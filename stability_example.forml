@@ -1,0 +1,5 @@
+[STABILITY]: 
+for x ~ x' with distance(name, levenshtein, 1) -> CLASSIFICATION.EQUAL
+
+[STABILITY]: 
+at x0 ~ x' with distance(name, levenshtein, 1) -> CLASSIFICATION.EQUAL

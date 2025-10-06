@@ -1,0 +1,5 @@
+[FAIRNESS]: 
+for x with gender("male", "female") -> PREDICTION.EQUITY(delta=0.05)
+
+[FAIRNESS]: 
+at x0 with gender("male", "female") -> PREDICTION.EQUITY(delta=0.05)

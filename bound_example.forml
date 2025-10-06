@@ -1,0 +1,5 @@
+[BOUND]: 
+for x in hyperball(L_inf, 0.01) -> PREDICTION.BETWEEN(0.0, 1.0)
+
+[BOUND]: 
+at x0 in hyperball(L_inf, 0.01) -> PREDICTION.BETWEEN(0.0, 1.0)
