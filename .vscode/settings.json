@@ -1,0 +1,4 @@
+{
+    "python.defaultInterpreterPath": "${workspaceFolder}/.forml_env/bin/python",
+    "python.terminal.activateEnvironment": true
+}

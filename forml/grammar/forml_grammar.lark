@@ -1,0 +1,79 @@
+%import common.WS
+%import common.WS_INLINE
+%import common.NEWLINE
+%import common.ESCAPED_STRING
+%import common.NUMBER
+%import common.DIGIT
+%ignore WS
+
+CLASSIFICATION : "CLASSIFICATION"
+REGRESSION : "REGRESSION"
+CLUSTERING : "CLUSTERING"
+ANOMALY_DETECTION : "ANOMALY_DETECTION"
+REINFORCEMENT_LEARNING : "REINFORCEMENT_LEARNING"
+
+ROBUTNESS : "ROBUTNESS"
+STABILITY : "STABILITY"
+FAIRNESS : "FAIRNESS"
+MONOTONICITY : "MONOTONICITY"
+BOUND : "BOUND"
+LOGIC : "LOGIC"
+
+# ===
+
+# === BASIC CHARACTER DEFINITIONS ===
+CHAR :  /(a-zA-Z)?/
+
+# === BASIC VALUE TYPES ===
+STRING :  ESCAPED_STRING 
+true :  "True" | "true" 
+false :  "False" | "false" 
+boolean :  true | false 
+identifier :  STRING ( STRING | DIGIT | "_" | ".")* 
+value :  STRING | DIGIT | boolean 
+
+# === ARGUMENT LIST AND VALUE ===
+arg :  identifier "=" value 
+args :  arg ( " " arg )* 
+
+
+# === PARAMETER LIST AND VALUE ===
+param :  identifier "=" value
+params :  param (" " param )*
+
+# === SEPARATOR DEFINITIONS ===
+SEPARATOR :  NEWLINE | ";"
+
+# === PROGRAM STRUCTURE ===
+# === PROGRAM COMPONENTS ===
+
+# === COMMENTS ===
+simple_comment :  "#" /(^\n)?/ 
+multiline_comment :  "'''" ( /'''(.|\n)*?'''/ )* "'''" 
+comment :  simple_comment | multiline_comment 
+
+# === DECLARATION SECTION ===
+declaration_section :  identifier ":=" value SEPARATOR
+
+# === PROPERTY SECTION ===
+logic_term :  "AND" | "OR" 
+comparison_op :  "==" | "!=" | "<" | "<=" | ">" | ">=" 
+logic_condition :  ( "NOT" )? identifier comparison_op value 
+logic_consequence :  ( "NOT" )? identifier comparison_op value 
+logic_implication :  "(" logic_condition "->" logic_consequence ")" 
+logic_assertion :  logic_implication ( logic_term logic_implication )* 
+
+
+function :  "EQUAL" | "EQUITY" | "BETWEEN" | "INCREASING" 
+function_expr :  function "(" ( args )? ")" 
+problem_type :  /.*/
+# CLASSIFICATION | REGRESSION | CLUSTERING | ANOMALY_DETECTION | REINFORCEMENT_LEARNING ;
+logic_expr :  problem_type "." function_expr 
+assertion :  logic_expr | logic_assertion 
+
+property_type :  ROBUTNESS | STABILITY | FAIRNESS | MONOTONICITY | BOUND | LOGIC | /(A-Z)?/
+property :  "(" property_type ")?" ":" NEWLINE property_expr "->" assertion 
+property_section :  ( comment )? property ( abstractor )? ( SEPARATOR )? 
+
+
+program :  ( comment | section | target_declaration )* 
