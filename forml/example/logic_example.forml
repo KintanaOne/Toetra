@@ -1,0 +1,5 @@
+[LOGIC]: 
+x.age > 18 -> ACCESS_GRANTED = True
+
+[LOGIC]: 
+x.income > 10000 -> CREDIT_GRANTED = True

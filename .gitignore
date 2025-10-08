@@ -137,8 +137,10 @@ celerybeat.pid
 # Environments
 .env
 .envrc
+.forml_env
 .venv
 env/
+forml_env/
 venv/
 ENV/
 env.bak/

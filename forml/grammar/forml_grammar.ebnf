@@ -1,0 +1,76 @@
+(* ===  *)
+
+(* === BASIC CHARACTER DEFINITIONS === *)
+CHAR = ? CHAR ?;
+
+(* === BASIC VALUE TYPES === *)
+STRING = ? any_character_except_quotes ? ;
+true = "True" | "true" ;
+false = "False" | "false" ;
+boolean = true | false ;
+identifier = STRING , { STRING | DIGIT | "_" | "."} ;
+value = STRING | DIGIT | boolean ;
+
+(* === ARGUMENT LIST AND VALUE === *)
+arg = identifier , "=" , value ;
+args = arg , { "," , arg } ;
+
+
+(* === PARAMETER LIST AND VALUE === *)
+param = identifier , "=" , value;
+params = param , {"," , param };
+
+(* === SEPARATOR DEFINITIONS === *)
+SEPARATOR = NEWLINE | ";";
+
+(* === PROGRAM STRUCTURE === *)
+    (* === PROGRAM COMPONENTS === *)
+
+    (* === COMMENTS === *)
+simple_comment = "#" , ? any_character_except_newline ? ;
+multiline_comment = "'''" , { ? any_character_except_triple_quotes ? } , "'''" ;
+comment = simple_comment | multiline_comment ;
+
+(* === DECLARATION SECTION === *)
+declaration_section = identifier , ":=" , value , SEPARATOR;
+
+(* === PROPERTY SECTION === *)
+logic_term        = "AND" | "OR" ;
+comparison_op     = "==" | "!=" | "<" | "<=" | ">" | ">=" ;
+logic_condition   = [ "NOT" ] , identifier , comparison_op , value ;
+logic_consequence = [ "NOT" ] , identifier , comparison_op , value ;
+logic_implication = "(" , logic_condition , "->" , logic_consequence , ")" ;
+logic_assertion   = logic_implication , { logic_term , logic_implication } ;
+
+
+function = ? official_function ? ;
+function_expr = function , "(" , [ args ] , ")" ;
+logic_expr = ? official_problems ? , "." , function_expr ;
+
+assertion = logic_expr | logic_assertion ;
+
+(* === PROPERTY EXPRESSION OPTIONS === *)
+property_expr = quantifier_expr | anchor_expr | check_expr | pairwise_expr ;
+quantifier_set = ? official_quantifier_set ? ;
+quantifier_expr = "forall" , identifier , "in" , quantifier_set ;
+
+domain = "with" , identifier , "(" , value , { "," , value } , ")" ;
+anchor_expr = "at" , identifier , "in" , ( quantifier_set | domain ) ;
+
+check_expr = "check_at" , identifier ;
+
+symbolic_distance = "distance(" , identifier , "," , identifier , "," , value , ")" ;
+pairwise_expr = identifier , "~" , identifier , "with" , symbolic_distance ;
+
+property_type = ? official_properties ? | ? uppercase_string ?;
+property = "[" , property_type , "]" , ":" , NEWLINE , property_expr , "->" , assertion ;
+property_section = [ comment ] , property , [ abstractor ] , [ SEPARATOR ] ;
+
+section = declaration_section | property_section ;
+
+
+(* === ABSTRACTOR SECTION === *)
+abstractor = "using" , ? official_backends? , [ "(" , { params } , ")" ] ;
+
+program = { comment | section | target_declaration } ;
+
