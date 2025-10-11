@@ -141,8 +141,8 @@ def ebnf_to_lark(ebnf_text: str) -> str:
     return "\n".join(header + lark_lines)
 
 def main():
-    input_path = Path("src/grammar/forml_grammar copy.ebnf")
-    output_path = Path("src/grammar/forml_grammar copy.lark")
+    input_path = Path("forml/grammar/forml_grammar.ebnf")
+    output_path = Path("forml/grammar/forml_grammar.lark")
 
     ebnf_text = input_path.read_text(encoding="utf-8")
     lark_text = ebnf_to_lark(ebnf_text)
