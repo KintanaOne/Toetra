@@ -64,16 +64,33 @@ logic_implication :  "(" logic_condition "->" logic_consequence ")"
 logic_assertion :  logic_implication ( logic_term logic_implication )* 
 
 
-function :  "EQUAL" | "EQUITY" | "BETWEEN" | "INCREASING" 
+function :  /.*/ 
 function_expr :  function "(" ( args )? ")" 
-problem_type :  /.*/
-# CLASSIFICATION | REGRESSION | CLUSTERING | ANOMALY_DETECTION | REINFORCEMENT_LEARNING ;
-logic_expr :  problem_type "." function_expr 
+logic_expr :  CLASSIFICATION | REGRESSION | CLUSTERING | ANOMALY_DETECTION | REINFORCEMENT_LEARNING "." function_expr 
+
 assertion :  logic_expr | logic_assertion 
+
+# === PROPERTY EXPRESSION OPTIONS ===
+property_expr :  quantifier_expr | anchor_expr | check_expr | pairwise_expr 
+quantifier_set :  /.*/ 
+quantifier_expr :  "forall" identifier "in" quantifier_set 
+
+domain :  "with" identifier "(" value ( " " value )* ")" 
+anchor_expr :  "at" identifier "in" ( quantifier_set | domain ) 
+
+check_expr :  "check_at" identifier 
+
+symbolic_distance :  "distance(" identifier " " identifier " " value ")" 
+pairwise_expr :  identifier "~" identifier "with" symbolic_distance 
 
 property_type :  ROBUTNESS | STABILITY | FAIRNESS | MONOTONICITY | BOUND | LOGIC | /(A-Z)?/
 property :  "(" property_type ")?" ":" NEWLINE property_expr "->" assertion 
 property_section :  ( comment )? property ( abstractor )? ( SEPARATOR )? 
 
+section :  declaration_section | property_section 
+
+
+# === ABSTRACTOR SECTION ===
+abstractor :  "using" /.*/ ( "(" ( params )* ")" )? 
 
 program :  ( comment | section | target_declaration )* 
