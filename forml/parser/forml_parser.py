@@ -4,7 +4,7 @@ from pathlib import Path
 from lark import Lark
 
 # Load grammar file
-GRAMMAR_PATH = Path(__file__).parent.parent / "grammar/forml_grammar copy.lark"
+GRAMMAR_PATH = Path(__file__).parent.parent / "grammar/forml_grammar.lark"
 
 with open(GRAMMAR_PATH, "r", encoding="utf-8") as f:
     grammar = f.read()
@@ -19,17 +19,13 @@ forml_parser = Lark(
     cache=False
 )
 
-# def check_property_type(value: str):
-#     if value not in official_properties:
-#         print(f"⚠️ Warning: '{value}' is not an official property type. "
-#               "It will be treated as custom.")
 
 def parse_forml_code(code: str):
     """Parses the raw DSL code into a Lark tree"""
     return forml_parser.parse(code)
 
 if __name__ == "__main__":
-    test_path = Path(__file__).parent.parent / "example/robutness_example.forml"
+    test_path = Path(__file__).parent.parent / "example/simple_example.forml"
     print(test_path)
     if test_path.exists():
         with open(test_path, "r", encoding="utf-8") as f:
