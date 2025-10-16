@@ -6,12 +6,15 @@
 %import common.DIGIT
 %ignore WS
 
+# === OFFICIAL PROBLEMS ===
 CLASSIFICATION : "CLASSIFICATION"
+PREDICTION : "PREDICTION"
 REGRESSION : "REGRESSION"
 CLUSTERING : "CLUSTERING"
 ANOMALY_DETECTION : "ANOMALY_DETECTION"
 REINFORCEMENT_LEARNING : "REINFORCEMENT_LEARNING"
 
+# === OFFICIAL PROPERTIES ===
 ROBUTNESS : "ROBUTNESS"
 STABILITY : "STABILITY"
 FAIRNESS : "FAIRNESS"
@@ -19,41 +22,69 @@ MONOTONICITY : "MONOTONICITY"
 BOUND : "BOUND"
 LOGIC : "LOGIC"
 
+# === OFFICIAL QUANTIFIER SETS ===
+ball : "ball"
+hyperball : "hyperball"
+noise : "noise"
+
+# === OFFICIAL FUNCTIONS ===
+EQUAL : "EQUAL"
+EQUITY : "EQUITY"
+BETWEEN : "BETWEEN"
+INCREASING : "INCREASING"
+
+# === OFFICIAL BACKENDS ===
+eran : "eran"
+ERAN : "ERAN"
+zonotope : "zonotope"
+ZONOTOPE : "ZONOTOPE"
+box : "box"
+BOX : "BOX"
+z3 : "z3"
+Z3 : "Z3"
+
 # ===
 
 # === BASIC CHARACTER DEFINITIONS ===
-CHAR :  /(a-zA-Z)?/
+CHAR :  /[a-zA-Z]/
 
 # === BASIC VALUE TYPES ===
-STRING :  ESCAPED_STRING 
 true :  "True" | "true" 
 false :  "False" | "false" 
 boolean :  true | false 
-identifier :  STRING ( STRING | DIGIT | "_" | ".")* 
-value :  STRING | DIGIT | boolean 
 
-# === ARGUMENT LIST AND VALUE ===
-arg :  identifier "=" value 
-args :  arg ( " " arg )* 
+# === IDENTIFIERS ===
+identifier :  /[A-Za-z_][A-Za-z0-9_.]*/ 
+quoted_identifier :  ESCAPED_STRING | identifier 
 
+# === VALUE TYPES ===
+value_identifier :  quoted_identifier 
+value_number :  NUMBER 
+value_boolean :  boolean 
+value :  value_identifier | value_number | value_boolean 
 
-# === PARAMETER LIST AND VALUE ===
-param :  identifier "=" value
-params :  param (" " param )*
+# === ARGUMENTS ===
+arg_identifier_eq :  quoted_identifier "=" value 
+arg_identifier_only :  quoted_identifier 
+arg_number :  NUMBER 
+arg_boolean :  boolean 
+arg :  arg_identifier_eq | arg_identifier_only | arg_number | arg_boolean 
+args :  arg ( "," arg )* 
 
 # === SEPARATOR DEFINITIONS ===
 SEPARATOR :  NEWLINE | ";"
+SEPARATORS :  SEPARATOR ( SEPARATOR )* 
 
 # === PROGRAM STRUCTURE ===
 # === PROGRAM COMPONENTS ===
 
 # === COMMENTS ===
-simple_comment :  "#" /(^\n)?/ 
-multiline_comment :  "'''" ( /'''(.|\n)*?'''/ )* "'''" 
+simple_comment :  "#" /[^\n]+/ 
+multiline_comment :  /'''(.|\n)*?'''/ 
 comment :  simple_comment | multiline_comment 
 
 # === DECLARATION SECTION ===
-declaration_section :  identifier ":=" value SEPARATOR
+declaration_section :  identifier ":=" value SEPARATORS
 
 # === PROPERTY SECTION ===
 logic_term :  "AND" | "OR" 
@@ -64,33 +95,44 @@ logic_implication :  "(" logic_condition "->" logic_consequence ")"
 logic_assertion :  logic_implication ( logic_term logic_implication )* 
 
 
-function :  /.*/ 
+function :  ( EQUAL | EQUITY | BETWEEN | INCREASING ) 
 function_expr :  function "(" ( args )? ")" 
-logic_expr :  CLASSIFICATION | REGRESSION | CLUSTERING | ANOMALY_DETECTION | REINFORCEMENT_LEARNING "." function_expr 
+logic_expr :  ( CLASSIFICATION | PREDICTION | REGRESSION | CLUSTERING | ANOMALY_DETECTION | REINFORCEMENT_LEARNING ) "." function_expr 
 
 assertion :  logic_expr | logic_assertion 
 
 # === PROPERTY EXPRESSION OPTIONS ===
 property_expr :  quantifier_expr | anchor_expr | check_expr | pairwise_expr 
-quantifier_set :  /.*/ 
+quantifier_set :  ( ball | hyperball | noise ) "(" ( args )? ")" 
 quantifier_expr :  "forall" identifier "in" quantifier_set 
 
-domain :  "with" identifier "(" value ( " " value )* ")" 
+# === ANCHOR EXPRESSIONS ===
+domain :  "with" identifier "(" value ( "," value )* ")" 
 anchor_expr :  "at" identifier "in" ( quantifier_set | domain ) 
 
+# === CHECK EXPRESSIONS ===
 check_expr :  "check_at" identifier 
 
-symbolic_distance :  "distance(" identifier " " identifier " " value ")" 
+# === PAIRWISE EXPRESSIONS ===
+symbolic_distance :  "distance(" identifier "," identifier "," value ")" 
 pairwise_expr :  identifier "~" identifier "with" symbolic_distance 
 
-property_type :  ROBUTNESS | STABILITY | FAIRNESS | MONOTONICITY | BOUND | LOGIC | /(A-Z)?/
-property :  "(" property_type ")?" ":" NEWLINE property_expr "->" assertion 
-property_section :  ( comment )? property ( abstractor )? ( SEPARATOR )? 
+# === PROPERTY DEFINITION ===
+property_type :  ( ROBUTNESS | STABILITY | FAIRNESS | MONOTONICITY | BOUND | LOGIC ) | /[A-Z]+/
+property :  "[" property_type "]" ":" NEWLINE property_expr "->" assertion 
+property_section :  property ( abstractor )? 
 
-section :  declaration_section | property_section 
-
+# === SECTION DEFINITION ===
+section :  ( comment )? ( declaration_section | property_section ) SEPARATORS 
 
 # === ABSTRACTOR SECTION ===
-abstractor :  "using" /.*/ ( "(" ( params )* ")" )? 
+abstractor :  "using" ( eran | ERAN | zonotope | ZONOTOPE | box | BOX | z3 | Z3 ) ( "(" ( args )* ")" )? 
 
-program :  ( comment | section | target_declaration )* 
+# === TARGET DECLARATION ===
+target_declaration :  "target" ":=" identifier SEPARATORS 
+
+# === FULL PROGRAM ===
+header :  ( comment )* ( target_declaration )? 
+body :  section ( section )* 
+footer :  ( comment )* 
+program :  header body footer 

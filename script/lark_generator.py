@@ -32,12 +32,14 @@ SPECIAL_SEQ = {
     "official_problems": official_problems,
     "official_quantifier_sets" : official_quantifier_sets,
     "official_functions": official_functions,
+    "official_backends": official_backends,
     "lowercase_string": r"/[a-z]+/",
     "uppercase_string": r"/[A-Z]+/",
-    "NUMBER": "common.NUMBER",
+    "number": "NUMBER",
     "CHAR": r"/[a-zA-Z]/",
-    "digit": r"/[0-9]/",
-    "any_character_except_quotes": "ESCAPED_STRING",
+    "digit": "DIGIT",
+    "identifier_name": r"/[A-Za-z_][A-Za-z0-9_.]*/",
+    "escaped_string": "ESCAPED_STRING",
     "any_character_except_triple_quotes": r"/'''(.|\n)*?'''/",
     "any_character_except_newline": r'/[^\n]+/',
 }
@@ -45,44 +47,99 @@ SPECIAL_SEQ = {
 def transform_ebnf_brackets(line: str) -> str:
     """
     Transforme les notations EBNF {} et [] en syntaxe Lark.
-    
     {} → répétition 0 ou plusieurs fois : (élément)*
     [] → optionnel (0 ou 1 fois) : (élément)?
-    
-    ⚠ Les regex Lark encadrées par /.../ sont protégées et ne sont pas modifiées.
+    ⚠ Les regex /…/ et les séquences spéciales ?…? sont protégées.
     """
+    def is_protected(inner: str) -> bool:
+        inner = inner.strip()
+        return (inner.startswith('/') and inner.endswith('/')) or \
+               (inner.startswith('?') and inner.endswith('?'))
 
-    # 🔹 Transformation des accolades { ... } pour répétition
     def repl_curly(match):
         inner = match.group(1)
-        if inner.startswith('/') and inner.endswith('/'):
-            return match.group(0)  # regex protégée
+        if is_protected(inner):
+            return match.group(0)
         return f"({inner})*"
 
-    line = re.sub(r"\{([^}]+)\}", repl_curly, line)
-
-    # 🔹 Transformation des crochets [ ... ] pour optionnel
-    # On protège aussi les regex déjà
     def repl_brackets(match):
         inner = match.group(1)
-        if inner.startswith('/') and inner.endswith('/'):
+        if is_protected(inner):
             return match.group(0)
         return f"({inner})?"
 
+    line = re.sub(r"\{([^}]+)\}", repl_curly, line)
     line = re.sub(r"\[([^\]]+)\]", repl_brackets, line)
-
     return line
+
+def protect_brackets(line: str) -> str:
+    """
+    Protège les crochets, parenthèses et accolades entre guillemets ("[", "]", "(", ")", "{", "}")
+    pour éviter qu'elles soient interprétées comme des structures EBNF par transform_ebnf_brackets().
+    """
+    def repl(match):
+        content = match.group(0)
+        # on protège uniquement les symboles entre guillemets
+        replacements = {
+            '"["': "___BRACKET_OPEN___",
+            '"]"': "___BRACKET_CLOSE___",
+            '"("': "___PAREN_OPEN___",
+            '")"': "___PAREN_CLOSE___",
+            '"{"': "___CURLY_OPEN___",
+            '"}"': "___CURLY_CLOSE___",
+            '","': '___COMMA___',
+        }
+        for k, v in replacements.items():
+            content = content.replace(k, v)
+        return content
+
+    # cette regex capture toutes les chaînes entre guillemets doubles
+    return re.sub(r'"[^"]*"', repl, line)
+
+
+def unprotect_brackets(line: str) -> str:
+    """
+    Restaure les crochets, parenthèses et accolades protégées.
+    """
+    replacements = {
+        "___BRACKET_OPEN___": '"["',
+        "___BRACKET_CLOSE___": '"]"',
+        "___PAREN_OPEN___": '"("',
+        "___PAREN_CLOSE___": '")"',
+        "___CURLY_OPEN___": '"{"',
+        "___CURLY_CLOSE___": '"}"',
+        "___COMMA___": '","',
+    }
+    for k, v in replacements.items():
+        line = line.replace(k, v)
+    return line
+
 
 def replace_special_sequences(line: str) -> str:
     """
-    Remplace les séquences spéciales ?nom? par leur regex ou valeur définie
-    dans SPECIAL_SEQ. Les regex sont déjà protégées pour ne pas subir de ?+.
+    Remplace les séquences spéciales ?nom? par leur valeur depuis SPECIAL_SEQ.
+    - Si la valeur est une regex (/.../), elle est insérée telle quelle.
+    - Si c'est une séquence multiple (avec "|"), elle est mise entre parenthèses.
+    - Si le placeholder est inconnu, lève une KeyError.
     """
     def repl(match):
         key = match.group(1).strip()
-        value = SPECIAL_SEQ.get(key, "/.*/")
-        return value
-    return re.sub(r'\?\s*(.*?)\s*\?', repl, line)
+        if key not in SPECIAL_SEQ:
+            raise KeyError(f"Placeholder inconnu dans la grammaire: ?{key}?")
+        value = SPECIAL_SEQ[key]
+
+        # Si c'est une regex (commence et finit par /), on garde tel quel
+        if isinstance(value, str) and value.startswith("/") and value.endswith("/"):
+            return value
+
+        # Pour les séquences multiples (backends, fonctions, etc.), on met entre parenthèses
+        if "|" in str(value):
+            return f"( {value} )"
+
+        # Sinon on renvoie la valeur brute
+        return str(value)
+
+    return re.sub(r'\?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\?', repl, line)
 
 
 def ebnf_to_lark(ebnf_text: str) -> str:
@@ -98,10 +155,22 @@ def ebnf_to_lark(ebnf_text: str) -> str:
         "%import common.DIGIT",
         "%ignore WS",
         "",
-    ]
-    
-    header += problem_list + [""] # Ajout des types de problème officiels
-    header += property_list + [""]  # Ajout des propriétés officielles
+        "# === OFFICIAL PROBLEMS ===",
+    ] + problem_list + [
+        "",
+        "# === OFFICIAL PROPERTIES ===",
+    ] + property_list + [
+        "",
+        "# === OFFICIAL QUANTIFIER SETS ===",
+    ] + quantifier_set_list + [
+        "",
+        "# === OFFICIAL FUNCTIONS ===",
+    ] + function_list + [
+        "",
+        "# === OFFICIAL BACKENDS ===",
+    ] + backend_list + [""]
+
+
 
     for raw_line in lines:
         if not raw_line.strip():
@@ -112,20 +181,31 @@ def ebnf_to_lark(ebnf_text: str) -> str:
         if raw_line.strip().startswith("(*") and raw_line.strip().endswith("*)"):
             lark_lines.append("# " + raw_line.strip()[2:-2].strip())
             continue
-        line = re.sub(r"\(\*(.*?)\*\)", lambda m: "# " + m.group(1).strip(), raw_line.strip())
 
-        # regex spéciaux
-        line = replace_special_sequences(line)
+        if raw_line.startswith("identifier ="):
+            print("Debug: Found identifier line:", raw_line)
+
+        line = re.sub(r"\(\*(.*?)\*\)", lambda m: "# " + m.group(1).strip(), raw_line.strip())
+        
+        # protéger les accolades/brackets/parenthèses entre guillemets
+        line = protect_brackets(line)
 
         # accolades/brackets
         line = transform_ebnf_brackets(line)
 
+        # restaurer les accolades/brackets/parenthèses protégées
+        line = unprotect_brackets(line)
+        
         # nettoyage des )?=
         line = re.sub(r"\?\+", "?", line)
 
         line = line.rstrip(";")
-        line = re.sub(r"\s*,\s*", " ", line)
+        line = re.sub(r"\s+,\s+", " ", line)
+        # line = line
         line = re.sub(r"\s+", " ", line)
+
+        # regex spéciaux
+        line = replace_special_sequences(line)
 
         # string déjà géré par ESCAPED_STRING
         if re.match(r'^string\s*=', line):
@@ -145,9 +225,12 @@ def main():
     output_path = Path("forml/grammar/forml_grammar.lark")
 
     ebnf_text = input_path.read_text(encoding="utf-8")
-    lark_text = ebnf_to_lark(ebnf_text)
-    output_path.write_text(lark_text, encoding="utf-8")
-    print(f"✅ Converted `{input_path.name}` → `{output_path.name}`")
+    try:
+        lark_text = ebnf_to_lark(ebnf_text)
+        output_path.write_text(lark_text, encoding="utf-8")
+        print(f"✅ Converted `{input_path.name}` → `{output_path.name}`")
+    except KeyError as e:
+        print(f"❌ EBNF to Lark Error: {e}")
 
 if __name__ == "__main__":
     main()
