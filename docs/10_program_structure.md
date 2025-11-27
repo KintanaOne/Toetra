@@ -28,47 +28,55 @@ program
 │
 ├── body
 │   │
-│   ├── section+                        # Une ou plusieurs sections
-│   │   │
-│   │   ├── comment?                    # Commentaire optionnel avant la section
-│   │   │
-│   │   ├── declaration_section?        # Exemple : variable := value
-│   │   │   ├── identifier
-│   │   │   ├── ":="
-│   │   │   └── value
-│   │   │
-│   │   └── property_section?           # Section de propriété
-│   │       ├── property
-│   │       │   ├── [ property_type ]
-│   │       │   ├── ":"
-│   │       │   ├── property_expr
-│   │       │   │   ├── quantifier_expr (optionnel)
-│   │       │   │   │   ├── "forall"
-│   │       │   │   │   ├── identifier
-│   │       │   │   │   └── quantifier_set
-│   │       │   │   │       ├── hyperball | ball | noise
-│   │       │   │   │       └── args
-│   │       │   │   │           ├── arg_identifier_only | arg_identifier_eq | arg_number | arg_boolean
-│   │       │   │   │           └── ...
-│   │       │   │   ├── anchor_expr (optionnel)
-│   │       │   │   │   ├── "at"
-│   │       │   │   │   ├── identifier
-│   │       │   │   │   ├── "in"
-│   │       │   │   │   └── domain | quantifier_set
-│   │       │   │   ├── check_expr (optionnel)
-│   │       │   │   └── pairwise_expr (optionnel)
-│   │       │   ├── "->"
-│   │       │   ├── assertion
-│   │       │   │   ├── logic_expr
-│   │       │   │   │   ├── CLASSIFICATION | PREDICTION | ...
-│   │       │   │   │   └── function_expr
-│   │       │   │   │       ├── function (EQUAL, EQUITY, BETWEEN, INCREASING)
-│   │       │   │   │       └── args (optionnels)
-│   │       │   │   └── logic_assertion (alternative)
-│   │       │   │       ├── "(" condition "->" consequence ")"
-│   │       │   │       └── logic_term (AND/OR)
-│   │       │   └── abstractor?          # using ERAN("zonotope")
-│   │       └── SEPARATORS
+│   └── section+                            # Une ou plusieurs sections
+│       │
+│       ├── comments?                       # Commentaire optionnel avant la section
+│       |   ├── simple_comment              #
+│       │   └── multiline_comment           # ```[...]```
+│       │
+│       ├── declaration_section?            # Exemple : variable := value
+│       │   ├── identifier
+│       │   ├── ":="
+│       │   └── value
+│       │
+│       └── property_section?               # Section de propriété
+│           ├── property
+│           │   ├── [ property_type ]
+│           │   ├── ":"
+│           │   ├── property_expr
+│           │   │   ├── quantifier_expr (optionnel)
+│           │   │   │   ├── "forall"
+│           │   │   │   ├── identifier
+│           │   │   │   └── quantifier_set
+│           │   │   │       ├── hyperball | ball | noise
+│           │   │   │       └── args
+│           │   │   │           ├── arg_identifier_only | arg_identifier_eq | arg_number | arg_boolean
+│           │   │   │           └── ...
+│           │   │   ├── anchor_expr (optionnel)
+│           │   │   │   ├── "at"
+│           │   │   │   ├── identifier
+│           │   │   │   ├── "in"
+│           │   │   │   └── domain | quantifier_set
+│           │   │   ├── check_expr (optionnel)
+│           │   │   └── pairwise_expr (optionnel)
+│           │   ├── "->"
+│           │   ├── assertion
+│           │   │   ├── logic_expr
+│           │   │   │   ├── CLASSIFICATION | PREDICTION | ...
+│           │   │   │   └── function_expr
+│           │   │   │       ├── function (EQUAL, EQUITY, BETWEEN, INCREASING)
+│           │   │   │       └── args (optionnels)
+│           │   │   │
+│           │   │   └── logic_assertion (alternative)
+│           │   │       ├── "(" condition "->" consequence ")"
+│           │   │       └── logic_term (AND/OR)
+│           │   │
+│           │   └── abstractor?          # using ERAN("zonotope")
+│           │       ├── "using"
+│           │       ├── Z3 | ERAN | other
+│           │       └── args (optionnels)
+|           |
+│           └── SEPARATORS
 │
 └── footer
     └── comment*                        # Commentaires optionnels, notes ou métadonnées

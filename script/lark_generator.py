@@ -2,43 +2,52 @@ import re
 import sys; print(sys.path)
 
 from pathlib import Path
-from forml.grammar.official_contents.official_problems import official_problems
-from forml.grammar.official_contents.official_properties import official_properties
-from forml.grammar.official_contents.official_quantifier_sets import official_quantifier_sets
-from forml.grammar.official_contents.official_functions import official_functions
-from forml.grammar.official_contents.official_backends import official_backends
+from forml.grammar.official_contents.problems import official_problems
+from forml.grammar.official_contents.properties import official_properties
+from forml.grammar.official_contents.quantifiers import official_quantifiers
+from forml.grammar.official_contents.functions import official_functions
+from forml.grammar.official_contents.backends import official_backends
+from forml.grammar.official_contents.sets import official_sets
+from forml.grammar.official_contents.protected_words import protected_words
 
 # Dictionnaires et listes des types officiels
-official_problem_dict = official_problems
-official_property_dict = official_properties
-official_quantifier_sets_dict = official_quantifier_sets
-official_function_dict = official_functions
-official_backends_dict = official_backends
+official_problems_dict          = official_problems
+official_properties_dict        = official_properties
+official_quantifiers_dict       = official_quantifiers
+official_functions_dict         = official_functions
+official_backends_dict          = official_backends
+official_sets_dict              = official_sets
+official_protected_words_dict   = protected_words
 
-problem_list = [f"{k} : {v}" for k, v in official_problem_dict.items()]
-property_list = [f"{k} : {v}" for k, v in official_property_dict.items()]
-quantifier_set_list = [f"{k} : {v}" for k, v in official_quantifier_sets_dict.items()]
-function_list = [f"{k} : {v}" for k, v in official_function_dict.items()]
-backend_list = [f"{k} : {v}" for k, v in official_backends_dict.items()]
+problem_list            = [f"{k} : {v}" for k, v in official_problems_dict.items()]
+property_list           = [f"{k} : {v}" for k, v in official_properties_dict.items()]
+quantifier_set_list     = [f"{k} : {v}" for k, v in official_quantifiers_dict.items()]
+function_list           = [f"{k} : {v}" for k, v in official_functions_dict.items()]
+backend_list            = [f"{k} : {v}" for k, v in official_backends_dict.items()]
+set_list                = [f"{k} : {v}" for k, v in official_sets_dict.items()]
+protected_words_list    = [f"{k} : {v}" for k, v in official_protected_words_dict.items()]
 
-official_properties = " | ".join(official_property_dict.keys())
-official_problems = " | ".join(official_problem_dict.keys())
-official_quantifier_sets = " | ".join(official_quantifier_sets_dict.keys())
-official_functions = " | ".join(official_function_dict.keys())
-official_backends = " | ".join(official_backends_dict.keys())
+official_properties =       " | ".join(official_properties_dict.keys())
+official_problems =         " | ".join(official_problems_dict.keys())
+official_quantifiers =      " | ".join(official_quantifiers_dict.keys())
+official_functions =        " | ".join(official_functions_dict.keys())
+official_backends =         " | ".join(official_backends_dict.keys())
+official_sets =             " | ".join(official_sets_dict.keys())
+official_protected_words =  " | ".join(official_protected_words_dict.keys())
 
 SPECIAL_SEQ = {
-    "official_properties": official_properties,
-    "official_problems": official_problems,
-    "official_quantifier_sets" : official_quantifier_sets,
-    "official_functions": official_functions,
-    "official_backends": official_backends,
+    "official_properties":  official_properties,
+    "official_problems":    official_problems,
+    "official_quantifier" : official_quantifiers,
+    "official_functions":   official_functions,
+    "official_backends":    official_backends,
+    "official_sets" :       official_sets,
     "lowercase_string": r"/[a-z]+/",
     "uppercase_string": r"/[A-Z]+/",
     "number": "NUMBER",
     "CHAR": r"/[a-zA-Z]/",
     "digit": "DIGIT",
-    "identifier_name": r"/[A-Za-z_][A-Za-z0-9_.]*/",
+    "identifier_name": r"/[A-Za-z][A-Za-z0-9_.]*/",
     "escaped_string": "ESCAPED_STRING",
     "any_character_except_triple_quotes": r"/'''(.|\n)*?'''/",
     "any_character_except_newline": r'/[^\n]+/',
@@ -114,6 +123,15 @@ def unprotect_brackets(line: str) -> str:
         line = line.replace(k, v)
     return line
 
+# Crée un motif regex qui détecte les mots exacts à remplacer
+PROTECTED_PATTERN = re.compile(rf"\b({'|'.join(map(re.escape, protected_words.keys()))})\b")
+
+def replace_protected_words(line: str) -> str:
+    """Remplace les tokens protégés (style _IN) par leurs équivalents lisibles."""
+    for k, v in protected_words.items():
+        line = line.replace(k, v)
+    return line
+
 
 def replace_special_sequences(line: str) -> str:
     """
@@ -168,8 +186,12 @@ def ebnf_to_lark(ebnf_text: str) -> str:
     ] + function_list + [
         "",
         "# === OFFICIAL BACKENDS ===",
-    ] + backend_list + [""]
-
+    ] + backend_list + [
+        "",
+        "# === OFFICIAL SETS ===",
+    ] + set_list + [
+        "",
+    ]
 
 
     for raw_line in lines:
@@ -206,6 +228,9 @@ def ebnf_to_lark(ebnf_text: str) -> str:
 
         # regex spéciaux
         line = replace_special_sequences(line)
+
+        # mots protégés
+        line = replace_protected_words(line)
 
         # string déjà géré par ESCAPED_STRING
         if re.match(r'^string\s*=', line):

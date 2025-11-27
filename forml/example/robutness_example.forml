@@ -2,24 +2,24 @@ target := MyTargetColumn
 
 # 1 forall without using
 [ROBUTNESS]:
-forall x in hyperball("L2", 0.01) -> CLASSIFICATION.EQUAL()
+forall in hyperball("L2", 0.01) -> CLASSIFICATION.EQUAL()
 
 [ROBUTNESS]:
-forall x in hyperball("L2", 0.01) -> PREDICTION.EQUAL()
+forall in hyperball("L2", 0.01) -> PREDICTION.EQUAL()
 
 # 2 forall and using simple
 [ROBUTNESS]:
-forall x in hyperball("L2", 0.01) -> CLASSIFICATION.EQUAL() using eran
+forall in hyperball("L2", 0.01) -> CLASSIFICATION.EQUAL() using eran
 
 [ROBUTNESS]:
-forall x in hyperball("L2", 0.01) -> PREDICTION.EQUAL() using eran
+forall in hyperball("L2", 0.01) -> PREDICTION.EQUAL() using eran
 
 # 3 forall and using with parameters
 [ROBUTNESS]:
-forall x in hyperball("L2", 0.01) -> CLASSIFICATION.EQUAL() using eran(param1="a")
+forall in hyperball("L2", 0.01) -> CLASSIFICATION.EQUAL() using eran(param1="a")
 
 [ROBUTNESS]:
-forall x in hyperball("L2", 0.01) -> PREDICTION.EQUAL() using eran(param1="a")
+forall in hyperball("L2", 0.01) -> PREDICTION.EQUAL() using eran(param1="a")
 
 # 4 at without using
 [ROBUTNESS]:

@@ -1,5 +1,3 @@
-(* ===  *)
-
 (* === BASIC CHARACTER DEFINITIONS === *)
 CHAR = ? CHAR ?;
 
@@ -37,39 +35,43 @@ SEPARATORS = SEPARATOR , { SEPARATOR } ;
 simple_comment = "#" , ? any_character_except_newline ? ;
 multiline_comment = ? any_character_except_triple_quotes ? ;
 comment = simple_comment | multiline_comment ;
+comments = comment , { comment } ;
 
     (* === DECLARATION SECTION === *)
 declaration_section = identifier , ":=" , value , SEPARATORS;
 
     (* === PROPERTY SECTION === *)
-logic_term        = "AND" | "OR" ;
-comparison_op     = "==" | "!=" | "<" | "<=" | ">" | ">=" ;
-logic_condition   = [ "NOT" ] , identifier , comparison_op , value ;
-logic_consequence = [ "NOT" ] , identifier , comparison_op , value ;
-logic_implication = "(" , logic_condition , "->" , logic_consequence , ")" ;
-logic_assertion   = logic_implication , { logic_term , logic_implication } ;
+logic_connection        = "AND" | "OR" ;
+logic_operation     = "==" | "!=" | "<" | "<=" | ">" | ">=" ;
+logic_expr   = [ "NOT" ] , identifier , logic_operation , value ;
+logic_implication = "(" , logic_expr , "->" , logic_expr , ")" ;
+logic_assertion   = logic_implication , { logic_connection , logic_implication } ;
 
 
 function = ? official_functions ? ;
 function_expr = function , "(" , [ args ] , ")" ;
-logic_expr = ? official_problems ? , "." , function_expr ;
+problem_expr = ? official_problems ? , "." , function_expr ;
 
-assertion = logic_expr | logic_assertion ;
+assertion = problem_expr | logic_assertion ;
 
     (* === PROPERTY EXPRESSION OPTIONS === *)
-property_expr = quantifier_expr | anchor_expr | check_expr | pairwise_expr ;
-quantifier_set = ? official_quantifier_sets ? , "(" , [ args ] , ")" ;
-quantifier_expr = "forall" , identifier , "in" , quantifier_set ;
+property_expr = universal_expr | anchor_expr | check_expr | pairwise_expr ;
+
+quantifier = ? official_quantifier ? , [ identifier ] , "in" ;
+
+    (* === UNIVERSAL EXPRESSIONS === *)
+universal_set = ? official_sets ? , "(" , [ args ] , ")" ;
+universal_expr = quantifier , universal_set ;
 
     (* === ANCHOR EXPRESSIONS === *)
 domain = "with" , identifier , "(" , value , { "," , value } , ")" ;
-anchor_expr = "at" , identifier , "in" , ( quantifier_set | domain ) ;
+anchor_expr = "at" , identifier , [ "in" , universal_expr ] , [ domain ] ;
 
     (* === CHECK EXPRESSIONS === *)
 check_expr = "check_at" , identifier ;
 
     (* === PAIRWISE EXPRESSIONS === *)
-symbolic_distance = "distance(" , identifier , "," , identifier , "," , value , ")" ;
+symbolic_distance = "distance" , "(" , identifier , "," , identifier , "," , value , ")" ;
 pairwise_expr = identifier , "~" , identifier , "with" , symbolic_distance ;
 
     (* === PROPERTY DEFINITION === *)
@@ -78,7 +80,7 @@ property = "[" , property_type , "]" , ":" , NEWLINE , property_expr , "->" , as
 property_section = property , [ abstractor ] ;
 
 (* === SECTION DEFINITION === *)
-section = [ comment ] , ( declaration_section | property_section ) , SEPARATORS ;
+section = [ comments ] , ( declaration_section | property_section ) , SEPARATORS ;
 
 (* === ABSTRACTOR SECTION === *)
 abstractor = "using" , ? official_backends? , [ "(" , { args } , ")" ] ;
@@ -86,8 +88,12 @@ abstractor = "using" , ? official_backends? , [ "(" , { args } , ")" ] ;
 (* === TARGET DECLARATION === *)
 target_declaration = "target" , ":=" , identifier , SEPARATORS  ;
 
+(* === MODEL DECLARATION === *)
+model = quoted_identifier ;
+model_declaration = "model" , ":=" , model , SEPARATORS ;
+
 (* === FULL PROGRAM === *)
-header = { comment } , [ target_declaration ] ;
+header = { comments } , [ model_declaration ] , [ target_declaration ] ;
 body = section , { section } ;
-footer = { comment } ;
+footer = { comments } ;
 program = header , body , footer ;
