@@ -57,10 +57,10 @@ Elle définit le contexte d’évaluation.
 Plusieurs formes sont possibles selon la nature du test :
 | Expression                     | Description                                 | Exemple                             |
 | ------------------------------ | ------------------------------------------- | ----------------------------------- |
-| `forall x in <set>`            | Quantificateur universel                    | `forall x in hyperball("L2", 0.01)` |
+| `forall in <set>`              | Quantificateur universel                    | `forall in hyperball("L2", 0.01)`   |
 | `at <anchor> in <domain>`      | Vérifie une propriété à un point donné      | `at pointA in ball("L2", 0.5)`      |
 | `check_at <anchor>`            | Vérifie une condition à un point spécifique | `check_at x0`                       |
-| `<a> ~ <b> with distance(...)` | Vérifie une propriété pairwise              | `x1 ~ x2 with distance(x1,x2,0.5)`  |
+| `<a> ~ <b> with distance(...)` | Vérifie une propriété pairwise              | `x1 ~ x2 with distance(<col>,<func>,<value>)`  |
 
 #### Assertion
 Elle définit ce que la propriété doit vérifier sur le modèle.
@@ -100,7 +100,7 @@ commentaire
 target := MyTargetColumn
 
 [ROBUTNESS]:
-forall x in hyperball("L2", 0.01) -> CLASSIFICATION.EQUAL();
+forall in hyperball("L2", 0.01) -> CLASSIFICATION.EQUAL();
 using ERAN("zonotope")
 
 # Fin du fichier

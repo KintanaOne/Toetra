@@ -1,0 +1,11 @@
+'''
+Le header respecte l'ordre :
+    - model_declaration
+    - target_declaration
+'''
+target := MyTargetColumn
+model := "path/to/model.onnx"
+
+# 1 forall without using
+[ROBUTNESS]:
+forall x in hyperball("L2", 0.01) -> CLASSIFICATION.EQUAL();

@@ -7,9 +7,7 @@ print(test_path)
 grammar = open(test_path).read()
 parser = Lark(grammar, parser="lalr", cache=False)
 
-code = """# 1 forall without using
-[ROBUTNESS]:
-forall x in hyperball("L2", 0.01) -> CLASSIFICATION.EQUAL()
+code = """
 """
 
 tree = parser.parse(code)

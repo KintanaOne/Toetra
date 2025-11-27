@@ -1,3 +1,4 @@
+model := "path/to/model.onnx"
 target := MyTargetColumn
 
 # 1 forall without using
