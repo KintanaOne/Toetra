@@ -1,0 +1,8 @@
+# This is a comment
+# Another comment
+model := "path/to/model.onnx"
+target := MyTargetColumn
+
+# 1 forall without using
+[ROBUTNESS]:
+forall in hyperball("L2", 0.01) -> CLASSIFICATION.EQUAL();

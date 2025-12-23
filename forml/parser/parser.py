@@ -25,7 +25,7 @@ def parse_forml_code(code: str):
     return forml_parser.parse(code)
 
 if __name__ == "__main__":
-    test_path = Path(__file__).parent.parent / "example/00_simple_correct_example.forml"
+    test_path = Path(__file__).parent.parent / "example/00_simple_correct_example_multi_comment.forml"
     print(test_path)
     if test_path.exists():
         with open(test_path, "r", encoding="utf-8") as f:

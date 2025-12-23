@@ -3,7 +3,9 @@ CHAR = ? CHAR ?;
 
 (* === BASIC VALUE TYPES === *)
 true = "True" | "true" ;
+
 false = "False" | "false" ;
+
 boolean = true | false ;
 
 (* === IDENTIFIERS === *)
@@ -25,8 +27,10 @@ arg = arg_identifier_eq | arg_identifier_only | arg_number | arg_boolean ;
 args = arg , { "," , arg } ;
 
 (* === SEPARATOR DEFINITIONS === *)
-SEPARATOR = NEWLINE | ";";
-SEPARATORS = SEPARATOR , { SEPARATOR } ;
+SEPARATOR = ";" ;
+
+(* === NEWLINE DEFINITIONS === *)
+NEWLINES = NEWLINE , { NEWLINE } ;
 
 (* === PROGRAM STRUCTURE === *)
     (* === PROGRAM COMPONENTS === *)
@@ -38,11 +42,13 @@ comment = simple_comment | multiline_comment ;
 comments = comment , { comment } ;
 
     (* === DECLARATION SECTION === *)
-declaration_section = identifier , ":=" , value , SEPARATORS;
+declaration_section = identifier , ":=" , value ;
 
     (* === PROPERTY SECTION === *)
 logic_connection        = "AND" | "OR" ;
+
 logic_operation     = "==" | "!=" | "<" | "<=" | ">" | ">=" ;
+
 logic_expr   = [ "NOT" ] , identifier , logic_operation , value ;
 logic_implication = "(" , logic_expr , "->" , logic_expr , ")" ;
 logic_assertion   = logic_implication , { logic_connection , logic_implication } ;
@@ -72,28 +78,35 @@ check_expr = "check_at" , identifier ;
 
     (* === PAIRWISE EXPRESSIONS === *)
 symbolic_distance = "distance" , "(" , identifier , "," , identifier , "," , value , ")" ;
+
 pairwise_expr = identifier , "~" , identifier , "with" , symbolic_distance ;
 
     (* === PROPERTY DEFINITION === *)
 property_type = ? official_properties ? | ? uppercase_string ?;
+
 property = "[" , property_type , "]" , ":" , NEWLINE , property_expr , "->" , assertion ;
+
 property_section = property , [ abstractor ] ;
 
 (* === SECTION DEFINITION === *)
-section = [ comments ] , ( declaration_section | property_section ) , SEPARATORS ;
+section = { comments } , ( declaration_section | property_section ) ;
 
 (* === ABSTRACTOR SECTION === *)
 abstractor = "using" , ? official_backends? , [ "(" , { args } , ")" ] ;
 
 (* === TARGET DECLARATION === *)
-target_declaration = "target" , ":=" , identifier , SEPARATORS  ;
+target_declaration = "target" , ":=" , identifier ;
 
 (* === MODEL DECLARATION === *)
 model = quoted_identifier ;
-model_declaration = "model" , ":=" , model , SEPARATORS ;
+
+model_declaration = "model" , ":=" , model ;
 
 (* === FULL PROGRAM === *)
-header = { comments } , [ model_declaration ] , [ target_declaration ] ;
-body = section , { section } ;
-footer = { comments } ;
+header = { NEWLINES } , { comments } , { NEWLINES } , [ model_declaration ] , [ target_declaration ] ;
+
+body = { NEWLINES } , section , { SEPARATOR , section } ;
+
+footer = { comments | NEWLINES } ;
+
 program = header , body , footer ;

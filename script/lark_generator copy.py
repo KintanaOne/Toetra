@@ -53,6 +53,17 @@ SPECIAL_SEQ = {
     "any_character_except_newline": r'/[^\n]+/',
 }
 
+TOKEN_REGEX = re.compile(
+    r'''
+    "(?:\\.|[^"])*"        |  # chaînes "..."
+    /[^/]+/                |  # regex /.../
+    \(|\)|\*|\?|\|         |  # symboles structurels
+    [A-Za-z_][A-Za-z0-9_]* |  # identifiants
+    \S                        # fallback
+    ''',
+    re.VERBOSE
+)
+
 def transform_ebnf_brackets(line: str) -> str:
     """
     Transforme les notations EBNF {} et [] en syntaxe Lark.
@@ -159,6 +170,118 @@ def replace_special_sequences(line: str) -> str:
 
     return re.sub(r'\?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\?', repl, line)
 
+def format_lark_rule(line: str, indent: str = "    ") -> list[str]:
+    """
+    Reformate une règle Lark avec indentation :
+    rule : A B | C D
+    =>
+    rule :
+        A B
+      | C D
+    """
+    if ":" not in line:
+        return [line]
+
+    lhs, rhs = line.split(":", 1)
+    lhs = lhs.strip()
+    rhs = rhs.strip()
+
+    # Pas d'alternative → on ne touche pas
+    if "|" not in rhs:
+        return [f"{lhs} : {rhs}"]
+
+    parts = [p.strip() for p in rhs.split("|")]
+
+    formatted = [f"{lhs} :"]
+    formatted.append(f"{indent}{parts[0]}")
+    for p in parts[1:]:
+        formatted.append(f"{indent}| {p}")
+
+    return formatted
+
+def format_enum_vertical(lhs: str, rhs: str, indent: str = "    ") -> list[str]:
+    parts = [p.strip() for p in rhs.split("|")]
+
+    lines = [f"{lhs} :"]
+    lines.append(f"{indent}{parts[0]}")
+    for p in parts[1:]:
+        lines.append(f"{indent}| {p}")
+
+    return lines
+
+def format_lark_rule_dispatch(line: str) -> list[str]:
+    # Lignes à ignorer
+    if not line or line.lstrip().startswith(("%", "#")):
+        return [line]
+
+    if ":" not in line:
+        return [line]
+
+    if '"("' in line or '")"' in line:
+        return [line]
+
+    lhs, rhs = line.split(":", 1)
+    rhs = rhs.strip()
+
+    # Test simple et sûr pour TON générateur
+    if "|" in rhs:
+        return format_enum_vertical(lhs.strip(), rhs.rstrip(";"))
+
+    return pretty_print_lark_rule(line)
+
+
+def pretty_print_lark_rule(line: str, indent: str = "    ") -> list[str]:
+    """
+    Pretty-printer Lark basé sur la profondeur syntaxique.
+    Retourne une liste de lignes formatées.
+    """
+
+    # Cas à ne pas formatter
+    if not line or line.lstrip().startswith(("%", "#")):
+        return [line]
+
+    if ":" not in line:
+        return [line]
+
+    lhs, rhs = line.split(":", 1)
+    lhs = lhs.strip()
+    rhs = rhs.strip()
+
+    # Tokens (séparés par espaces, mais on garde (), *, ?, |)
+    tokens = re.findall(r'\(|\)|\*|\?|[^\s()|*?]+|\|', rhs)
+
+    lines = [f"{lhs} :"]
+    depth = 1
+    current = []
+
+    def flush():
+        nonlocal current
+        if current:
+            lines.append(f"{indent * depth}{' '.join(current)}")
+            current = []
+
+    for tok in tokens:
+        if tok == "(":
+            flush()
+            lines.append(f"{indent * depth}(")
+            depth += 1
+        elif tok == ")":
+            flush()
+            depth -= 1
+            lines.append(f"{indent * depth})")
+        elif tok in ("*", "?"):
+            # attache le quantificateur à la ligne précédente
+            lines[-1] += tok
+        elif tok == "|":
+            flush()
+            lines.append(f"{indent * depth}|")
+        else:
+            current.append(tok)
+
+    flush()
+    lines[-1] += " ;"
+
+    return lines
 
 def ebnf_to_lark(ebnf_text: str) -> str:
     lines = ebnf_text.splitlines()
@@ -241,7 +364,8 @@ def ebnf_to_lark(ebnf_text: str) -> str:
         if re.match(r"^\w+\s*=", line):
             line = re.sub(r"^(\w+)\s*=", r"\1 : ", line)
 
-        lark_lines.append(line)
+        lark_lines.extend(format_lark_rule_dispatch(line))
+
 
     return "\n".join(header + lark_lines)
 
