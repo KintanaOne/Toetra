@@ -52,7 +52,8 @@ FORML is organized as a modular Python project:
 ### 📌 Basic Structure
 
 ```forml
-[PROPERTY_TYPE]: for x with [DOMAIN] [at INSTANCE] := [ASSERTION] [using ABSTRACTION]
+[PROPERTY_TYPE]:
+for x with [DOMAIN] [at INSTANCE] := [ASSERTION] [using ABSTRACTION]
 ```
 - PROPERTY_TYPE: 
     - ROBUSTNESS,
