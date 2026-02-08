@@ -41,8 +41,8 @@ multiline_comment = ? any_character_except_triple_quotes ? ;
 comment = simple_comment | multiline_comment ;
 comments = comment , { comment } ;
 
-    (* === DECLARATION SECTION === *)
-declaration_section = identifier , ":=" , value ;
+(* === PADDING === *)
+padding = { NEWLINES | comments } ;
 
     (* === PROPERTY SECTION === *)
 logic_connection        = "AND" | "OR" ;
@@ -84,12 +84,12 @@ pairwise_expr = identifier , "~" , identifier , "with" , symbolic_distance ;
     (* === PROPERTY DEFINITION === *)
 property_type = ? official_properties ? | ? uppercase_string ?;
 
-property = "[" , property_type , "]" , ":" , NEWLINE , property_expr , "->" , assertion ;
+property = "[" , property_type , "]" , ":" , property_expr , "->" , assertion ;
 
 property_section = property , [ abstractor ] ;
 
 (* === SECTION DEFINITION === *)
-section = { comments } , ( declaration_section | property_section ) ;
+section = ( property_section ) ;
 
 (* === ABSTRACTOR SECTION === *)
 abstractor = "using" , ? official_backends? , [ "(" , { args } , ")" ] ;
@@ -100,13 +100,15 @@ target_declaration = "target" , ":=" , identifier ;
 (* === MODEL DECLARATION === *)
 model = quoted_identifier ;
 
+(* === VARIABLE DECLARATION === *)
+variable_declaration = identifier , ":=" , value ;
+variables_declaration = variable_declaration , { ( SEPARATOR | padding ) , variable_declaration } ;
+
 model_declaration = "model" , ":=" , model ;
 
 (* === FULL PROGRAM === *)
-header = { NEWLINES } , { comments } , { NEWLINES } , [ model_declaration ] , [ target_declaration ] ;
+header = padding , model_declaration , padding , target_declaration , padding , [ variables_declaration , padding ] ;
 
-body = { NEWLINES } , section , { SEPARATOR , section } ;
+body = padding , property_section , { SEPARATOR , padding , property_section } , [ SEPARATOR ] , padding ;
 
-footer = { comments | NEWLINES } ;
-
-program = header , body , footer ;
+program = header , body  ;

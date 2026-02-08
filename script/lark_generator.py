@@ -172,6 +172,12 @@ def ebnf_to_lark(ebnf_text: str) -> str:
         "%import common.NUMBER",
         "%import common.DIGIT",
         "%ignore WS_INLINE",
+        # Définition des commentaires
+        'COMMENT_LINE: /#[^\\n]*/',
+        'COMMENT_BLOCK: /\'\'\'(.|\\n)*?\'\'\'/',
+        "%ignore COMMENT_LINE",
+        "%ignore COMMENT_BLOCK",
+        "%ignore NEWLINE",
         "",
         "# === OFFICIAL PROBLEMS ===",
     ] + problem_list + [

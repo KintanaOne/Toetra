@@ -25,6 +25,22 @@ class ParserSectionError(ParserError):
     pass
 
 # ───────────────────────────────
+# Header Errors
+# ───────────────────────────────
+
+class ParserHeaderDeclarationError(ParserHeaderError):
+    """Error in a header declaration"""
+    pass
+
+class ParserHeaderModelError(ParserHeaderDeclarationError):
+    """Error in the model declaration"""
+    pass
+
+class ParserHeaderTargetError(ParserHeaderDeclarationError):
+    """Error in the target declaration"""
+    pass
+
+# ───────────────────────────────
 # Section Errors
 # ───────────────────────────────
 

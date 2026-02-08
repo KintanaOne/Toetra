@@ -20,7 +20,7 @@ def test_footer_empty():
 
     result = parse_forml_code(code)
     footer = find_node(result, "footer")
-    assert len(footer.children) == 0
+    assert footer is None
 
 def test_footer_with_simple_comment():
     code = """
@@ -41,7 +41,4 @@ def test_footer_with_simple_comment():
 
     result = parse_forml_code(code)
     footer = find_node(result, "footer")
-    print(result.pretty())
-    assert footer is not None
-    comments = find_all_nodes(footer, "comment")
-    assert len(comments) == 1
+    assert footer is None
