@@ -5,18 +5,20 @@ from test.utils import *
 
 def test_body_simple_rule():
     code = """
+    # This is a comment
+    # Another comment
     model := "path/to/model.onnx"
     target := MyTargetColumn
 
-    [ROBUSTNESS]:
+    [ROBUTNESS]:
     forall in hyperball("L2", 0.01) -> CLASSIFICATION.EQUAL();
     """
     result = parse_forml_code(code)
     print(result.pretty())
     body = find_child(result, "body")
     assert body is not None
-    sections = find_all(body, "section")
-    assert len(sections) == 1
+    properties = find_all(body, "property_section")
+    assert len(properties) == 1
     hyperball = find_node(body, "hyperball")
     assert hyperball.data == "hyperball"
 
@@ -33,10 +35,10 @@ def test_body_multiple_rules():
     forall in hyperball("L2", 0.05) -> CLASSIFICATION.EQUAL();
     """
     result = parse_forml_code(code)
-    sections = find_all_nodes(result, "section")
-    assert len(sections) == 2
-    for s in sections:
-        assert s is not None
+    properties = find_all_nodes(result, "property_section")
+    assert len(properties) == 2
+    for p in properties:
+        assert p is not None
 
 
 def test_body_with_using():

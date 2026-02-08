@@ -1,4 +1,6 @@
+from lark import UnexpectedToken
 import pytest
+from forml.parser.errors import ParserHeaderError, ParserHeaderModelError
 from forml.parser.parser import parse_forml_code
 from test.utils import *
 
@@ -70,21 +72,24 @@ def test_header_with_comments():
     model := "path/to/model.onnx"
     target := MyTargetColumn
 
-    
     # 1 forall without using
     [ROBUTNESS]:
     forall in hyperball("L2", 0.01) -> CLASSIFICATION.EQUAL();
     '''
+    # Le parsing doit réussir même avec des commentaires ignorés
     result = parse_forml_code(code)
 
+    # Vérifier que le header est présent
     header = find_child(result, "header")
-    comments = find_child(header, "comments")
-    comments_list = comments.children if comments else []
+    assert header is not None, "Header not found in the parsed result"
 
-    assert len(comments_list) == 2
-    for c in comments_list:
-        print(c)
-        assert c.data.value == "comment"
+    # Vérifier que le header contient model_declaration et target_declaration
+    model_decl = find_child(header, "model_declaration")
+    target_decl = find_child(header, "target_declaration")
+
+    assert model_decl is not None
+    assert target_decl is not None
+
 
 
 def test_header_missing_model():
@@ -101,13 +106,10 @@ def test_header_missing_model():
     forall in hyperball("L2", 0.01) -> CLASSIFICATION.EQUAL();
     """
 
-    result = parse_forml_code(code)
-    header = find_child(result, "header")
-    model = find_child(header, "model_declaration")
-    target = find_child(header, "target_declaration")
+    with pytest.raises(UnexpectedToken) as exc_info:
+        parse_forml_code(code)
 
-    assert model is None
-    assert target is not None
+    assert "model" in str(exc_info.value).lower()
 
 def test_header_missing_target():
     code = """
@@ -123,13 +125,10 @@ def test_header_missing_target():
     forall in hyperball("L2", 0.01) -> CLASSIFICATION.EQUAL();
     """
 
-    result = parse_forml_code(code)
-    header = find_child(result, "header")
-    model = find_child(header, "model_declaration")
-    target = find_child(header, "target_declaration")
+    with pytest.raises(UnexpectedToken) as exc_info:
+        parse_forml_code(code)
 
-    assert model is not None
-    assert target is None
+    assert "target" in str(exc_info.value).lower()
 
 
 def test_header_invalid_model_type():

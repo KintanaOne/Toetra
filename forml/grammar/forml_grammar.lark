@@ -5,6 +5,11 @@
 %import common.NUMBER
 %import common.DIGIT
 %ignore WS_INLINE
+COMMENT_LINE: /#[^\n]*/
+COMMENT_BLOCK: /'''(.|\n)*?'''/
+%ignore COMMENT_LINE
+%ignore COMMENT_BLOCK
+%ignore NEWLINE
 
 # === OFFICIAL PROBLEMS ===
 CLASSIFICATION : "CLASSIFICATION"
@@ -50,245 +55,116 @@ hyperball : "hyperball"
 noise : "noise"
 
 # === BASIC CHARACTER DEFINITIONS ===
-CHAR :
-    /[a-zA-Z]/ ;
+CHAR :  /[a-zA-Z]/
 
 # === BASIC VALUE TYPES ===
-true :
-    "True"
-    | "true"
+true :  "True" | "true" 
 
-false :
-    "False"
-    | "false"
+false :  "False" | "false" 
 
-boolean :
-    true
-    | false
+boolean :  true | false 
 
 # === IDENTIFIERS ===
-identifier :*
-    /[A-Za-z][A-Za-z0-9_.] / ;
-quoted_identifier :
-    ESCAPED_STRING
-    | identifier
+identifier :  /[A-Za-z][A-Za-z0-9_.]*/ 
+quoted_identifier :  ESCAPED_STRING | identifier 
 
 # === VALUE TYPES ===
-value_identifier :
-    quoted_identifier ;
-value_number :
-    NUMBER ;
-value_boolean :
-    boolean ;
-value :
-    value_identifier
-    | value_number
-    | value_boolean
+value_identifier :  quoted_identifier 
+value_number :  NUMBER 
+value_boolean :  boolean 
+value :  value_identifier | value_number | value_boolean 
 
 # === ARGUMENTS ===
-arg_identifier_eq :
-    quoted_identifier "=" value ;
-arg_identifier_only :
-    quoted_identifier ;
-arg_number :
-    NUMBER ;
-arg_boolean :
-    boolean ;
-arg :
-    arg_identifier_eq
-    | arg_identifier_only
-    | arg_number
-    | arg_boolean
-args :
-    arg
-    (
-        "," arg
-    )* ;
+arg_identifier_eq :  quoted_identifier "=" value 
+arg_identifier_only :  quoted_identifier 
+arg_number :  NUMBER 
+arg_boolean :  boolean 
+arg :  arg_identifier_eq | arg_identifier_only | arg_number | arg_boolean 
+args :  arg ( "," arg )* 
 
 # === SEPARATOR DEFINITIONS ===
-SEPARATOR :
-    ";" ;
+SEPARATOR :  ";" 
 
 # === NEWLINE DEFINITIONS ===
-NEWLINES :
-    NEWLINE
-    (
-        NEWLINE
-    )* ;
+NEWLINES :  NEWLINE ( NEWLINE )* 
 
 # === PROGRAM STRUCTURE ===
 # === PROGRAM COMPONENTS ===
 
 # === COMMENTS ===
-simple_comment :
-    "#" /[^\n]+/ ;
-multiline_comment :
-    /'''(.
-    | \n)*?'''/
-comment :
-    simple_comment
-    | multiline_comment
-comments :
-    comment
-    (
-        comment
-    )* ;
+simple_comment :  "#" /[^\n]+/ 
+multiline_comment :  /'''(.|\n)*?'''/ 
+comment :  simple_comment | multiline_comment 
+comments :  comment ( comment )* 
 
-# === DECLARATION SECTION ===
-declaration_section :
-    identifier ":=" value ;
+# === PADDING ===
+padding :  ( NEWLINES | comments )* 
 
 # === PROPERTY SECTION ===
-logic_connection :
-    "AND"
-    | "OR"
+logic_connection :  "AND" | "OR" 
 
-logic_operation :
-    "=="
-    | "!="
-    | "<"
-    | "<="
-    | ">"
-    | ">="
+logic_operation :  "==" | "!=" | "<" | "<=" | ">" | ">=" 
 
-logic_expr :
-    (
-        "NOT"
-    )?
-    identifier logic_operation value ;
+logic_expr :  ( "NOT" )? identifier logic_operation value 
 logic_implication :  "(" logic_expr "->" logic_expr ")" 
-logic_assertion :
-    logic_implication
-    (
-        logic_connection logic_implication
-    )* ;
+logic_assertion :  logic_implication ( logic_connection logic_implication )* 
 
 
-function :
-    ( EQUAL
-    | EQUITY
-    | BETWEEN
-    | INCREASING )
+function :  ( EQUAL | EQUITY | BETWEEN | INCREASING ) 
 function_expr :  function "(" ( args )? ")" 
-problem_expr :
-    ( CLASSIFICATION
-    | PREDICTION
-    | REGRESSION
-    | CLUSTERING
-    | ANOMALY_DETECTION
-    | REINFORCEMENT_LEARNING ) "." function_expr
+problem_expr :  ( CLASSIFICATION | PREDICTION | REGRESSION | CLUSTERING | ANOMALY_DETECTION | REINFORCEMENT_LEARNING ) "." function_expr 
 
-assertion :
-    problem_expr
-    | logic_assertion
+assertion :  problem_expr | logic_assertion 
 
 # === PROPERTY EXPRESSION OPTIONS ===
-property_expr :
-    universal_expr
-    | anchor_expr
-    | check_expr
-    | pairwise_expr
+property_expr :  universal_expr | anchor_expr | check_expr | pairwise_expr 
 
-quantifier :
-    ( FORALL
-    | EXISTS
-    | forall
-    | exists ) ( identifier )? "in"
+quantifier :  ( FORALL | EXISTS | forall | exists ) ( identifier )? "in" 
 
 # === UNIVERSAL EXPRESSIONS ===
 universal_set :  ( ball | hyperball | noise ) "(" ( args )? ")" 
-universal_expr :
-    quantifier universal_set ;
+universal_expr :  quantifier universal_set 
 
 # === ANCHOR EXPRESSIONS ===
 domain :  "with" identifier "(" value ( "," value )* ")" 
-anchor_expr :
-    "at" identifier
-    (
-        "in" universal_expr
-    )?
-    (
-        domain
-    )? ;
+anchor_expr :  "at" identifier ( "in" universal_expr )? ( domain )? 
 
 # === CHECK EXPRESSIONS ===
-check_expr :
-    "check_at" identifier ;
+check_expr :  "check_at" identifier 
 
 # === PAIRWISE EXPRESSIONS ===
 symbolic_distance :  "distance" "(" identifier "," identifier "," value ")" 
 
-pairwise_expr :
-    identifier "~" identifier "with" symbolic_distance ;
+pairwise_expr :  identifier "~" identifier "with" symbolic_distance 
 
 # === PROPERTY DEFINITION ===
-property_type :
-    ( ROBUSTNESS
-    | STABILITY
-    | FAIRNESS
-    | MONOTONICITY
-    | BOUND
-    | LOGIC )
-    | /[A-Z]+/
+property_type :  ( ROBUSTNESS | STABILITY | FAIRNESS | MONOTONICITY | BOUND | LOGIC ) | /[A-Z]+/
 
-property :
-    "[" property_type "]" ":" NEWLINE property_expr "->" assertion ;
+property :  "[" property_type "]" ":" property_expr "->" assertion 
 
-property_section :
-    property
-    (
-        abstractor
-    )? ;
+property_section :  property ( abstractor )? 
 
 # === SECTION DEFINITION ===
-section :
-    ( comments )* ( declaration_section
-    | property_section )
+section :  ( property_section ) 
 
 # === ABSTRACTOR SECTION ===
 abstractor :  "using" ( eran | ERAN | zonotope | ZONOTOPE | box | BOX | z3 | Z3 ) ( "(" ( args )* ")" )? 
 
 # === TARGET DECLARATION ===
-target_declaration :
-    "target" ":=" identifier ;
+target_declaration :  "target" ":=" identifier 
 
 # === MODEL DECLARATION ===
-model :
-    quoted_identifier ;
+model :  quoted_identifier 
 
-model_declaration :
-    "model" ":=" model ;
+# === VARIABLE DECLARATION ===
+variable_declaration :  identifier ":=" value 
+variables_declaration :  variable_declaration ( ( SEPARATOR | padding ) variable_declaration )* 
+
+model_declaration :  "model" ":=" model 
 
 # === FULL PROGRAM ===
-header :
-    (
-        NEWLINES
-    )*
-    (
-        comments
-    )*
-    (
-        NEWLINES
-    )*
-    (
-        model_declaration
-    )?
-    (
-        target_declaration
-    )? ;
+header :  padding model_declaration padding target_declaration padding ( variables_declaration padding )? 
 
-body :
-    (
-        NEWLINES
-    )*
-    section
-    (
-        SEPARATOR section
-    )* ;
+body :  padding property_section ( SEPARATOR padding property_section )* ( SEPARATOR )? padding 
 
-footer :
-    ( comments
-    | NEWLINES )*
-
-program :
-    header body footer ;
+program :  header body 
