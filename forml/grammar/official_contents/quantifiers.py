@@ -5,13 +5,21 @@ from forml.grammar.official_contents.utils import EnumMixin
 
 official_quantifiers = {
     "FORALL": '"∀"',
-    "EXISTS": '"∃"',
+    "EXIST": '"∃"',
     "forall": '"forall"',
-    "exists": '"exists"',
+    "exist": '"exist"',
+    "forall x" : "forall",
+    "exist x" : "exist",
+    "check_at" : "check_at",
+    "at" : "at"
 }
 
 class EnumQuantifier(EnumMixin, Enum):
     FORALL = "FORALL"
-    EXISTS = "EXISTS"
+    EXIST = "EXIST"
     forall = "forall"
-    exists = "exists"
+    exist = "exist"
+    forall_x = "forall x"
+    exist_x = "exist x"
+    check_at = "check_at"
+    at = "at"

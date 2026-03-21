@@ -16,7 +16,7 @@ def test_header_correct_order():
     target := MyTargetColumn
 
     # 1 forall without using
-    [ROBUTNESS]:
+    [ROBUSTNESS]:
     forall in hyperball("L2", 0.01) -> CLASSIFICATION.EQUAL();
     """
     result = parse_forml_code(code)
@@ -52,7 +52,7 @@ def test_header_uncorrect_order():
     model := "path/to/model.onnx"
 
     # 1 forall without using
-    [ROBUTNESS]:
+    [ROBUSTNESS]:
     forall in hyperball("L2", 0.01) -> CLASSIFICATION.EQUAL();
     """
 
@@ -73,7 +73,7 @@ def test_header_with_comments():
     target := MyTargetColumn
 
     # 1 forall without using
-    [ROBUTNESS]:
+    [ROBUSTNESS]:
     forall in hyperball("L2", 0.01) -> CLASSIFICATION.EQUAL();
     '''
     # Le parsing doit réussir même avec des commentaires ignorés
@@ -102,7 +102,7 @@ def test_header_missing_model():
     target := MyTargetColumn
 
     # 1 forall without using
-    [ROBUTNESS]:
+    [ROBUSTNESS]:
     forall in hyperball("L2", 0.01) -> CLASSIFICATION.EQUAL();
     """
 
@@ -121,7 +121,7 @@ def test_header_missing_target():
     model := "path/to/model.onnx"
 
     # 1 forall without using
-    [ROBUTNESS]:
+    [ROBUSTNESS]:
     forall in hyperball("L2", 0.01) -> CLASSIFICATION.EQUAL();
     """
 
@@ -140,7 +140,7 @@ def test_header_invalid_model_type():
 
     
     # 1 forall without using
-    [ROBUTNESS]:
+    [ROBUSTNESS]:
     forall in hyperball("L2", 0.01) -> CLASSIFICATION.EQUAL();
     '''
     try:
@@ -160,7 +160,7 @@ def test_header_invalid_target_type():
 
     
     # 1 forall without using
-    [ROBUTNESS]:
+    [ROBUSTNESS]:
     forall in hyperball("L2", 0.01) -> CLASSIFICATION.EQUAL();
     '''
 

@@ -1,5 +1,7 @@
 # forml/parser/forml_transformer.py
 
+from pathlib import Path
+
 from lark import Token, Transformer, Lark, Tree
 from forml.parser.errors import (
     ParserAssertionError, ParserDomainError, ParserError, ParserHeaderError, ParserBodyError, ParserImplicationError, ParserLogicAssertionError, ParserLogicExprError, ParserProblemError,
@@ -7,13 +9,50 @@ from forml.parser.errors import (
     ParserAnchorError, ParserAbstractorError, ParserBackendError, ParserFunctionError,
     ParserUniversalError
 )
-from forml.parser.nodes import *
+from forml.transformer.helper import print_tree
+from forml.transformer.nodes import *
 
 
 class FORMLTransformer(Transformer):
     """Transforms Lark parse tree into Python Node objects, with validation."""
 
     # ────────────────────────────── Utilities ──────────────────────────────
+
+    # Recursive search for a node of a specific type in the tree
+    def find_node(self, node, node_type):
+
+        # if it's a list, we need to check each item
+        if isinstance(node, list):
+            for item in node:
+                result = self.find_node(item, node_type)
+                if result:
+                    return result
+
+        # if it's a Tree, we need to check its children
+        elif isinstance(node, Tree):
+            for child in node.children:
+                result = self.find_node(child, node_type)
+                if result:
+                    return result
+
+        # if it's the node type we're looking for, return it
+        elif isinstance(node, node_type):
+            return node
+
+        return None
+    
+    def find_nodes(self, node, node_type):
+        found = []
+
+        if isinstance(node, node_type):
+            found.append(node)
+
+        if isinstance(node, Tree):
+            for child in node.children:
+                found.extend(self.find_nodes(child, node_type))
+
+        return found
+
 
     def extract_value(self, node):
         """Safely extract the string value from a Token or Tree."""
@@ -116,19 +155,16 @@ class FORMLTransformer(Transformer):
         if not items:
             raise ParserAnchorError("Empty anchor expression.")
 
-        # 1. premier élément = identifiant après "at"
+        # get anchor (must be first)
         anchor = self.extract_value(items[0])
 
-        # 2. reste = optionnels
+        # optional
         set_expr = None
         domain = None
 
-        # on parcourt le reste, on détecte le type selon l'instance
-        for item in items[1:]:
-            if isinstance(item, UniversalExpr):
-                set_expr = item
-            elif isinstance(item, Domain):
-                domain = item
+        # try to find universal_expr and domain in items
+        set_expr = self.find_node(items, UniversalExpr)
+        domain = self.find_node(items, Domain)
 
         return AnchorExpr(anchor=anchor, set_expr=set_expr, domain=domain)
 
@@ -198,22 +234,29 @@ class FORMLTransformer(Transformer):
             raise ParserPropertyError("Property incomplete (type or assertion missing).")
 
         property_type = self.extract_value(items[0])
-        universal_expr = next((i for i in items if isinstance(i, UniversalExpr)), None)
-        anchor_expr = next((i for i in items if isinstance(i, AnchorExpr)), None)
-        assertion = next((i for i in items if isinstance(i, Assertion)), None)
+        universal_expr = self.find_node(items, UniversalExpr)   # we are looking for a UniversalExpr
+        anchor_expr = self.find_node(items, AnchorExpr)         # we are looking for an AnchorExpr
+        check_expr = self.find_node(items, CheckExpr)           # we are looking for a CheckExpr
+        pairwise_expr = self.find_node(items, PairwiseExpr)     # we are looking for a PairwiseExpr
+        assertion = self.find_node(items, Assertion)            # we are looking for an Assertion
 
         return Property(
             property_type=property_type,
-            quantifier_expr=universal_expr,
+            universal_expr=universal_expr,
             anchor_expr=anchor_expr,
+            check_expr=check_expr,
+            pairwise_expr=pairwise_expr,
             assertion=assertion
         )
 
     def property_section(self, items):
         if len(items) < 1:
             raise ParserPropertyError("Property section is empty.")
-        prop = next((i for i in items if isinstance(i, Property)), None)
-        abstractor = next((i for i in items if isinstance(i, Abstractor)), None)
+        
+        # We need to find the Property node and the Abstractor node (if it exists) among the items
+        prop = self.find_node(items, Property)
+        abstractor = self.find_node(items, Abstractor)
+
         return PropertySection(property=prop, abstractor=abstractor)
 
     # ────────────────────────────── Assertions ─────────────────────
@@ -244,8 +287,10 @@ class FORMLTransformer(Transformer):
     def logic_assertion(self, items):
         if not items:
             raise ParserLogicAssertionError("Logic assertion is empty.")
-        implications = [i for i in items if isinstance(i, LogicImplication)]
+        
+        implications = self.find_nodes(items, LogicImplication)
         connections = [self.extract_value(i) for i in items if isinstance(i, Token) and str(i).upper() in {"AND", "OR"}]
+        
         if len(implications) > 1 and not connections:
             raise ParserLogicAssertionError("Multiple implications without logical connections.")
         return LogicAssertion(implications=implications, connections=connections or None)
@@ -256,14 +301,27 @@ class FORMLTransformer(Transformer):
         if len(items) != 2:
             raise ParserProblemError("Problem expression must have problem and function.")
         problem = self.extract_value(items[0])
-        function = items[1]
+
+        func_tree = items[1]
+        function = self.find_node(func_tree, FunctionExpr)
+        if function is None:
+            raise ParserFunctionError(f"Invalid function in problem_expr: {func_tree}")
         return ProblemExpr(problem=problem, function=function)
 
     def function_expr(self, items):
         if not items:
             raise ParserFunctionError("Function is empty or invalid.")
         func_name = self.extract_value(items[0])
-        args = items[1] if len(items) > 1 else None
+
+        # Extract arguments
+        args = []
+        if len(items) > 1:
+            # items[1] can be an arg list or a Tree
+            raw_args = items[1]
+            if isinstance(raw_args, Tree) and raw_args.data == "args":
+                args = [self.extract_value(arg) for arg in raw_args.children]
+            else:
+                args = [self.extract_value(raw_args)]
         try:
             func_enum = EnumFunction[func_name.upper()]
         except KeyError:
@@ -322,14 +380,34 @@ def transform_forml_code(code: str, grammar_path: str = "forml/grammar/forml_gra
     except Exception as e:
         raise ParserError(f"Transformation error: {e}")
 
+def list_node_classes(self, node):
+    classes = set()
+    def recurse(n):
+        classes.add(type(n).__name__)
+        for c in getattr(n, '__dict__', {}).values():
+            if isinstance(c, Node):
+                recurse(c)
+            elif isinstance(c, list):
+                for x in c:
+                    if isinstance(x, Node):
+                        recurse(x)
+    recurse(node)
+    return classes
+
+
+def print_node_tree(base_cls=Node, indent=0):
+    """Affiche toutes les classes héritant de Node sous forme d'arbre."""
+    prefix = " " * (indent * 2)
+    print(f"{prefix}{base_cls.__name__}")
+    for cls in base_cls.__subclasses__():
+        print_node_tree(cls, indent + 1)
+
 
 if __name__ == "__main__":
-    code = '''
-        model := "path/to/model.onnx"
-        target := MyTargetColumn
-
-        [ROBUSTNESS]:
-        forall x in hyperball("L2", 0.01) -> CLASSIFICATION.EQUAL();
-    '''
+    test_path = Path(__file__).parent.parent / "example/00_simple_correct_example_multi_comment.forml"
+    print(test_path)
+    if test_path.exists():
+        with open(test_path, "r", encoding="utf-8") as f:
+            code = f.read()
     program = transform_forml_code(code)
-    print(program)
+    print_tree(program)
