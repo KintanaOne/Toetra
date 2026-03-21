@@ -67,6 +67,7 @@ class UniversalSet(Node):
 class UniversalExpr(Node):
     quantifier: EnumQuantifier
     variable: Optional[str] = None
+    set: Optional[UniversalSet] = None
 
         # ───────────────────────────────
         # Domain Expression
@@ -161,7 +162,7 @@ class Assertion(Node):
 @dataclass
 class Property(Node):
     property_type: Union[str, EnumProperty]  # ← accepte officiel ou custom
-    quantifier_expr: Optional[UniversalExpr] = None
+    universal_expr: Optional[UniversalExpr] = None
     anchor_expr: Optional[AnchorExpr] = None
     check_expr: Optional[CheckExpr] = None
     pairwise_expr: Optional[PairwiseExpr] = None

@@ -8,7 +8,8 @@ official_functions = {
     "EQUAL" : '"EQUAL"',
     "EQUITY" : '"EQUITY"',
     "BETWEEN" : '"BETWEEN"',
-    "INCREASING" : '"INCREASING"'
+    "INCREASING" : '"INCREASING"',
+    "DECREASING" : '"DECREASING"'
 }
 
 class EnumFunction(EnumMixin, Enum):
@@ -16,3 +17,4 @@ class EnumFunction(EnumMixin, Enum):
     EQUITY = "EQUITY"
     BETWEEN = "BETWEEN"
     INCREASING = "INCREASING"
+    DECREASING = "DECREASING"

@@ -38,13 +38,13 @@ PROPERTY_EXPRESSION -> ASSERTION;
 #### Exemple minimal
 ```forml
 # Vérification de robustesse locale
-[ROBUTNESS]:
+[ROBUSTNESS]:
 forall x in hyperball("L2", 0.01) -> CLASSIFICATION.EQUAL();
 ```
 ### Composants
 #### Type de propriété :
 Le mot entre crochets détermine la nature de la propriété :
-- ROBUTNESS
+- ROBUSTNESS
 - STABILITY
 - FAIRNESS
 - MONOTONICITY
@@ -99,7 +99,7 @@ commentaire
 # Test de robustesse simple
 target := MyTargetColumn
 
-[ROBUTNESS]:
+[ROBUSTNESS]:
 forall in hyperball("L2", 0.01) -> CLASSIFICATION.EQUAL();
 using ERAN("zonotope")
 

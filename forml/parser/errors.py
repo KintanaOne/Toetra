@@ -119,6 +119,7 @@ class ParserLogicAssertionError(ParserLogicError):
 class ParserAssertionError(ParserLogicError):
     """Error in assertions"""
     pass
+
 class ParserImplicationError(ParserLogicError):
     """Error in logic implications"""
     pass

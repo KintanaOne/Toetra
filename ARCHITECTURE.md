@@ -31,7 +31,7 @@ forml/
 │       ├── logic_example.forml        # Exemple de fichier FORML
 │       ├── monotonicity_example.forml        # Exemple de fichier FORML
 │       ├── stability_example.forml        # Exemple de fichier FORML
-│       └── robutness_example.forml        # Exemple de fichier FORML
+│       └── ROBUSTNESS_example.forml        # Exemple de fichier FORML
 ├── tests/
 │   ├── test_parser.py           # Tests unitaires du parser
 │   ├── test_transformer.py      # Tests des objets générés

@@ -14,7 +14,7 @@ def test_footer_empty():
     target := MyTargetColumn
 
     # 1 forall without using
-    [ROBUTNESS]:
+    [ROBUSTNESS]:
     forall in hyperball("L2", 0.01) -> CLASSIFICATION.EQUAL();
     """
 
@@ -33,7 +33,7 @@ def test_footer_with_simple_comment():
     target := MyTargetColumn
 
     # 1 forall without using
-    [ROBUTNESS]:
+    [ROBUSTNESS]:
     forall in hyperball("L2", 0.01) -> CLASSIFICATION.EQUAL();
 
     # This is a simple footer comment

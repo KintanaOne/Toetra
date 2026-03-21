@@ -10,7 +10,7 @@ def test_body_simple_rule():
     model := "path/to/model.onnx"
     target := MyTargetColumn
 
-    [ROBUTNESS]:
+    [ROBUSTNESS]:
     forall in hyperball("L2", 0.01) -> CLASSIFICATION.EQUAL();
     """
     result = parse_forml_code(code)
