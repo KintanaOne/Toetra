@@ -7,11 +7,7 @@ official_quantifiers = {
     "FORALL": '"∀"',
     "EXIST": '"∃"',
     "forall": '"forall"',
-    "exist": '"exist"',
-    "forall x" : "forall",
-    "exist x" : "exist",
-    "check_at" : "check_at",
-    "at" : "at"
+    "exist": '"exist"'
 }
 
 class EnumQuantifier(EnumMixin, Enum):
@@ -19,7 +15,3 @@ class EnumQuantifier(EnumMixin, Enum):
     EXIST = "EXIST"
     forall = "forall"
     exist = "exist"
-    forall_x = "forall x"
-    exist_x = "exist x"
-    check_at = "check_at"
-    at = "at"

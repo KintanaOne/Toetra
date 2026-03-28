@@ -11,7 +11,7 @@ from forml.grammar.official_contents.problems import EnumProblem
 from forml.grammar.official_contents.properties import EnumProperty
 from forml.grammar.official_contents.protected_words import EnumProtectedWord
 from forml.grammar.official_contents.quantifiers import EnumQuantifier
-from forml.grammar.official_contents.sets import EnumSet
+from forml.grammar.official_contents.neighborhoods import EnumSet
 
 # ───────────────────────────────
 # Base Classes
@@ -66,8 +66,7 @@ class UniversalSet(Node):
 @dataclass
 class UniversalExpr(Node):
     quantifier: EnumQuantifier
-    variable: Optional[str] = None
-    set: Optional[UniversalSet] = None
+    set: UniversalSet
 
         # ───────────────────────────────
         # Domain Expression
@@ -114,13 +113,20 @@ class PairwiseExpr(Node):
     distance_func: EnumDistance
     threshold: Union[int, float]
 
+    # 
+
         # ───────────────────────────────
-        # Function Expression
+        # Function & Args Expression
         # ───────────────────────────────
+
+@dataclass
+class Args(Node):
+    args: Optional[Dict[str, Union[str, int, float]]] = None
+
 @dataclass
 class FunctionExpr(Node):
     function: EnumFunction
-    args: Optional[Dict[str, Union[str, int, float]]] = None
+    args: Args
 
         # ───────────────────────────────
         # Problem Expression

@@ -5,22 +5,22 @@ from forml.grammar.official_contents.utils import EnumMixin
 
 
 protected_words = {
-    "_IN": "in",
-    "_WITH": "with",
-    "_AT": "at",
-    "_CHECK_AT": "check_at",
-    "_USING": "using",
-    "_MODEL": "model",
-    "_TARGET": "target",
-    "_DISTANCE": "distance",
+    "IN":           '"in"',
+    "WITH":         '''"with"''',
+    "AT":           '"at"',
+    "CHECK_AT":     '"check_at"',
+    "USING":        '"using"',
+    "MODEL":        '"model"',
+    "TARGET":       '"target"',
+    "NEIGHBORHOOD": '"neighborhood"',
 }
 
 class EnumProtectedWord(EnumMixin, Enum):
-    IN = "in"
-    WITH = "with"
-    AT = "at"
-    CHECK_AT = "check_at"
-    USING = "using"
-    MODEL = "model"
-    TARGET = "target"
-    DISTANCE = "distance"
+    IN = '"in"'
+    WITH = '''"with"'''
+    AT = '"at"'
+    CHECK_AT = '"check_at"'
+    USING = '"using"'
+    MODEL = '"model"'
+    TARGET = '"target"'
+    NEIGHBORHOOD = '"neighborhood"'

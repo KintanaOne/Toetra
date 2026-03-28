@@ -50,7 +50,7 @@ def format_node(node):
         return f"Property ({node.property_type})"
 
     if isinstance(node, UniversalExpr):
-        return f"UniversalExpr ({node.quantifier} {node.variable})"
+        return f"UniversalExpr ({node.quantifier} {node.set})"
 
     if isinstance(node, ProblemExpr):
         return f"ProblemExpr ({node.problem})"

@@ -7,7 +7,7 @@ from forml.grammar.official_contents.properties import official_properties
 from forml.grammar.official_contents.quantifiers import official_quantifiers
 from forml.grammar.official_contents.functions import official_functions
 from forml.grammar.official_contents.backends import official_backends
-from forml.grammar.official_contents.sets import official_sets
+from forml.grammar.official_contents.neighborhoods import official_neighborhoods
 from forml.grammar.official_contents.protected_words import protected_words
 
 # Dictionnaires et listes des types officiels
@@ -16,7 +16,7 @@ official_properties_dict        = official_properties
 official_quantifiers_dict       = official_quantifiers
 official_functions_dict         = official_functions
 official_backends_dict          = official_backends
-official_sets_dict              = official_sets
+official_neighborhoods_dict     = official_neighborhoods
 official_protected_words_dict   = protected_words
 
 problem_list            = [f"{k} : {v}" for k, v in official_problems_dict.items()]
@@ -24,7 +24,7 @@ property_list           = [f"{k} : {v}" for k, v in official_properties_dict.ite
 quantifier_set_list     = [f"{k} : {v}" for k, v in official_quantifiers_dict.items()]
 function_list           = [f"{k} : {v}" for k, v in official_functions_dict.items()]
 backend_list            = [f"{k} : {v}" for k, v in official_backends_dict.items()]
-set_list                = [f"{k} : {v}" for k, v in official_sets_dict.items()]
+neighborhood_list       = [f"{k} : {v}" for k, v in official_neighborhoods_dict.items()]
 protected_words_list    = [f"{k} : {v}" for k, v in official_protected_words_dict.items()]
 
 official_properties =       " | ".join(official_properties_dict.keys())
@@ -32,7 +32,7 @@ official_problems =         " | ".join(official_problems_dict.keys())
 official_quantifiers =      " | ".join(official_quantifiers_dict.keys())
 official_functions =        " | ".join(official_functions_dict.keys())
 official_backends =         " | ".join(official_backends_dict.keys())
-official_sets =             " | ".join(official_sets_dict.keys())
+official_neighborhoods =    " | ".join(official_neighborhoods_dict.keys())
 official_protected_words =  " | ".join(official_protected_words_dict.keys())
 
 SPECIAL_SEQ = {
@@ -41,7 +41,7 @@ SPECIAL_SEQ = {
     "official_quantifier" : official_quantifiers,
     "official_functions":   official_functions,
     "official_backends":    official_backends,
-    "official_sets" :       official_sets,
+    "official_neighborhoods" : official_neighborhoods,
     "lowercase_string": r"/[a-z]+/",
     "uppercase_string": r"/[A-Z]+/",
     "number": "NUMBER",
@@ -311,8 +311,8 @@ def ebnf_to_lark(ebnf_text: str) -> str:
         "# === OFFICIAL BACKENDS ===",
     ] + backend_list + [
         "",
-        "# === OFFICIAL SETS ===",
-    ] + set_list + [
+        "# === OFFICIAL NEIGHBORHOODS ===",
+    ] + neighborhood_list + [
         "",
     ]
 

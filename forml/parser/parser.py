@@ -1,5 +1,3 @@
-# forml/parser/forml_parser.py
-
 from pathlib import Path
 from lark import Lark
 
@@ -25,7 +23,7 @@ def parse_forml_code(code: str):
     return forml_parser.parse(code)
 
 if __name__ == "__main__":
-    test_path = Path(__file__).parent.parent / "example/00_simple_correct_example_multi_comment.forml"
+    test_path = Path(__file__).parent.parent / "/mnt/c<LOCAL_USER_HOME>/KintanaOne/FORML/forml/example/robustness/robustness_forall.forml"
     print(test_path)
     if test_path.exists():
         with open(test_path, "r", encoding="utf-8") as f:
