@@ -1,6 +1,5 @@
 (* === BASIC CHARACTER DEFINITIONS === *)
 CHAR = ? CHAR ?;
-string = ? escaped_string ? ;
 
 (* === BASIC VALUE TYPES === *)
 true  = "True" | "true" ;
@@ -12,9 +11,10 @@ identifier = ? identifier_name ? ;
 quoted_identifier = ? escaped_string ? | identifier ;
 
 (* === VALUE TYPES === *)
+value_identifier = quoted_identifier ;
 value_number = ? number ? ;
 value_boolean = boolean ;
-value = value_number | value_boolean | string ;
+value = value_identifier | value_number | value_boolean ;
 
 (* === ARGUMENTS === *)
 arg_identifier_eq   = quoted_identifier , "=" , value ;
@@ -44,46 +44,57 @@ padding = { NEWLINE_SEQUENCE | comments } ;
 (* === LOGIC (NON-ROBUSTNESS) =============================== *)
 (* ========================================================= *)
 
+logic_connection = "AND" | "OR" ;
+logic_operation  = "==" | "!=" | "<" | "<=" | ">" | ">=" ;
+
+logic_expr =
+    [ "NOT" ] , identifier , logic_operation , value ;
+
+logic_implication =
+    "(" , logic_expr , "->" , logic_expr , ")" ;
+
+logic_assertion =
+    logic_implication , { logic_connection , logic_implication } ;
+
 (* === FUNCTIONS / PROBLEMS === *)
 function        = ? official_functions ? ;
 function_expr   = function , "(" , [ args ] , ")" ;
 problem_expr    = ? official_problems ? , "." , function_expr ;
 
-(* === ATTRIBUTES === *)
-attribute = identifier , { "." , identifier } ;
-logic_expr = attribute , logic_operation , value ;
-
-(* === LOGIC OPERATIONS === *)
-logic_operation = ? official_logic_operations ? ;
-
-(* === IMPLICATION === *)
-assertion      = logic_or , [ "->" , assertion ] ;
-logic_or       = logic_and , { "OR" , logic_and } ;
-logic_and      = logic_not , { "AND" , logic_not } ;
-logic_not      = [ "NOT" ] , atom ;
-atom           = logic_expr | problem_expr | "(" , assertion , ")" ;
+assertion = problem_expr | logic_assertion ;
 
 (* ========================================================= *)
 (* === ROBUSTNESS CORE ===================================== *)
 (* ========================================================= *)
 
 (* === NEIGHBORHOOD (CRITICAL ABSTRACTION) === *)
-neighborhood = "neighborhood" , "(" , ? official_metrics ? , "," , [ args ] , ")" ;
+neighborhood =
+    ? official_neighborhoods ? , "(" , identifier , "," , [ args ] , ")" ;
 
-(* Exemple attendu : hyperball(x, "L2", 0.01) *)
+(* Exemple attendu :
+   hyperball(x, "L2", 0.01)
+*)
 
 (* ========================================================= *)
 (* === PROPERTY EXPRESSIONS ================================ *)
 (* ========================================================= *)
 
-property_expr = quantifier_expr | at_expr | check_expr | pairwise_expr ;
+property_expr =
+      quantifier_expr
+    | at_expr
+    | check_expr
+    | pairwise_expr ;
 
 (* === UNIVERSAL (GLOBAL) === *)
 quantifier = ? official_quantifier ? ;
 
-quantifier_expr = quantifier , [ domain ] ;
+quantifier_expr =
+    quantifier , [ domain ] ;
 
-(* Exemple : forall -> P() (x implicite) *)
+(* Exemple :
+   forall -> P()
+   (x implicite)
+*)
 
 (* ================================== POINTWISE ================================== *)
 
@@ -91,67 +102,101 @@ quantifier_expr = quantifier , [ domain ] ;
 (* === AT (POINTWISE) ====================================== *)
 (* ========================================================= *)
 
-at_expr = "at" , identifier , [ "in" , neighborhood ] , [ domain ] ;
+at_expr =
+    "at" , identifier ,
+    [ "in" , neighborhood ] , [ domain ] ;
 
-(* Exemple : at x0 in hyperball(x0, L2, 0.01) *)
+(* Exemple :
+   at x0 in hyperball(x0, L2, 0.01)
+*)
 
 (* ========================================================= *)
 (* === CHECK AT (POINTWISE) ================================ *)
 (* ========================================================= *)
 
-check_expr = "check_at" , identifier ;
+check_expr =
+    "check_at" , identifier ;
 
 (* ========================================================= *)
 (* === PAIRWISE (ROBUSTNESS) =============================== *)
 (* ========================================================= *)
 
-pairwise_token = PAIRWISE ;
-pairwise_expr = pairwise_token , "in" , neighborhood ;
+pairwise_expr =
+    identifier , "~" , identifier ,
+    "in" , neighborhood ;
 
-(* Exemple : x ~ x' in hyperball(x, L2, 0.01) *)
+(* Exemple :
+   x ~ x' in hyperball(x, L2, 0.01)
+*)
 
 (* ========================================================= *)
 (* === DOMAIN / CONTEXT ==================================== *)
 (* ========================================================= *)
 
-domain = "with" , identifier , "(" , value , { "," , value } , ")" ;
+domain =
+    "with" , identifier ,
+    "(" , value , { "," , value } , ")" ;
 
 (* ========================================================= *)
 (* === PROPERTY DEFINITION ================================= *)
 (* ========================================================= *)
 
-property_type = ? official_properties ? | ? uppercase_string ? ;
+property_type =
+    ? official_properties ? | ? uppercase_string ? ;
 
-property = "[" , property_type , "]" , ":" , property_expr , "->" , assertion ;
+property =
+    "[" , property_type , "]" , ":" ,
+    property_expr , "->" , assertion ;
 
-property_section = property , [ abstractor ] ;
+property_section =
+    property , [ abstractor ] ;
 
 (* ========================================================= *)
 (* === ABSTRACTOR ========================================== *)
 (* ========================================================= *)
 
-abstractor = "using" , ? official_backends ? , [ "(" , args , ")" ] ;
+abstractor =
+    "using" , ? official_backends ? ,
+    [ "(" , args , ")" ] ;
 
 (* ========================================================= *)
 (* === DECLARATIONS ======================================== *)
 (* ========================================================= *)
 
-target_declaration = "target" , ":=" , identifier ;
+target_declaration =
+    "target" , ":=" , identifier ;
 
-model = quoted_identifier ;
+model =
+    quoted_identifier ;
 
-model_declaration = "model" , ":=" , model ;
+model_declaration =
+    "model" , ":=" , model ;
 
-variable_declaration = identifier , ":=" , value ;
+variable_declaration =
+    identifier , ":=" , value ;
 
-variables_declaration = variable_declaration , { SEPARATOR , variable_declaration } ;
+variables_declaration =
+    variable_declaration ,
+    { SEPARATOR | padding , variable_declaration } ;
 
 (* ========================================================= *)
 (* === PROGRAM STRUCTURE =================================== *)
 (* ========================================================= *)
 
-header = padding , model_declaration , padding , target_declaration , padding , [ variables_declaration , padding ] ;
+header =
+    padding ,
+    model_declaration ,
+    padding ,
+    target_declaration ,
+    padding ,
+    [ variables_declaration , padding ] ;
 
-body = padding , property_section , { SEPARATOR , padding , property_section } , [ SEPARATOR ] , padding ;
+body =
+    padding ,
+    property_section ,
+    { SEPARATOR , padding , property_section } ,
+    [ SEPARATOR ] ,
+    padding ;
 
-program = header , body ;
+program =
+    header , body ;

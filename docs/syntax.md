@@ -1,106 +1,203 @@
 # FORML Syntax Specification
 
-This document defines the concrete syntax of the FORML language.
+This document defines the **concrete syntax and semantics** of the FORML language.
 
-FORML is a **declarative constraint language** for machine learning models.
-Its syntax encodes *where* a property applies **implicitly**, through
-quantification and variable relationships.
+FORML is a **declarative constraint language for machine learning models**.
+It allows expressing *properties* over models in a formal, structured, and backend-agnostic way.
 
-There is no explicit `scope` keyword.
+A key design principle of FORML is that **scope is implicit**, derived from syntax rather than explicitly declared.
 
 ---
 
 ## 1. Core Principle
 
-In FORML, **scope is a consequence of syntax**, not a declared attribute.
+In FORML, the **scope of a property is determined by its syntactic form**.
 
-| Syntactic form       | Induced semantic scope | Semantic |
-|----------------------|------------------------|----------|
-| `forall x`           | Global                 | Property must be True for all instance |
-| `at x`               | Local                  | For any instance in hyperballwith an anchor x, the property must be True |
-| `check_at x`         | pointwise              | For an instance x, the property must be True |
-| `x ~ x'`             | Pairwise               | For x and x' with distance d, the property must be True |
+| Syntactic form | Induced scope | Semantics                                       |
+| -------------- | ------------- | ----------------------------------------------- |
+| `forall`       | Global        | Property must hold for all valid inputs         |
+| `at x`         | Local region  | Property must hold in a neighborhood around `x` |
+| `check_at x`   | Pointwise     | Property must hold for a specific input `x`     |
+| `x ~ x'`       | Pairwise      | Property relates two inputs `x` and `x'`        |
 
-This makes FORML closer to logic and specification languages than to APIs.
+There is **no explicit `scope` keyword**.
 
 ---
 
 ## 2. Property Declaration
 
-A property is defined by:
+A property is declared using the following structure:
 
 ```forml
 [PROPERTY_TYPE]:
-...
+<property_expression> -> <assertion>
 ```
 
-## 3. Quantification Forms
-### 3.1 Universal Quantification (Global)
+Example:
+
 ```forml
 [ROBUSTNESS]:
-forall ...
+x ~ x' in neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL()
 ```
-**Semantique** :
+
+---
+
+## 3. Property Expressions
+
+A property expression defines **where and how** the constraint applies.
+
+### 3.1 Global (Quantified)
+
+```forml
+forall -> ...
+```
+
+**Semantics**:
 The constraint must hold for all valid inputs.
 
-### 3.2 Local Evaluation (Local region)
-```forml
-[ROBUSTNESS]:
-at x ...
-```
-**Semantique** :
-The constraint is evaluated at a specific region.
+---
 
-### 3.3 Pointwise Evaluation (Instance)
-```forml
-[ROBUSTNESS]:
-check_at x ...
-```
-**Semantique** :
-The constraint is evaluated at a specific input.
+### 3.2 Local (Neighborhood-based)
 
-### 3.4 Pairwise Evaluation
 ```forml
-[ROBUSTNESS]:
-x ~ x' ...
+at x in neighborhood(L2, eps=0.01) -> ...
 ```
-**Semantique** :
-The constraint is beetween two instances :
-- similarity
-- neighborhood
-- same group
-- counterfactual relation
-- Its interpretation is backend-defined.
 
-## 4. Constraint Expressions
-### 4.1 Equality
+**Semantics**:
+The constraint must hold for all inputs in a neighborhood around `x`.
+
+---
+
+### 3.3 Pointwise
+
 ```forml
-output(x) == output(x')
+check_at x -> ...
 ```
-### 4.2 Similarity / Tolerance
+
+**Semantics**:
+The constraint must hold for the specific input `x`.
+
+---
+
+### 3.4 Pairwise
+
 ```forml
-|output(x) - output(x')| <= ε
+x ~ x' in neighborhood(L2, eps=0.01) -> ...
 ```
-### 4.3 Order
+
+**Semantics**:
+The constraint relates two inputs `x` and `x'`, typically under a notion of proximity.
+
+Typical interpretations include:
+
+* robustness (small perturbations)
+* fairness (counterfactual comparison)
+* invariance constraints
+
+The exact semantics may depend on the backend.
+
+---
+
+## 4. Neighborhoods
+
+Neighborhoods define **how inputs are related or perturbed**.
+
+General form:
+
 ```forml
-output(x₁) <= output(x₂)
+<neighborhood>(<arg>=<value>, ...)
 ```
-### 4.4 Bounds
+
+Example:
+
 ```forml
-a <= output(x) <= b
+neighborhood(L2, eps=0.01)
 ```
-### 4.5 Logic
+
+Arguments are **named and typed**, enabling extensibility and backend compatibility.
+
+---
+
+## 5. Assertions
+
+Assertions define **what must hold** once the scope is defined.
+
+General form:
+
+```forml
+<PROBLEM_TYPE>.<FUNCTION>(...)
+```
+
+Example:
+
+```forml
+CLASSIFICATION.EQUAL()
+```
+
+---
+
+## 6. Logical Constraints (Optional)
+
+FORML also supports logical expressions:
+
 ```forml
 (A -> B) AND NOT C
 ```
-## 5. Variables and Symbols
+
+With operators:
+
+* `AND`, `OR`
+* `NOT`
+* `->` (implication)
+
+---
+
+## 7. Variables and Symbols
 
 Common symbols:
 
-- x, x' : inputs
-- δ : perturbation
-- ε : tolerance
-- output(x) : model output
+* `x`, `x'` : input instances
+* `eps` : tolerance (ε)
+* `norm` : distance type (e.g. `"L2"`)
+* `output(x)` : model output
 
-Variables are symbolic.
-No execution order is implied.
+Variables are **symbolic**:
+
+* no execution order
+* no assignment semantics
+* purely declarative
+
+---
+
+## 8. Design Philosophy
+
+FORML is designed to be:
+
+* **Declarative**: describe *what*, not *how*
+* **Compositional**: syntax encodes semantics
+* **Backend-agnostic**: compatible with multiple verification engines
+* **Extensible**: arguments and functions can evolve without breaking syntax
+
+---
+
+## 9. Summary
+
+A FORML property is composed of:
+
+1. A **scope** (implicit via syntax)
+2. A **relation** (e.g. pairwise, local)
+3. A **constraint** (assertion)
+
+Example:
+
+```forml
+[ROBUSTNESS]:
+x ~ x' in neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL()
+```
+
+Which reads as:
+
+> For any pair of inputs `x` and `x'` within an L2 neighborhood of radius 0.01,
+> the model must produce the same classification output.
+
+---

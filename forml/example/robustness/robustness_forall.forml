@@ -1,0 +1,8 @@
+# This is a comment
+# Another comment
+model := "path/to/model.onnx"
+target := MyTargetColumn
+
+# 1 forall without using
+[ROBUSTNESS]:
+forall with gender("male", "female") -> x.target == 0

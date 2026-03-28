@@ -7,8 +7,9 @@ from forml.grammar.official_contents.properties import official_properties
 from forml.grammar.official_contents.quantifiers import official_quantifiers
 from forml.grammar.official_contents.functions import official_functions
 from forml.grammar.official_contents.backends import official_backends
-from forml.grammar.official_contents.sets import official_sets
+from forml.grammar.official_contents.metrics import official_metrics
 from forml.grammar.official_contents.protected_words import protected_words
+from forml.grammar.official_contents.logic_operations import official_logic_operations, EnumLogicOperation
 
 # Dictionnaires et listes des types officiels
 official_problems_dict          = official_problems
@@ -16,41 +17,46 @@ official_properties_dict        = official_properties
 official_quantifiers_dict       = official_quantifiers
 official_functions_dict         = official_functions
 official_backends_dict          = official_backends
-official_sets_dict              = official_sets
+official_metrics_dict           = official_metrics
 official_protected_words_dict   = protected_words
+official_logic_operations_dict   = official_logic_operations
 
 problem_list            = [f"{k} : {v}" for k, v in official_problems_dict.items()]
 property_list           = [f"{k} : {v}" for k, v in official_properties_dict.items()]
 quantifier_set_list     = [f"{k} : {v}" for k, v in official_quantifiers_dict.items()]
 function_list           = [f"{k} : {v}" for k, v in official_functions_dict.items()]
 backend_list            = [f"{k} : {v}" for k, v in official_backends_dict.items()]
-set_list                = [f"{k} : {v}" for k, v in official_sets_dict.items()]
+metric_list             = [f"{k} : {v}" for k, v in official_metrics_dict.items()]
 protected_words_list    = [f"{k} : {v}" for k, v in official_protected_words_dict.items()]
+logic_operation_list    = [f"{k} : {v}" for k, v in official_logic_operations_dict.items()]
 
-official_properties =       " | ".join(official_properties_dict.keys())
-official_problems =         " | ".join(official_problems_dict.keys())
-official_quantifiers =      " | ".join(official_quantifiers_dict.keys())
-official_functions =        " | ".join(official_functions_dict.keys())
-official_backends =         " | ".join(official_backends_dict.keys())
-official_sets =             " | ".join(official_sets_dict.keys())
-official_protected_words =  " | ".join(official_protected_words_dict.keys())
+official_properties         = " | ".join(official_properties_dict.keys())
+official_problems           = " | ".join(official_problems_dict.keys())
+official_quantifiers        = " | ".join(official_quantifiers_dict.keys())
+official_functions          = " | ".join(official_functions_dict.keys())
+official_backends           = " | ".join(official_backends_dict.keys())
+official_metrics            = " | ".join(official_metrics_dict.keys())
+official_protected_words    = " | ".join(official_protected_words_dict.keys())
+official_logic_operations    = " | ".join(official_logic_operations_dict.keys())
 
 SPECIAL_SEQ = {
-    "official_properties":  official_properties,
-    "official_problems":    official_problems,
-    "official_quantifier" : official_quantifiers,
-    "official_functions":   official_functions,
-    "official_backends":    official_backends,
-    "official_sets" :       official_sets,
-    "lowercase_string": r"/[a-z]+/",
-    "uppercase_string": r"/[A-Z]+/",
-    "number": "NUMBER",
-    "CHAR": r"/[a-zA-Z]/",
-    "digit": "DIGIT",
-    "identifier_name": r"/[A-Za-z][A-Za-z0-9_.]*/",
-    "escaped_string": "ESCAPED_STRING",
-    "any_character_except_triple_quotes": r"/'''(.|\n)*?'''/",
-    "any_character_except_newline": r'/[^\n]+/',
+    "official_properties":                  official_properties,
+    "official_problems":                    official_problems,
+    "official_quantifier" :                 official_quantifiers,
+    "official_functions":                   official_functions,
+    "official_backends":                    official_backends,
+    "official_metrics" :                    official_metrics,
+    "official_logic_operations":            official_logic_operations,
+    "lowercase_string":                     r"/[a-z]+/",
+    "uppercase_string":                     r"/[A-Z]+/",
+    "number":                               "NUMBER",
+    "CHAR":                                 r"/[a-zA-Z]/",
+    "digit":                                "DIGIT",
+    "identifier_name":                      "IDENTIFIER",
+    "escaped_string":                       "ESCAPED_STRING",
+    "any_character_except_triple_quotes":   r"/'''(.|\n)*?'''/",
+    "any_character_except_newline":         r'/[^\n]+/',
+    "pairwise_token":                       r"/[A-Za-z][A-Za-z0-9_]*\s*~\s*[A-Za-z][A-Za-z0-9_]*'/"
 }
 
 def transform_ebnf_brackets(line: str) -> str:
@@ -159,6 +165,23 @@ def replace_special_sequences(line: str) -> str:
 
     return re.sub(r'\?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\?', repl, line)
 
+def remove_ebnf_commas(line: str) -> str:
+    result = []
+    depth = 0
+
+    for char in line:
+        if char == "(":
+            depth += 1
+        elif char == ")":
+            depth -= 1
+
+        if char == "," and depth == 0:
+            result.append(" ")
+        else:
+            result.append(char)
+
+    return "".join(result)
+
 
 def ebnf_to_lark(ebnf_text: str) -> str:
     lines = ebnf_text.splitlines()
@@ -171,6 +194,7 @@ def ebnf_to_lark(ebnf_text: str) -> str:
         "%import common.ESCAPED_STRING",
         "%import common.NUMBER",
         "%import common.DIGIT",
+        "%import common.CNAME -> IDENTIFIER",
         "%ignore WS_INLINE",
         # Définition des commentaires
         'COMMENT_LINE: /#[^\\n]*/',
@@ -194,8 +218,17 @@ def ebnf_to_lark(ebnf_text: str) -> str:
         "# === OFFICIAL BACKENDS ===",
     ] + backend_list + [
         "",
-        "# === OFFICIAL SETS ===",
-    ] + set_list + [
+        "# === OFFICIAL METRICS ===",
+    ] + metric_list + [
+        "",
+        "# === PROTECTED WORDS ===",
+    ] + protected_words_list + [
+        ""
+        "# === OFFICIAL LOGIC OPERATIONS ===",
+    ] + logic_operation_list + [
+        "",
+        "# === TOKENS ===",
+        "PAIRWISE.2 : /[A-Za-z][A-Za-z0-9_]*\\s*~\\s*[A-Za-z][A-Za-z0-9_']*/",
         "",
     ]
 
@@ -210,8 +243,8 @@ def ebnf_to_lark(ebnf_text: str) -> str:
             lark_lines.append("# " + raw_line.strip()[2:-2].strip())
             continue
 
-        if raw_line.startswith("identifier ="):
-            print("Debug: Found identifier line:", raw_line)
+        # if raw_line.startswith("quoted_identifier"):
+        #    print("Debug: Found identifier line:", raw_line)
 
         line = re.sub(r"\(\*(.*?)\*\)", lambda m: "# " + m.group(1).strip(), raw_line.strip())
         
@@ -228,7 +261,10 @@ def ebnf_to_lark(ebnf_text: str) -> str:
         line = re.sub(r"\?\+", "?", line)
 
         line = line.rstrip(";")
+        
+        # line = remove_ebnf_commas(line)
         line = re.sub(r"\s+,\s+", " ", line)
+
         # line = line
         line = re.sub(r"\s+", " ", line)
 
@@ -236,7 +272,7 @@ def ebnf_to_lark(ebnf_text: str) -> str:
         line = replace_special_sequences(line)
 
         # mots protégés
-        line = replace_protected_words(line)
+        # line = replace_protected_words(line)
 
         # string déjà géré par ESCAPED_STRING
         if re.match(r'^string\s*=', line):

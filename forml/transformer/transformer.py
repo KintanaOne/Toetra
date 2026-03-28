@@ -63,6 +63,22 @@ class FORMLTransformer(Transformer):
                 return node.data
             return self.extract_value(node.children[0])
         return str(node)
+    
+    def extract_args(self, args_tree):
+        values = []
+
+        for arg in args_tree.children:
+            node = arg.children[0]
+
+            if node.data == "arg_identifier_only":
+                token = node.children[0].children[0]
+                values.append(token.value.strip('"'))
+
+            elif node.data == "arg_number":
+                token = node.children[0]
+                values.append(float(token.value))
+
+        return values
 
     # ────────────────────────────── Program ──────────────────────────────
 
@@ -131,10 +147,31 @@ class FORMLTransformer(Transformer):
 
     def universal_expr(self, items):
         if len(items) != 2:
-            raise ParserUniversalError("Universal expression requires quantifier and variable.")
+            raise ParserUniversalError(
+                "Universal expression requires quantifier and set."
+            )
+
         quantifier = self.extract_value(items[0])
-        variable = self.extract_value(items[1])
-        return UniversalExpr(quantifier=quantifier, variable=variable)
+        set_tree = items[1]
+
+        set_name = None
+        args = []
+
+        if isinstance(set_tree, Tree):
+            # ex: Tree('universal_set', [hyperball, args])
+            set_name = set_tree.children[0].data
+
+            # gérer args si présents
+            if len(set_tree.children) > 1:
+                args_tree = set_tree.children[1]
+
+                if isinstance(args_tree, Tree) and args_tree.data == "args":
+                    args = self.extract_args(args_tree)
+
+        return UniversalExpr(
+            quantifier=quantifier,
+            set=UniversalSet(func=set_name, args=args)
+        )
 
     def domain(self, items):
         """
@@ -410,4 +447,6 @@ if __name__ == "__main__":
         with open(test_path, "r", encoding="utf-8") as f:
             code = f.read()
     program = transform_forml_code(code)
+
+    print(program)
     print_tree(program)

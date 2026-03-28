@@ -4,6 +4,7 @@
 %import common.ESCAPED_STRING
 %import common.NUMBER
 %import common.DIGIT
+%import common.CNAME -> IDENTIFIER
 %ignore WS_INLINE
 COMMENT_LINE: /#[^\n]*/
 COMMENT_BLOCK: /'''(.|\n)*?'''/
@@ -29,15 +30,16 @@ LOGIC : "LOGIC"
 
 # === OFFICIAL QUANTIFIER SETS ===
 FORALL : "∀"
-EXISTS : "∃"
+EXIST : "∃"
 forall : "forall"
-exists : "exists"
+exist : "exist"
 
 # === OFFICIAL FUNCTIONS ===
 EQUAL : "EQUAL"
 EQUITY : "EQUITY"
 BETWEEN : "BETWEEN"
 INCREASING : "INCREASING"
+DECREASING : "DECREASING"
 
 # === OFFICIAL BACKENDS ===
 eran : "eran"
@@ -49,47 +51,63 @@ BOX : "BOX"
 z3 : "z3"
 Z3 : "Z3"
 
-# === OFFICIAL SETS ===
-ball : "ball"
-hyperball : "hyperball"
-noise : "noise"
+# === OFFICIAL METRICS ===
+L1 : "L1"
+L2 : "L2"
+LINF : "Linf"
+
+# === PROTECTED WORDS ===
+IN : "in"
+WITH : "with"
+AT : "at"
+CHECK_AT : "check_at"
+USING : "using"
+MODEL : "model"
+TARGET : "target"
+NEIGHBORHOOD : "neighborhood"
+# === OFFICIAL LOGIC OPERATIONS ===
+EQ : "=="
+NEQ : "!="
+LT : "<"
+LTE : "<="
+GT : ">"
+GTE : ">="
+
+# === TOKENS ===
+PAIRWISE.2 : /[A-Za-z][A-Za-z0-9_]*\s*~\s*[A-Za-z][A-Za-z0-9_']*/
 
 # === BASIC CHARACTER DEFINITIONS ===
 CHAR :  /[a-zA-Z]/
+string : ESCAPED_STRING
 
 # === BASIC VALUE TYPES ===
 true :  "True" | "true" 
-
 false :  "False" | "false" 
-
 boolean :  true | false 
 
 # === IDENTIFIERS ===
-identifier :  /[A-Za-z][A-Za-z0-9_.]*/ 
+identifier :  IDENTIFIER 
 quoted_identifier :  ESCAPED_STRING | identifier 
 
 # === VALUE TYPES ===
-value_identifier :  quoted_identifier 
 value_number :  NUMBER 
 value_boolean :  boolean 
-value :  value_identifier | value_number | value_boolean 
+value :  value_number | value_boolean | string 
 
 # === ARGUMENTS ===
 arg_identifier_eq :  quoted_identifier "=" value 
 arg_identifier_only :  quoted_identifier 
 arg_number :  NUMBER 
 arg_boolean :  boolean 
+
 arg :  arg_identifier_eq | arg_identifier_only | arg_number | arg_boolean 
 args :  arg ( "," arg )* 
 
-# === SEPARATOR DEFINITIONS ===
+# === SEPARATORS ===
 SEPARATOR :  ";" 
 
-# === NEWLINE DEFINITIONS ===
-NEWLINES :  NEWLINE ( NEWLINE )* 
-
-# === PROGRAM STRUCTURE ===
-# === PROGRAM COMPONENTS ===
+# === NEWLINES ===
+NEWLINE_SEQUENCE :  NEWLINE ( NEWLINE )* 
 
 # === COMMENTS ===
 simple_comment :  "#" /[^\n]+/ 
@@ -98,71 +116,118 @@ comment :  simple_comment | multiline_comment
 comments :  comment ( comment )* 
 
 # === PADDING ===
-padding :  ( NEWLINES | comments )* 
+padding :  ( NEWLINE_SEQUENCE | comments )* 
 
-# === PROPERTY SECTION ===
-logic_connection :  "AND" | "OR" 
+# =========================================================
+# === LOGIC (NON-ROBUSTNESS) ===============================
+# =========================================================
 
-logic_operation :  "==" | "!=" | "<" | "<=" | ">" | ">=" 
-
-logic_expr :  ( "NOT" )? identifier logic_operation value 
-logic_implication :  "(" logic_expr "->" logic_expr ")" 
-logic_assertion :  logic_implication ( logic_connection logic_implication )* 
-
-
-function :  ( EQUAL | EQUITY | BETWEEN | INCREASING ) 
+# === FUNCTIONS / PROBLEMS ===
+function :  ( EQUAL | EQUITY | BETWEEN | INCREASING | DECREASING ) 
 function_expr :  function "(" ( args )? ")" 
 problem_expr :  ( CLASSIFICATION | PREDICTION | REGRESSION | CLUSTERING | ANOMALY_DETECTION | REINFORCEMENT_LEARNING ) "." function_expr 
 
-assertion :  problem_expr | logic_assertion 
+# === ATTRIBUTES ===
+attribute :  identifier ( "." identifier )* 
+logic_expr :  attribute logic_operation value 
 
-# === PROPERTY EXPRESSION OPTIONS ===
-property_expr :  universal_expr | anchor_expr | check_expr | pairwise_expr 
+# === LOGIC OPERATIONS ===
+logic_operation :  ( EQ | NEQ | LT | LTE | GT | GTE ) 
 
-quantifier :  ( FORALL | EXISTS | forall | exists ) ( identifier )? "in" 
+# === IMPLICATION ===
+assertion :  logic_or ( "->" assertion )? 
+logic_or :  logic_and ( "OR" logic_and )* 
+logic_and :  logic_not ( "AND" logic_not )* 
+logic_not :  ( "NOT" )? atom 
+atom :  logic_expr | problem_expr | "(" assertion ")" 
 
-# === UNIVERSAL EXPRESSIONS ===
-universal_set :  ( ball | hyperball | noise ) "(" ( args )? ")" 
-universal_expr :  quantifier universal_set 
+# =========================================================
+# === ROBUSTNESS CORE =====================================
+# =========================================================
 
-# === ANCHOR EXPRESSIONS ===
-domain :  "with" identifier "(" value ( "," value )* ")" 
-anchor_expr :  "at" identifier ( "in" universal_expr )? ( domain )? 
+# === NEIGHBORHOOD (CRITICAL ABSTRACTION) ===
+neighborhood :  "neighborhood" "(" ( L1 | L2 | LINF ) "," ( args )? ")" 
 
-# === CHECK EXPRESSIONS ===
+# Exemple attendu : hyperball(x, "L2", 0.01)
+
+# =========================================================
+# === PROPERTY EXPRESSIONS ================================
+# =========================================================
+
+property_expr :  quantifier_expr | at_expr | check_expr | pairwise_expr 
+
+# === UNIVERSAL (GLOBAL) ===
+quantifier :  ( FORALL | EXIST | forall | exist ) 
+
+quantifier_expr :  quantifier ( domain )? 
+
+# Exemple : forall -> P() (x implicite)
+
+# ================================== POINTWISE ==================================
+
+# =========================================================
+# === AT (POINTWISE) ======================================
+# =========================================================
+
+at_expr :  "at" identifier ( "in" neighborhood )? ( domain )? 
+
+# Exemple : at x0 in hyperball(x0, L2, 0.01)
+
+# =========================================================
+# === CHECK AT (POINTWISE) ================================
+# =========================================================
+
 check_expr :  "check_at" identifier 
 
-# === PAIRWISE EXPRESSIONS ===
-symbolic_distance :  "distance" "(" identifier "," identifier "," value ")" 
+# =========================================================
+# === PAIRWISE (ROBUSTNESS) ===============================
+# =========================================================
 
-pairwise_expr :  identifier "~" identifier "with" symbolic_distance 
+pairwise_token :  PAIRWISE 
+pairwise_expr :  pairwise_token "in" neighborhood 
 
-# === PROPERTY DEFINITION ===
-property_type :  ( ROBUSTNESS | STABILITY | FAIRNESS | MONOTONICITY | BOUND | LOGIC ) | /[A-Z]+/
+# Exemple : x ~ x' in hyperball(x, L2, 0.01)
+
+# =========================================================
+# === DOMAIN / CONTEXT ====================================
+# =========================================================
+
+domain :  "with" identifier "(" value ( "," value )* ")" 
+
+# =========================================================
+# === PROPERTY DEFINITION =================================
+# =========================================================
+
+property_type :  ( ROBUSTNESS | STABILITY | FAIRNESS | MONOTONICITY | BOUND | LOGIC ) | /[A-Z]+/ 
 
 property :  "[" property_type "]" ":" property_expr "->" assertion 
 
 property_section :  property ( abstractor )? 
 
-# === SECTION DEFINITION ===
-section :  ( property_section ) 
+# =========================================================
+# === ABSTRACTOR ==========================================
+# =========================================================
 
-# === ABSTRACTOR SECTION ===
-abstractor :  "using" ( eran | ERAN | zonotope | ZONOTOPE | box | BOX | z3 | Z3 ) ( "(" ( args )* ")" )? 
+abstractor :  "using" ( eran | ERAN | zonotope | ZONOTOPE | box | BOX | z3 | Z3 ) ( "(" args ")" )? 
 
-# === TARGET DECLARATION ===
+# =========================================================
+# === DECLARATIONS ========================================
+# =========================================================
+
 target_declaration :  "target" ":=" identifier 
 
-# === MODEL DECLARATION ===
 model :  quoted_identifier 
-
-# === VARIABLE DECLARATION ===
-variable_declaration :  identifier ":=" value 
-variables_declaration :  variable_declaration ( ( SEPARATOR | padding ) variable_declaration )* 
 
 model_declaration :  "model" ":=" model 
 
-# === FULL PROGRAM ===
+variable_declaration :  identifier ":=" value 
+
+variables_declaration :  variable_declaration ( SEPARATOR variable_declaration )* 
+
+# =========================================================
+# === PROGRAM STRUCTURE ===================================
+# =========================================================
+
 header :  padding model_declaration padding target_declaration padding ( variables_declaration padding )? 
 
 body :  padding property_section ( SEPARATOR padding property_section )* ( SEPARATOR )? padding 
