@@ -15,7 +15,7 @@ def test_footer_empty():
 
     # 1 forall without using
     [ROBUSTNESS]:
-    forall in hyperball("L2", 0.01) -> CLASSIFICATION.EQUAL();
+    forall -> CLASSIFICATION.EQUAL();
     """
 
     result = parse_forml_code(code)
@@ -34,7 +34,7 @@ def test_footer_with_simple_comment():
 
     # 1 forall without using
     [ROBUSTNESS]:
-    forall in hyperball("L2", 0.01) -> CLASSIFICATION.EQUAL();
+    forall -> CLASSIFICATION.EQUAL();
 
     # This is a simple footer comment
     """
