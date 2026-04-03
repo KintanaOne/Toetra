@@ -1,9 +1,9 @@
- cc<    # FORML Semantic Model
+# FORML Semantic Model
 
 This document defines the formal semantics of FORML.
 
 While `syntax.md` specifies how properties are written,
-this document defines **what they mean** independently
+this document defines **what they mean**, independently
 of any parser, solver, or verification backend.
 
 FORML specifications are interpreted as logical constraints
@@ -24,6 +24,7 @@ Where:
 - f is deterministic
 
 No assumptions are made about:
+
 - architecture
 - training process
 - differentiability
@@ -31,158 +32,227 @@ No assumptions are made about:
 
 ---
 
-## 2. Inputs and Variables
+## 2. Variables and Inputs
 
-Variables such as `x`, `x'` are elements of X.
+Variables such as `x`, `x0`, `x'` denote elements of X.
 
-They are symbolic unless explicitly instantiated.
+They are:
 
-A specification never executes the model.
+- symbolic (not assigned)
+- implicitly scoped by the property expression
+- interpreted within a logical formula
+
+A FORML specification does not execute the model.
 It constrains its behavior.
 
 ---
 
-## 3. Perturbations
+## 3. Attribute Access
 
-A perturbation δ is an element of X such that:
+Attributes represent projections over input variables.
 
-    x + δ ∈ X
+Example:
 
-The interpretation of `+` depends on the input structure.
-FORML does not prescribe a metric or norm.
-
-Backends may interpret perturbations using:
-- Lp norms
-- discrete flips
-- structured transformations
-
----
-
-## 4. Quantification Semantics
-
-### 4.1 Universal Quantification
-
-`forall x : P(x)`
+    x.feature1
+    x.feature1.subfeature
 
 Semantics:
 
-    ∀x ∈ X, P(x) holds.
+An attribute is interpreted as a function:
+
+    feature : X → V
+
+So that:
+
+    x.feature1  ≡  feature1(x)
+
+Chained attributes are interpreted as function composition.
 
 ---
 
-### 4.2 Local Evaluation
+## 4. Neighborhoods and Relations
 
-`at x : P(x)`
+A neighborhood defines a relation over inputs.
+
+Example:
+
+    neighborhood(L2, eps=0.01)
 
 Semantics:
 
-The property is evaluated at a specific input x₀ ∈ X.
+A neighborhood induces a binary relation:
 
-This does not imply universal validity.
+    R ⊆ X × X
+
+Such that:
+
+    (x, x') ∈ R  ⇔  d(x, x') ≤ ε
+
+The exact definition of:
+
+- distance d
+- norm (L1, L2, Linf, etc.)
+- admissible perturbations
+
+is delegated to the backend.
 
 ---
 
-### 4.3 Relational Quantification
+## 5. Property Expressions (Scope Semantics)
 
-`forall x ~ x' : P(x, x')`
+In FORML, **scope is implicit and syntactically defined**.
 
-Let R ⊆ X × X be a binary relation.
+---
+
+### 5.1 Pointwise
+
+```forml
+check_at x -> P(x)
+```
+Semantics:
+```forml
+P(x₀)
+```
+for a specific input x₀ ∈ X.
+
+### 5.2 Local (Neighborhood-based)
+at x in neighborhood(...) -> P(x')
 
 Semantics:
 
-    ∀(x, x') ∈ R, P(x, x') holds.
+∀x' ∈ N(x₀), P(x')
 
-The relation R is abstract at the language level.
-Its definition is delegated to the verification context.
+where N(x₀) is the neighborhood of x₀.
 
----
+### 5.3 Pairwise
+```forml
+x ~ x' in neighborhood(...) -> P(x, x')
+```
+#### Semantics:
+```forml
+∀(x, x') ∈ R, P(x, x')
+```
+where R is induced by the neighborhood.
 
-## 5. Constraint Semantics
+### 5.4 Global (Quantified)
+```forml
+forall -> P(x)
+```
+#### Semantics:
+```forml
+∀x ∈ X, P(x)
+```
+## 6. Logical Semantics
 
-A FORML constraint is interpreted as a logical formula
-over the model function f.
+Assertions are interpreted as logical formulas.
 
-Examples:
+### 6.1 Atomic Expressions
+#### Attribute comparisons
+```forml
+x.feature1 <= 0
+```
+##### Semantics:
+```forml
+feature1(x) ≤ 0
+```
+#### Problem-level predicates
+```forml
+CLASSIFICATION.EQUAL()
+```
+##### Semantics:
 
-### Equality
+A predicate over the model output, e.g.:
+```forml
+f(x) = f(x')
+```
+depending on the context (pairwise, local, etc.)
 
-    output(x) == output(x')
+### 6.2 Logical Operators
 
-means:
+FORML supports standard propositional logic:
 
-    f(x) = f(x')
+- AND (conjunction)
+- OR (disjunction)
+- NOT (negation)
+- -> (implication)
 
----
+Example:
+```forml
+A AND B -> C
+```
+#### Semantics:
+```forml
+(A ∧ B) ⇒ C
+```
+### 6.3 Structured Composition
 
-### Bounded Difference
+Logical expressions form a tree:
 
-    |output(x) - output(x')| ≤ ε
+- leaves: atomic predicates
+- internal nodes: logical operators
 
-means:
+Example:
+```forml
+(x.feature1 <= 0 AND x.feature2 >= 1) -> CLASSIFICATION.EQUAL()
+```
+#### Semantics:
+```forml
+(feature1(x) ≤ 0 ∧ feature2(x) ≥ 1) ⇒ EQUAL(f(x), ...)
+```
 
-    |f(x) - f(x')| ≤ ε
+## 7. Assertion Semantics
 
----
+A FORML assertion defines a logical formula Φ.
 
-### Order
+A property:
+```forml
+[property]:
+<property_expr> -> <assertion>
+```
+is interpreted as:
+```forml
+Scope(property_expr) ⇒ Φ(assertion)
+```
+Where:
 
-    output(x₁) ≤ output(x₂)
+- Scope(...) introduces quantification
+- Φ(assertion) is the logical formula
 
-means:
+## 8. Property Satisfaction
 
-    f(x₁) ≤ f(x₂)
-
----
-
-### Logical Expressions
-
-Logical operators follow classical propositional logic:
-
-- ∧ (and)
-- ∨ (or)
-- ¬ (not)
-- ⇒ (implication)
-- ⇔ (equivalence)
-
----
-
-## 6. Property Satisfaction
-
-A property is satisfied if its induced logical formula
-is true under the chosen interpretation of:
+A property is satisfied if the induced formula is true under:
 
 - input domain X
 - relation R (if any)
-- perturbation model
-- arithmetic structure of Y
+- neighborhood definition
+- interpretation of predicates
 
-FORML itself does not decide satisfiability.
+FORML does not decide satisfiability.
+
 It defines the formula to be evaluated.
 
----
-
-## 7. Backend Independence
+## 9. Backend Independence
 
 FORML semantics is backend-agnostic.
 
-Given a specification S, it defines a formula Φ(S).
+Given a specification S, it defines a logical formula Φ(S).
 
 A backend is responsible for:
 
 - encoding Φ(S)
-- checking satisfiability or validity
-- producing certificates or counterexamples
+- solving or verifying it
+- producing counterexamples if violated
 
----
-
-## 8. Design Principles
+## 10. Design Principles
 
 FORML semantics is:
 
-- extensional (defined over function behavior)
-- declarative (no execution semantics)
-- compositional (complex properties are built from logical primitives)
-- independent of verification strategy
+- declarative (no execution)
+- compositional (tree-structured logic)
+- extensional (defined on f)
+- backend-independent
 
-A FORML file denotes a set of logical constraints
-over a function f.
+A FORML program denotes a logical constraint over a function f.
+
+
+---
