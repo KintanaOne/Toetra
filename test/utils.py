@@ -1,92 +1,27 @@
 from lark import Tree, Token
+from typing import Optional, List, Union
 
 
-def find_child(tree: Tree, name: str):
+AST = Tree
+Node = Union[Tree, Token]
+
+
+def find_child(tree: AST, name: str) -> Optional[AST]:
     """
-    Return the first direct child Tree whose .data equals the given name.
-    Returns None if not found.
+    Return first direct child Tree matching name.
     """
     if not isinstance(tree, Tree):
         return None
+
     for child in tree.children:
         if isinstance(child, Tree) and child.data == name:
             return child
-    return None
-
-
-def find_all(tree: Tree, name: str):
-    """
-    Return all subtrees in the AST whose .data equals the given name.
-    """
-    if not isinstance(tree, Tree):
-        return []
-
-    result = []
-    for subtree in tree.iter_subtrees():
-        if subtree.data == name:
-            result.append(subtree)
-    return result
-
-
-def get_token_value(node):
-    """
-    Extract the Token value inside a Tree node.
-    Works whether the node is:
-    - a Token directly
-    - a Tree containing exactly one Token
-    - a Tree whose last child is a Token
-    Returns None if no Token is found.
-    """
-    if isinstance(node, Token):
-        return node.value
-
-    if isinstance(node, Tree):
-        # If the node wraps one child that is a token
-        if len(node.children) == 1 and isinstance(node.children[0], Token):
-            return node.children[0].value
-
-        # Try scanning children from the end
-        for child in reversed(node.children):
-            if isinstance(child, Token):
-                return child.value
-            if isinstance(child, Tree) and len(child.children) == 1 and isinstance(child.children[0], Token):
-                return child.children[0].value
 
     return None
 
-
-def get_assignment_value_node(decl_tree: Tree):
+def find_node(tree: AST, name: str) -> Optional[AST]:
     """
-    Exemples : si model_declaration est un Tree contenant children
-    [Token('IDENT', 'model'), Token(':=', ':='), Token('STRING', '"path"')]
-    on retourne le dernier enfant (ou adapter selon ta grammaire).
-    """
-    if not isinstance(decl_tree, Tree):
-        return None
-    # Cherche le premier Token non-Tree dans children (ex: value)
-    for c in decl_tree.children[::-2]:
-        if isinstance(c, Token):
-            return c
-        if isinstance(c, Tree) and len(c.children) == 1 and isinstance(c.children[0], Token):
-            return c.children[0]
-    return None
-
-
-def debug_tree(tree: Tree):
-    """
-    Convenience helper for debugging:
-    Prints a pretty representation of the AST Tree.
-    """
-    if isinstance(tree, Tree):
-        print(tree.pretty())
-    else:
-        print(tree)
-
-
-def find_node(tree: Tree, name: str):
-    """
-    Depth-first search.
-    Return the first Tree whose .data == name.
+    Depth-first search: first occurrence of node.
     """
     if not isinstance(tree, Tree):
         return None
@@ -97,16 +32,14 @@ def find_node(tree: Tree, name: str):
     for child in tree.children:
         if isinstance(child, Tree):
             found = find_node(child, name)
-            if found is not None:
+            if found:
                 return found
 
     return None
 
-
-def find_all_nodes(tree: Tree, name: str):
+def find_all_nodes(tree: AST, name: str) -> List[AST]:
     """
-    Depth-first search.
-    Return a list of all Tree nodes whose .data == name.
+    Return all nodes matching name (DFS).
     """
     results = []
 
@@ -121,3 +54,56 @@ def find_all_nodes(tree: Tree, name: str):
             results.extend(find_all_nodes(child, name))
 
     return results
+
+def get_token_value(node: Node):
+    """
+    Extract token value safely.
+    """
+    if isinstance(node, Token):
+        return node.value
+
+    if not isinstance(node, Tree):
+        return None
+
+    # 1. direct single-child case
+    if len(node.children) == 1:
+        child = node.children[0]
+        if isinstance(child, Token):
+            return child.value
+
+    # 2. fallback scan
+    for child in node.children:
+        if isinstance(child, Token):
+            return child.value
+
+    return None
+
+def get_assignment_value_node(decl_tree: AST):
+    """
+    Return RHS of assignment in a safe way.
+    Assumes pattern: IDENT := VALUE
+    """
+    if not isinstance(decl_tree, Tree):
+        return None
+
+    children = decl_tree.children
+
+    # find first Tree or Token after ':=' pattern
+    seen_colon = False
+
+    for child in children:
+        if isinstance(child, Token) and child.value == ":=":
+            seen_colon = True
+            continue
+
+        if seen_colon:
+            return child
+
+    return None
+
+
+def debug_tree(tree: AST):
+    if isinstance(tree, Tree):
+        print(tree.pretty())
+    else:
+        print(tree)

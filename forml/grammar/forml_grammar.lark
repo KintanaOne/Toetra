@@ -32,7 +32,7 @@ LOGIC : "LOGIC"
 FORALL : "∀"
 EXIST : "∃"
 forall : "forall"
-exist : "exist"
+exists : "exists"
 
 # === OFFICIAL FUNCTIONS ===
 EQUAL : "EQUAL"
@@ -157,7 +157,7 @@ neighborhood :  "neighborhood" "(" ( L1 | L2 | LINF ) "," ( args )? ")"
 property_expr :  quantifier_expr | at_expr | check_expr | pairwise_expr 
 
 # === UNIVERSAL (GLOBAL) ===
-quantifier :  ( FORALL | EXIST | forall | exist ) 
+quantifier :  ( FORALL | EXIST | forall | exists ) 
 
 quantifier_expr :  quantifier ( domain )? 
 
@@ -230,6 +230,6 @@ variables_declaration :  variable_declaration ( SEPARATOR variable_declaration )
 
 header :  padding model_declaration padding target_declaration padding ( variables_declaration padding )? 
 
-body :  padding property_section ( SEPARATOR padding property_section )* ( SEPARATOR )? padding 
+body :  padding property_section ( padding property_section )* ( SEPARATOR )? padding 
 
 program :  header body 

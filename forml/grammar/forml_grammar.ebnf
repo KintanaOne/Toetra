@@ -152,6 +152,6 @@ variables_declaration = variable_declaration , { SEPARATOR , variable_declaratio
 
 header = padding , model_declaration , padding , target_declaration , padding , [ variables_declaration , padding ] ;
 
-body = padding , property_section , { SEPARATOR , padding , property_section } , [ SEPARATOR ] , padding ;
+body = padding , property_section , { , padding , property_section } , [ SEPARATOR ] , padding ;
 
 program = header , body ;

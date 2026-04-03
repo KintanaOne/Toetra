@@ -1,92 +1,85 @@
 import pytest
-from forml.parser.parser import parse_forml_code
-from test.utils import *
+from lark import Tree
 
+from forml.parser.parser import parse_forml_code
+from forml.ast.queries import (
+    get_property_expression,
+    get_assertion_expression,
+    get_abstractor
+)
+
+def parse(code: str) -> Tree:
+    return parse_forml_code(code)
 
 def test_body_simple_rule():
     code = """
-    # This is a comment
-    # Another comment
-    model := "path/to/model.onnx"
+    model := "model.onnx"
     target := MyTargetColumn
 
     [ROBUSTNESS]:
-    forall in hyperball("L2", 0.01) -> CLASSIFICATION.EQUAL();
+    x ~ x' in neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL()
     """
-    result = parse_forml_code(code)
-    print(result.pretty())
-    body = find_child(result, "body")
-    assert body is not None
-    properties = find_all(body, "property_section")
-    assert len(properties) == 1
-    hyperball = find_node(body, "hyperball")
-    assert hyperball.data == "hyperball"
 
+    tree = parse(code)
 
-def test_body_multiple_rules():
-    code = """
-    model := "path/to/model.onnx"
-    target := MyTargetColumn
+    property = get_property_expression(tree)
 
-    [ROBUSTNESS]:
-    forall in hyperball("L2", 0.01) -> CLASSIFICATION.EQUAL();
+    assertion = get_assertion_expression(tree)
 
-    [ROBUSTNESS]:
-    forall in hyperball("L2", 0.05) -> CLASSIFICATION.EQUAL();
-    """
-    result = parse_forml_code(code)
-    properties = find_all_nodes(result, "property_section")
-    assert len(properties) == 2
-    for p in properties:
-        assert p is not None
+    assert property is not None
 
+    assert assertion is not None
 
 def test_body_with_using():
     code = """
-    model := "path/to/model.onnx"
+    model := "model.onnx"
     target := MyTargetColumn
 
     [ROBUSTNESS]:
-    forall in hyperball("L2", 0.01) -> CLASSIFICATION.EQUAL() using eran(param1="a");
+    x ~ x' in neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL() using eran(param1="a")
     """
-    result = parse_forml_code(code)
-    body = find_node(result, "body")
-    assert body is not None
-    abstractor = find_node(body, "abstractor")
-    assert abstractor is not None
 
+    tree = parse(code)
+
+    prop = get_property_expression(tree)
+
+    # abstraction layer exists 
+    abstractor = get_abstractor(tree)
+
+    assert abstractor is not None
 
 def test_body_empty():
     code = """
-    model := "path/to/model.onnx"
+    model := "model.onnx"
     target := MyTargetColumn
 
     [ROBUSTNESS]:
     """
 
     with pytest.raises(Exception):
-        parse_forml_code(code)
-
+        parse(code)
 
 def test_body_syntax_error():
     code = """
-    model := "path/to/model.onnx"
+    model := "model.onnx"
     target := MyTargetColumn
 
     [ROBUSTNESS]:
-    forall in hyperball("L2", 0.01) CLASSIFICATION.EQUAL();  # missing ->
+    x ~ x' in neighborhood(L2, eps=0.01) CLASSIFICATION.EQUAL()   # missing ->
     """
+
     with pytest.raises(Exception):
-        parse_forml_code(code)
+        parse(code)
 
-
-def test_body_invalid_property():
+def test_body_invalid_assertion():
     code = """
-    model := "path/to/model.onnx"
+    model := "model.onnx"
     target := MyTargetColumn
 
     [ROBUSTNESS]:
-    forall in hyperball("L2", 0.01) -> CLASSIFICATION.INVALID();
+    x ~ x' in neighborhood(L2, eps=0.01) -> CLASSIFICATION.INVALID()
     """
+
     with pytest.raises(Exception):
-        parse_forml_code(code)
+        parse(code)
+

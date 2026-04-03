@@ -136,37 +136,116 @@ CLASSIFICATION.EQUAL()
 
 ---
 
-## 6. Logical Constraints (Optional)
+## 6. Logical Constraints
 
-FORML also supports logical expressions:
+FORML supports structured logical expressions inside assertions.
+
+### 6.1 Grammar Overview
+
+Assertions follow a standard logical structure with precedence:
+
+- `NOT` (highest precedence)
+- `AND`
+- `OR`
+- `->` (implication, right-associative)
+
+General form:
 
 ```forml
-(A -> B) AND NOT C
+A AND B -> C
+```
+Which is interpreted as:
+```forml
+(A AND B) -> C
 ```
 
-With operators:
+### 6.2 Atomic Expressions
 
-* `AND`, `OR`
-* `NOT`
-* `->` (implication)
+The smallest logical units are:
+
+#### Attribute comparisons :
+```forml
+x.feature1 <= 0
+```
+General form:
+```forml
+<attribute> <operator> <value>
+```
+Where:
+
+- <attribute> can be nested: x.feature.subfeature
+- <operator> ∈ ==, !=, <, <=, >, >=
+- <value> is a number, boolean, or string
+
+#### Problem assertions
+```forml
+CLASSIFICATION.EQUAL()
+```
+These represent model-level constraints.
+
+### 6.3 Composition
+
+Logical expressions can be composed:
+```forml
+(x.feature1 <= 0 AND x.feature2 >= 1) -> CLASSIFICATION.EQUAL()
+```
+```forml
+NOT (x.feature1 <= 0) OR CLASSIFICATION.EQUAL()
+```
+Parentheses can be used to control evaluation order.
+
+### 6.4 Semantics
+- Logical expressions define constraints over inputs and model outputs
+- They are declarative, not executable
+- They are later transformed into an internal logical representation (IR)
 
 ---
 
-## 7. Variables and Symbols
+## 🆕 Section 7 — Variables and Attributes (FIXED)
 
-Common symbols:
+## 7. Variables and Attributes
 
-* `x`, `x'` : input instances
-* `eps` : tolerance (ε)
-* `norm` : distance type (e.g. `"L2"`)
-* `output(x)` : model output
+### 7.1 Variables
 
-Variables are **symbolic**:
+Variables represent **symbolic inputs** to the model.
 
-* no execution order
-* no assignment semantics
-* purely declarative
+Examples:
 
+- `x`
+- `x0`
+- `x'` (used in pairwise relations)
+
+They are:
+
+- not assigned
+- not evaluated directly
+- used as symbolic references in constraints
+
+---
+
+### 7.2 Attributes
+
+Attributes allow accessing features of an input:
+
+```forml
+x.feature1
+x.feature1.subfeature
+```
+General form :
+```forml
+<identifier> { "." <identifier> }
+```
+
+### 7.3 Key Distinction
+| Concept     | Meaning                 |
+| ----------- | ----------------------- |
+| `x`         | an input instance       |
+| `x.feature` | a feature of that input |
+
+### 7.4 Notes
+- Variables are scoped implicitly via property expressions (at, check_at, x ~ x', etc.)
+- There is no assignment or mutation
+- All variables are purely symbolic
 ---
 
 ## 8. Design Philosophy
@@ -196,8 +275,8 @@ x ~ x' in neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL()
 ```
 
 Which reads as:
-
+```forml
 > For any pair of inputs `x` and `x'` within an L2 neighborhood of radius 0.01,
 > the model must produce the same classification output.
-
+```
 ---
