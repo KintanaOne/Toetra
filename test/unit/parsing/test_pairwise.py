@@ -12,7 +12,17 @@ from forml.ast.queries import (
     get_identifier_value,
 )
 from forml.parser.parser import parse_forml_code
-
+from test.fixtures.properties_samples import (
+    INVALID_PAIRWISE_MALFORMED_ABSTRACTOR,
+    INVALID_PAIRWISE_MALFORMED_NEIGHBORHOOD,
+    INVALID_PAIRWISE_MISSING_ASSERTION,
+    INVALID_PAIRWISE_MISSING_BOTH_IDENTIFIERS,
+    INVALID_PAIRWISE_MISSING_IDENTIFIER,
+    INVALID_PAIRWISE_MISSING_IDENTIFIER_PRIME,
+    INVALID_PAIRWISE_MISSING_NEIGHBORHOOD_SYNTAX, 
+    VALID_PAIRWISE_WITH_ABSTRACTOR,
+    VALID_MINIMAL_PAIRWISE 
+)
 
 def parse(code: str) -> Tree:
     return parse_forml_code(code)
@@ -25,23 +35,12 @@ def parse(code: str) -> Tree:
 def test_pairwise_basic():
     """ PW1 : Basic pairwise expression """
 
-    code = """
-    model := "path/to/model.onnx"
-    target := MyTargetColumn
-
-    [ROBUSTNESS]:
-    x ~ x' in neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL()
-    """
-
-    tree = parse(code)
+    tree = parse(VALID_MINIMAL_PAIRWISE)
 
     pairwise_expr = get_pairwise_expression(tree)
     neighborhood = get_neighborhood_dict(pairwise_expr)
     assertion = get_assertion_expression(tree)
-
-    identifiers = get_identifiers(pairwise_expr)
-    values = [get_identifier_value(i) for i in identifiers]
-
+        
     assert pairwise_expr is not None
     assert neighborhood is not None
     assert neighborhood["metric"] == "L2"
@@ -52,15 +51,7 @@ def test_pairwise_basic():
 def test_pairwise_with_using():
     """ PW2 : Pairwise with abstractor """
 
-    code = """
-    model := "path/to/model.onnx"
-    target := MyTargetColumn
-
-    [ROBUSTNESS]:
-    x ~ x' in neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL() using Z3
-    """
-
-    tree = parse(code)
+    tree = parse(VALID_PAIRWISE_WITH_ABSTRACTOR)
 
     pairwise_expr = get_pairwise_expression(tree)
     neighborhood = get_neighborhood_dict(pairwise_expr)
@@ -81,106 +72,50 @@ def test_pairwise_with_using():
 #                                             INVALID CASES
 #----------------------------------------------------------------------------------------------------------------------#
 
-def test_pairwise_missing_using():
+def test_pairwise_malformed_abstractor():
     """ PW3 : Missing 'using' keyword """
 
-    code = """
-    model := "path/to/model.onnx"
-    target := MyTargetColumn
-
-    [ROBUSTNESS]:
-    x ~ x' in neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL() Z3
-    """
-
     with pytest.raises(Exception):
-        parse(code)
+        parse(INVALID_PAIRWISE_MALFORMED_ABSTRACTOR)
 
 
 def test_pairwise_missing_neighborhood_syntax():
     """ PW4 : Missing neighborhood """
 
-    code = """
-    model := "path/to/model.onnx"
-    target := MyTargetColumn
-
-    [ROBUSTNESS]:
-    x ~ x' -> CLASSIFICATION.EQUAL() using Z3
-    """
-
     with pytest.raises(Exception):
-        parse(code)
+        parse(INVALID_PAIRWISE_MISSING_NEIGHBORHOOD_SYNTAX)
 
 
 def test_pairwise_malformed_neighborhood():
     """ PW5 : Malformed neighborhood """
 
-    code = """
-    model := "path/to/model.onnx"
-    target := MyTargetColumn
-
-    [ROBUSTNESS]:
-    x ~ x' in neighborhood(L2 eps=0.01) -> CLASSIFICATION.EQUAL() using Z3
-    """
-
     with pytest.raises(Exception):
-        parse(code)
+        parse(INVALID_PAIRWISE_MALFORMED_NEIGHBORHOOD)
 
 
 def test_pairwise_missing_assertion():
     """ PW6 : Missing assertion """
 
-    code = """
-    model := "path/to/model.onnx"
-    target := MyTargetColumn
-
-    [ROBUSTNESS]:
-    x ~ x' in neighborhood(L2, eps=0.01) using Z3
-    """
-
     with pytest.raises(Exception):
-        parse(code)
+        parse(INVALID_PAIRWISE_MISSING_ASSERTION)
 
 
 def test_pairwise_missing_identifier():
     """ PW7 : Missing identifier """
 
-    code = """
-    model := "path/to/model.onnx"
-    target := MyTargetColumn
-
-    [ROBUSTNESS]:
-     ~ x' in neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL() using Z3
-    """
-
     with pytest.raises(Exception):
-        parse(code)
+        parse(INVALID_PAIRWISE_MISSING_IDENTIFIER)
 
 
 def test_pairwise_missing_identifier_prime():
     """ PW8 : Missing identifier prime """
 
-    code = """
-    model := "path/to/model.onnx"
-    target := MyTargetColumn
-
-    [ROBUSTNESS]:
-    x ~  in neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL() using Z3
-    """
-
     with pytest.raises(Exception):
-        parse(code)
+        parse(INVALID_PAIRWISE_MISSING_IDENTIFIER_PRIME)
 
 
 def test_pairwise_missing_both_identifiers():
     """ PW9 : Missing both identifiers """
 
-    code = """
-    model := "path/to/model.onnx"
-    target := MyTargetColumn
-
-    [ROBUSTNESS]:
-     ~  in neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL() using Z3
-    """
-
     with pytest.raises(Exception):
-        parse(code)
+        parse(INVALID_PAIRWISE_MISSING_BOTH_IDENTIFIERS)

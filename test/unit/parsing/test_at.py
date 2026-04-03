@@ -12,6 +12,17 @@ from forml.ast.queries import (
 )
 from forml.parser.parser import parse_forml_code
 
+from test.fixtures.properties_samples import (
+    INVALID_AT_INVALID_DOMAIN_VALUES,
+    INVALID_AT_INVALID_NEIGHBORHOOD_ARGUMENTS,
+    INVALID_AT_MISSING_IDENTIFIER,
+    INVALID_AT_INVALID_DOMAIN_SYNTAX,
+    INVALID_AT_INVALID_NEIGHBORHOOD_SYNTAX,
+    VALID_AT_WITH_DOMAIN,
+    VALID_AT_WITH_NEIGHBORHOOD,
+    VALID_AT_WITH_NEIGHBORHOOD_AND_DOMAIN,
+    VALID_MINIMAL_AT,
+)
 
 def parse(code: str) -> Tree:
     return parse_forml_code(code)
@@ -24,15 +35,7 @@ def parse(code: str) -> Tree:
 def test_at_basic():
     """ AT1 : Test parsing of a basic at expression."""
 
-    code = """
-    model := "model.onnx"
-    target := MyTarget
-
-    [ROBUSTNESS]:
-    at x0 -> CLASSIFICATION.EQUAL()
-    """
-
-    tree = parse(code)
+    tree = parse(VALID_MINIMAL_AT)
 
     at_expr = get_at_expression(tree)
     identifiers = get_identifiers(at_expr)
@@ -45,15 +48,7 @@ def test_at_basic():
 def test_at_with_neighborhood():
     """ AT2 : Test parsing of an at expression with a neighborhood."""
 
-    code = """
-    model := "model.onnx"
-    target := MyTarget
-
-    [ROBUSTNESS]:
-    at x0 in neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL()
-    """
-
-    tree = parse(code)
+    tree = parse(VALID_AT_WITH_NEIGHBORHOOD)
 
     at_expr = get_at_expression(tree)
     neighborhood = get_neighborhood_dict(at_expr)
@@ -67,15 +62,7 @@ def test_at_with_neighborhood():
 def test_at_with_domain():
     """ AT3 : Test parsing of an at expression with a domain."""
 
-    code = """
-    model := "model.onnx"
-    target := MyTarget
-
-    [ROBUSTNESS]:
-    at x0 with sex("male","female") -> CLASSIFICATION.EQUAL()
-    """
-
-    tree = parse(code)
+    tree = parse(VALID_AT_WITH_DOMAIN)
 
     at_expr = get_at_expression(tree)
     domain = get_domain_dict(at_expr)
@@ -89,15 +76,7 @@ def test_at_with_domain():
 def test_at_with_neighborhood_and_domain():
     """ AT4 : Test parsing of an at expression with a neighborhood and domain."""
 
-    code = """
-    model := "model.onnx"
-    target := MyTarget
-
-    [ROBUSTNESS]:
-    at x0 in neighborhood(L2, eps=0.01) with sex("male","female") -> CLASSIFICATION.EQUAL()
-    """
-
-    tree = parse(code)
+    tree = parse(VALID_AT_WITH_NEIGHBORHOOD_AND_DOMAIN)
 
     at_expr = get_at_expression(tree)
     neighborhood = get_neighborhood_dict(at_expr)
@@ -114,69 +93,33 @@ def test_at_with_neighborhood_and_domain():
 
 def test_at_missing_identifier():
     """AT5 — missing identifier"""
-    code = """
-    model := "model.onnx"
-    target := MyTarget
-
-    [ROBUSTNESS]:
-    at -> CLASSIFICATION.EQUAL()
-    """
 
     with pytest.raises(Exception):
-        parse(code)
+        parse(INVALID_AT_MISSING_IDENTIFIER)
 
 
 def test_at_invalid_neighborhood_arguments():
     """AT6 — malformed neighborhood"""
-    code = """
-    model := "model.onnx"
-    target := MyTarget
-
-    [ROBUSTNESS]:
-    at x0 in neighborhood(L2 eps=0.01) -> CLASSIFICATION.EQUAL()
-    """
 
     with pytest.raises(Exception):
-        parse(code)
+        parse(INVALID_AT_INVALID_NEIGHBORHOOD_ARGUMENTS)
 
 
 def test_at_invalid_neighborhood_syntax():
-    """AT7 — malformed neighborhood"""
-    code = """
-    model := "model.onnx"
-    target := MyTarget
-
-    [ROBUSTNESS]:
-    at x0 with neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL()
-    """
 
     with pytest.raises(Exception):
-        parse(code)
+        parse(INVALID_AT_INVALID_NEIGHBORHOOD_SYNTAX)
 
 
-def test_at_invalid_domain_value():
-    """AT8 — invalid domain value"""
-    code = """
-    model := "model.onnx"
-    target := MyTarget
-
-    [ROBUSTNESS]:
-    at x0 with sex(male,female) -> CLASSIFICATION.EQUAL()
-    """
+def test_at_invalid_domain_values():
+    """AT8 — invalid domain values"""
 
     with pytest.raises(Exception):
-        parse(code)
+        parse(INVALID_AT_INVALID_DOMAIN_VALUES)
 
 
 def test_at_invalid_domain_syntax():
     """AT9 — invalid domain syntax"""
-    code = """
-    model := "model.onnx"
-    target := MyTarget
-
-    [ROBUSTNESS]:
-    at x0 in sex("male", "female") -> CLASSIFICATION.EQUAL()
-    """
 
     with pytest.raises(Exception):
-        parse(code)
+        parse(INVALID_AT_INVALID_DOMAIN_SYNTAX)
