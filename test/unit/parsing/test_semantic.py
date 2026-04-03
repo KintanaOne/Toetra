@@ -3,6 +3,14 @@ import pytest
 
 from forml.parser.parser import parse_forml_code
 from forml.ast.queries import get_program_dict
+from test.fixtures.program_samples import INVALID_BODY_MISSING_EXPRESSION, INVALID_BODY_MULTIPLE_EXPRESSION, VALID_PROGRAM_WITH_BODY_MULTIPLE_PROPERTIES
+from test.fixtures.properties_samples import (
+    VALID_AT_WITH_NEIGHBORHOOD,
+    VALID_AT_WITH_NEIGHBORHOOD_AND_DOMAIN,
+    VALID_FORALL_WITH_DOMAIN,
+    VALID_MINIMAL_CHECK_AT,
+    VALID_PAIRWISE_WITH_ABSTRACTOR
+)
 
 
 def parse(code: str) -> Tree:
@@ -14,15 +22,8 @@ def parse(code: str) -> Tree:
 #----------------------------------------------------------------------------------------------------------------------#
 
 def test_program_header():
-    code = """
-    model := "model.onnx"
-    target := MyTarget
 
-    [ROBUSTNESS]:
-    at x0 in neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL()
-    """
-
-    data = get_program_dict(parse(code))
+    data = get_program_dict(parse(VALID_AT_WITH_NEIGHBORHOOD))
 
     assert data["model"] == "model.onnx"
     assert data["target"] == "MyTarget"
@@ -56,15 +57,8 @@ def test_program_with_at():
 #----------------------------------------------------------------------------------------------------------------------#
 
 def test_program_with_check_at():
-    code = """
-    model := "model.onnx"
-    target := MyTarget
 
-    [ROBUSTNESS]:
-    check_at x0 -> x0.a <= 1
-    """
-
-    data = get_program_dict(parse(code))
+    data = get_program_dict(parse(VALID_MINIMAL_CHECK_AT))
     prop = data["properties"][0]
 
     assert prop["mode"] == "check_at"
@@ -75,15 +69,8 @@ def test_program_with_check_at():
 #----------------------------------------------------------------------------------------------------------------------#
 
 def test_program_with_pairwise():
-    code = """
-    model := "model.onnx"
-    target := MyTarget
 
-    [ROBUSTNESS]:
-    x ~ x' in neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL() using Z3
-    """
-
-    data = get_program_dict(parse(code))
+    data = get_program_dict(parse(VALID_PAIRWISE_WITH_ABSTRACTOR))
     prop = data["properties"][0]
 
     assert prop["mode"] == "pairwise"
@@ -97,15 +84,8 @@ def test_program_with_pairwise():
 #----------------------------------------------------------------------------------------------------------------------#
 
 def test_program_with_quantifier():
-    code = """
-    model := "model.onnx"
-    target := MyTarget
 
-    [ROBUSTNESS]:
-    forall with gender("male","female") -> CLASSIFICATION.EQUAL()
-    """
-
-    data = get_program_dict(parse(code))
+    data = get_program_dict(parse(VALID_FORALL_WITH_DOMAIN))
     prop = data["properties"][0]
 
     assert prop["mode"] == "quantifier"
@@ -120,18 +100,8 @@ def test_program_with_quantifier():
 #----------------------------------------------------------------------------------------------------------------------#
 
 def test_program_multiple_properties():
-    code = """
-    model := "model.onnx"
-    target := MyTarget
 
-    [ROBUSTNESS]:
-    at x0 -> CLASSIFICATION.EQUAL()
-
-    [FAIRNESS]:
-    forall with gender("male","female") -> CLASSIFICATION.EQUAL()
-    """
-
-    data = get_program_dict(parse(code))
+    data = get_program_dict(parse(VALID_PROGRAM_WITH_BODY_MULTIPLE_PROPERTIES))
 
     assert len(data["properties"]) == 2
 
@@ -144,16 +114,8 @@ def test_program_multiple_properties():
 #----------------------------------------------------------------------------------------------------------------------#
 
 def test_program_with_domain_and_neighborhood():
-    code = """
-    model := "model.onnx"
-    target := MyTarget
 
-    [ROBUSTNESS]:
-    at x0 in neighborhood(L2, eps=0.01) with sex("male","female")
-    -> CLASSIFICATION.EQUAL()
-    """
-
-    data = get_program_dict(parse(code))
+    data = get_program_dict(parse(VALID_AT_WITH_NEIGHBORHOOD_AND_DOMAIN))
     prop = data["properties"][0]
 
     assert prop["domain"]["name"] == "sex"
@@ -167,26 +129,12 @@ def test_program_with_domain_and_neighborhood():
 #----------------------------------------------------------------------------------------------------------------------#
 
 def test_invalid_multiple_expr():
-    code = """
-    model := "model.onnx"
-    target := MyTarget
-
-    [ROBUSTNESS]:
-    forall at x0 -> CLASSIFICATION.EQUAL()
-    """
 
     with pytest.raises(Exception):
-        parse(code)
+        parse(INVALID_BODY_MULTIPLE_EXPRESSION)
 
 
 def test_invalid_missing_expr():
-    code = """
-    model := "model.onnx"
-    target := MyTarget
-
-    [ROBUSTNESS]:
-    -> CLASSIFICATION.EQUAL()
-    """
 
     with pytest.raises(Exception):
-        parse(code)
+        parse(INVALID_BODY_MISSING_EXPRESSION)

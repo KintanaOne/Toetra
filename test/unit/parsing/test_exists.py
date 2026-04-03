@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 from forml.ast.queries import get_program_dict
 from forml.parser.parser import parse_forml_code
+from test.fixtures.properties_samples import VALID_MINIMAL_EXISTS, VALID_MINIMAL_EXISTS_WITH_DOMAIN
 from test.utils import *
 
 
@@ -14,20 +15,26 @@ def parse(code: str) -> Tree:
 #----------------------------------------------------------------------------------------------------------------------#
 
 def test_exists_basic():
-    """ E1 : Test parsing of a basic exists expression."""
+    """ E1 : Test parsing of an exists expression with domain."""
 
-    code="""
-    # This is a comment
-    # Another comment
-    model := "path/to/model.onnx"
-    target := MyTargetColumn
+    tree = parse(VALID_MINIMAL_EXISTS)
 
-    # 1 exists without using
-    [ROBUSTNESS]:
-    exists with gender("male", "female") -> x.target == 0
-    """
+    program = get_program_dict(tree)
 
-    tree = parse(code)
+    assert program["properties"][0] == {
+        "type": "ROBUSTNESS",
+        "mode": "quantifier",
+        "quantifier": "exists",
+        "domain": None,
+        "neighborhood": None,
+        "abstractor": None,
+    }
+
+
+def test_exists_with_domain():
+    """ E2 : Test parsing of an exists expression with domain."""
+
+    tree = parse(VALID_MINIMAL_EXISTS_WITH_DOMAIN)
 
     program = get_program_dict(tree)
 

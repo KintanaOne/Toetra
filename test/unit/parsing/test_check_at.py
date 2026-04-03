@@ -10,7 +10,13 @@ from forml.ast.queries import (
     get_identifier_value,
 )
 from forml.parser.parser import parse_forml_code
-
+from test.fixtures.properties_samples import (
+    INVALID_CHECK_AT_INVALID_IDENTIFIER,
+    INVALID_CHECK_AT_MISSING_ASSERTION,
+    INVALID_CHECK_AT_MISSING_IDENTIFIER,
+    VALID_CHECK_AT_WITH_COMPLEX_ASSERTION,
+    VALID_MINIMAL_CHECK_AT
+)
 
 def parse(code: str) -> Tree:
     return parse_forml_code(code)
@@ -23,15 +29,7 @@ def parse(code: str) -> Tree:
 def test_check_at_basic():
     """ C1 : Test parsing of a basic check_at expression."""
 
-    code = """
-    model := "model.onnx"
-    target := MyTarget
-
-    [ROBUSTNESS]:
-    check_at x0 -> x0.a <= 1
-    """
-
-    tree = parse(code)
+    tree = parse(VALID_MINIMAL_CHECK_AT)
 
     check_at_expr = get_check_at_expression(tree)
     identifiers = get_identifiers(check_at_expr)
@@ -50,46 +48,22 @@ def test_check_at_basic():
 def test_check_at_missing_identifier():
     """ C2 : Missing identifier """
 
-    code = """
-    model := "model.onnx"
-    target := MyTarget
-
-    [ROBUSTNESS]:
-    check_at -> x0.a <= 1
-    """
-
     with pytest.raises(Exception):
-        parse(code)
+        parse(INVALID_CHECK_AT_MISSING_IDENTIFIER)
 
 
 def test_check_at_missing_assertion():
     """ C3 : Missing assertion """
 
-    code = """
-    model := "model.onnx"
-    target := MyTarget
-
-    [ROBUSTNESS]:
-    check_at x0 ->
-    """
-
     with pytest.raises(Exception):
-        parse(code)
+        parse(INVALID_CHECK_AT_MISSING_ASSERTION)
 
 
 def test_check_at_with_invalid_identifier():
     """ C4 : Invalid identifier """
 
-    code = """
-    model := "model.onnx"
-    target := MyTarget
-
-    [ROBUSTNESS]:
-    check_at 123 -> x0.a <= 1
-    """
-
     with pytest.raises(Exception):
-        parse(code)
+        parse(INVALID_CHECK_AT_INVALID_IDENTIFIER)
 
 
 #----------------------------------------------------------------------------------------------------------------------#
@@ -99,16 +73,7 @@ def test_check_at_with_invalid_identifier():
 def test_check_at_with_complex_assertion():
     """ C5 : Complex logical assertion """
 
-    code = """
-    model := "model.onnx"
-    target := MyTarget
-
-    [ROBUSTNESS]:
-    check_at x0 ->
-        x0.a <= 1 OR x0.b <= 2 AND x0.c <= 3
-    """
-
-    tree = parse(code)
+    tree = parse(VALID_CHECK_AT_WITH_COMPLEX_ASSERTION)
 
     check_at_expr = get_check_at_expression(tree)
     assertion = get_assertion_expression(tree)
