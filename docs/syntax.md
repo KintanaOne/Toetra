@@ -16,6 +16,7 @@ In FORML, the **scope of a property is determined by its syntactic form**.
 | Syntactic form | Induced scope | Semantics                                       |
 | -------------- | ------------- | ----------------------------------------------- |
 | `forall`       | Global        | Property must hold for all valid inputs         |
+| `exists`       | Global        | Property must hold for at least one valid inputs         |
 | `at x`         | Local region  | Property must hold in a neighborhood around `x` |
 | `check_at x`   | Pointwise     | Property must hold for a specific input `x`     |
 | `x ~ x'`       | Pairwise      | Property relates two inputs `x` and `x'`        |

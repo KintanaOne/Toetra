@@ -5,4 +5,4 @@ target := MyTargetColumn
 
 # 1 forall without using
 [ROBUSTNESS]:
-forall with gender("male", "female") -> x.target == 0
+forall with gender("male", "female") => x.target == 0

@@ -14,7 +14,7 @@ VALID_PROGRAM_WITH_HEADER_COMMENTS = """
 
     # between declarations
     [ROBUSTNESS]:
-    x ~ x' in neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL()
+    x ~ x' in neighborhood(L2, eps=0.01) => CLASSIFICATION.EQUAL()
     """
 
 
@@ -23,7 +23,7 @@ VALID_PROGRAM_WITH_BODY_SIMPLE_ASSERTION = """
     target := MyTargetColumn
 
     [ROBUSTNESS]:
-    x ~ x' in neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL()
+    x ~ x' in neighborhood(L2, eps=0.01) => CLASSIFICATION.EQUAL()
     """
 
 VALID_PROGRAM_WITH_BODY_MULTIPLE_PROPERTIES = """
@@ -31,10 +31,10 @@ VALID_PROGRAM_WITH_BODY_MULTIPLE_PROPERTIES = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    at x0 -> CLASSIFICATION.EQUAL()
+    at x0 => CLASSIFICATION.EQUAL()
 
     [FAIRNESS]:
-    forall with gender("male","female") -> CLASSIFICATION.EQUAL()
+    forall with gender("male","female") => CLASSIFICATION.EQUAL()
     """
 
 
@@ -43,7 +43,7 @@ VALID_PROGRAM_WITH_ABSTRACTOR = """
     target := MyTargetColumn
 
     [ROBUSTNESS]:
-    x ~ x' in neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL() using eran(param1="a")
+    x ~ x' in neighborhood(L2, eps=0.01) => CLASSIFICATION.EQUAL() using eran(param1="a")
     """
 
 #----------------------------------------------------------------------------------------------------------------------#
@@ -54,20 +54,20 @@ INVALID_HEADER_MISSING_MODEL = """
     target := MyTargetColumn
 
     [ROBUSTNESS]:
-    x ~ x' in neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL()
+    x ~ x' in neighborhood(L2, eps=0.01) => CLASSIFICATION.EQUAL()
     """
 
 INVALID_HEADER_MISSING_TARGET = """
     model := "model.onnx"
 
     [ROBUSTNESS]:
-    x ~ x' in neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL()
+    x ~ x' in neighborhood(L2, eps=0.01) => CLASSIFICATION.EQUAL()
     """
 
 
 INVALID_HEADER_MISSING_BOTH = """
     [ROBUSTNESS]:
-    x ~ x' in neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL()
+    x ~ x' in neighborhood(L2, eps=0.01) => CLASSIFICATION.EQUAL()
     """
 
 
@@ -76,7 +76,7 @@ INVALID_HEADER_MODEL_INVALID_TYPE = """
     target := MyTargetColumn
 
     [ROBUSTNESS]:
-    x ~ x' in neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL()
+    x ~ x' in neighborhood(L2, eps=0.01) => CLASSIFICATION.EQUAL()
     """
 
 
@@ -85,7 +85,7 @@ INVALID_HEADER_TARGET_INVALID_TYPE = """
     target := 12345
 
     [ROBUSTNESS]:
-    x ~ x' in neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL()
+    x ~ x' in neighborhood(L2, eps=0.01) => CLASSIFICATION.EQUAL()
     """
 
 
@@ -101,7 +101,7 @@ INVALID_BODY_SYNTAX_ERROR = """
     target := MyTargetColumn
 
     [ROBUSTNESS]:
-    x ~ x' in neighborhood(L2, eps=0.01) CLASSIFICATION.EQUAL()   # missing ->
+    x ~ x' in neighborhood(L2, eps=0.01) CLASSIFICATION.EQUAL()   # missing =>
     """
 
 INVALID_BODY_INVALID_ASSERTION = """
@@ -109,7 +109,7 @@ INVALID_BODY_INVALID_ASSERTION = """
     target := MyTargetColumn
 
     [ROBUSTNESS]:
-    x ~ x' in neighborhood(L2, eps=0.01) -> CLASSIFICATION.INVALID()
+    x ~ x' in neighborhood(L2, eps=0.01) => CLASSIFICATION.INVALID()
     """
 
 
@@ -118,7 +118,7 @@ INVALID_BODY_MULTIPLE_EXPRESSION = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    forall at x0 -> CLASSIFICATION.EQUAL()
+    forall at x0 => CLASSIFICATION.EQUAL()
     """
 
 INVALID_BODY_MISSING_EXPRESSION = """
@@ -126,7 +126,7 @@ INVALID_BODY_MISSING_EXPRESSION = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    -> CLASSIFICATION.EQUAL()
+    => CLASSIFICATION.EQUAL()
     """
 
 

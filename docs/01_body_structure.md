@@ -36,10 +36,10 @@ Each property is composed of four main blocks:
 
 | Block         | Description                                                                    | Example                            |
 | ------------- | ------------------------------------------------------------------------------ | ---------------------------------- |
-| **Universal** | Applies to **all elements** of a set; allows global generalization             | `forall x in hyperball(L2,0.01)`   |
-| **Anchor**    | Focused on a **specific reference point** `x₀`, optionally with a neighborhood | `at x0 in hyperball(L2,0.01)`      |
+| **Quantifier** | Applies to **all elements** of a set; allows global generalization             | `forall with feature("valA", "valB")` OR `exists with feature("valA", "valB")`|
+| **Anchor**    | Focused on a **specific reference point** `x₀`, optionally with a neighborhood | `at x0 in neighborhood(L2,0.01)`      |
 | **Check**     | Strictly **pointwise**; evaluated exactly at one point                         | `check_at x0`                      |
-| **Pairwise**  | Relational property between two entities                                       | `x1 ~ x2 with distance(x1,x2,0.5)` |
+| **Pairwise**  | Relational property between two entities                                       | `x1 ~ x2 in neighborhood(L2,0.01)` ` |
 
 ---
 
@@ -64,10 +64,10 @@ Each property is composed of four main blocks:
 
 | Property Type  | Global Syntax                                                          | Global Semantics                                                             | Local Syntax (`x₀`)                                                    | Local Semantics                                                                      | Support Tool / Backend | `.forml` Example                                                                           |
 | -------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ---------------------- | ------------------------------------------------------------------------------------------ |
-| **ROBUSTNESS** | `[ROBUSTNESS]: forall in hyperball(L2,0.01) -> CLASSIFICATION.EQUAL()` | All inputs in the set must yield the same class under small L2 perturbations | `[ROBUSTNESS]: at x0 in hyperball(L2,0.01) -> CLASSIFICATION.EQUAL()`    | For a specific input `x₀`, its perturbed neighbors must yield same prediction        | ERAN, ZONOTOPE         | `[ROBUSTNESS]: at x0 in hyperball(L2,0.01) -> CLASSIFICATION.EQUAL() using ERAN("zonotope")` |
+| **ROBUSTNESS** | `[ROBUSTNESS]: forall in neighborhood(L2,0.01) -> CLASSIFICATION.EQUAL()` | All inputs in the set must yield the same class under small L2 perturbations | `[ROBUSTNESS]: at x0 in neighborhood(L2,0.01) -> CLASSIFICATION.EQUAL()`    | For a specific input `x₀`, its perturbed neighbors must yield same prediction        | ERAN, ZONOTOPE         | `[ROBUSTNESS]: at x0 in neighborhood(L2,0.01) -> CLASSIFICATION.EQUAL() using ERAN("zonotope")` |
 | **FAIRNESS**   | `[FAIRNESS]: forall in groupA -> CLASSIFICATION.EQUAL()`               | All inputs in groupA must satisfy equality/fairness constraints              | `[FAIRNESS]: at x0 in groupA -> CLASSIFICATION.EQUAL()`                  | For a specific input `x₀` in groupA, its neighborhood or point must satisfy fairness | Z3, Custom             | `[FAIRNESS]: at x0 in groupA -> CLASSIFICATION.EQUAL()`                                      |
-| **STABILITY**  | `[STABILITY]: forall in hyperball(L2,0.05) -> CLASSIFICATION.EQUAL()`  | Small perturbations of all inputs should not change predictions              | `[STABILITY]: at x0 in hyperball(L2,0.05) -> CLASSIFICATION.EQUAL()`     | Only the perturbations around `x₀` must preserve prediction                          | ERAN, Zonotope         | `[STABILITY]: at x0 in hyperball(L2,0.05) -> CLASSIFICATION.EQUAL()`                         |
-| **PAIRWISE**   | `[PAIRWISE]: x1 ~ x2 with distance(x1,x2,0.5) -> CLASSIFICATION.EQUAL()` | All pairs of inputs within distance threshold must satisfy assertion         | `[PAIRWISE]: x1 ~ x2 with distance(x1,x2,0.5) -> CLASSIFICATION.EQUAL()` | Only the selected pair `x₁`, `x₂` is checked                                         | ERAN, Custom           | `[PAIRWISE]: x1 ~ x2 with distance(x1,x2,0.5) -> CLASSIFICATION.EQUAL()`                     |
+| **STABILITY**  | `[STABILITY]: forall in neighborhood(L2,0.05) -> CLASSIFICATION.EQUAL()`  | Small perturbations of all inputs should not change predictions              | `[STABILITY]: at x0 in neighborhood(L2,0.05) -> CLASSIFICATION.EQUAL()`     | Only the perturbations around `x₀` must preserve prediction                          | ERAN, Zonotope         | `[STABILITY]: at x0 in neighborhood(L2,0.05) -> CLASSIFICATION.EQUAL()`                         |
+| **PAIRWISE**   | `x ~ x' in neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL() using Z3` | All pairs of inputs within distance threshold must satisfy assertion         | `x ~ x' in neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL() using Z3` | Only the selected pair `x₁`, `x₂` is checked                                         | ERAN, Custom           | `x ~ x' in neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL() using Z3`                     |
 | **POINTWISE**  | `[POINTWISE]: check_at x0 -> CLASSIFICATION.EQUAL()`                     | Assertion evaluated exactly at one point, no generalization                  | `[POINTWISE]: check_at x0 -> CLASSIFICATION.EQUAL()`                     | Same as global since it’s strictly one point                                         | Any backend            | `[POINTWISE]: check_at x0 -> CLASSIFICATION.EQUAL()`                                         |
 
 ---
@@ -76,11 +76,11 @@ Each property is composed of four main blocks:
 
 ```
 [ROBUSTNESS] :
-at x0 in hyperball(L2,0.01) -> CLASSIFICATION.EQUAL() using ERAN("zonotope")
+at x0 in neighborhood(L2,0.01) -> CLASSIFICATION.EQUAL() using ERAN("zonotope")
 ```
 
 * **Property Type** → `ROBUSTNESS`
-* **Property Expression** → `at x0 in hyperball(L2,0.01)` (local focus)
+* **Property Expression** → `at x0 in neighborhood(L2,0.01)` (local focus)
 * **Assertion** → `CLASSIFICATION.EQUAL()`
 * **Backend** → `ERAN("zonotope")`
 
