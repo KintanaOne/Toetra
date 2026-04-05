@@ -34,15 +34,8 @@ def test_program_header():
 #----------------------------------------------------------------------------------------------------------------------#
 
 def test_program_with_at():
-    code = """
-    model := "model.onnx"
-    target := MyTarget
 
-    [ROBUSTNESS]:
-    at x0 in neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL()
-    """
-
-    data = get_program_dict(parse(code))
+    data = get_program_dict(parse(VALID_AT_WITH_NEIGHBORHOOD))
     prop = data["properties"][0]
 
     assert prop["type"] == "ROBUSTNESS"

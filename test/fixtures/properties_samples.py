@@ -13,7 +13,7 @@ VALID_MINIMAL_AT = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    at x0 -> CLASSIFICATION.EQUAL()
+    at x0 => CLASSIFICATION.EQUAL()
     """
 
 # AT with neighborhood
@@ -22,7 +22,7 @@ VALID_AT_WITH_NEIGHBORHOOD = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    at x0 in neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL()
+    at x0 in neighborhood(L2, eps=0.01) => CLASSIFICATION.EQUAL()
     """
 
 VALID_AT_WITH_DOMAIN = """
@@ -30,7 +30,7 @@ VALID_AT_WITH_DOMAIN = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    at x0 with sex("male","female") -> CLASSIFICATION.EQUAL()
+    at x0 with sex("male","female") => CLASSIFICATION.EQUAL()
     """
 
 # AT with neighborhood and domain
@@ -39,7 +39,7 @@ VALID_AT_WITH_NEIGHBORHOOD_AND_DOMAIN = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    at x0 in neighborhood(L2, eps=0.01) with sex("male","female") -> CLASSIFICATION.EQUAL()
+    at x0 in neighborhood(L2, eps=0.01) with sex("male","female") => CLASSIFICATION.EQUAL()
     """
 
 # AT with neighborhood and domain and USING clause
@@ -48,7 +48,7 @@ VALID_AT_WITH_NEIGHBORHOOD_AND_DOMAIN_AND_USING = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    at x0 in neighborhood(L2, eps=0.01) with sex("male","female") -> CLASSIFICATION.EQUAL() using Z3
+    at x0 in neighborhood(L2, eps=0.01) with sex("male","female") => CLASSIFICATION.EQUAL() using Z3
     """
 
 # -------------------------------------------- CHECK_AT ---------------------------------------------#
@@ -58,7 +58,7 @@ VALID_MINIMAL_CHECK_AT = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    check_at x0 -> x0.a <= 1
+    check_at x0 => x0.a <= 1
     """
 
 # -------------------------------------------- PAIRWISE ---------------------------------------------#
@@ -68,7 +68,7 @@ VALID_MINIMAL_PAIRWISE = """
     target := MyTargetColumn
 
     [ROBUSTNESS]:
-    x ~ x' in neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL()
+    x ~ x' in neighborhood(L2, eps=0.01) => CLASSIFICATION.EQUAL()
     """
 
 VALID_PAIRWISE_WITH_ABSTRACTOR = """
@@ -76,7 +76,7 @@ VALID_PAIRWISE_WITH_ABSTRACTOR = """
     target := MyTargetColumn
 
     [ROBUSTNESS]:
-    x ~ x' in neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL() using Z3
+    x ~ x' in neighborhood(L2, eps=0.01) => CLASSIFICATION.EQUAL() using Z3
     """
 
 # -------------------------------------------- FORALL ---------------------------------------------#
@@ -86,7 +86,7 @@ VALID_MINIMAL_FORALL = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    forall -> x.target == 0
+    forall => x.target == 0
     """
 
 
@@ -95,7 +95,7 @@ VALID_FORALL_WITH_DOMAIN = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    forall with gender("male", "female") -> x.target == 0
+    forall with gender("male", "female") => x.target == 0
     """
 
 
@@ -106,7 +106,7 @@ VALID_MINIMAL_EXISTS = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    exists -> x.target == 0
+    exists => x.target == 0
     """
 
 
@@ -115,7 +115,7 @@ VALID_MINIMAL_EXISTS_WITH_DOMAIN = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    exists with gender("male", "female") -> x.target == 0
+    exists with gender("male", "female") => x.target == 0
     """
 
 
@@ -130,7 +130,7 @@ INVALID_AT_MISSING_IDENTIFIER = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    at -> CLASSIFICATION.EQUAL()
+    at => CLASSIFICATION.EQUAL()
     """
 
 
@@ -139,7 +139,7 @@ INVALID_AT_INVALID_NEIGHBORHOOD_ARGUMENTS = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    at x0 in neighborhood(L2 eps=0.01) -> CLASSIFICATION.EQUAL()
+    at x0 in neighborhood(L2 eps=0.01) => CLASSIFICATION.EQUAL()
     """
 
 
@@ -148,7 +148,7 @@ INVALID_AT_INVALID_NEIGHBORHOOD_SYNTAX = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    at x0 with neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL()
+    at x0 with neighborhood(L2, eps=0.01) => CLASSIFICATION.EQUAL()
     """
 
 
@@ -157,7 +157,7 @@ INVALID_AT_INVALID_DOMAIN_VALUES = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    at x0 with sex(male,female) -> CLASSIFICATION.EQUAL()
+    at x0 with sex(male,female) => CLASSIFICATION.EQUAL()
     """
 
 
@@ -166,7 +166,7 @@ INVALID_AT_INVALID_DOMAIN_SYNTAX = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    at x0 in sex("male", "female") -> CLASSIFICATION.EQUAL()
+    at x0 in sex("male", "female") => CLASSIFICATION.EQUAL()
     """
 
 # -------------------------------------------- CHECK_AT ---------------------------------------------#
@@ -176,7 +176,7 @@ INVALID_CHECK_AT_MISSING_IDENTIFIER = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    check_at -> x0.a <= 1
+    check_at => x0.a <= 1
     """
 
 
@@ -185,7 +185,7 @@ INVALID_CHECK_AT_MISSING_ASSERTION = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    check_at x0 ->
+    check_at x0 =>
     """
 
 
@@ -194,7 +194,7 @@ INVALID_CHECK_AT_INVALID_IDENTIFIER = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    check_at 123 -> x0.a <= 1
+    check_at 123 => x0.a <= 1
     """
 
 # -------------------------------------------- PAIRWISE ---------------------------------------------#
@@ -204,7 +204,7 @@ INVALID_PAIRWISE_MALFORMED_ABSTRACTOR = """
     target := MyTargetColumn
 
     [ROBUSTNESS]:
-    x ~ x' in neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL() Z3
+    x ~ x' in neighborhood(L2, eps=0.01) => CLASSIFICATION.EQUAL() Z3
     """
 
 
@@ -213,7 +213,7 @@ INVALID_PAIRWISE_MISSING_NEIGHBORHOOD_SYNTAX = """
     target := MyTargetColumn
 
     [ROBUSTNESS]:
-    x ~ x' -> CLASSIFICATION.EQUAL() using Z3
+    x ~ x' => CLASSIFICATION.EQUAL() using Z3
     """
 
 
@@ -222,7 +222,7 @@ INVALID_PAIRWISE_MALFORMED_NEIGHBORHOOD = """
     target := MyTargetColumn
 
     [ROBUSTNESS]:
-    x ~ x' in neighborhood(L2 eps=0.01) -> CLASSIFICATION.EQUAL() using Z3
+    x ~ x' in neighborhood(L2 eps=0.01) => CLASSIFICATION.EQUAL() using Z3
     """
 
 
@@ -240,7 +240,7 @@ INVALID_PAIRWISE_MISSING_IDENTIFIER = """
     target := MyTargetColumn
 
     [ROBUSTNESS]:
-     ~ x' in neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL() using Z3
+     ~ x' in neighborhood(L2, eps=0.01) => CLASSIFICATION.EQUAL() using Z3
     """
 
 
@@ -249,7 +249,7 @@ INVALID_PAIRWISE_MISSING_IDENTIFIER_PRIME = """
     target := MyTargetColumn
 
     [ROBUSTNESS]:
-    x ~  in neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL() using Z3
+    x ~  in neighborhood(L2, eps=0.01) => CLASSIFICATION.EQUAL() using Z3
     """
 
 
@@ -258,7 +258,7 @@ INVALID_PAIRWISE_MISSING_BOTH_IDENTIFIERS = """
     target := MyTargetColumn
 
     [ROBUSTNESS]:
-     ~  in neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL() using Z3
+     ~  in neighborhood(L2, eps=0.01) => CLASSIFICATION.EQUAL() using Z3
     """
 
 
@@ -276,7 +276,7 @@ VALID_CHECK_AT_WITH_COMPLEX_ASSERTION = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    check_at x0 ->
+    check_at x0 =>
         x0.a <= 1 OR x0.b <= 2 AND x0.c <= 3
     """
 

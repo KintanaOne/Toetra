@@ -229,6 +229,7 @@ def ebnf_to_lark(ebnf_text: str) -> str:
         "",
         "# === TOKENS ===",
         "PAIRWISE.2 : /[A-Za-z][A-Za-z0-9_]*\\s*~\\s*[A-Za-z][A-Za-z0-9_']*/",
+        "IMPLIES : \"=>\" ",
         "",
     ]
 

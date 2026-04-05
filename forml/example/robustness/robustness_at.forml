@@ -5,4 +5,4 @@ target := MyTargetColumn
 
 # at without using
 [ROBUSTNESS]:
-at x0 in neighborhood(L2, eps=0.01) with sex("male","female") -> CLASSIFICATION.EQUAL()
+at x0 in neighborhood(L2, eps=0.01) with sex("male","female") => CLASSIFICATION.EQUAL()

@@ -5,4 +5,4 @@ target := MyTargetColumn
 
 # check_at without using
 [ROBUSTNESS]:
-check_at x0 -> x0.feature1 <= 0
+check_at x0 => x0.feature1 <= 0

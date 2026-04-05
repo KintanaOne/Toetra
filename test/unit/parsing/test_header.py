@@ -13,7 +13,7 @@ from test.fixtures.program_samples import (
     INVALID_HEADER_MISSING_TARGET,
     INVALID_HEADER_MODEL_INVALID_TYPE,
     INVALID_HEADER_TARGET_INVALID_TYPE,
-    VALID_HEADER_WITH_COMMENTS
+    VALID_PROGRAM_WITH_HEADER_COMMENTS,
 )
 from test.fixtures.properties_samples import VALID_MINIMAL_PAIRWISE
 
@@ -65,7 +65,7 @@ def test_header_invalid_target_type():
 
 def test_header_with_comments():
 
-    tree = parse(VALID_HEADER_WITH_COMMENTS)
+    tree = parse(VALID_PROGRAM_WITH_HEADER_COMMENTS)
 
     assert get_header(tree) is not None
     assert get_model_declaration(tree) is not None

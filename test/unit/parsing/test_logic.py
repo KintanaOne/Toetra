@@ -13,6 +13,16 @@ from forml.ast.queries import (
     get_logic_not,
     get_or_operands,
 )
+from test.fixtures.logic_samples import (
+    INVALID_LOGIC_SYNTAX,
+    INVALID_PARENTHESES,
+    NESTED_IMPLICATION_PROPERTY,
+    NESTED_IMPLICATION_PROPERTY,
+    NOT_PRECEDENCE_PROPERTY,
+    OPERATOR_PRECEDENCE_PROPERTY,
+    PARENTHESES_PRECEDENCE_PROPERTY,
+    SIMPLE_LOGIC_PROPERTY
+)
 
 
 def parse(code: str) -> Tree:
@@ -24,13 +34,7 @@ def parse(code: str) -> Tree:
 # ----------------------------------------------------------------------------------------------------------------------
 
 def test_simple_logic_in_property():
-    tree = parse("""
-    model := "path/to/model.onnx"
-    target := MyTarget
-
-    [ROBUSTNESS]:
-    at x0 -> CLASSIFICATION.EQUAL()
-    """)
+    tree = parse(SIMPLE_LOGIC_PROPERTY)
 
     assert tree is not None
 
@@ -43,14 +47,8 @@ def test_logic_operator_precedence():
     """
     A OR (B AND C)
     """
-    tree = parse("""
-    model := "model.onnx"
-    target := MyTarget
 
-    [ROBUSTNESS]:
-    check_at x0 ->
-        x0.a <= 1 OR x0.b <= 2 AND x0.c <= 3
-    """)
+    tree = parse(OPERATOR_PRECEDENCE_PROPERTY)
 
     assertion = get_assertion_expression(tree)
 
@@ -68,13 +66,7 @@ def test_logic_parentheses_override_precedence():
     """
     (A OR B) AND C
     """
-    tree = parse("""
-    model := "model.onnx"
-    target := MyTarget
-
-    [ROBUSTNESS]:
-    check_at x0 -> (x0.a <= 1 OR x0.b <= 2) AND x0.c <= 3
-    """)
+    tree = parse(PARENTHESES_PRECEDENCE_PROPERTY)
 
     assertion = get_assertion_expression(tree)
 
@@ -93,14 +85,7 @@ def test_logic_not_precedence():
     """
     NOT A AND B => (NOT A) AND B
     """
-    tree = parse("""
-    model := "model.onnx"
-    target := MyTarget
-
-    [ROBUSTNESS]:
-    check_at x0 ->
-        NOT x0.a <= 1 AND x0.b <= 2
-    """)
+    tree = parse(NOT_PRECEDENCE_PROPERTY)
 
     assertion = get_assertion_expression(tree)
 
@@ -121,7 +106,7 @@ def test_logic_implication():
     target := MyTarget
 
     [ROBUSTNESS]:
-    check_at x0 ->
+    check_at x0 =>
         x0.a <= 1 -> x0.b <= 2
     """)
 
@@ -137,14 +122,8 @@ def test_logic_implication():
 
 
 def test_logic_nested_implication():
-    tree = parse("""
-    model := "model.onnx"
-    target := MyTarget
-
-    [ROBUSTNESS]:
-    check_at x0 ->
-        x0.a <= 1 -> x0.b <= 2 -> x0.c <= 3
-    """)
+    
+    tree = parse(NESTED_IMPLICATION_PROPERTY)
 
     assertion = get_assertion_expression(tree)
 
@@ -161,23 +140,9 @@ def test_logic_nested_implication():
 
 def test_invalid_logic_syntax():
     with pytest.raises(UnexpectedToken):
-        parse("""
-        model := "model.onnx"
-        target := MyTarget
-
-        [ROBUSTNESS]:
-        check_at x0 ->
-            x0.a <= OR x0.b <= 2
-        """)
+        parse(INVALID_LOGIC_SYNTAX)
 
 
 def test_invalid_parentheses():
     with pytest.raises(UnexpectedToken):
-        parse("""
-        model := "model.onnx"
-        target := MyTarget
-
-        [ROBUSTNESS]:
-        check_at x0 ->
-            (x0.a <= 1 OR x0.b <= 2
-        """)
+        parse(INVALID_PARENTHESES)

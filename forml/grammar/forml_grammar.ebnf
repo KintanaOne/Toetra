@@ -120,9 +120,11 @@ domain = "with" , identifier , "(" , value , { "," , value } , ")" ;
 (* === PROPERTY DEFINITION ================================= *)
 (* ========================================================= *)
 
+implies_token = IMPLIES ;
+
 property_type = ? official_properties ? | ? uppercase_string ? ;
 
-property = "[" , property_type , "]" , ":" , property_expr , "->" , assertion ;
+property = "[" , property_type , "]" , ":" , property_expr , implies_token , assertion ;
 
 property_section = property , [ abstractor ] ;
 

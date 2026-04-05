@@ -75,6 +75,7 @@ GTE : ">="
 
 # === TOKENS ===
 PAIRWISE.2 : /[A-Za-z][A-Za-z0-9_]*\s*~\s*[A-Za-z][A-Za-z0-9_']*/
+IMPLIES : "=>" 
 
 # === BASIC CHARACTER DEFINITIONS ===
 CHAR :  /[a-zA-Z]/
@@ -198,9 +199,11 @@ domain :  "with" identifier "(" value ( "," value )* ")"
 # === PROPERTY DEFINITION =================================
 # =========================================================
 
+implies_token :  IMPLIES 
+
 property_type :  ( ROBUSTNESS | STABILITY | FAIRNESS | MONOTONICITY | BOUND | LOGIC ) | /[A-Z]+/ 
 
-property :  "[" property_type "]" ":" property_expr "->" assertion 
+property :  "[" property_type "]" ":" property_expr implies_token assertion 
 
 property_section :  property ( abstractor )? 
 
