@@ -1,6 +1,10 @@
 from pathlib import Path
 from lark import Lark
 
+from test.fixtures.logic_samples import OPERATOR_PRECEDENCE_PROPERTY, SIMPLE_LOGIC_PROPERTY, VALID_TRIPLE_OR_PROPERTY
+from test.fixtures.program_samples import VALID_PROGRAM_WITH_ABSTRACTOR
+from test.fixtures.properties_samples import VALID_MINIMAL_AT, VALID_MINIMAL_CHECK_AT, VALID_MINIMAL_PAIRWISE
+
 # Load grammar file
 GRAMMAR_PATH = Path(__file__).parent.parent / "grammar/forml_grammar.lark"
 
@@ -23,12 +27,12 @@ def parse_forml_code(code: str):
     return forml_parser.parse(code)
 
 if __name__ == "__main__":
-    test_path = Path(__file__).parent.parent / "/mnt/c/Users/tinar/KintanaOne/FORML/forml/example/robustness/robustness_forall.forml"
-    print(test_path)
+    test_path = Path(__file__).parent.parent / "/mnt/c/Users/tinar/KintanaOne/FORML/forml/example/robustness/robustness_pairwise.forml"
     if test_path.exists():
         with open(test_path, "r", encoding="utf-8") as f:
             code = f.read()
-        tree = parse_forml_code(code)
+        tree = parse_forml_code(VALID_TRIPLE_OR_PROPERTY)
         print(tree.pretty())
+        print(tree)
     else:
         print("No example.forml file found.")

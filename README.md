@@ -45,11 +45,13 @@ The model must predict the same class for all small perturbations around x0.
 
 Full documentation is available in the docs/ directory:
 
-- [properties.md](docs/properties.md) — semantic definition of property types
-
 - [scopes.md](docs/scope.md) — global, local and pairwise scopes
 
-- syntax.md — language syntax
+- [syntax.md — language syntax](docs/syntax.md)
+  
+- [semantic.md](docs/semantics.md)
+  
+- [properties.md](docs/properties.md) — semantic definition of property types
 
 - backends.md — supported verification tools
 

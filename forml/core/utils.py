@@ -70,6 +70,8 @@ def get_token_value(node: Node):
         child = node.children[0]
         if isinstance(child, Token):
             return child.value
+        if isinstance(child, Tree):
+            return get_token_value(child)
 
     # 2. fallback scan
     for child in node.children:

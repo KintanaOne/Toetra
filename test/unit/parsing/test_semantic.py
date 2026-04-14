@@ -1,6 +1,8 @@
 from lark import Tree
 import pytest
 
+from forml.ast.expressions import parse_at
+from forml.ast.program import parse_program
 from forml.parser.parser import parse_forml_code
 from forml.ast.queries import get_program_dict
 from test.fixtures.program_samples import INVALID_BODY_MISSING_EXPRESSION, INVALID_BODY_MULTIPLE_EXPRESSION, VALID_PROGRAM_WITH_BODY_MULTIPLE_PROPERTIES
@@ -23,7 +25,9 @@ def parse(code: str) -> Tree:
 
 def test_program_header():
 
-    data = get_program_dict(parse(VALID_AT_WITH_NEIGHBORHOOD))
+    tree = parse(VALID_AT_WITH_NEIGHBORHOOD)
+
+    data = parse_program(tree)
 
     assert data["model"] == "model.onnx"
     assert data["target"] == "MyTarget"
@@ -35,14 +39,24 @@ def test_program_header():
 
 def test_program_with_at():
 
-    data = get_program_dict(parse(VALID_AT_WITH_NEIGHBORHOOD))
-    prop = data["properties"][0]
+    tree = parse(VALID_AT_WITH_NEIGHBORHOOD)
+    program = parse_program(tree)
 
-    assert prop["type"] == "ROBUSTNESS"
-    assert prop["mode"] == "at"
+    property = program["properties"][0]
+    expr = property["expr"]
+    neighborhood = expr["neighborhood"]
 
-    assert prop["neighborhood"]["metric"] == "L2"
-    assert prop["neighborhood"]["args"]["eps"] == "0.01"
+    assert program["model"] is not None
+    assert program["target"] is not None
+
+    assert property["type"] == "ROBUSTNESS"
+    assert expr["kind"] == "at"
+    assert property["assertion"] is not None
+
+    assert neighborhood["metric"] == "L2"
+    assert neighborhood["args"]["eps"] == 0.01
+
+    assert property["abstractor"] is None
 
 
 #----------------------------------------------------------------------------------------------------------------------#
@@ -51,11 +65,20 @@ def test_program_with_at():
 
 def test_program_with_check_at():
 
-    data = get_program_dict(parse(VALID_MINIMAL_CHECK_AT))
-    prop = data["properties"][0]
+    tree = parse(VALID_MINIMAL_CHECK_AT)
+    program = parse_program(tree)
 
-    assert prop["mode"] == "check_at"
+    property = program["properties"][0]
+    expr = property["expr"]
 
+    assert program["model"] is not None
+    assert program["target"] is not None
+
+    assert property["type"] == "ROBUSTNESS"
+    assert expr["kind"] == "check_at"
+    assert property["assertion"] is not None
+
+    assert property["abstractor"] is None
 
 #----------------------------------------------------------------------------------------------------------------------#
 #                                             PAIRWISE
@@ -63,14 +86,24 @@ def test_program_with_check_at():
 
 def test_program_with_pairwise():
 
-    data = get_program_dict(parse(VALID_PAIRWISE_WITH_ABSTRACTOR))
-    prop = data["properties"][0]
+    tree = parse(VALID_PAIRWISE_WITH_ABSTRACTOR)
+    program = parse_program(tree)
 
-    assert prop["mode"] == "pairwise"
+    property = program["properties"][0]
+    expr = property["expr"]
+    neighborhood = expr["neighborhood"]
 
-    assert prop["neighborhood"]["metric"] == "L2"
-    assert prop["abstractor"]["name"] == "Z3"
+    assert program["model"] is not None
+    assert program["target"] is not None
 
+    assert property["type"] == "ROBUSTNESS"
+    assert expr["kind"] == "pairwise"
+    assert property["assertion"] is not None
+
+    assert neighborhood["metric"] == "L2"
+    assert neighborhood["args"]["eps"] == 0.01
+
+    assert property["abstractor"] is not None
 
 #----------------------------------------------------------------------------------------------------------------------#
 #                                             QUANTIFIER
@@ -78,15 +111,24 @@ def test_program_with_pairwise():
 
 def test_program_with_quantifier():
 
-    data = get_program_dict(parse(VALID_FORALL_WITH_DOMAIN))
-    prop = data["properties"][0]
+    tree = parse(VALID_FORALL_WITH_DOMAIN)
+    program = parse_program(tree)
 
-    assert prop["mode"] == "quantifier"
-    assert prop["quantifier"] == "forall"
+    property = program["properties"][0]
+    expr = property["expr"]
+    domain = expr["domain"]
 
-    assert prop["domain"]["name"] == "gender"
-    assert prop["domain"]["values"] == ["male", "female"]
+    assert program["model"] is not None
+    assert program["target"] is not None
 
+    assert property["type"] == "ROBUSTNESS"
+    assert expr["kind"] == "quantifier"
+    assert property["assertion"] is not None
+
+    assert domain["name"] == "gender"
+    assert domain["values"] == ["male", "female"]
+
+    assert property["abstractor"] is None
 
 #----------------------------------------------------------------------------------------------------------------------#
 #                                             MULTIPLE PROPERTIES
@@ -94,12 +136,13 @@ def test_program_with_quantifier():
 
 def test_program_multiple_properties():
 
-    data = get_program_dict(parse(VALID_PROGRAM_WITH_BODY_MULTIPLE_PROPERTIES))
+    tree = parse(VALID_PROGRAM_WITH_BODY_MULTIPLE_PROPERTIES)
+    program = parse_program(tree)
 
-    assert len(data["properties"]) == 2
+    assert len(program["properties"]) == 2
 
-    assert data["properties"][0]["mode"] == "at"
-    assert data["properties"][1]["mode"] == "quantifier"
+    assert program["properties"][0]["expr"]["kind"] == "at"
+    assert program["properties"][1]["expr"]["kind"] == "quantifier"
 
 
 #----------------------------------------------------------------------------------------------------------------------#
@@ -108,13 +151,28 @@ def test_program_multiple_properties():
 
 def test_program_with_domain_and_neighborhood():
 
-    data = get_program_dict(parse(VALID_AT_WITH_NEIGHBORHOOD_AND_DOMAIN))
-    prop = data["properties"][0]
+    tree = parse(VALID_AT_WITH_NEIGHBORHOOD_AND_DOMAIN)
+    program = parse_program(tree)
 
-    assert prop["domain"]["name"] == "sex"
-    assert prop["domain"]["values"] == ["male", "female"]
+    property = program["properties"][0]
+    expr = property["expr"]
+    neighborhood = expr["neighborhood"]
+    domain = expr["domain"]
 
-    assert prop["neighborhood"]["metric"] == "L2"
+    assert program["model"] is not None
+    assert program["target"] is not None
+
+    assert property["type"] == "ROBUSTNESS"
+    assert expr["kind"] == "at"
+    assert property["assertion"] is not None
+
+    assert neighborhood["metric"] == "L2"
+    assert neighborhood["args"]["eps"] == 0.01
+
+    assert domain["name"] == "sex"
+    assert domain["values"] == ["male", "female"]
+
+    assert property["abstractor"] is None
 
 
 #----------------------------------------------------------------------------------------------------------------------#

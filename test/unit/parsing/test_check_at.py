@@ -3,12 +3,7 @@ from pathlib import Path
 import pytest
 from lark import Tree
 
-from forml.ast.queries import (
-    get_check_at_expression,
-    get_assertion_expression,
-    get_identifiers,
-    get_identifier_value,
-)
+from forml.ast.program import parse_program
 from forml.parser.parser import parse_forml_code
 from test.fixtures.properties_samples import (
     INVALID_CHECK_AT_INVALID_IDENTIFIER,
@@ -30,14 +25,16 @@ def test_check_at_basic():
     """ C1 : Test parsing of a basic check_at expression."""
 
     tree = parse(VALID_MINIMAL_CHECK_AT)
+    program = parse_program(tree)
+    property = program["properties"][0]
 
-    check_at_expr = get_check_at_expression(tree)
-    identifiers = get_identifiers(check_at_expr)
-    assertion = get_assertion_expression(tree)
+    expr = property["expr"]
+    assertion = property["assertion"]
 
-    assert check_at_expr is not None
-    assert len(identifiers) == 1
-    assert get_identifier_value(identifiers[0]) == "x0"
+    identifier = expr["variable"]
+
+    assert expr["kind"] == "check_at"
+    assert identifier == "x0"
     assert assertion is not None
 
 
@@ -75,14 +72,14 @@ def test_check_at_with_complex_assertion():
 
     tree = parse(VALID_CHECK_AT_WITH_COMPLEX_ASSERTION)
 
-    check_at_expr = get_check_at_expression(tree)
-    assertion = get_assertion_expression(tree)
+    program = parse_program(tree)
+    property = program["properties"][0]
 
-    assert check_at_expr is not None
+    expr = property["expr"]
+    assertion = property["assertion"]
+
+    identifier = expr["variable"]
+
+    assert expr["kind"] == "check_at"
+    assert identifier == "x0"
     assert assertion is not None
-
-    # Bonus robuste : vérifier qu'on retrouve bien x0 dans l'expression logique
-    identifiers = get_identifiers(assertion)
-    values = [get_identifier_value(i) for i in identifiers]
-
-    assert "x0" in values

@@ -110,7 +110,7 @@ VALID_MINIMAL_EXISTS = """
     """
 
 
-VALID_MINIMAL_EXISTS_WITH_DOMAIN = """
+VALID_EXISTS_WITH_DOMAIN = """
     model := "model.onnx"
     target := MyTarget
 
