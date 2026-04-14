@@ -1,12 +1,10 @@
 import pytest
 from lark import Tree
 
+from forml.ast.expressions import parse_pairwise
+from forml.ast.program import parse_program
+from forml.ast.property import parse_property
 from forml.parser.parser import parse_forml_code
-from forml.ast.queries import (
-    get_property_expression,
-    get_assertion_expression,
-    get_abstractor
-)
 from test.fixtures.program_samples import (
     INVALID_BODY_EMPTY,
     INVALID_BODY_INVALID_ASSERTION,
@@ -22,11 +20,13 @@ def test_body_simple_assertion():
 
     tree = parse(VALID_PROGRAM_WITH_BODY_SIMPLE_ASSERTION)
 
-    property = get_property_expression(tree)
+    program = parse_program(tree)
+    properties = program["properties"]
+    property = properties[0]
 
-    assertion = get_assertion_expression(tree)
+    assertion = property["assertion"]
 
-    assert property is not None
+    assert len(properties) == 1
 
     assert assertion is not None
 
@@ -34,12 +34,15 @@ def test_body_with_abstractor():
 
     tree = parse(VALID_PROGRAM_WITH_ABSTRACTOR)
 
-    prop = get_property_expression(tree)
+    program = parse_program(tree)
+    properties = program["properties"]
+    property = properties[0]
 
     # abstraction layer exists 
-    abstractor = get_abstractor(tree)
+    abstractor = property["abstractor"]
 
-    assert abstractor is not None
+    assert abstractor["name"] == "eran"
+    assert abstractor["args"]["param1"] == "a"
 
 def test_body_empty():
 

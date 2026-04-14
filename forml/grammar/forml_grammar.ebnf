@@ -68,7 +68,7 @@ atom           = logic_expr | problem_expr | "(" , assertion , ")" ;
 (* ========================================================= *)
 
 (* === NEIGHBORHOOD (CRITICAL ABSTRACTION) === *)
-neighborhood = "neighborhood" , "(" , ? official_metrics ? , "," , [ args ] , ")" ;
+neighborhood = "in" , "neighborhood" , "(" , [ "metric" , "=" ] , ? official_metrics ? , "," , [ args ] , ")" ;
 
 (* Exemple attendu : hyperball(x, "L2", 0.01) *)
 
@@ -91,7 +91,7 @@ quantifier_expr = quantifier , [ domain ] ;
 (* === AT (POINTWISE) ====================================== *)
 (* ========================================================= *)
 
-at_expr = "at" , identifier , [ "in" , neighborhood ] , [ domain ] ;
+at_expr = "at" , identifier , [ neighborhood ] , [ domain ] ;
 
 (* Exemple : at x0 in hyperball(x0, L2, 0.01) *)
 
@@ -106,7 +106,7 @@ check_expr = "check_at" , identifier ;
 (* ========================================================= *)
 
 pairwise_token = PAIRWISE ;
-pairwise_expr = pairwise_token , "in" , neighborhood ;
+pairwise_expr = pairwise_token , neighborhood , [ domain ] ;
 
 (* Exemple : x ~ x' in hyperball(x, L2, 0.01) *)
 

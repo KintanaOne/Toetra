@@ -92,3 +92,26 @@ INVALID_PARENTHESES = """
     check_at x0 =>
     (x0.a <= 1 OR x0.b <= 2
     """
+
+#----------------------------------------------------------------------------------------------------------------------#
+#                                             INVALID
+#----------------------------------------------------------------------------------------------------------------------#
+
+VALID_TRIPLE_OR_PROPERTY = """
+    model := "model.onnx"
+    target := MyTarget
+
+    [ROBUSTNESS]:
+    check_at x0 =>
+        x0.a <= 1 OR x0.b <= 2 OR x0.c <= 3
+    """
+
+
+VALID_TRIPLE_AND_PROPERTY = """
+    model := "model.onnx"
+    target := MyTarget
+
+    [ROBUSTNESS]:
+    check_at x0 =>
+        x0.a <= 1 AND x0.b <= 2 AND x0.c <= 3
+    """
