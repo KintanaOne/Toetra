@@ -120,8 +120,11 @@ comments :  comment ( comment )*
 padding :  ( NEWLINE_SEQUENCE | comments )* 
 
 # =========================================================
-# === LOGIC (NON-ROBUSTNESS) ===============================
+# === LOGIC (NON-ROBUSTNESS) ==============================
 # =========================================================
+
+# === LOGIC OPERATIONS ===
+logic_operation :  ( EQ | NEQ | LT | LTE | GT | GTE ) 
 
 # === FUNCTIONS / PROBLEMS ===
 function :  ( EQUAL | EQUITY | BETWEEN | INCREASING | DECREASING ) 
@@ -132,15 +135,17 @@ problem_expr :  ( CLASSIFICATION | PREDICTION | REGRESSION | CLUSTERING | ANOMAL
 attribute :  identifier ( "." identifier )* 
 logic_expr :  attribute logic_operation value 
 
-# === LOGIC OPERATIONS ===
-logic_operation :  ( EQ | NEQ | LT | LTE | GT | GTE ) 
-
 # === IMPLICATION ===
-assertion :  logic_or ( "->" assertion )? 
-logic_or :  logic_and ( "OR" logic_and )* 
-logic_and :  logic_not ( "AND" logic_not )* 
-logic_not :  ( "NOT" )? atom 
-atom :  logic_expr | problem_expr | "(" assertion ")" 
+
+?assertion :  logic_or | logic_or "->" assertion -> implication
+
+?logic_or :  logic_and | logic_or "OR" logic_and -> logic_or
+
+?logic_and :  logic_not | logic_and "AND" logic_not -> logic_and
+
+?logic_not :  "NOT" atom -> logic_not | atom
+
+?atom :  logic_expr | problem_expr | "(" assertion ")"
 
 # =========================================================
 # === ROBUSTNESS CORE =====================================

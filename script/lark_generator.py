@@ -183,6 +183,10 @@ def remove_ebnf_commas(line: str) -> str:
     return "".join(result)
 
 
+def is_advanced_rule(line: str) -> bool:
+    return "->" in line or line.strip().startswith("?")
+
+
 def ebnf_to_lark(ebnf_text: str) -> str:
     lines = ebnf_text.splitlines()
     lark_lines = []
@@ -252,14 +256,13 @@ def ebnf_to_lark(ebnf_text: str) -> str:
         # protéger les accolades/brackets/parenthèses entre guillemets
         line = protect_brackets(line)
 
-        # accolades/brackets
-        line = transform_ebnf_brackets(line)
-
-        # restaurer les accolades/brackets/parenthèses protégées
-        line = unprotect_brackets(line)
-        
-        # nettoyage des )?=
-        line = re.sub(r"\?\+", "?", line)
+        if not is_advanced_rule(line):
+            line = transform_ebnf_brackets(line)
+            line = unprotect_brackets(line)
+            line = re.sub(r"\s+,\s+", " ", line)
+        else:
+            # garder la ligne telle quelle (important pour la logique)
+            line = unprotect_brackets(line)
 
         line = line.rstrip(";")
         
@@ -281,8 +284,7 @@ def ebnf_to_lark(ebnf_text: str) -> str:
             continue
 
         # conversion EBNF assignment => Lark
-        if re.match(r"^\w+\s*=", line):
-            line = re.sub(r"^(\w+)\s*=", r"\1 : ", line)
+        line = re.sub(r"^(\??\w+)\s*=", r"\1 : ", line)
 
         lark_lines.append(line)
 
