@@ -27,12 +27,6 @@ def parse_forml_code(code: str):
     return forml_parser.parse(code)
 
 if __name__ == "__main__":
-    test_path = Path(__file__).parent.parent / "/mnt/c<LOCAL_USER_HOME>/KintanaOne/FORML/forml/example/robustness/robustness_pairwise.forml"
-    if test_path.exists():
-        with open(test_path, "r", encoding="utf-8") as f:
-            code = f.read()
-        tree = parse_forml_code(VALID_TRIPLE_OR_PROPERTY)
-        print(tree.pretty())
-        print(tree)
-    else:
-        print("No example.forml file found.")
+    tree = parse_forml_code(OPERATOR_PRECEDENCE_PROPERTY)
+    print(tree.pretty())
+    print(tree)
