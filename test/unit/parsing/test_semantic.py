@@ -1,9 +1,9 @@
 from lark import Tree
 import pytest
 
-from forml.builder.expressions import parse_at
-from forml.builder.program import parse_program
-from forml.parser.parser import parse_forml_code
+from dsl.builder.expressions import parse_at
+from dsl.builder.program import parse_program
+from dsl.parser.parser import parse_forml_code
 from previous_forml.ast.queries import get_program_dict
 from test.fixtures.program_samples import INVALID_BODY_MISSING_EXPRESSION, INVALID_BODY_MULTIPLE_EXPRESSION, VALID_PROGRAM_WITH_BODY_MULTIPLE_PROPERTIES
 from test.fixtures.properties_samples import (

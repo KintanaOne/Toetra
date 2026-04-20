@@ -1,10 +1,10 @@
 import pytest
 from lark import Tree
 
-from forml.builder.expressions import parse_pairwise
-from forml.builder.program import parse_program
-from forml.builder.property import parse_property
-from forml.parser.parser import parse_forml_code
+from dsl.builder.expressions import parse_pairwise
+from dsl.builder.program import parse_program
+from dsl.builder.property import parse_property
+from dsl.parser.parser import parse_forml_code
 from test.fixtures.program_samples import (
     INVALID_BODY_EMPTY,
     INVALID_BODY_INVALID_ASSERTION,

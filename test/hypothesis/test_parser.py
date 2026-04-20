@@ -2,7 +2,7 @@ from hypothesis import given
 from test.hypothesis.settings import DEFAULT_SETTINGS
 from test.hypothesis.strategies.program import program
 
-from forml.parser.parser import parse_forml_code
+from dsl.parser.parser import parse_forml_code
 
 
 @DEFAULT_SETTINGS
