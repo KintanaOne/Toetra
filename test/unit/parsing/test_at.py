@@ -3,8 +3,8 @@ from pathlib import Path
 import pytest
 from lark import Tree
 
-from forml.ast.expressions import parse_at
-from forml.ast.program import parse_program
+from forml.builder.expressions import parse_at
+from forml.builder.program import parse_program
 from forml.parser.parser import parse_forml_code
 
 from test.fixtures.properties_samples import (

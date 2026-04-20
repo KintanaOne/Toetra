@@ -1,6 +1,6 @@
 import pytest
 from forml.parser.parser import parse_forml_code
-from forml.core.utils import *
+from forml.builder.core.utils import *
 
 
 def test_footer_empty():

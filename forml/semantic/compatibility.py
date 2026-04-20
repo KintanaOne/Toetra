@@ -1,5 +1,7 @@
-from forml.grammar.official_contents.functions import EnumFunction
-from forml.grammar.official_contents.properties import EnumProperty
+# forml/semantic/compatibility.py
+
+from forml.language.vocabulary.functions import EnumFunction
+from forml.language.vocabulary.properties import EnumProperty
 from forml.semantic.scope import SemanticScope
 
 
@@ -27,7 +29,7 @@ PROBLEM_FUNCTION_COMPATIBILITY = {
 # -------------------------------
 PROPERTY_SCOPE_COMPATIBILITY = {
     "ROBUSTNESS": {
-        SemanticScope.GLOBAL,
+        SemanticScope.QUANTIFIER,
         SemanticScope.LOCAL,
         SemanticScope.POINTWISE,
     },
@@ -36,15 +38,15 @@ PROPERTY_SCOPE_COMPATIBILITY = {
     },
     "MONOTONICITY": {
         SemanticScope.PAIRWISE,
-        SemanticScope.GLOBAL,
+        SemanticScope.QUANTIFIER,
     },
     "STABILITY": {
         SemanticScope.LOCAL,
-        SemanticScope.GLOBAL,
+        SemanticScope.QUANTIFIER,
     },
     "BOUNDS": {
         SemanticScope.POINTWISE,
-        SemanticScope.GLOBAL,
+        SemanticScope.QUANTIFIER,
     },
 }
 

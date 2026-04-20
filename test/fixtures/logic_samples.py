@@ -23,8 +23,7 @@ OPERATOR_PRECEDENCE_PROPERTY = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    check_at x0 =>
-        x0.a <= 1 OR x0.b <= 2 AND x0.c <= 3
+    check_at x0 => x0.a <= 1 OR x0.b <= 2 AND x0.c <= 3
     """
 
 

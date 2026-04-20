@@ -6,7 +6,7 @@ from test.fixtures.program_samples import VALID_PROGRAM_WITH_ABSTRACTOR
 from test.fixtures.properties_samples import VALID_MINIMAL_AT, VALID_MINIMAL_CHECK_AT, VALID_MINIMAL_PAIRWISE
 
 # Load grammar file
-GRAMMAR_PATH = Path(__file__).parent.parent / "grammar/forml_grammar.lark"
+GRAMMAR_PATH = "forml/language/grammar/forml_grammar.lark"
 
 with open(GRAMMAR_PATH, "r", encoding="utf-8") as f:
     grammar = f.read()
@@ -27,6 +27,7 @@ def parse_forml_code(code: str):
     return forml_parser.parse(code)
 
 if __name__ == "__main__":
-    tree = parse_forml_code(OPERATOR_PRECEDENCE_PROPERTY)
+    forml = OPERATOR_PRECEDENCE_PROPERTY
+    tree = parse_forml_code(forml)
     print(tree.pretty())
     print(tree)
