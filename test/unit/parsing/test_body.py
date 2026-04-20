@@ -1,9 +1,9 @@
 import pytest
 from lark import Tree
 
-from forml.ast.expressions import parse_pairwise
-from forml.ast.program import parse_program
-from forml.ast.property import parse_property
+from forml.builder.expressions import parse_pairwise
+from forml.builder.program import parse_program
+from forml.builder.property import parse_property
 from forml.parser.parser import parse_forml_code
 from test.fixtures.program_samples import (
     INVALID_BODY_EMPTY,

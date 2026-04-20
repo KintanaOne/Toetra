@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from lark import Tree
 
-from forml.ast.program import parse_program
+from forml.builder.program import parse_program
 from forml.parser.parser import parse_forml_code
 from test.fixtures.properties_samples import (
     VALID_MINIMAL_FORALL,

@@ -3,7 +3,7 @@
 from enum import Enum
 
 class SemanticScope(Enum):
-    GLOBAL = "global"
+    QUANTIFIER = "quantifier"
     LOCAL = "local"
     POINTWISE = "pointwise"
     PAIRWISE = "pairwise"
@@ -18,7 +18,7 @@ def get_scope_from_property(prop):
             return SemanticScope.POINTWISE
         return SemanticScope.LOCAL
 
-    if prop.universal_expr:
-        return SemanticScope.GLOBAL
+    if prop.quantifier_expr:
+        return SemanticScope.QUANTIFIER
 
     return None

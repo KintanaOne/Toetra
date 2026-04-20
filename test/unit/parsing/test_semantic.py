@@ -1,10 +1,10 @@
 from lark import Tree
 import pytest
 
-from forml.ast.expressions import parse_at
-from forml.ast.program import parse_program
+from forml.builder.expressions import parse_at
+from forml.builder.program import parse_program
 from forml.parser.parser import parse_forml_code
-from forml.ast.queries import get_program_dict
+from previous_forml.ast.queries import get_program_dict
 from test.fixtures.program_samples import INVALID_BODY_MISSING_EXPRESSION, INVALID_BODY_MULTIPLE_EXPRESSION, VALID_PROGRAM_WITH_BODY_MULTIPLE_PROPERTIES
 from test.fixtures.properties_samples import (
     VALID_AT_WITH_NEIGHBORHOOD,

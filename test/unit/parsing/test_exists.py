@@ -1,10 +1,10 @@
 from pathlib import Path
 
 import pytest
-from forml.ast.program import parse_program
+from forml.builder.program import parse_program
 from forml.parser.parser import parse_forml_code
 from test.fixtures.properties_samples import VALID_MINIMAL_EXISTS, VALID_EXISTS_WITH_DOMAIN
-from forml.core.utils import *
+from forml.builder.core.utils import *
 
 
 def parse(code: str) -> Tree:
