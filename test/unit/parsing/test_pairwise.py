@@ -3,8 +3,8 @@ from pathlib import Path
 import pytest
 from lark import Tree
 
-from forml.builder.program import parse_program
-from forml.parser.parser import parse_forml_code
+from dsl.builder.program import parse_program
+from dsl.parser.parser import parse_forml_code
 from test.fixtures.properties_samples import (
     INVALID_PAIRWISE_MALFORMED_ABSTRACTOR,
     INVALID_PAIRWISE_MALFORMED_NEIGHBORHOOD,

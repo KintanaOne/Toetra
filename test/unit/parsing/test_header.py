@@ -1,7 +1,7 @@
 import pytest
 from lark import Tree
 
-from forml.parser.parser import parse_forml_code
+from dsl.parser.parser import parse_forml_code
 from previous_forml.ast.queries import (
     get_header,
     get_model_declaration,

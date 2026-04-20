@@ -1,7 +1,7 @@
 from hypothesis import given
 
 from previous_forml.ast.queries import get_program_dict
-from forml.parser.parser import parse_forml_code
+from dsl.parser.parser import parse_forml_code
 from test.hypothesis.strategies.program import program
 
 

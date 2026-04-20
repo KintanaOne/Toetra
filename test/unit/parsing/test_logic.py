@@ -2,8 +2,8 @@ from lark import Tree
 import pytest
 from lark.exceptions import UnexpectedToken
 
-from forml.parser.parser import parse_forml_code
-from forml.builder.core.utils import find_node
+from dsl.parser.parser import parse_forml_code
+from dsl.builder.core.utils import find_node
 
 from test.fixtures.logic_samples import (
     INVALID_LOGIC_SYNTAX,
