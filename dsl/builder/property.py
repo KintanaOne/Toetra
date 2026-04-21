@@ -1,4 +1,4 @@
-from lark import Tree
+from lark import Token, Tree
 from dsl.ast.nodes.implication import ImplicationNode
 from dsl.ast.nodes.property import PropertyNode
 from dsl.builder.backends import parse_backend
@@ -29,11 +29,24 @@ def detect_mode(prop: Tree) -> str:
     return "unknown"
 
 
-def find_rhs_node(prop: Tree):
-    for name in ["problem_expr", "logic_expr", "logic_not", "logic_or", "logic_and"]:
-        node = find_node(prop, name)
-        if node:
-            return node
+def extract_rhs(prop: Tree):
+    """
+    Extract RHS = node after '=>' at property level.
+    """
+
+    found_implies = False
+
+    for child in prop.children:
+        # detect =>
+        if isinstance(child, Token) and child.value == "=>":
+            found_implies = True
+            continue
+
+        # first Tree after =>
+        if found_implies and isinstance(child, Tree):
+            return child
+
+    # fallback
     return None
 
 
@@ -50,7 +63,7 @@ def parse_property(prop: Tree) -> PropertyNode:
     left = expr_map.get(mode, lambda x: None)(prop)
 
     # 🔥 RIGHT SIDE OF "=>"
-    right_node = find_rhs_node(prop)
+    right_node = extract_rhs(prop)
     right = parse_assertion(right_node)
 
     # 🔥 BACKEND

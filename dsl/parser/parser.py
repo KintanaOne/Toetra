@@ -2,11 +2,11 @@ from pathlib import Path
 from lark import Lark
 
 from test.fixtures.logic_samples import OPERATOR_PRECEDENCE_PROPERTY, SIMPLE_LOGIC_PROPERTY, VALID_TRIPLE_OR_PROPERTY
-from test.fixtures.program_samples import VALID_PROGRAM_WITH_ABSTRACTOR
-from test.fixtures.properties_samples import VALID_MINIMAL_AT, VALID_MINIMAL_CHECK_AT, VALID_MINIMAL_PAIRWISE
+from test.fixtures.program_samples import VALID_PROGRAM_WITH_BACKEND
+from test.fixtures.properties_samples import VALID_CHECK_AT_WITH_COMPLEX_ASSERTION, VALID_MINIMAL_AT, VALID_MINIMAL_CHECK_AT, VALID_MINIMAL_PAIRWISE
 
 # Load grammar file
-GRAMMAR_PATH = "forml/language/grammar/forml_grammar.lark"
+GRAMMAR_PATH = "dsl/language/grammar/forml_grammar.lark"
 
 with open(GRAMMAR_PATH, "r", encoding="utf-8") as f:
     grammar = f.read()
@@ -27,7 +27,7 @@ def parse_forml_code(code: str):
     return forml_parser.parse(code)
 
 if __name__ == "__main__":
-    forml = OPERATOR_PRECEDENCE_PROPERTY
+    forml = VALID_CHECK_AT_WITH_COMPLEX_ASSERTION
     tree = parse_forml_code(forml)
     print(tree.pretty())
     print(tree)

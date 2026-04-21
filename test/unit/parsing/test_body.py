@@ -9,7 +9,7 @@ from test.fixtures.program_samples import (
     INVALID_BODY_EMPTY,
     INVALID_BODY_INVALID_ASSERTION,
     INVALID_BODY_SYNTAX_ERROR,
-    VALID_PROGRAM_WITH_ABSTRACTOR,
+    VALID_PROGRAM_WITH_BACKEND,
     VALID_PROGRAM_WITH_BODY_SIMPLE_ASSERTION
 )
 
@@ -21,28 +21,30 @@ def test_body_simple_assertion():
     tree = parse(VALID_PROGRAM_WITH_BODY_SIMPLE_ASSERTION)
 
     program = parse_program(tree)
-    properties = program["properties"]
-    property = properties[0]
+    property = program.body[0]
 
-    assertion = property["assertion"]
+    left = property.implication.left
+    right = property.implication.right
 
-    assert len(properties) == 1
+    assert len(program.body) == 1
 
-    assert assertion is not None
+    assert right is not None
+
 
 def test_body_with_abstractor():
 
-    tree = parse(VALID_PROGRAM_WITH_ABSTRACTOR)
+    tree = parse(VALID_PROGRAM_WITH_BACKEND)
 
     program = parse_program(tree)
-    properties = program["properties"]
-    property = properties[0]
+    property = program.body[0]
 
-    # abstraction layer exists 
-    abstractor = property["abstractor"]
+    # backend layer exists 
+    backend = property.backend
 
-    assert abstractor["name"] == "eran"
-    assert abstractor["args"]["param1"] == "a"
+    assert backend.name == "eran"
+    assert backend.args[0].key == "param1"
+    assert backend.args[0].value == "a"
+
 
 def test_body_empty():
 

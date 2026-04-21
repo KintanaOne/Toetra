@@ -19,17 +19,16 @@ def test_exists_basic():
 
     tree = parse(VALID_MINIMAL_EXISTS)
     program = parse_program(tree)
-    property = program["properties"][0]
+    property = program.body[0]
 
-    expr = property["expr"]
-    assertion = property["assertion"]
-    abstractor = property["abstractor"]
+    left = property.implication.left
+    right = property.implication.right
+    abstractor = property.backend
     
-    assert property["type"] == "ROBUSTNESS"
-    assert expr["kind"] == "quantifier"
-    assert expr["quantifier"] == "exists"
-    assert expr["domain"] == None
-    assert assertion is not None
+    assert property.type == "ROBUSTNESS"
+    assert left.quantifier == "exists"
+    assert left.domain == None
+    assert right is not None
     assert abstractor is None
 
 
@@ -38,22 +37,19 @@ def test_exists_with_domain():
 
     tree = parse(VALID_EXISTS_WITH_DOMAIN)
     program = parse_program(tree)
-    property = program["properties"][0]
+    property = program.body[0]
 
-    expr = property["expr"]
-    domain = expr["domain"]
-    assertion = property["assertion"]
-    abstractor = property["abstractor"]
+    left = property.implication.left
+    domain = left.domain
+    right = property.implication.right
+    backend = property.backend
     
-    assert property["type"] == "ROBUSTNESS"
-    assert expr["kind"] == "quantifier"
-    assert expr["quantifier"] == "exists"
-    assert domain["name"] == "gender"
-    assert domain["values"] == ["male", "female"]
-    assert assertion is not None
-    assert abstractor is None
-
-
+    assert property.type == "ROBUSTNESS"
+    assert left.quantifier == "exists"
+    assert domain.name == "gender"
+    assert domain.values == ["male", "female"]
+    assert right is not None
+    assert backend is None
 
 #----------------------------------------------------------------------------------------------------------------------#
 #                                             INVALID CASES

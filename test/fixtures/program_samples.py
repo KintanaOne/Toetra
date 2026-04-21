@@ -38,7 +38,7 @@ VALID_PROGRAM_WITH_BODY_MULTIPLE_PROPERTIES = """
     """
 
 
-VALID_PROGRAM_WITH_ABSTRACTOR = """
+VALID_PROGRAM_WITH_BACKEND = """
     model := "model.onnx"
     target := MyTargetColumn
 

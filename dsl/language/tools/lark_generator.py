@@ -291,8 +291,8 @@ def ebnf_to_lark(ebnf_text: str) -> str:
     return "\n".join(header + lark_lines)
 
 def main():
-    input_path = Path("forml/language/grammar/forml_grammar.ebnf")
-    output_path = Path("forml/language/grammar/forml_grammar.lark")
+    input_path = Path("dsl/language/grammar/forml_grammar.ebnf")
+    output_path = Path("dsl/language/grammar/forml_grammar.lark")
 
     ebnf_text = input_path.read_text(encoding="utf-8")
     try:
