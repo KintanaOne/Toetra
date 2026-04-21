@@ -5,8 +5,8 @@ from dsl.language.tools.lark_generator import ebnf_to_lark
 
 def main():
     # Convert EBNF grammar to Lark format
-    input_path = Path("forml/language/grammar/forml_grammar.ebnf")
-    output_path = Path("forml/language/grammar/forml_grammar.")
+    input_path = Path("dsl/language/grammar/forml_grammar.ebnf")
+    output_path = Path("dsl/language/grammar/forml_grammar.")
 
     ebnf_text = input_path.read_text(encoding="utf-8")
     try:

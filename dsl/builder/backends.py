@@ -21,7 +21,7 @@ def parse_backend(node: Tree):
     if not n:
         return None
 
-    name = node_value(find_child(n, "identifier"))
+    name = node_value(n)
     args: list[ArgNode] = []
 
     args_node = find_child(n, "args")

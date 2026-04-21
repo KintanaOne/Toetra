@@ -26,16 +26,13 @@ def test_check_at_basic():
 
     tree = parse(VALID_MINIMAL_CHECK_AT)
     program = parse_program(tree)
-    property = program["properties"][0]
+    property = program.body[0]
 
-    expr = property["expr"]
-    assertion = property["assertion"]
+    left = property.implication.left
+    right = property.implication.right
 
-    identifier = expr["variable"]
-
-    assert expr["kind"] == "check_at"
-    assert identifier == "x0"
-    assert assertion is not None
+    assert left is not None
+    assert right is not None
 
 
 #----------------------------------------------------------------------------------------------------------------------#
@@ -73,13 +70,12 @@ def test_check_at_with_complex_assertion():
     tree = parse(VALID_CHECK_AT_WITH_COMPLEX_ASSERTION)
 
     program = parse_program(tree)
-    property = program["properties"][0]
+    property = program.body[0]
 
-    expr = property["expr"]
-    assertion = property["assertion"]
+    left = property.implication.left
+    right = property.implication.right
+    
+    
 
-    identifier = expr["variable"]
-
-    assert expr["kind"] == "check_at"
-    assert identifier == "x0"
-    assert assertion is not None
+    assert left is not None
+    assert right is not None

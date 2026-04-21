@@ -32,43 +32,42 @@ def test_at_basic():
 
     tree = parse(VALID_MINIMAL_AT)
     program = parse_program(tree)
-    property = program["properties"][0]
+    property = program.body[0]
 
-    expr = property["expr"]
-    neighborhood = expr["neighborhood"]
-    domain = expr["domain"]
-    assertion = property["assertion"]
-    abstractor = property["abstractor"]
+    left = property.implication.left
+    right = property.implication.right
+    neighborhood = left.neighborhood
+    domain = left.domain
+    backend = property.backend
     
-    assert property["type"] == "ROBUSTNESS"
-    assert expr["kind"] == "at"
-    assert expr["variable"] == "x0"
+    assert property.type == "ROBUSTNESS"
+    assert left.variable == "x0"
     assert neighborhood == None
     assert domain == None
-    assert assertion is not None
-    assert abstractor is None
+    assert right is not None
+    assert backend is None
 
 def test_at_with_neighborhood():
     """ AT2 : Test parsing of an at expression with a neighborhood."""
 
     tree = parse(VALID_AT_WITH_NEIGHBORHOOD)
     program = parse_program(tree)
-    property = program["properties"][0]
+    property = program.body[0]
 
-    expr = property["expr"]
-    neighborhood = expr["neighborhood"]
-    domain = expr["domain"]
-    assertion = property["assertion"]
-    abstractor = property["abstractor"]
+    left = property.implication.left
+    right = property.implication.right
+    neighborhood = left.neighborhood
+    domain = left.domain
+    backend = property.backend
     
-    assert property["type"] == "ROBUSTNESS"
-    assert expr["kind"] == "at"
-    assert expr["variable"] == "x0"
-    assert neighborhood["metric"] == "L2"
-    assert neighborhood["args"]["eps"] == 0.01
+    assert property.type == "ROBUSTNESS"
+    assert left.variable == "x0"
+    assert neighborhood.metric == "L2"
+    assert neighborhood.args[0].key == "eps"
+    assert neighborhood.args[0].value == 0.01
     assert domain == None
-    assert assertion is not None
-    assert abstractor is None
+    assert right is not None
+    assert backend is None
 
 
 def test_at_with_domain():
@@ -76,22 +75,21 @@ def test_at_with_domain():
 
     tree = parse(VALID_AT_WITH_DOMAIN)
     program = parse_program(tree)
-    property = program["properties"][0]
+    property = program.body[0]
 
-    expr = property["expr"]
-    neighborhood = expr["neighborhood"]
-    domain = expr["domain"]
-    assertion = property["assertion"]
-    abstractor = property["abstractor"]
+    left = property.implication.left
+    right = property.implication.right
+    neighborhood = left.neighborhood
+    domain = left.domain
+    backend = property.backend
     
-    assert property["type"] == "ROBUSTNESS"
-    assert expr["kind"] == "at"
-    assert expr["variable"] == "x0"
+    assert property.type == "ROBUSTNESS"
+    assert left.variable == "x0"
     assert neighborhood == None
-    assert domain["name"] == "sex"
-    assert domain["values"] == ["male", "female"]
-    assert assertion is not None
-    assert abstractor is None
+    assert domain.name == "sex"
+    assert domain.values == ["male", "female"]
+    assert right is not None
+    assert backend is None
 
 
 def test_at_with_neighborhood_and_domain():
@@ -99,23 +97,25 @@ def test_at_with_neighborhood_and_domain():
 
     tree = parse(VALID_AT_WITH_NEIGHBORHOOD_AND_DOMAIN)
     program = parse_program(tree)
-    property = program["properties"][0]
+    property = program.body[0]
 
-    expr = property["expr"]
-    neighborhood = expr["neighborhood"]
-    domain = expr["domain"]
-    assertion = property["assertion"]
-    abstractor = property["abstractor"]
+    left = property.implication.left
+    right = property.implication.right
+    neighborhood = left.neighborhood
+    domain = left.domain
+    backend = property.backend
     
-    assert property["type"] == "ROBUSTNESS"
-    assert expr["kind"] == "at"
-    assert expr["variable"] == "x0"
-    assert neighborhood["metric"] == "L2"
-    assert neighborhood["args"]["eps"] == 0.01
-    assert domain["name"] == "sex"
-    assert domain["values"] == ["male", "female"]
-    assert assertion is not None
-    assert abstractor is None
+    assert property.type == "ROBUSTNESS"
+
+    assert left.variable == "x0"
+    assert neighborhood.metric == "L2"
+    assert neighborhood.args[0].key == "eps"
+    assert neighborhood.args[0].value == 0.01
+    assert domain.name == "sex"
+    assert domain.values == ["male", "female"]
+
+    assert right is not None
+    assert backend is None
 
 #----------------------------------------------------------------------------------------------------------------------#
 #                                             INVALID CASES

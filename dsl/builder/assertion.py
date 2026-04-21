@@ -31,19 +31,21 @@ def build_logic_expr(node: Tree) -> ComparisonNode:
 # ASSERTION ENGINE (FUTURE PROOF CORE)
 # ============================================================================
 
+def _extract_trees(node: Tree):
+    """Utility: keep only Tree children (ignore tokens safely)."""
+    return [c for c in node.children if isinstance(c, Tree)]
+
+
 def parse_assertion(node: Tree):
     """
     🔥 POINT CENTRAL DU DSL
-
-    Design principe :
-    ------------------
-    it does not rely on the position of children but only on their type (data) and structure.
-    This makes it more robust to changes in the grammar and allows for more complex expressions.
-    It also allows for more natural expressions (e.g., A AND B OR C is parsed as (A AND B) OR C without needing to enforce parentheses).:
     """
 
     if node is None:
         return UnknownNode(raw="None")
+
+    if isinstance(node, Token):
+        return UnknownNode(raw=node.value)
 
     t = node.data
 
@@ -51,49 +53,68 @@ def parse_assertion(node: Tree):
     # implication
     # ------------------------------------------------------------------------
     if t == "assertion":
-        parts = [c for c in node.children if isinstance(c, Tree)]
+        parts = _extract_trees(node)
 
         if len(parts) == 1:
             return parse_assertion(parts[0])
 
+        # safe: first => last (grammar ensures structure)
         return ImplicationNode(
             left=parse_assertion(parts[0]),
             right=parse_assertion(parts[-1])
         )
 
     # ------------------------------------------------------------------------
-    # OR (variadic)
+    # OR (variadic, robust)
     # ------------------------------------------------------------------------
     if t == "logic_or":
-        ops = [parse_assertion(c) for c in node.children if isinstance(c, Tree)]
+        children = _extract_trees(node)
 
-        return ops[0] if len(ops) == 1 else OrNode(operands=ops)
+        ops = [parse_assertion(c) for c in children]
+
+        if not ops:
+            return UnknownNode(raw="empty_or")
+
+        if len(ops) == 1:
+            return ops[0]
+
+        return OrNode(operands=ops)
 
     # ------------------------------------------------------------------------
-    # AND (variadic)
+    # AND (variadic, robust)
     # ------------------------------------------------------------------------
     if t == "logic_and":
-        ops = [parse_assertion(c) for c in node.children if isinstance(c, Tree)]
+        children = _extract_trees(node)
 
-        return ops[0] if len(ops) == 1 else AndNode(operands=ops)
+        ops = [parse_assertion(c) for c in children]
+
+        if not ops:
+            return UnknownNode(raw="empty_and")
+
+        if len(ops) == 1:
+            return ops[0]
+
+        return AndNode(operands=ops)
 
     # ------------------------------------------------------------------------
     # NOT
     # ------------------------------------------------------------------------
     if t == "logic_not":
-        inner = [c for c in node.children if isinstance(c, Tree)]
+        inner = _extract_trees(node)
 
         return NotNode(
             operand=parse_assertion(inner[-1]) if inner else UnknownNode("empty_not")
         )
-    # ------------------------------------------------------------------------
-    # atom 
-    # ------------------------------------------------------------------------
-    if t == "atom":
-        return parse_assertion(node.children[0])
 
     # ------------------------------------------------------------------------
-    # comparison 
+    # atom (flatten)
+    # ------------------------------------------------------------------------
+    if t == "atom":
+        children = _extract_trees(node)
+        return parse_assertion(children[0]) if children else UnknownNode("empty_atom")
+
+    # ------------------------------------------------------------------------
+    # comparison
     # ------------------------------------------------------------------------
     if t == "logic_expr":
         return build_logic_expr(node)
@@ -117,6 +138,6 @@ def parse_assertion(node: Tree):
         )
 
     # ------------------------------------------------------------------------
-    # fallback expr
+    # fallback
     # ------------------------------------------------------------------------
     return UnknownNode(raw=str(node))

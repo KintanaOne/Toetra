@@ -1,6 +1,6 @@
 from hypothesis import given
 
-from previous_forml.ast.queries import get_program_dict
+from dsl.builder.program import parse_program
 from dsl.parser.parser import parse_forml_code
 from test.hypothesis.strategies.program import program
 
@@ -8,10 +8,10 @@ from test.hypothesis.strategies.program import program
 @given(program())
 def test_semantic_roundtrip(prog):
     ast1 = parse_forml_code(prog)
-    dict1 = get_program_dict(ast1)
+    obj1 = parse_program(ast1)
 
     # reparse même programme
     ast2 = parse_forml_code(prog)
-    dict2 = get_program_dict(ast2)
+    obj2 = parse_program(ast2)
 
-    assert dict1 == dict2
+    assert obj1 == obj2
