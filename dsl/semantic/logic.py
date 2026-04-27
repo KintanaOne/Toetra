@@ -16,6 +16,10 @@ class LogicValidator:
     It is assumed that BindingValidator has already run.
     """
 
+    # LogicalNode hierarchy:
+    # - Structural logic nodes: And, Or, Not, Implication
+    # - Leaf / terminal logic nodes: Comparison, Problem
+
     def __init__(self, tracer=None):
         self.tracer = tracer or ValidationTracer()
 
@@ -67,18 +71,15 @@ class LogicValidator:
     def _validate_and(self, node, context):
         self.tracer.log(f"Validating AndNode: {node}")
 
-        self.validate(node.left, context)
-        self.validate(node.right, context)
+        for operand in node.operands:
+            self.validate(operand, context)
 
-    # ─────────────────────────────
-    # OR
-    # ─────────────────────────────
 
     def _validate_or(self, node, context):
         self.tracer.log(f"Validating OrNode: {node}")
 
-        self.validate(node.left, context)
-        self.validate(node.right, context)
+        for operand in node.operands:
+            self.validate(operand, context)
 
     # ─────────────────────────────
     # NOT
@@ -87,10 +88,10 @@ class LogicValidator:
     def _validate_not(self, node, context):
         self.tracer.log(f"Validating NotNode: {node}")
 
-        if not node.child:
-            raise InvalidPropertyError("NOT expression missing child")
+        if not node.operand:
+            raise InvalidPropertyError("NOT expression missing operand")
 
-        self.validate(node.child, context)
+        self.validate(node.operand, context)
 
     # ─────────────────────────────
     # OPERANDS
