@@ -1,4 +1,5 @@
 from lark import Token, Tree
+from dsl.ast.nodes.assertion import AssertionNode
 from dsl.ast.nodes.property import PropertyNode, PropertyRuleNode
 from dsl.builder.backends import parse_backend
 from dsl.builder.core.strict import require_node, require_value
@@ -108,17 +109,23 @@ def parse_property(prop: Tree) -> PropertyNode:
     # -----------------------------------------------------------------------
     # Parse LHS expression
     # -----------------------------------------------------------------------
+    
     left = expr_map[mode](prop)
 
     # -----------------------------------------------------------------------
     # Parse RHS assertion
     # -----------------------------------------------------------------------
+    
     right_node = extract_rhs(prop)
-    right = parse_assertion(right_node)
+
+    logical_root = parse_assertion(right_node)
+
+    right = AssertionNode(root=logical_root)
 
     # -----------------------------------------------------------------------
     # Parse backend configuration (strict)
     # -----------------------------------------------------------------------
+    
     backend_node = find_node(prop, "backend")
     backend = parse_backend(backend_node)
 

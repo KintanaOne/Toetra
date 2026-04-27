@@ -1,0 +1,828 @@
+
+===== dsl\semantic\binding.py =====
+
+from dsl.semantic.errors import UnboundVariableError
+from dsl.semantic.tracer import ValidationTracer
+
+
+class BindingValidator:
+    """
+    BindingValidator is responsible for resolving variable references in the RHS.
+
+    It ensures that:
+    - all variables used in expressions are declared in the LHS context
+    - implicit feature access (e.g., `a <= 1`) is resolved to a valid entity
+    - user-defined variable names can be mapped to internal symbolic variables
+
+    This phase is equivalent to:
+        🔥 name resolution / symbol binding in a compiler
+
+    It may also rewrite the AST in-place:
+        - inject missing entities
+        - normalize variable names
+    """
+
+    def __init__(self, tracer=None):
+        self.tracer = tracer or ValidationTracer()
+
+    # ─────────────────────────────
+    # ENTRY POINT
+    # ─────────────────────────────
+
+    def validate(self, context, rhs):
+        """
+        Validates and resolves all variable bindings in the RHS.
+
+        Parameters:
+            context: dict produced by LHSValidator
+            rhs: AST node (logical expression or problem node)
+        """
+
+        self.tracer.log(f"Binding validation with context: {context}")
+
+        self._check_node(rhs, context)
+
+    # ─────────────────────────────
+    # CORE RECURSIVE WALK
+    # ─────────────────────────────
+
+    def _check_node(self, node, context):
+        """
+        Recursively traverses the AST and resolves:
+        - explicit variable references
+        - implicit feature accesses
+        """
+
+        variables = context["variables"]
+        default_entity = context.get("default_entity")
+
+        # ─────────────────────────────
+        # CASE 1 — AttributeNode (feature access)
+        # ─────────────────────────────
+
+        if hasattr(node, "feature"):
+
+            # --------------------------------
+            # 1A — Explicit entity (x.a)
+            # --------------------------------
+            if getattr(node, "entity", None):
+
+                if node.entity not in variables:
+
+                    # 🔥 Alias resolution (quantifier case)
+                    if len(variables) == 1:
+                        target_var = next(iter(variables.keys()))
+
+                        self.tracer.log(
+                            f"Alias binding: {node.entity} → {target_var}"
+                        )
+
+                        # Alias resolution
+                        node.entity = target_var
+
+                        # 🔥 keep path consistent
+                        if hasattr(node, "path") and node.path:
+                            node.path[0] = target_var
+
+                    else:
+                        raise UnboundVariableError(
+                            f"Variable '{node.entity}' not allowed. "
+                            f"Expected one of {list(variables.keys())}"
+                        )
+
+            # --------------------------------
+            # 1B — Implicit entity (a <= 1)
+            # --------------------------------
+            else:
+                if default_entity:
+                    node.entity = default_entity
+
+                    self.tracer.log(
+                        f"Implicit binding: {node.feature} → "
+                        f"{default_entity}.{node.feature}"
+                    )
+
+                elif len(variables) == 1:
+                    var = next(iter(variables.keys()))
+                    node.entity = var
+
+                    self.tracer.log(
+                        f"Implicit binding: {node.feature} → "
+                        f"{var}.{node.feature}"
+                    )
+
+                else:
+                    raise UnboundVariableError(
+                        f"Ambiguous feature '{node.feature}' "
+                        f"with variables {list(variables.keys())}"
+                    )
+
+        # ─────────────────────────────
+        # RECURSIVE DESCENT
+        # ─────────────────────────────
+
+        for child in self._children(node):
+            self._check_node(child, context)
+
+    # ─────────────────────────────
+    # CHILD EXTRACTION
+    # ─────────────────────────────
+
+    def _children(self, node):
+        """
+        Extracts child nodes from an AST node.
+
+        Supports:
+        - nested objects
+        - lists of nodes
+        - ignores primitives (int, str, etc.)
+        """
+
+        if not hasattr(node, "__dict__"):
+            return []
+
+        children = []
+
+        for value in node.__dict__.values():
+
+            if isinstance(value, list):
+                children.extend(
+                    v for v in value if hasattr(v, "__dict__")
+                )
+
+            elif hasattr(value, "__dict__"):
+                children.append(value)
+
+        return children
+
+===== dsl\semantic\compatibility.py =====
+
+# forml/semantic/compatibility.py
+
+from dsl.language.vocabulary.functions import EnumFunction
+from dsl.language.vocabulary.properties import EnumProperty
+from dsl.semantic.scope import SemanticScope
+
+
+# -------------------------------
+# Problem ↔ Function
+# -------------------------------
+PROBLEM_FUNCTION_COMPATIBILITY = {
+    "CLASSIFICATION": {
+        EnumFunction.EQUAL,
+        EnumFunction.EQUITY,
+        EnumFunction.BETWEEN,
+    },
+    "REGRESSION": {
+        EnumFunction.EQUAL,
+        EnumFunction.INCREASING,
+        EnumFunction.DECREASING,
+        EnumFunction.BETWEEN,
+    },
+    "CLUSTERING": set()
+}
+
+
+# -------------------------------
+# Property ↔ Scope (IMPORTANT 🔥)
+# -------------------------------
+PROPERTY_SCOPE_COMPATIBILITY = {
+    "ROBUSTNESS": {
+        SemanticScope.QUANTIFIER,
+        SemanticScope.LOCAL,
+        SemanticScope.POINTWISE,
+    },
+    "FAIRNESS": {
+        SemanticScope.PAIRWISE,
+    },
+    "MONOTONICITY": {
+        SemanticScope.PAIRWISE,
+        SemanticScope.QUANTIFIER,
+    },
+    "STABILITY": {
+        SemanticScope.LOCAL,
+        SemanticScope.QUANTIFIER,
+    },
+    "BOUNDS": {
+        SemanticScope.POINTWISE,
+        SemanticScope.QUANTIFIER,
+    },
+}
+
+
+# -------------------------------
+# Property ↔ Backend
+# -------------------------------
+PROPERTY_MODEL_COMPATIBILITY = {
+    "ONNX": {"ROBUSTNESS", "STABILITY", "FAIRNESS"},
+    "SKLEARN": {"FAIRNESS", "BOUNDS"},
+    "PYTORCH": {"ROBUSTNESS", "MONOTONICITY", "STABILITY"},
+}
+
+===== dsl\semantic\errors.py =====
+
+class SemanticError(Exception):
+    def __init__(self, message, node=None, context=None):
+        self.message = message
+        self.node = node
+        self.context = context
+        super().__init__(self.__str__())
+
+    def __str__(self):
+        location = f"[{self.context}]" if self.context else ""
+        node_info = f" Node={type(self.node).__name__}" if self.node else ""
+        return f"{location} {self.message}{node_info}"
+
+
+class InvalidPropertyError(SemanticError):
+    pass
+
+
+class UnboundVariableError(SemanticError):
+    pass
+
+
+class TypeMismatchError(SemanticError):
+    pass
+
+
+class InvalidOperatorError(SemanticError):
+    pass
+
+
+class IncompatibleFunctionError(SemanticError):
+    pass
+
+===== dsl\semantic\implication.py =====
+
+from dsl.semantic.lhs import LHSValidator
+from dsl.semantic.logic import LogicValidator
+from dsl.semantic.problem import ProblemValidator
+from dsl.semantic.binding import BindingValidator
+from dsl.semantic.errors import InvalidPropertyError
+from dsl.semantic.tracer import ValidationTracer
+
+
+class ImplicationValidator:
+
+    def __init__(self, tracer=None):
+        self.tracer = tracer or ValidationTracer()
+
+    def validate(self, imp):
+        self.tracer.log(f"Validating ImplicationNode: {imp}")
+
+        lhs = imp.left
+        rhs = imp.right
+
+        # ---------------------------
+        # 1. LHS → create contexte
+        # ---------------------------
+        lhs_validator = LHSValidator(tracer=self.tracer)
+        context = lhs_validator.validate(lhs)
+
+        # ---------------------------
+        # 2. Binding (CRUCIAL)
+        # ---------------------------
+        BindingValidator(tracer=self.tracer).validate(context, rhs)
+
+        # ---------------------------
+        # 3. RHS validation
+        # ---------------------------
+        node_type = rhs.__class__.__name__
+
+        if node_type in ["ComparisonNode", "AndNode", "OrNode", "NotNode"]:
+            LogicValidator(tracer=self.tracer).validate(rhs, context)
+
+        elif node_type == "ProblemNode":
+            ProblemValidator().validate(rhs)
+
+        else:
+            raise InvalidPropertyError(f"Invalid RHS type: {node_type}")
+
+===== dsl\semantic\lhs.py =====
+
+from dsl.semantic.errors import InvalidPropertyError
+from dsl.semantic.tracer import ValidationTracer
+
+
+class LHSValidator:
+    """
+    LHSValidator is responsible for validating the LEFT-HAND SIDE (LHS)
+    of an implication and producing a semantic context.
+
+    This context is later used by:
+    - BindingValidator (variable resolution)
+    - LogicValidator (semantic correctness)
+
+    The LHS defines:
+    - which variables exist
+    - their semantic role (anchor, perturbation, symbolic, etc.)
+    - the default entity used for implicit feature access (e.g., `a <= 1`)
+    """
+
+    def __init__(self, tracer=None):
+        self.tracer = tracer or ValidationTracer()
+
+    def validate(self, lhs):
+        self.tracer.log(f"Validating LHS: {lhs}")
+
+        node_type = lhs.__class__.__name__
+
+        if node_type == "CheckAtExprNode":
+            return self._validate_check_at(lhs)
+
+        elif node_type == "AtExprNode":
+            return self._validate_at(lhs)
+
+        elif node_type == "PairwiseExprNode":
+            return self._validate_pairwise(lhs)
+
+        elif node_type == "QuantifierExprNode":
+            return self._validate_quantifier(lhs)
+
+        else:
+            raise InvalidPropertyError(f"Unknown LHS type: {node_type}")
+
+    # ─────────────────────────────
+    # CHECK_AT (point evaluation)
+    # ─────────────────────────────
+
+    def _validate_check_at(self, lhs):
+        """
+        Example:
+            check_at x0 => ...
+
+        Semantics:
+            Evaluate the property at a single concrete point.
+        """
+
+        self.tracer.log(f"Validating CheckAtExprNode: {lhs}")
+
+        if not lhs.variable:
+            raise InvalidPropertyError("Missing variable in check_at")
+
+        return {
+            "type": "pointwise",
+            "variables": {
+                lhs.variable: "anchor"
+            },
+            "default_entity": lhs.variable
+        }
+
+    # ─────────────────────────────
+    # AT (local neighborhood)
+    # ─────────────────────────────
+
+    def _validate_at(self, lhs):
+        """
+        Example:
+            at x => ...
+
+        Semantics:
+            x is the anchor point
+            x' is implicitly introduced as a perturbation
+
+        Implicit rule:
+            a <= 1  →  x'.a <= 1
+        """
+
+        self.tracer.log(f"Validating AtExprNode: {lhs}")
+
+        if not lhs.variable:
+            raise InvalidPropertyError("Missing variable in at")
+
+        x = lhs.variable
+        x_prime = f"{x}'"
+
+        return {
+            "type": "local",
+            "variables": {
+                x: "anchor",
+                x_prime: "perturbation"
+            },
+            "default_entity": x_prime,  # 🔥 implicit resolution goes to x'
+            "domain": lhs.domain,
+            "neighborhood": lhs.neighborhood
+        }
+
+    # ─────────────────────────────
+    # PAIRWISE (x ~ x')
+    # ─────────────────────────────
+
+    def _validate_pairwise(self, lhs):
+        """
+        Example:
+            x ~ x' => ...
+
+        Semantics:
+            x is a fixed anchor
+            x' is a perturbation sampled from a neighborhood of x
+
+        Implicit rule:
+            a <= 1  →  x'.a <= 1
+        """
+
+        self.tracer.log(f"Validating PairwiseExprNode: {lhs}")
+
+        if not lhs.pair:
+            raise InvalidPropertyError("Pairwise requires a pair")
+
+        try:
+            left, right = [v.strip() for v in lhs.pair.split("~")]
+        except Exception:
+            raise InvalidPropertyError(
+                f"Invalid pair format '{lhs.pair}', expected 'x ~ x\\''"
+            )
+
+        if not left or not right:
+            raise InvalidPropertyError("Pairwise requires two variables")
+
+        if not right.endswith("'"):
+            raise InvalidPropertyError(
+                f"Right variable '{right}' must be a primed version of '{left}'"
+            )
+
+        if right[:-1] != left:
+            raise InvalidPropertyError(
+                f"Invalid pair '{lhs.pair}': expected '{left} ~ {left}\\''"
+            )
+
+        return {
+            "type": "pairwise",
+            "variables": {
+                left: "anchor",
+                right: "perturbation"
+            },
+            "default_entity": right,  # 🔥 implicit resolution goes to x'
+            "domain": lhs.domain,
+            "neighborhood": lhs.neighborhood
+        }
+
+    # ─────────────────────────────
+    # QUANTIFIER (forall / exists)
+    # ─────────────────────────────
+
+    def _validate_quantifier(self, lhs):
+        """
+        Example:
+            forall => ...
+            exists => ...
+
+        Semantics:
+            Introduces a symbolic variable implicitly.
+
+        Convention:
+            Internal variable name = _x
+
+        Implicit rule:
+            a <= 1 → _x.a <= 1
+        """
+
+        self.tracer.log(f"Validating QuantifierExprNode: {lhs}")
+
+        if not lhs.quantifier:
+            raise InvalidPropertyError("Missing quantifier")
+
+        quantifier = lhs.quantifier.strip()
+
+        if quantifier not in {"forall", "exists"}:
+            raise InvalidPropertyError(
+                f"Unknown quantifier '{quantifier}'"
+            )
+
+        var = "_x"
+
+        return {
+            "type": "quantifier",
+            "quantifier": quantifier,
+            "variables": {
+                var: "symbolic"
+            },
+            "default_entity": var,
+            "domain": lhs.domain
+        }
+
+===== dsl\semantic\logic.py =====
+
+from dsl.semantic.errors import InvalidPropertyError
+from dsl.semantic.tracer import ValidationTracer
+
+
+class LogicValidator:
+    """
+    LogicValidator validates logical expressions on the RHS of an implication.
+
+    It ensures:
+    - structural correctness (AND, OR, NOT, comparisons)
+    - recursive validation of sub-expressions
+    - compatibility with the semantic context (variables already bound)
+
+    NOTE:
+    Variable binding is NOT handled here.
+    It is assumed that BindingValidator has already run.
+    """
+
+    def __init__(self, tracer=None):
+        self.tracer = tracer or ValidationTracer()
+
+    def validate(self, node, context):
+        self.tracer.log(f"Validating logic node: {node}")
+
+        node_type = node.__class__.__name__
+
+        if node_type == "ComparisonNode":
+            self._validate_comparison(node, context)
+
+        elif node_type == "AndNode":
+            self._validate_and(node, context)
+
+        elif node_type == "OrNode":
+            self._validate_or(node, context)
+
+        elif node_type == "NotNode":
+            self._validate_not(node, context)
+
+        else:
+            raise InvalidPropertyError(
+                f"Unknown logical node type: {node_type}"
+            )
+
+    # ─────────────────────────────
+    # COMPARISON
+    # ─────────────────────────────
+
+    def _validate_comparison(self, node, context):
+        """
+        Example:
+            x.a <= 1
+            a <= 1  (after binding → x'.a <= 1)
+        """
+
+        self.tracer.log(f"Validating ComparisonNode: {node}")
+
+        if not node.left or not node.right:
+            raise InvalidPropertyError("Invalid comparison: missing operands")
+
+        self._validate_operand(node.left, context)
+        self._validate_operand(node.right, context)
+
+    # ─────────────────────────────
+    # AND
+    # ─────────────────────────────
+
+    def _validate_and(self, node, context):
+        self.tracer.log(f"Validating AndNode: {node}")
+
+        self.validate(node.left, context)
+        self.validate(node.right, context)
+
+    # ─────────────────────────────
+    # OR
+    # ─────────────────────────────
+
+    def _validate_or(self, node, context):
+        self.tracer.log(f"Validating OrNode: {node}")
+
+        self.validate(node.left, context)
+        self.validate(node.right, context)
+
+    # ─────────────────────────────
+    # NOT
+    # ─────────────────────────────
+
+    def _validate_not(self, node, context):
+        self.tracer.log(f"Validating NotNode: {node}")
+
+        if not node.child:
+            raise InvalidPropertyError("NOT expression missing child")
+
+        self.validate(node.child, context)
+
+    # ─────────────────────────────
+    # OPERANDS
+    # ─────────────────────────────
+
+    def _validate_operand(self, node, context):
+        """
+        Validates leaf-level elements:
+        - AttributeNode
+        - ConstantNode
+
+        NOTE:
+        Binding (entity resolution) has already been done upstream.
+        """
+
+        node_type = node.__class__.__name__
+
+        if node_type == "AttributeNode":
+            self._validate_attribute(node, context)
+
+        elif node_type == "ConstantNode":
+            pass  # Always valid
+
+        else:
+            raise InvalidPropertyError(
+                f"Invalid operand type: {node_type}"
+            )
+
+    # ─────────────────────────────
+    # ATTRIBUTE
+    # ─────────────────────────────
+
+    def _validate_attribute(self, node, context):
+        """
+        Ensures:
+        - attribute has a resolved entity (after binding)
+        - feature name is valid (basic check only)
+        """
+
+        if not node.feature:
+            raise InvalidPropertyError("Attribute missing feature name")
+
+        if not node.entity:
+            raise InvalidPropertyError(
+                f"Unresolved attribute '{node.feature}' (binding failed)"
+            )
+
+===== dsl\semantic\problem.py =====
+
+from dsl.language.vocabulary.functions import EnumFunction
+from dsl.semantic.compatibility import PROBLEM_FUNCTION_COMPATIBILITY
+from dsl.semantic.errors import IncompatibleFunctionError, InvalidPropertyError
+from dsl.semantic.tracer import ValidationTracer
+
+
+class ProblemValidator:
+
+    def __init__(self, tracer=None):
+        self.tracer = tracer or ValidationTracer()
+
+    def validate(self, node):
+        self.tracer.log(f"Validating ProblemValidator: {node}")
+
+        problem = node.problem.upper()
+        function_str = node.function
+
+        # 🔥 conversion string → Enum
+        try:
+            function = EnumFunction[function_str]
+        except KeyError:
+            raise IncompatibleFunctionError(
+                f"Unknown function '{function_str}'"
+            )
+
+        allowed = PROBLEM_FUNCTION_COMPATIBILITY.get(problem)
+
+        if not allowed:
+            raise IncompatibleFunctionError(
+                f"Unknown problem '{problem}'"
+            )
+
+        if function not in allowed:
+            raise IncompatibleFunctionError(
+                f"{function_str} not allowed for {problem}"
+            )
+
+===== dsl\semantic\property.py =====
+
+from dsl.semantic.implication import ImplicationValidator
+from dsl.semantic.errors import InvalidPropertyError, SemanticError
+from dsl.semantic.tracer import ValidationTracer
+
+
+class PropertyValidator:
+
+    def __init__(self, tracer=None):
+        self.tracer = tracer or ValidationTracer()
+
+    def validate(self, prop):
+        self.tracer.log(f"Validating Property: {prop.type}")
+
+        # ---------------------------
+        # 1. Base verification
+        # ---------------------------
+        if not hasattr(prop, "implication") or prop.implication is None:
+            raise InvalidPropertyError(
+                message="Missing implication",
+                node=prop,
+                context="PropertyValidator"
+            )
+
+        # ---------------------------
+        # 2. implication Validation 
+        # ---------------------------
+        try:
+            ImplicationValidator(tracer=self.tracer).validate(prop.implication)
+
+        except SemanticError as e:
+            # Enrichir le contexte
+            raise InvalidPropertyError(
+                message=f"Property '{prop.type}' invalid: {e}",
+                node=prop,
+                context="PropertyValidator"
+            ) from e
+
+        # ---------------------------
+        # 3. Succees
+        # ---------------------------
+        self.tracer.log(f"✔ Property '{prop.type}' validated")
+
+        return True
+
+===== dsl\semantic\scope.py =====
+
+# forml/semantic/scope.py
+
+from enum import Enum
+
+class SemanticScope(Enum):
+    QUANTIFIER = "quantifier"
+    LOCAL = "local"
+    POINTWISE = "pointwise"
+    PAIRWISE = "pairwise"
+
+def get_scope_from_property(prop):
+    if prop.pairwise_expr:
+        return SemanticScope.PAIRWISE
+    
+    if prop.anchor_expr:
+        # check_at vs at
+        if prop.anchor_expr.anchor == "check_at":
+            return SemanticScope.POINTWISE
+        return SemanticScope.LOCAL
+
+    if prop.quantifier_expr:
+        return SemanticScope.QUANTIFIER
+
+    return None
+
+===== dsl\semantic\tracer.py =====
+
+class ValidationTracer:
+    def __init__(self, enabled=False):
+        self.enabled = enabled
+
+    def log(self, message):
+        if self.enabled:
+            print(message)
+
+===== dsl\semantic\type_system.py =====
+
+class Type:
+    pass
+
+
+class IntType(Type):
+    pass
+
+
+class FloatType(Type):
+    pass
+
+
+class BoolType(Type):
+    pass
+
+===== dsl\semantic\validator.py =====
+
+from dsl.builder.program import parse_program
+from dsl.parser.parser import parse_forml_code
+from dsl.semantic.tracer import ValidationTracer
+
+from dsl.semantic.property import PropertyValidator
+from test.fixtures.properties_samples import (
+    VALID_MINIMAL_AT,
+    VALID_MINIMAL_CHECK_AT,
+    VALID_MINIMAL_EXISTS,
+    VALID_MINIMAL_FORALL,
+    VALID_MINIMAL_PAIRWISE
+)
+
+class FORMLValidator:
+
+    def __init__(self):
+        self.tracer = ValidationTracer(enabled=True)
+
+    def validate(self, program, tracer=None):
+        if tracer:
+            self.tracer = tracer
+
+        self.tracer.log(f"Validating FORMLValidator: {program}")
+
+        for prop in program.body:
+            PropertyValidator(tracer=self.tracer).validate(prop)
+
+        return True
+
+
+if __name__ == "__main__":
+    """ This script is for quick testing of the validator. It parses a sample property and prints the resulting AST than validates it """
+    CST = parse_forml_code(VALID_MINIMAL_PAIRWISE)
+    print(CST.pretty())
+
+    AST = parse_program(CST)
+    print(AST)
+
+    tracer = ValidationTracer(enabled=True)
+    validator = FORMLValidator()
+    validator.validate(AST, tracer=tracer)

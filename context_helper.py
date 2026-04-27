@@ -44,4 +44,9 @@ def concat_files_in_folder(
 
 
 if __name__ == "__main__":
-    concat_files_in_folder("dsl", recursive=True, output_file="dsl.txt")
+    concat_files_in_folder("dsl/", recursive=True, output_file="context/dsl.txt")
+    concat_files_in_folder("dsl/ast", recursive=True, output_file="context/ast.txt")
+    concat_files_in_folder("dsl/semantic", recursive=True, output_file="context/semantic.txt")
+    concat_files_in_folder("dsl/builder", recursive=True, output_file="context/builder.txt")
+    concat_files_in_folder("dsl/language", recursive=True, output_file="context/language.txt")
+    concat_files_in_folder("dsl/parser", recursive=True, output_file="context/parser.txt")

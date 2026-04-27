@@ -129,6 +129,10 @@ def parse_value(node: Tree) -> ConstantNode:
 
     if cleaned is None:
         raise ValueError("Invalid value: None after cleaning")
+    
+    if cleaned.lower() == "true": return ConstantNode(True, "bool")
+    if cleaned.lower() == "false": return ConstantNode(False, "bool")
+    if cleaned.lower() == "null": return ConstantNode(None, "null")
 
     # Integer parsing
     try:
