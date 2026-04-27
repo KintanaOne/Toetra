@@ -1,0 +1,814 @@
+
+===== dsl\language\tools\constants.py =====
+
+# dsl/language/tools/constants.py
+
+"""
+Central registry of grammar constants used in Lark generation.
+All static header definitions and shared mappings live here.
+"""
+
+from dsl.language.vocabulary.problems import official_problems
+from dsl.language.vocabulary.properties import official_properties
+from dsl.language.vocabulary.quantifiers import official_quantifiers
+from dsl.language.vocabulary.functions import official_functions
+from dsl.language.vocabulary.backends import official_backends
+from dsl.language.vocabulary.metrics import official_metrics
+from dsl.language.vocabulary.protected_words import protected_words
+from dsl.language.vocabulary.logic_operations import official_logic_operations
+
+
+# =========================
+# RAW DICTIONARIES
+# =========================
+
+OFFICIAL_MAPS = {
+    "problems": official_problems,
+    "properties": official_properties,
+    "quantifiers": official_quantifiers,
+    "functions": official_functions,
+    "backends": official_backends,
+    "metrics": official_metrics,
+    "logic_operations": official_logic_operations,
+}
+
+# protected_words volontairement exclu du header rules
+
+
+# =========================
+# HEADER BLOCK GENERATION
+# =========================
+
+def format_rule_block(title: str, items: dict) -> list[str]:
+    """Convert dictionary into Lark rule list."""
+    return [f"# === {title.upper()} ==="] + [
+        f"{k} : {v}" for k, v in items.items()
+    ] + [""]
+
+
+def build_header() -> list[str]:
+    """Build full Lark header section."""
+    header = [
+        "%import common.WS",
+        "%import common.WS_INLINE",
+        "%import common.NEWLINE",
+        "%import common.ESCAPED_STRING",
+        "%import common.NUMBER",
+        "%import common.DIGIT",
+        "%import common.CNAME -> IDENTIFIER",
+        "%ignore WS_INLINE",
+        "",
+        "# === COMMENTS ===",
+        "COMMENT_LINE: /#[^\\n]*/",
+        "COMMENT_BLOCK: /'''(.|\\n)*?'''/",
+        "%ignore COMMENT_LINE",
+        "%ignore COMMENT_BLOCK",
+        "%ignore NEWLINE",
+        "",
+    ]
+
+    for name, mapping in OFFICIAL_MAPS.items():
+        header += format_rule_block(name, mapping)
+
+    header += [
+        "# === TOKENS ===",
+        "PAIRWISE.2 : /[A-Za-z][A-Za-z0-9_]*\\s*~\\s*[A-Za-z][A-Za-z0-9_']*/",
+        "PROPERTY_IMPLY : \"=>\"",
+        "",
+    ]
+
+    return header
+
+===== dsl\language\tools\formatter.py =====
+
+import re
+
+
+def format_lark_output(lines: list[str]) -> str:
+    formatted = []
+    i = 0
+    n = len(lines)
+
+    def is_section_line(line: str) -> bool:
+        return line.strip().startswith("#")
+
+    def is_rule(line: str) -> bool:
+        return ":" in line and not line.strip().startswith("#")
+    
+    def split_outside_regex(s: str, sep: str = "|") -> list[str]:
+        parts = []
+        current = []
+        in_regex = False
+
+        i = 0
+        while i < len(s):
+            c = s[i]
+
+            if c == "/" and (i == 0 or s[i-1] != "\\"):
+                in_regex = not in_regex
+                current.append(c)
+
+            elif c == sep and not in_regex:
+                parts.append("".join(current).strip())
+                current = []
+            else:
+                current.append(c)
+
+            i += 1
+
+        if current:
+            parts.append("".join(current).strip())
+
+        return parts
+    
+    def normalize_or_spacing(s: str) -> str:
+        parts = re.split(r"(/[^/]+/)", s)
+        result = []
+
+        for part in parts:
+            if part.startswith("/") and part.endswith("/"):
+                result.append(part)
+            else:
+                result.append(re.sub(r"\s*\|\s*", " | ", part))
+
+        return "".join(result)
+
+    while i < n:
+        line = lines[i]
+
+        # =========================
+        # SECTION BLOCKS
+        # =========================
+        if is_section_line(line):
+            block = []
+            while i < n and is_section_line(lines[i]):
+                block.append(lines[i])
+                i += 1
+
+            if formatted:
+                formatted.append("")
+
+            formatted.extend(block)
+            formatted.append("")
+            continue
+
+        # =========================
+        # RULE FORMATTING (FIXED)
+        # =========================
+        if is_rule(line):
+            lhs, rhs = line.split(":", 1)
+            lhs = lhs.strip()
+            rhs = rhs.strip()
+
+            # normalize spacing
+            rhs = re.sub(r"\s*\|\s*", "|", rhs)
+            # rhs = re.sub(r"\s*,\s*", ", ", rhs)
+            rhs = re.sub(r"\(\s+", "(", rhs)
+            rhs = re.sub(r"\s+\)", ")", rhs)
+
+            parts = split_outside_regex(rhs)
+
+            # SINGLE LINE SAFE
+            if len(parts) <= 1:
+                formatted.append(f"{lhs} : {parts[0]}")
+            else:
+                for j,part in enumerate(parts):
+                    # 🔥 CRITICAL: always same prefix, no variation
+                    if j == 0:
+                        formatted.append(f"{lhs} : {part}")
+                    else:
+                        formatted.append(f"    | {part}")
+
+            i += 1
+            continue
+
+        # =========================
+        # DEFAULT
+        # =========================
+        formatted.append(line)
+        i += 1
+
+    # =========================
+    # 🔥 FINAL FIX (ANTI _NL_OR)
+    # =========================
+    result = "\n".join(formatted)
+
+    # force clean newline + pipe formatting
+    result = re.sub(r"\n\s*\|", "\n    |", result)
+
+    return result
+
+===== dsl\language\tools\generator.py =====
+
+# dsl/language/tools/generator.py
+
+"""
+Main EBNF → Lark compiler pipeline.
+"""
+
+import re
+from pathlib import Path
+
+from dsl.language.tools.constants import build_header
+from dsl.language.tools.formatter import format_lark_output
+from dsl.language.tools.transforms import (
+    protect_brackets,
+    remove_ebnf_commas,
+    unprotect_brackets,
+    transform_ebnf_brackets,
+    replace_all_sequences,
+    normalize_whitespace,
+    convert_assignment,
+)
+from dsl.language.tools.registry import GRAMMAR_REGISTRY
+
+
+def is_advanced_rule(line: str) -> bool:
+    return "->" in line or line.strip().startswith("?")
+
+
+def ebnf_to_lark(ebnf_text: str) -> str:
+    lines = ebnf_text.splitlines()
+    lark_lines = build_header()
+
+    for raw in lines:
+        if not raw.strip():
+            continue
+
+        line = raw.strip()
+
+        # comment
+        if line.startswith("(*") and line.endswith("*)"):
+            lark_lines.append("# " + line[2:-2].strip())
+            continue
+
+        # inline comments
+        line = re.sub(r"\(\*(.*?)\*\)", r"# \1", line)
+
+        # 🔥 STEP 1: convert assignment FIRST
+        line = convert_assignment(line)
+
+        # protect
+        line = protect_brackets(line)
+
+        # transform EBNF
+        if not is_advanced_rule(line):
+            line = transform_ebnf_brackets(line)
+
+        line = unprotect_brackets(line)
+
+        # line = group_or_blocks(line)
+
+        # line = fix_neighborhood_precedence(line)
+
+        # remove EBNF commas (CRITICAL FIX)
+        line = remove_ebnf_commas(line)
+
+        # cleanup
+        line = line.rstrip(";")
+        line = normalize_whitespace(line)
+
+        # 🔥 STEP 2: replace AFTER assignment
+        line = replace_all_sequences(line, GRAMMAR_REGISTRY)
+
+        lark_lines.append(line)
+
+    return format_lark_output(lark_lines)
+
+
+def main():
+    input_path = Path("dsl/language/grammar/forml_grammar.ebnf")
+    output_path = Path("dsl/language/grammar/forml_grammar.lark")
+
+    ebnf_text = input_path.read_text(encoding="utf-8")
+
+    try:
+        lark_text = ebnf_to_lark(ebnf_text)
+        output_path.write_text(lark_text, encoding="utf-8")
+        print("✅ Conversion successful")
+    except KeyError as e:
+        print(f"❌ Grammar error: {e}")
+
+
+if __name__ == "__main__":
+    main()
+
+===== dsl\language\tools\registry.py =====
+
+# dsl/language/tools/registry.py
+
+from dsl.language.vocabulary.protected_words import protected_words
+from dsl.language.tools.constants import OFFICIAL_MAPS
+
+
+SPECIAL_SEQ = {
+    "official_properties": " | ".join(OFFICIAL_MAPS["properties"].keys()),
+    "official_problems": " | ".join(OFFICIAL_MAPS["problems"].keys()),
+    "official_quantifier": " | ".join(OFFICIAL_MAPS["quantifiers"].keys()),
+    "official_functions": " | ".join(OFFICIAL_MAPS["functions"].keys()),
+    "official_backends": " | ".join(OFFICIAL_MAPS["backends"].keys()),
+    "official_metrics": " | ".join(OFFICIAL_MAPS["metrics"].keys()),
+    "official_logic_operations": " | ".join(OFFICIAL_MAPS["logic_operations"].keys()),
+}
+
+
+PRIMITIVE_SEQ = {
+    "lowercase_string": r"/[a-z]+/",
+    "uppercase_string": r"/[A-Z]+/",
+    "number": "NUMBER",
+    "CHAR": r"/[a-zA-Z]/",
+    "digit": "DIGIT",
+    "identifier_name": "IDENTIFIER",
+    "escaped_string": "ESCAPED_STRING",
+}
+
+
+MISC_SEQ = {
+    "any_character_except_triple_quotes": r"/'''(.|\n)*?'''/",
+    "any_character_except_newline": r"/[^\n]+/",
+    "pairwise_token": r"/[A-Za-z][A-Za-z0-9_]*\s*~\s*[A-Za-z][A-Za-z0-9_]*'/",
+}
+
+
+GRAMMAR_REGISTRY = {
+    "SPECIAL_SEQ": SPECIAL_SEQ,
+    "PRIMITIVE_SEQ": PRIMITIVE_SEQ,
+    "MISC_SEQ": MISC_SEQ,
+    "PROTECTED_WORDS": protected_words,
+}
+
+===== dsl\language\tools\transforms.py =====
+
+# dsl/language/tools/transforms.py
+
+"""
+EBNF → Lark transformation utilities.
+"""
+
+import re
+
+
+# =========================
+# RULE CONTEXT DETECTION
+# =========================
+
+def is_rule_root(line: str) -> bool:
+    """
+    Detect if we are at rule root level AFTER assignment conversion.
+    """
+    return ":" in line and not line.strip().startswith("#")
+
+
+# =========================
+# ASSIGNMENT FIRST (IMPORTANT)
+# =========================
+
+def convert_assignment(line: str) -> str:
+    """
+    Convert EBNF assignment to Lark BEFORE any transformation.
+    """
+    return re.sub(r"^(\??\w+)\s*=", r"\1 :", line)
+
+
+# =========================
+# BRACKET PROTECTION
+# =========================
+
+def protect_brackets(line: str) -> str:
+    def repl(match):
+        content = match.group(0)
+        replacements = {
+            '"["': "___BRACKET_OPEN___",
+            '"]"': "___BRACKET_CLOSE___",
+            '"("': "___PAREN_OPEN___",
+            '")"': "___PAREN_CLOSE___",
+            '"{"': "___CURLY_OPEN___",
+            '"}"': "___CURLY_CLOSE___",
+        }
+        for k, v in replacements.items():
+            content = content.replace(k, v)
+        return content
+
+    return re.sub(r'"[^"]*"', repl, line)
+
+
+def unprotect_brackets(line: str) -> str:
+    replacements = {
+        "___BRACKET_OPEN___": '"["',
+        "___BRACKET_CLOSE___": '"]"',
+        "___PAREN_OPEN___": '"("',
+        "___PAREN_CLOSE___": '")"',
+        "___CURLY_OPEN___": '"{"',
+        "___CURLY_CLOSE___": '"}"',
+    }
+    for k, v in replacements.items():
+        line = line.replace(k, v)
+    return line
+
+
+# =========================
+# EBNF STRUCTURES
+# =========================
+
+def transform_ebnf_brackets(line: str) -> str:
+    def repl_curly(match):
+        return f"({match.group(1)})*"
+
+    def repl_brackets(match):
+        return f"({match.group(1)})?"
+    
+    def protect_or_groups(line: str) -> str:
+        """
+        Ensure OR chains are preserved as atomic blocks.
+        """
+
+        def repl(match):
+            group = match.group(0)
+            return f"( {group} )"
+
+        # match A | B | C pattern
+        return re.sub(
+            r"(?:[A-Z_]+\s*\|\s*)+[A-Z_]+",
+            repl,
+            line
+        )
+
+    prev = None
+    while prev != line:
+        prev = line
+        line = re.sub(r"\{([^{}]+)\}", repl_curly, line)
+        line = re.sub(r"\[([^\[\]]+)\]", repl_brackets, line)
+        line = protect_or_groups(line)
+
+    return line
+
+
+# =========================
+# MAIN RESOLVER (FIXED)
+# =========================
+
+def replace_all_sequences(line: str, registry: dict) -> str:
+    """
+    Replace ?tokens? using registry.
+
+    Adds automatic grouping for:
+    - metrics
+    - backends
+    """
+
+    root = is_rule_root(line)
+
+    WRAP_PAREN = {
+        "official_metrics",
+        "official_backends",
+    }
+
+    def resolve(key: str):
+        for group in ["SPECIAL_SEQ", "PRIMITIVE_SEQ", "MISC_SEQ"]:
+            if key in registry[group]:
+                return registry[group][key], group
+        raise KeyError(f"Unknown placeholder: ?{key}?")
+
+    def repl(match):
+        key = match.group(1).strip()
+        value, group = resolve(key)
+
+        # regex passthrough
+        if isinstance(value, str) and value.startswith("/") and value.endswith("/"):
+            return value
+
+        value_str = str(value)
+
+        # 🔥 ONLY WRAP SELECTED GROUPS
+        if group == "SPECIAL_SEQ" and key in WRAP_PAREN:
+            return f"{value_str}"
+
+        # root rule safety (no parentheses globally)
+        if root:
+            return value_str
+
+        # fallback
+        if "|" in value_str:
+            return f"( {value_str} )"
+
+        return value_str
+
+    return re.sub(r"\?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\?", repl, line)
+
+# =========================
+# CLEANERS
+# =========================
+
+def normalize_whitespace(line: str) -> str:
+    parts = re.split(r"(/[^/]+/)", line)  # split regex vs non-regex
+    cleaned = []
+
+    for part in parts:
+        if part.startswith("/") and part.endswith("/"):
+            cleaned.append(part)  # 🔒 untouched regex
+        else:
+            cleaned.append(re.sub(r"[ \t]+", " ", part))  # only spaces/tabs
+
+    return "".join(cleaned).strip()
+
+
+def remove_ebnf_commas(line: str) -> str:
+    result = []
+    in_string = False
+    depth = 0
+
+    for char in line:
+        if char == '"':
+            in_string = not in_string
+            result.append(char)
+            continue
+
+        if not in_string:
+            if char == "(":
+                depth += 1
+            elif char == ")":
+                depth -= 1
+
+            if char == ",":
+                result.append(" ")
+                continue
+
+        result.append(char)
+
+    return "".join(result)
+
+
+# =========================
+# PIPELINE SAFETY FOR OR BLOCKS
+# =========================
+
+def group_or_blocks(line: str) -> str:
+    """
+    Force parentheses around OR blocks when they are followed by tokens.
+    Fixes Lark ambiguity like:
+        A | B "." C
+    """
+
+    # pattern: A | B | C "." D  => (A | B | C) "." D
+    return re.sub(
+        r"((?:[A-Z_]+\s*\|\s*)+[A-Z_]+)\s*(\.)",
+        r"(\1) \2",
+        line
+    )
+
+
+# =========================
+# NEIGHBORHOOD PRECEDENCE
+# =========================
+
+def fix_neighborhood_precedence(line: str) -> str:
+    """
+    Fix:
+    L1 | L2 | LINF ","
+    => (L1 | L2 | LINF) ","
+    """
+
+    # capture metric block
+    return re.sub(
+        r"\(\s*metric\s*=\s*\)\?\s*([A-Z0-9_]+)\s*\|\s*([A-Z0-9_]+)\s*\|\s*([A-Z0-9_]+)",
+        r'("metric" "=")? (\1 | \2 | \3)',
+        line
+    )
+
+
+
+===== dsl\language\vocabulary\__init__.py =====
+
+
+
+===== dsl\language\vocabulary\backends.py =====
+
+# /forml/grammar/official_contents/backends.py
+
+from enum import Enum
+from dsl.language.vocabulary.utils import EnumMixin
+
+
+official_backends = {
+    "eran" : '"eran"',
+    "ERAN" : '"ERAN"',
+    "zonotope" : '"zonotope"',
+    "ZONOTOPE" : '"ZONOTOPE"',
+    "box" : '"box"',
+    "BOX" : '"BOX"',
+    "z3" : '"z3"',
+    "Z3" : '"Z3"'
+}
+
+class EnumBackend(EnumMixin, Enum):
+    ERAN = "ERAN"
+    zonotope = "zonotope"
+    ZONOTOPE = "ZONOTOPE"
+    box = "box"
+    BOX = "BOX"
+    z3 = "z3"
+    Z3 = "Z3"
+
+===== dsl\language\vocabulary\distances.py =====
+
+# /forml/grammar/official_contents/distance.py
+
+from enum import Enum
+from dsl.language.vocabulary.utils import EnumMixin
+
+
+official_distances = {
+    "hyperball" : '"hyperball"',
+    "levenshtein" : '"levenshtein"',
+    "euclidian" : '"euclidian"',
+}
+
+class EnumDistance(EnumMixin, Enum):
+    hyperball = "hyperball"
+    levenshtein = "levenshtein"
+    euclidian = "euclidian"
+
+===== dsl\language\vocabulary\functions.py =====
+
+# /forml/grammar/official_contents/functions.py
+
+from enum import Enum
+from dsl.language.vocabulary.utils import EnumMixin
+
+
+official_functions = {
+    "EQUAL" : '"EQUAL"',
+    "EQUITY" : '"EQUITY"',
+    "BETWEEN" : '"BETWEEN"',
+    "INCREASING" : '"INCREASING"',
+    "DECREASING" : '"DECREASING"'
+}
+
+class EnumFunction(EnumMixin, Enum):
+    EQUAL = "EQUAL"
+    EQUITY = "EQUITY"
+    BETWEEN = "BETWEEN"
+    INCREASING = "INCREASING"
+    DECREASING = "DECREASING"
+
+===== dsl\language\vocabulary\logic_operations.py =====
+
+# /forml/grammar/official_contents/quantifiers.py
+
+from enum import Enum
+from dsl.language.vocabulary.utils import EnumMixin
+
+official_logic_operations = {
+    "EQ": '"=="',
+    "NEQ": '"!="',
+    "LT": '"<"',
+    "LTE": '"<="',
+    "GT": '">"',
+    "GTE": '">="',
+    "IMPLY": '"->"'
+}
+
+class EnumLogicOperation(EnumMixin, Enum):
+    EQ = "=="
+    NEQ = "!="
+    LT = "<"
+    LTE = "<="
+    GT = ">"
+    GTE = ">="
+    IMPLY = "->"
+    
+
+===== dsl\language\vocabulary\metrics.py =====
+
+# /formel/grammar/official_contents/sets.py
+
+from enum import Enum
+from dsl.language.vocabulary.utils import EnumMixin
+
+official_metrics = {
+    "L1": '"L1"',
+    "L2": '"L2"',
+    "LINF": '"Linf"'
+}
+
+class EnumMetric(EnumMixin, Enum):
+    L1 = '"L1"'
+    L2 = '"L2"'
+    LINF = '"Linf"'
+
+
+===== dsl\language\vocabulary\problems.py =====
+
+# /forml/grammar/official_contents/problems.py
+
+from enum import Enum
+from dsl.language.vocabulary.utils import EnumMixin
+
+
+official_problems = {
+    "CLASSIFICATION" : '"CLASSIFICATION"',
+    "PREDICTION" : '"PREDICTION"',
+    "REGRESSION" : '"REGRESSION"',
+    "CLUSTERING" : '"CLUSTERING"',
+    "ANOMALY_DETECTION" : '"ANOMALY_DETECTION"',
+    "REINFORCEMENT_LEARNING" : '"REINFORCEMENT_LEARNING"',
+}
+
+class EnumProblem(EnumMixin, Enum):
+    CLASSIFICATION = "CLASSIFICATION"
+    PREDICTION = "PREDICTION"
+    REGRESSION = "REGRESSION"
+    CLUSTERING = "CLUSTERING"
+    ANOMALY_DETECTION = "ANOMALY_DETECTION"
+    REINFORCEMENT_LEARNING = "REINFORCEMENT_LEARNING"
+
+===== dsl\language\vocabulary\properties.py =====
+
+# /forml/grammar/official_contents/properties.py
+
+from enum import Enum
+from dsl.language.vocabulary.utils import EnumMixin
+
+
+official_properties = {
+    "ROBUSTNESS" : '"ROBUSTNESS"',
+    "STABILITY" : '"STABILITY"',
+    "FAIRNESS" : '"FAIRNESS"',
+    "MONOTONICITY" : '"MONOTONICITY"',
+    "BOUND" : '"BOUND"',
+    "LOGIC" : '"LOGIC"',
+
+}
+
+class EnumProperty(EnumMixin, Enum):
+    ROBUSTNESS = "ROBUSTNESS"
+    STABILITY = "STABILITY"
+    FAIRNESS = "FAIRNESS"
+    MONOTONICITY = "MONOTONICITY"
+    BOUND = "BOUND"
+    LOGIC = "LOGIC"
+
+===== dsl\language\vocabulary\protected_words.py =====
+
+# /forml/grammar/official_contents/protected_words.py
+
+from enum import Enum
+from dsl.language.vocabulary.utils import EnumMixin
+
+
+protected_words = {
+    "IN":           '"in"',
+    "WITH":         '''"with"''',
+    "AT":           '"at"',
+    "CHECK_AT":     '"check_at"',
+    "USING":        '"using"',
+    "MODEL":        '"model"',
+    "TARGET":       '"target"',
+    "NEIGHBORHOOD": '"neighborhood"',
+}
+
+class EnumProtectedWord(EnumMixin, Enum):
+    IN = '"in"'
+    WITH = '''"with"'''
+    AT = '"at"'
+    CHECK_AT = '"check_at"'
+    USING = '"using"'
+    MODEL = '"model"'
+    TARGET = '"target"'
+    NEIGHBORHOOD = '"neighborhood"'
+
+===== dsl\language\vocabulary\quantifiers.py =====
+
+# /forml/grammar/official_contents/quantifiers.py
+
+from enum import Enum
+from dsl.language.vocabulary.utils import EnumMixin
+
+official_quantifiers = {
+    "FORALL": '"∀"',
+    "EXIST": '"∃"',
+    "FORALL_WORD ": '"forall"',
+    "EXISTS_WORD ": '"exists"'
+}
+
+class EnumQuantifier(EnumMixin, Enum):
+    FORALL = "FORALL"
+    EXIST = "EXIST"
+    forall = "forall"
+    exists = "exists"
+
+===== dsl\language\vocabulary\utils.py =====
+
+# /forml/grammar/official_contents/utils.py
+
+class EnumMixin:
+    @classmethod
+    def from_str(cls, name: str):
+        """
+        
+        """
+        normalized = name.strip('"').upper()
+        for member in cls:
+            if member.value.upper() == normalized:
+                return member
+        raise ValueError(f"{cls.__name__} inconnu : {name}")

@@ -1,0 +1,262 @@
+
+===== dsl\ast\nodes\__init__.py =====
+
+
+
+===== dsl\ast\nodes\assertion.py =====
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Union
+
+from dsl.ast.nodes.base import ASTNode
+from dsl.ast.nodes.primitives import AttributeNode, ConstantNode
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# ASSERTION (WRAPPER)
+# ----------------------------------------------------------------------------------------------------------------------
+
+@dataclass
+class AssertionNode(ASTNode):
+    """Top-level assertion (WHAT must be true)."""
+    root: LogicalNode
+    context: ProblemNode | None = None
+# ----------------------------------------------------------------------------------------------------------------------
+# LOGICAL NODES
+# ----------------------------------------------------------------------------------------------------------------------
+
+class LogicalNode(ASTNode):
+    """Base class for all logical expressions."""
+    pass
+
+
+@dataclass
+class ComparisonNode(LogicalNode):
+    left: AttributeNode
+    op: str
+    right: ConstantNode
+
+
+@dataclass
+class AndNode(LogicalNode):
+    operands: list[LogicalNode]
+
+
+@dataclass
+class OrNode(LogicalNode):
+    operands: list[LogicalNode]
+
+
+@dataclass
+class NotNode(LogicalNode):
+    operand: LogicalNode
+
+
+@dataclass
+class ImplicationNode(LogicalNode):
+    left: LogicalNode
+    right: LogicalNode
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# CONTEXT
+# ----------------------------------------------------------------------------------------------------------------------
+
+@dataclass
+class ProblemNode(ASTNode):
+    problem: str
+    function: str | None
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# FALLBACK
+# ----------------------------------------------------------------------------------------------------------------------
+
+@dataclass
+class UnknownNode(LogicalNode):
+    raw: str
+
+===== dsl\ast\nodes\backends.py =====
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from dsl.ast.nodes.base import ASTNode
+from dsl.ast.nodes.primitives import ArgNode
+
+
+@dataclass
+class BackendNode(ASTNode):
+    """
+    Defines WHICH engine is used to verify the property.
+    """
+
+    name: str
+    args: list[ArgNode]
+
+===== dsl\ast\nodes\base.py =====
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+
+@dataclass
+class ASTNode:
+    """
+    Root class for all AST nodes in FORML DSL.
+    Enables polymorphism and tree traversal.
+    """
+    pass
+
+===== dsl\ast\nodes\domain.py =====
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from dsl.ast.nodes.base import ASTNode
+
+
+@dataclass
+class DomainNode(ASTNode):
+    name: str
+    values: list[str]
+
+===== dsl\ast\nodes\expressions.py =====
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Union
+
+from dsl.ast.nodes.base import ASTNode
+from dsl.ast.nodes.neighborhood import NeighborhoodNode
+from dsl.ast.nodes.domain import DomainNode
+
+
+@dataclass
+class ExpressionNode(ASTNode):
+    """WHERE a property is evaluated."""
+    pass
+
+
+@dataclass
+class AtExprNode(ExpressionNode):
+    variable: str
+    neighborhood: NeighborhoodNode | None
+    domain: DomainNode | None
+
+
+@dataclass
+class PairwiseExprNode(ExpressionNode):
+    pair: str
+    neighborhood: NeighborhoodNode
+    domain: DomainNode | None = None
+
+
+@dataclass
+class CheckAtExprNode(ExpressionNode):
+    variable: str
+
+
+@dataclass
+class QuantifierExprNode(ExpressionNode):
+    quantifier: str
+    domain: DomainNode | None
+
+===== dsl\ast\nodes\header.py =====
+
+from dataclasses import dataclass
+from typing import Optional
+
+
+@dataclass
+class HeaderNode:
+    model: str
+    target: str
+
+===== dsl\ast\nodes\neighborhood.py =====
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from dsl.ast.nodes.base import ASTNode
+from dsl.ast.nodes.primitives import ArgNode
+
+
+@dataclass
+class NeighborhoodNode(ASTNode):
+    metric: str
+    args: list[ArgNode]
+
+===== dsl\ast\nodes\primitives.py =====
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Union
+
+
+PrimitiveValue = Union[str, int, float, bool, None]
+
+
+@dataclass
+class ArgNode:
+    key: str
+    value: PrimitiveValue
+
+
+@dataclass
+class ConstantNode:
+    value: PrimitiveValue
+    dtype: str  # TODO: remplacer par Enum
+
+
+@dataclass
+class AttributeNode:
+    entity: str | None
+    feature: str
+    path: list[str]
+
+===== dsl\ast\nodes\program.py =====
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from dsl.ast.nodes.header import HeaderNode
+from dsl.ast.nodes.property import PropertyNode
+
+
+@dataclass
+class ProgramNode:
+    header: HeaderNode
+    body: list[PropertyNode]
+
+===== dsl\ast\nodes\property.py =====
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from dsl.ast.nodes.assertion import AssertionNode
+from dsl.ast.nodes.backends import BackendNode
+from dsl.ast.nodes.expressions import ExpressionNode
+
+
+@dataclass
+class PropertyNode:
+    type: str
+    rule: PropertyRuleNode
+    backend: BackendNode | None
+
+
+@dataclass
+class PropertyRuleNode:
+    scope: ExpressionNode
+    assertion: AssertionNode

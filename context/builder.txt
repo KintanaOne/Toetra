@@ -1,0 +1,1727 @@
+
+===== dsl\builder\__init__.py =====
+
+
+
+===== dsl\builder\assertion.py =====
+
+from typing import List, Union
+
+from lark import Tree, Token
+
+from dsl.ast.nodes.assertion import (
+    AndNode,
+    AssertionNode,
+    ComparisonNode,
+    ImplicationNode,
+    OrNode,
+    NotNode,
+    ProblemNode,
+    UnknownNode,
+    LogicalNode,
+)
+
+from dsl.builder.core.utils import find_node, get_token_value
+from dsl.builder.core.ast_utils import parse_attribute, node_value, parse_value
+
+
+# ============================================================================  
+# COMPARISON  
+# ============================================================================  
+
+def build_logic_expr(node: Tree) -> LogicalNode:
+    attribute_node = find_node(node, "attribute")
+    value_node = find_node(node, "value")
+    op_node = find_node(node, "logic_operation")
+
+    if attribute_node is None or value_node is None or op_node is None:
+        return UnknownNode(raw="invalid_comparison")
+
+    left = parse_attribute(attribute_node)
+    op = str(get_token_value(op_node))
+    right = parse_value(value_node)
+
+    return ComparisonNode(left=left, op=op, right=right)
+
+
+# ============================================================================  
+# UTILS  
+# ============================================================================  
+
+def _extract_trees(node: Tree) -> List[Tree]:
+    return [c for c in node.children if isinstance(c, Tree)]
+
+
+# ============================================================================  
+# CORE PARSER  
+# ============================================================================  
+
+def parse_assertion(node: Union[Tree, Token, None]) -> AssertionNode:
+
+    if node is None:
+        return AssertionNode(root=UnknownNode(raw="None"))
+
+    if isinstance(node, Token):
+        return AssertionNode(root=UnknownNode(raw=node.value))
+
+    t = node.data
+    children = _extract_trees(node)
+
+    # ----------------------------------------------------------------------
+    # IMPLY
+    # ----------------------------------------------------------------------
+    if t == "logical_imply":
+        if len(children) != 2:
+            return AssertionNode(root=UnknownNode(raw="invalid_imply"))
+
+        return AssertionNode(
+            root=ImplicationNode(
+                left=parse_assertion(children[0]).root,
+                right=parse_assertion(children[1]).root,
+            )
+        )
+
+    # ----------------------------------------------------------------------
+    # OR
+    # ----------------------------------------------------------------------
+    if t == "logic_or":
+        ops = [parse_assertion(c).root for c in children]
+
+        if len(ops) == 1:
+            return AssertionNode(root=ops[0])
+
+        return AssertionNode(root=OrNode(operands=ops))
+
+    # ----------------------------------------------------------------------
+    # AND
+    # ----------------------------------------------------------------------
+    if t == "logic_and":
+        ops = [parse_assertion(c).root for c in children]
+
+        if len(ops) == 1:
+            return AssertionNode(root=ops[0])
+
+        return AssertionNode(root=AndNode(operands=ops))
+
+    # ----------------------------------------------------------------------
+    # NOT
+    # ----------------------------------------------------------------------
+    if t == "logic_not":
+        if not children:
+            return AssertionNode(root=UnknownNode(raw="empty_not"))
+
+        return AssertionNode(
+            root=NotNode(
+                operand=parse_assertion(children[-1]).root
+            )
+        )
+
+    # ----------------------------------------------------------------------
+    # COMPARISON
+    # ----------------------------------------------------------------------
+    if t == "logic_expr":
+        return AssertionNode(root=build_logic_expr(node))
+
+    # ----------------------------------------------------------------------
+    # ATOM
+    # ----------------------------------------------------------------------
+    if t == "atom":
+        return parse_assertion(children[0]) if children else AssertionNode(root=UnknownNode(raw="empty_atom"))
+
+    # ----------------------------------------------------------------------
+    # PROBLEM
+    # ----------------------------------------------------------------------
+    if t == "problem_expr":
+        problem = "UNKNOWN"
+        function = None
+
+        for c in node.children:
+            if isinstance(c, Token):
+                problem = c.value
+            elif isinstance(c, Tree):
+                function = node_value(c)
+
+        return AssertionNode(
+            root=UnknownNode(raw="problem_expr"),
+            context=ProblemNode(problem=problem, function=function)
+        )
+
+    # ----------------------------------------------------------------------
+    # FALLBACK
+    # ----------------------------------------------------------------------
+    return AssertionNode(root=UnknownNode(raw=f"Unhandled node: {t}"))
+
+
+
+===== dsl\builder\backends.py =====
+
+from lark import Tree
+from dsl.builder.core.utils import find_child, find_all_nodes, find_node
+from dsl.builder.core.ast_utils import node_value, clean_string
+
+from dsl.ast.nodes.backends import BackendNode
+from dsl.ast.nodes.primitives import ArgNode
+
+# ============================================================================
+# backend
+# ============================================================================
+
+def parse_backend(node: Tree | None):
+    if node is None:
+        return None
+
+    n = find_node(node, "backend")
+    if n is None:
+        return None
+
+    name = node_value(n)
+    if name is None:
+        raise ValueError("Backend name missing")
+
+    args: list[ArgNode] = []
+
+    args_node = find_child(n, "args")
+
+    if args_node:
+        for arg in find_all_nodes(args_node, "arg"):
+            eq = find_child(arg, "arg_identifier_eq")
+
+            if eq:
+                key = node_value(find_child(eq, "quoted_identifier"))
+                val = clean_string(node_value(find_child(eq, "value")))
+
+                if key is None or val is None:
+                    raise ValueError("Invalid backend arg")
+
+                args.append(ArgNode(key=key, value=val))
+
+    return BackendNode(name=name, args=args)
+
+===== dsl\builder\builder.py =====
+
+from dsl.builder.core.pretty_ast import pretty
+
+from dsl.builder.program import parse_program
+from dsl.parser.parser import parse_forml_code
+from test.fixtures.properties_samples import VALID_AT_WITH_NEIGHBORHOOD, VALID_CHECK_AT_WITH_COMPLEX_ASSERTION, VALID_FORALL_WITH_DOMAIN, VALID_MINIMAL_AT
+from test.fixtures.logic_samples import OPERATOR_PRECEDENCE_PROPERTY
+
+if __name__ == "__main__":
+    """ This script is for quick testing of the builder. It parses a sample property and prints the resulting AST """
+    # LARK
+    CST = parse_forml_code(VALID_AT_WITH_NEIGHBORHOOD)
+    print(CST.pretty())
+
+    # BUILDER
+    AST = parse_program(CST)
+    print(pretty(AST))
+
+===== dsl\builder\core\__init__.py =====
+
+
+
+===== dsl\builder\core\ast_utils.py =====
+
+from __future__ import annotations
+
+from lark import Tree, Token
+
+from dsl.ast.nodes.primitives import AttributeNode, ConstantNode
+from dsl.builder.core.types import LarkNode
+from dsl.builder.core.utils import get_token_value
+
+# ============================================================================
+# GENERIC NODE VALUE EXTRACTION
+# ============================================================================
+# These helpers provide a uniform way to extract meaningful values
+# from Lark nodes without relying on grammar-specific positions.
+
+
+def node_value(node: LarkNode | None) -> str | None:
+    """
+    Recursively extract the first usable string value from a node.
+
+    Rules:
+    - Token -> return value
+    - Tree -> recursively inspect children
+    - None -> return None
+
+    This function avoids hardcoding grammar structure elsewhere.
+    """
+    if node is None:
+        return None
+
+    if isinstance(node, Token):
+        return node.value
+
+    if isinstance(node, Tree):
+        for child in node.children:
+            v = node_value(child)
+            if v is not None:
+                return v
+
+    return None
+
+
+# ============================================================================
+# STRING NORMALIZATION
+# ============================================================================
+
+def clean_string(value: str | None) -> str | None:
+    """
+    Normalize string literals by removing surrounding quotes.
+
+    Supports:
+    - "text"
+    - 'text'
+    """
+    if value is None:
+        return None
+
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+        return value[1:-1]
+
+    return value
+
+
+# ============================================================================
+# ATTRIBUTE PARSING
+# ============================================================================
+# Converts a Lark subtree into a structured AttributeNode.
+
+
+def parse_attribute(node: Tree) -> AttributeNode:
+    """
+    Parse an attribute expression into an AttributeNode.
+
+    Supported forms:
+    - age
+    - x0.age
+    - user.profile.age
+    - a.b.c.d
+
+    Design rules:
+    - Last identifier = feature
+    - First identifier (if multiple) = entity
+    - Full chain stored in `path`
+    """
+
+    def require_str(value: str | None) -> str:
+        if value is None:
+            raise ValueError("Expected string, got None")
+        return value
+
+    identifiers = [
+        require_str(get_token_value(child))
+        for child in node.children
+        if isinstance(child, Tree) and child.data == "identifier"
+    ]
+
+    identifiers = [i for i in identifiers if i is not None]
+
+    if not identifiers:
+        raise ValueError("Invalid attribute: no identifiers found")
+
+    return AttributeNode(
+        entity=identifiers[0] if len(identifiers) > 1 else None,
+        feature=identifiers[-1],
+        path=identifiers,
+    )
+
+
+# ============================================================================
+# CONSTANT PARSING
+# ============================================================================
+# Converts raw tokens into typed ConstantNode.
+
+
+def parse_value(node: Tree) -> ConstantNode:
+    """
+    Parse a value node into a ConstantNode with inferred type.
+
+    Type inference strategy:
+    1. Try int
+    2. Try float
+    3. Fallback to string
+    """
+    raw = get_token_value(node)
+
+    if raw is None:
+        raise ValueError("Invalid value node")
+
+    cleaned = clean_string(raw)
+
+    if cleaned is None:
+        raise ValueError("Invalid value: None after cleaning")
+
+    # Integer parsing
+    try:
+        return ConstantNode(value=int(cleaned), dtype="int")
+    except (ValueError, TypeError):
+        pass
+
+    # Float parsing
+    try:
+        return ConstantNode(value=float(cleaned), dtype="float")
+    except (ValueError, TypeError):
+        pass
+
+    # Fallback: string
+    return ConstantNode(value=cleaned, dtype="string")
+
+
+# ============================================================================
+# TREE NORMALIZATION
+# ============================================================================
+# Removes syntactic noise from Lark trees.
+
+
+def unwrap_single_child(node: Tree) -> Tree:
+    """
+    Collapse intermediate nodes that only wrap a single child.
+
+    This is a purely syntactic normalization step:
+    - No semantic assumption
+    - Safe to apply globally
+
+    Useful to simplify AST construction logic.
+    """
+    while (
+        isinstance(node, Tree)
+        and len(node.children) == 1
+        and isinstance(node.children[0], Tree)
+    ):
+        node = node.children[0]
+
+    return node
+
+===== dsl\builder\core\pretty.py =====
+
+# dsl/utils/pretty.py
+
+from typing import Any
+
+
+def pretty(node: Any, indent: int = 0) -> str:
+    """
+    Generic pretty printer for AST nodes.
+
+    - Handles primitives (str, int, float, bool)
+    - Handles lists
+    - Handles dataclasses / objects via __dict__
+    """
+
+    pad = "  " * indent
+
+    # None
+    if node is None:
+        return f"{pad}None"
+
+    # Primitive types
+    if isinstance(node, (str, int, float, bool)):
+        return f"{pad}{node}"
+
+    # List
+    if isinstance(node, list):
+        if not node:
+            return f"{pad}[]"
+
+        lines = []
+        for item in node:
+            lines.append(pretty(item, indent))
+        return "\n".join(lines)
+
+    # AST Node (dataclass or object)
+    if hasattr(node, "__dict__"):
+        lines = [f"{pad}{node.__class__.__name__}"]
+
+        for key, value in node.__dict__.items():
+            lines.append(f"{pad}  {key}:")
+            lines.append(pretty(value, indent + 2))
+
+        return "\n".join(lines)
+
+    # Fallback
+    return f"{pad}{repr(node)}"
+
+===== dsl\builder\core\pretty_ast.py =====
+
+# dsl/utils/pretty_ast.py
+
+from typing import Any
+
+
+# =========================================================
+# ENTRY POINT
+# =========================================================
+
+def pretty(node: Any, indent: int = 0) -> str:
+    if node is None:
+        return _pad(indent) + "None"
+
+    if isinstance(node, list):
+        return _pretty_list(node, indent)
+
+    method = _DISPATCH.get(type(node))
+    if method:
+        return method(node, indent)
+
+    return _pretty_object(node, indent)
+
+
+# =========================================================
+# DISPATCH
+# =========================================================
+
+_DISPATCH = {}
+
+
+def register(cls):
+    def wrapper(func):
+        _DISPATCH[cls] = func
+        return func
+    return wrapper
+
+
+# =========================================================
+# HELPERS
+# =========================================================
+
+def _pad(indent: int) -> str:
+    return "  " * indent
+
+
+def _pretty_list(lst, indent):
+    if not lst:
+        return _pad(indent) + "[]"
+    return "\n".join(pretty(item, indent) for item in lst)
+
+
+def _pretty_object(obj, indent):
+    pad = _pad(indent)
+    lines = [f"{pad}{obj.__class__.__name__}"]
+
+    if hasattr(obj, "__dict__"):
+        for k, v in obj.__dict__.items():
+            lines.append(f"{pad}  {k}:")
+            lines.append(pretty(v, indent + 2))
+
+    return "\n".join(lines)
+
+
+def _expr(node):
+    from dsl.ast.nodes.primitives import AttributeNode, ConstantNode
+
+    if isinstance(node, AttributeNode):
+        return ".".join(node.path)
+
+    if isinstance(node, ConstantNode):
+        return str(node.value)
+
+    return str(node)
+
+
+# =========================================================
+# IMPORTS (TES VRAIS NODES)
+# =========================================================
+
+from dsl.ast.nodes.assertion import (
+    OrNode,
+    AndNode,
+    NotNode,
+    ComparisonNode,
+    ProblemNode,
+)
+
+from dsl.ast.nodes.primitives import (
+    ConstantNode,
+    AttributeNode,
+    ArgNode,
+)
+
+from dsl.ast.nodes.expressions import (
+    AtExprNode,
+    CheckAtExprNode,
+    PairwiseExprNode,
+    QuantifierExprNode,
+)
+
+from dsl.ast.nodes.neighborhood import NeighborhoodNode
+from dsl.ast.nodes.domain import DomainNode
+
+from dsl.ast.nodes.property import PropertyNode, PropertyRuleNode
+from dsl.ast.nodes.header import HeaderNode
+from dsl.ast.nodes.program import ProgramNode
+
+
+# =========================================================
+# LOGIC
+# =========================================================
+
+@register(OrNode)
+def _pretty_or(node: OrNode, indent: int):
+    pad = _pad(indent)
+    lines = [f"{pad}OR"]
+    lines += [pretty(op, indent + 1) for op in node.operands]
+    return "\n".join(lines)
+
+
+@register(AndNode)
+def _pretty_and(node: AndNode, indent: int):
+    pad = _pad(indent)
+    lines = [f"{pad}AND"]
+    lines += [pretty(op, indent + 1) for op in node.operands]
+    return "\n".join(lines)
+
+
+@register(NotNode)
+def _pretty_not(node: NotNode, indent: int):
+    pad = _pad(indent)
+    return f"{pad}NOT\n{pretty(node.operand, indent + 1)}"
+
+
+@register(ComparisonNode)
+def _pretty_cmp(node: ComparisonNode, indent: int):
+    pad = _pad(indent)
+    return f"{pad}{_expr(node.left)} {node.op} {_expr(node.right)}"
+
+
+# =========================================================
+# PRIMITIVES
+# =========================================================
+
+@register(AttributeNode)
+def _pretty_attr(node: AttributeNode, indent: int):
+    return _pad(indent) + ".".join(node.path)
+
+
+@register(ConstantNode)
+def _pretty_const(node: ConstantNode, indent: int):
+    return _pad(indent) + str(node.value)
+
+
+@register(ArgNode)
+def _pretty_arg(node: ArgNode, indent: int):
+    pad = _pad(indent)
+
+    # suppose format: key=value
+    key = getattr(node, "name", None) or getattr(node, "key", None)
+    value = getattr(node, "value", None)
+
+    if key is not None:
+        return f"{pad}{key}={value}"
+
+    return f"{pad}{value}"
+
+
+# =========================================================
+# DOMAIN / NEIGHBORHOOD
+# =========================================================
+
+@register(DomainNode)
+def _pretty_domain(node: DomainNode, indent: int):
+    pad = _pad(indent)
+    return f"{pad}domain({node})"
+
+
+@register(NeighborhoodNode)
+def _pretty_neighborhood(node: NeighborhoodNode, indent: int):
+    pad = _pad(indent)
+
+    if not node.args:
+        return f"{pad}neighborhood({node.metric})"
+
+    args = ", ".join(
+        f"{getattr(arg, 'name', getattr(arg, 'key', '?'))}={getattr(arg, 'value', '?')}"
+        for arg in node.args
+    )
+
+    return f"{pad}neighborhood({node.metric}, {args})"
+
+
+# =========================================================
+# EXPRESSIONS
+# =========================================================
+
+@register(AtExprNode)
+def _pretty_at(node: AtExprNode, indent: int):
+    pad = _pad(indent)
+
+    lines = [f"{pad}at {node.variable}"]
+
+    if node.domain:
+        lines.append(f"{pad}  in {pretty(node.domain, 0).strip()}")
+
+    if node.neighborhood:
+        lines.append(f"{pad}  in {pretty(node.neighborhood, 0).strip()}")
+
+    return "\n".join(lines)
+
+
+@register(CheckAtExprNode)
+def _pretty_check(node: CheckAtExprNode, indent: int):
+    return f"{_pad(indent)}check_at {node.variable}"
+
+
+@register(PairwiseExprNode)
+def _pretty_pairwise(node: PairwiseExprNode, indent: int):
+    pad = _pad(indent)
+
+    lines = [f"{pad}pairwise {node.pair}"]
+
+    if node.domain:
+        lines.append(f"{pad}  in {pretty(node.domain, 0).strip()}")
+
+    if node.neighborhood:
+        lines.append(f"{pad}  in {pretty(node.neighborhood, 0).strip()}")
+
+    return "\n".join(lines)
+
+
+@register(QuantifierExprNode)
+def _pretty_quantifier(node: QuantifierExprNode, indent: int):
+    pad = _pad(indent)
+
+    lines = [f"{pad}{node.quantifier}"]
+
+    if node.domain:
+        lines.append(f"{pad}  in {pretty(node.domain, 0).strip()}")
+
+    return "\n".join(lines)
+
+
+# =========================================================
+# PROBLEM
+# =========================================================
+
+@register(ProblemNode)
+def _pretty_problem(node: ProblemNode, indent: int):
+    pad = _pad(indent)
+
+    if node.function:
+        return f"{pad}{node.problem}.{node.function}()"
+
+    return f"{pad}{node.problem}"
+
+
+# =========================================================
+# PROPERTY
+# =========================================================
+
+@register(PropertyRuleNode)
+def _pretty_rule(node: PropertyRuleNode, indent: int):
+    pad = _pad(indent)
+
+    lines = [
+        f"{pad}scope:",
+        pretty(node.scope, indent + 1),
+    ]
+
+    lines.extend([
+        f"{pad}assertion:",
+        pretty(node.assertion, indent + 1),
+    ])
+
+    return "\n".join(lines)
+
+
+@register(PropertyNode)
+def _pretty_property(node: PropertyNode, indent: int):
+    pad = _pad(indent)
+
+    lines = [f"{pad}[{node.type}]"]
+    lines.append(pretty(node.rule, indent + 1))
+
+    if node.backend:
+        lines.append(f"{pad}using {node.backend}")
+
+    return "\n".join(lines)
+
+
+# =========================================================
+# HEADER / PROGRAM
+# =========================================================
+
+@register(HeaderNode)
+def _pretty_header(node: HeaderNode, indent: int):
+    pad = _pad(indent)
+
+    return "\n".join([
+        f"{pad}model := {node.model}",
+        f"{pad}target := {node.target}",
+    ])
+
+
+@register(ProgramNode)
+def _pretty_program(node: ProgramNode, indent: int):
+    lines = [
+        pretty(node.header, indent),
+        ""
+    ]
+
+    for prop in node.body:
+        lines.append(pretty(prop, indent))
+        lines.append("")
+
+    return "\n".join(lines).strip()
+
+===== dsl\builder\core\pretty_tree.py =====
+
+# dsl/utils/pretty_tree.py
+
+from typing import Any
+
+
+def pretty_tree(node: Any, prefix: str = "", is_last: bool = True) -> str:
+    """
+    Pretty print AST as a tree (like Lark .pretty()).
+
+    Example:
+    ProgramNode
+    ├── header
+    │   └── HeaderNode
+    └── body
+        └── PropertyNode
+    """
+
+    connector = "└── " if is_last else "├── "
+    line = prefix + connector + _node_label(node)
+
+    lines = [line]
+
+    children = _get_children(node)
+
+    if children:
+        new_prefix = prefix + ("    " if is_last else "│   ")
+
+        for i, (key, child) in enumerate(children):
+            last = i == len(children) - 1
+
+            if key is not None:
+                # Print field name
+                lines.append(new_prefix + ("└── " if last else "├── ") + f"{key}")
+
+                child_prefix = new_prefix + ("    " if last else "│   ")
+                lines.append(pretty_tree(child, child_prefix, True))
+            else:
+                lines.append(pretty_tree(child, new_prefix, last))
+
+    return "\n".join(lines)
+
+
+def _node_label(node: Any) -> str:
+    if node is None:
+        return "None"
+
+    if isinstance(node, (str, int, float, bool)):
+        return str(node)
+
+    return node.__class__.__name__
+
+
+def _get_children(node: Any):
+    """
+    Extract children as (key, value) pairs.
+    """
+
+    if node is None:
+        return []
+
+    if isinstance(node, list):
+        return [(None, item) for item in node]
+
+    if hasattr(node, "__dict__"):
+        return [(k, v) for k, v in node.__dict__.items()]
+
+    return []
+
+===== dsl\builder\core\strict.py =====
+
+from typing import TypeVar, Optional
+from lark import Tree
+
+from dsl.builder.core.utils import find_node
+
+T = TypeVar("T")
+
+
+# ============================================================================
+# STRICT VALIDATION HELPERS
+# ============================================================================
+# These helpers ensure that no None values leak from the parsing layer
+# into the AST / domain layer.
+#
+# The goal is to enforce strong invariants at the boundary between:
+#   - Lark parsing (which is permissive and optional-heavy)
+#   - Domain AST construction (which must be strict and type-safe)
+#
+# This avoids repetitive None-checking across all parser functions.
+# ============================================================================
+
+
+def require_node(node: Optional[T], message: str) -> T:
+    """
+    Ensures that a parsed node is not None.
+
+    Args:
+        node: potentially None node returned by a search function
+        message: error message used if the node is missing
+
+    Returns:
+        A non-None node (type-safe)
+
+    Raises:
+        ValueError: if node is None
+    """
+    if node is None:
+        raise ValueError(message)
+    return node
+
+
+def require_tree(node: Optional[Tree], message: str) -> Tree:
+    """
+    Strict version specialized for Lark Tree nodes.
+
+    Ensures the parser does not propagate missing tree nodes.
+    """
+    if node is None:
+        raise ValueError(message)
+    return node
+
+
+def require_value(value: Optional[str], message: str) -> str:
+    """
+    Ensures that extracted token values are not None.
+
+    Used after node_value(...) calls.
+    """
+    if value is None:
+        raise ValueError(message)
+    return value
+
+
+def optional(node, name, parser):
+    child = find_node(node, name)
+    return parser(child) if child else None
+
+
+def safe_find_child(tree: Tree, name: str) -> Tree:
+    """
+    Safe wrapper around find_child.
+
+    Guarantees that the returned child node exists.
+    """
+    from dsl.builder.core.utils import find_child
+
+    node = find_child(tree, name)
+    return require_tree(node, f"Expected child node '{name}' not found")
+
+
+def safe_find_node(tree: Tree, name: str) -> Tree:
+    """
+    Safe wrapper around find_node.
+
+    Guarantees that the requested node exists in the tree.
+    """
+    from dsl.builder.core.utils import find_node
+
+    node = find_node(tree, name)
+    return require_tree(node, f"Expected node '{name}' not found")
+
+===== dsl\builder\core\types.py =====
+
+from __future__ import annotations
+
+from lark import Tree, Token
+from typing import Union
+
+# ============================================================================
+# LARK TYPE ALIASES
+# ============================================================================
+# These aliases centralize Lark typing across the builder.
+# This avoids repetition and improves readability + maintainability.
+
+LarkNode = Union[Tree, Token]
+LarkTree = Tree
+
+===== dsl\builder\core\utils.py =====
+
+from __future__ import annotations
+
+from lark import Tree, Token
+
+from dsl.builder.core.types import LarkNode, LarkTree
+
+# ============================================================================
+# TREE NAVIGATION HELPERS
+# ============================================================================
+# These functions provide safe and reusable traversal utilities over Lark trees.
+# They are intentionally generic and contain NO DSL-specific logic.
+
+
+def find_child(tree: LarkTree, name: str) -> LarkTree | None:
+    """
+    Return the first direct child Tree matching a given rule name.
+
+    This is a shallow search (1 level only).
+    """
+    for child in tree.children:
+        if isinstance(child, Tree) and child.data == name:
+            return child
+    return None
+
+
+def find_node(tree: LarkTree, name: str) -> LarkTree | None:
+    """
+    Depth-first search (DFS) to find the first occurrence of a node.
+
+    Stops at the first match.
+    """
+    if tree.data == name:
+        return tree
+
+    for child in tree.children:
+        if isinstance(child, Tree):
+            found = find_node(child, name)
+            if found:
+                return found
+
+    return None
+
+
+def find_all_nodes(tree: LarkTree, name: str) -> list[LarkTree]:
+    """
+    Return ALL nodes matching a given rule name using DFS.
+    """
+    results: list[LarkTree] = []
+
+    if tree.data == name:
+        results.append(tree)
+
+    for child in tree.children:
+        if isinstance(child, Tree):
+            results.extend(find_all_nodes(child, name))
+
+    return results
+
+
+# ============================================================================
+# TOKEN EXTRACTION
+# ============================================================================
+# Centralized logic to safely extract values from mixed Tree/Token structures.
+
+
+def get_token_value(node: LarkNode) -> str | None:
+    """
+    Extract a string value from a Lark node.
+
+    Strategy:
+    - If Token -> return value directly
+    - If Tree -> recursively scan children until a Token is found
+
+    This avoids positional assumptions in the grammar.
+    """
+    if isinstance(node, Token):
+        return node.value
+
+    if isinstance(node, Tree):
+        for child in node.children:
+            val = get_token_value(child)
+            if val is not None:
+                return val
+
+    return None
+
+
+def extract_direct_token(node: Tree) -> str | None:
+    """
+    Extract token only from immediate children (no deep recursion).
+    More stable for grammar nodes like quantifier.
+    """
+    for child in node.children:
+        if isinstance(child, Token):
+            return child.value
+        if isinstance(child, Tree):
+            # only go one level deeper for wrapper nodes
+            for sub in child.children:
+                if isinstance(sub, Token):
+                    return sub.value
+    return None
+
+
+def get_node_name_or_value(node: Tree) -> str | None:
+    """
+    Extract semantic value from a node:
+    - Token -> value
+    - Tree with no children -> data (rule name)
+    - Tree with children -> recurse
+    """
+
+    from lark import Token, Tree
+
+    if node is None:
+        return None
+
+    if isinstance(node, Token):
+        return node.value
+
+    if isinstance(node, Tree):
+        # ✔ leaf rule (comme "exists")
+        if len(node.children) == 0:
+            return node.data
+
+        for child in node.children:
+            v = get_node_name_or_value(child)
+            if v is not None:
+                return v
+
+    return None
+
+
+# ============================================================================
+# ASSIGNMENT EXTRACTION
+# ============================================================================
+
+def get_assignment_value_node(decl_tree: LarkTree) -> LarkNode | None:
+    """
+    Extract the RHS (right-hand side) of an assignment.
+
+    Expected pattern:
+        IDENT := VALUE
+
+    The function scans for ':=' and returns the first node after it.
+
+    This is syntax-driven and does NOT interpret semantics.
+    """
+    seen_assign = False
+
+    for child in decl_tree.children:
+        if isinstance(child, Token) and child.value == ":=":
+            seen_assign = True
+            continue
+
+        if seen_assign:
+            return child
+
+    return None
+
+
+# ============================================================================
+# DEBUG UTILITIES
+# ============================================================================
+
+def debug_tree(tree: LarkTree) -> None:
+    """
+    Pretty-print a Lark tree for debugging purposes.
+    """
+    print(tree.pretty())
+
+
+===== dsl\builder\domain.py =====
+
+from lark import Tree
+from dsl.builder.core.strict import require_node, require_value
+from dsl.builder.core.utils import find_child, find_all_nodes, find_node
+from dsl.builder.core.ast_utils import node_value, clean_string
+from dsl.ast.nodes.domain import DomainNode
+
+
+# ============================================================================
+# DOMAIN PARSER
+# ============================================================================
+# This parser builds a strict DomainNode from a Lark tree.
+# All missing or invalid nodes are rejected immediately to enforce AST integrity.
+# ============================================================================
+
+
+def parse_domain(node: Tree) -> DomainNode:
+    # ------------------------------------------------------------------------
+    # Retrieve domain node (must exist)
+    # ------------------------------------------------------------------------
+    domain = require_node(
+        find_node(node, "domain"),
+        "Domain node not found"
+    )
+
+    # ------------------------------------------------------------------------
+    # Extract domain identifier (must exist and be valid string)
+    # ------------------------------------------------------------------------
+    identifier_node = find_child(domain, "identifier")
+
+    name = require_value(
+        node_value(identifier_node),
+        "Missing domain name"
+    )
+
+    # ------------------------------------------------------------------------
+    # Extract and sanitize domain values
+    # ------------------------------------------------------------------------
+    values = [
+        require_value(
+            clean_string(node_value(v)),
+            "Invalid domain value"
+        )
+        for v in find_all_nodes(domain, "value")
+    ]
+
+    # ------------------------------------------------------------------------
+    # Build AST node
+    # ------------------------------------------------------------------------
+    return DomainNode(
+        name=name,
+        values=values,
+    )
+
+===== dsl\builder\expressions.py =====
+
+from lark import Tree
+from dsl.ast.nodes.expressions import (
+    AtExprNode, 
+    CheckAtExprNode, 
+    PairwiseExprNode,
+    QuantifierExprNode
+)
+from dsl.builder.core.strict import optional, require_value, safe_find_child, safe_find_node
+from dsl.builder.core.utils import extract_direct_token, find_child, find_node, get_node_name_or_value
+from dsl.builder.core.ast_utils import node_value
+from dsl.builder.domain import parse_domain
+from dsl.builder.neighborhood import parse_neighborhood
+
+from dsl.builder.core.strict import require_node, require_value
+
+# ============================================================================
+# EXPRESSIONS (AT / CHECK / PAIRWISE / QUANTIFIER)
+# ============================================================================
+
+def parse_at(prop: Tree) -> AtExprNode:
+    # =========================================================================
+    # AT EXPRESSION PARSING
+    # =========================================================================
+    # This function converts a Lark parse tree into a strict AtExprNode.
+    # All structural validations are enforced through safe helpers.
+    # =========================================================================
+
+    node = safe_find_node(prop, "at_expr")
+
+    identifier_node = safe_find_child(node, "identifier")
+
+    variable = require_value(
+        node_value(identifier_node),
+        "Identifier value cannot be None"
+    )
+
+    neighborhood = optional(node, "neighborhood", parse_neighborhood)
+    domain = optional(node, "domain", parse_domain)
+
+    return AtExprNode(
+        variable=variable,
+        neighborhood=neighborhood,
+        domain=domain,
+    )
+
+
+
+
+
+# ============================================================================
+# EXPRESSIONS PARSERS (STRICT VERSION)
+# ============================================================================
+
+
+def parse_pairwise(prop: Tree) -> PairwiseExprNode:
+    """
+    Parse a pairwise expression into a strict AST node.
+    """
+
+    # --- 1. Ensure pairwise_expr exists ---
+    node = require_node(
+        find_node(prop, "pairwise_expr"),
+        "pairwise_expr node not found"
+    )
+
+    # --- 2. Extract pair token (mandatory) ---
+    pair_node = require_node(
+        find_child(node, "pairwise_token"),
+        "pairwise_token node not found"
+    )
+
+    pair = require_value(
+        node_value(pair_node),
+        "pairwise_token is missing or invalid"
+    )
+
+    # --- 3. Neighborhood (depends on your grammar: required here) ---
+    neighborhood = parse_neighborhood(node)
+
+    # --- 4. Domain (OPTIONAL) ---
+    domain = optional(node, "domain", parse_domain)
+
+    # --- 5. Build AST ---
+    return PairwiseExprNode(
+        pair=pair,
+        neighborhood=neighborhood,
+        domain=domain
+    )
+
+# ---------------------------------------------------------------------------
+
+def parse_check_at(prop: Tree) -> CheckAtExprNode:
+    """
+    Parse a check_at expression into a strict AST node.
+    """
+
+    node = require_node(
+        find_node(prop, "check_expr"),
+        "check_expr node not found"
+    )
+
+    identifier_node = find_child(node, "identifier")
+
+    variable = require_value(
+        node_value(identifier_node),
+        "identifier is missing or invalid"
+    )
+
+    return CheckAtExprNode(variable=variable)
+
+
+# ---------------------------------------------------------------------------
+
+def parse_quantifier(prop: Tree) -> QuantifierExprNode:
+
+    node = require_node(
+        find_node(prop, "quantifier_expr"),
+        "quantifier_expr node not found"
+    )
+
+    quantifier_node = require_node(
+        find_child(node, "quantifier"),
+        "quantifier node not found"
+    )
+
+    quantifier_child = require_node(
+        quantifier_node.children[0] if quantifier_node.children else None,
+        "quantifier value missing"
+        )
+
+    quantifier = get_node_name_or_value(quantifier_node)
+    
+    quantifier = require_value(
+        quantifier,
+        "quantifier is missing or invalid"
+    )
+
+    domain = optional(node, "domain", parse_domain)
+
+    return QuantifierExprNode(
+        quantifier=quantifier,
+        domain=domain,
+    )
+
+===== dsl\builder\header.py =====
+
+from __future__ import annotations
+
+from lark import Tree
+from dsl.ast.nodes.header import HeaderNode
+from dsl.builder.core.utils import find_child
+from dsl.builder.core.ast_utils import node_value, clean_string
+from dsl.builder.core.strict import require_node, require_value
+
+
+# ============================================================================
+# HEADER PARSING
+# ============================================================================
+# This module extracts the header section of the DSL AST.
+# It enforces strict validation: missing header fields are rejected early.
+# ============================================================================
+
+
+def get_header(tree: Tree) -> Tree:
+    """
+    Extract header node from full AST.
+    """
+    return require_node(
+        find_child(tree, "header"),
+        "Header node not found"
+    )
+
+
+# ---------------------------------------------------------------------------
+
+def parse_model(tree: Tree) -> str:
+    """
+    model := "path"
+    """
+
+    header = get_header(tree)
+
+    model_node = find_child(header, "model_declaration")
+
+    return require_value(
+        clean_string(node_value(model_node)),
+        "Model declaration is missing or invalid"
+    )
+
+
+# ---------------------------------------------------------------------------
+
+def parse_target(tree: Tree) -> str:
+    """
+    target := Column
+    """
+
+    header = get_header(tree)
+
+    target_node = find_child(header, "target_declaration")
+
+    return require_value(
+        clean_string(node_value(target_node)),
+        "Target declaration is missing or invalid"
+    )
+
+
+# ---------------------------------------------------------------------------
+
+def parse_header(tree: Tree) -> HeaderNode:
+    """
+    Parse header node into a strict HeaderNode AST.
+    """
+
+    header_tree = get_header(tree)
+
+    model = parse_model(header_tree)
+    target = parse_target(header_tree)
+
+    return HeaderNode(
+        model=model,
+        target=target
+    )
+
+===== dsl\builder\neighborhood.py =====
+
+from lark import Tree, Token
+from dsl.ast.nodes.neighborhood import NeighborhoodNode
+from dsl.ast.nodes.primitives import ArgNode
+from dsl.builder.core.utils import find_child, find_all_nodes, find_node
+from dsl.builder.core.ast_utils import node_value, clean_string
+from dsl.builder.core.strict import require_node, require_value
+
+from typing import List, Any
+
+
+# ============================================================================
+# NEIGHBORHOOD PARSER
+# ============================================================================
+# This module parses a Neighborhood AST node in a strict manner.
+# All invalid or missing elements raise immediate errors to guarantee
+# AST consistency for downstream processing.
+# ============================================================================
+
+
+# ---------------------------------------------------------------------------
+# Numeric parsing helper
+# ---------------------------------------------------------------------------
+def _parse_numeric(value: Any) -> Any:
+    """
+    Try to convert a value into int or float.
+    Falls back to original value if conversion fails.
+    """
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        pass
+
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return value
+
+
+# ---------------------------------------------------------------------------
+# Argument parsing
+# ---------------------------------------------------------------------------
+def _parse_arg(arg_node: Tree) -> ArgNode | None:
+    """
+    Parse a single argument node into an ArgNode.
+    """
+
+    eq = find_child(arg_node, "arg_identifier_eq")
+    if eq is None:
+        return None
+
+    key_node = find_child(eq, "quoted_identifier")
+    val_node = find_child(eq, "value")
+
+    key = require_value(
+        node_value(key_node),
+        "Missing argument key"
+    )
+
+    raw_val = node_value(val_node)
+    if raw_val is None:
+        raise ValueError("Missing argument value")
+
+    # Try numeric conversion first, fallback to cleaned string
+    try:
+        val = _parse_numeric(raw_val)
+    except Exception:
+        val = clean_string(raw_val)
+
+    return ArgNode(key=key, value=val)
+
+
+# ---------------------------------------------------------------------------
+# Args parsing
+# ---------------------------------------------------------------------------
+def _parse_args(args_node: Tree | None) -> List[ArgNode]:
+    """
+    Parse args node into a list of ArgNode.
+    """
+
+    if args_node is None:
+        return []
+
+    args: List[ArgNode] = []
+
+    for arg in find_all_nodes(args_node, "arg"):
+        parsed = _parse_arg(arg)
+        if parsed is not None:
+            args.append(parsed)
+
+    return args
+
+
+# ---------------------------------------------------------------------------
+# Metric extraction
+# ---------------------------------------------------------------------------
+def _extract_metric(node: Tree) -> str:
+    """
+    Extract metric token from a neighborhood node.
+    """
+
+    if not node.children:
+        raise ValueError("Neighborhood node is empty")
+
+    for child in node.children:
+        if isinstance(child, Token):
+            return child.value
+
+    raise ValueError("No metric token found in neighborhood")
+
+
+# ---------------------------------------------------------------------------
+# Main parser
+# ---------------------------------------------------------------------------
+def parse_neighborhood(node: Tree) -> NeighborhoodNode:
+    """
+    Parse a neighborhood expression:
+        neighborhood = metric + args
+    """
+
+    n = require_node(
+        find_node(node, "neighborhood"),
+        "Neighborhood node not found"
+    )
+
+    metric = _extract_metric(n)
+
+    args_node = find_child(n, "args")
+    args = _parse_args(args_node)
+
+    return NeighborhoodNode(
+        metric=metric,
+        args=args
+    )
+
+===== dsl\builder\program.py =====
+
+from lark import Tree
+
+from dsl.builder.core.utils import find_all_nodes
+from dsl.builder.header import parse_model, parse_target
+from dsl.builder.property import parse_property
+
+from dsl.ast.nodes.program import ProgramNode
+from dsl.ast.nodes.header import HeaderNode
+
+
+# ============================================================================
+# PROGRAM ENTRYPOINT
+# ============================================================================
+
+def parse_program(tree: Tree) -> ProgramNode:
+    # ------------------------------------------------------------------------
+    # HEADER
+    # ------------------------------------------------------------------------
+    model = parse_model(tree)
+    target = parse_target(tree)
+
+    header = HeaderNode(
+        model=model,
+        target=target
+    )
+
+    # ------------------------------------------------------------------------
+    # BODY
+    # ------------------------------------------------------------------------
+    properties = [
+        parse_property(p)
+        for p in find_all_nodes(tree, "property_section")
+    ]
+
+    # ------------------------------------------------------------------------
+    # PROGRAM NODE
+    # ------------------------------------------------------------------------
+    return ProgramNode(
+        header=header,
+        body=properties
+    )
+
+===== dsl\builder\property.py =====
+
+from lark import Token, Tree
+from dsl.ast.nodes.property import PropertyNode, PropertyRuleNode
+from dsl.builder.backends import parse_backend
+from dsl.builder.core.strict import require_node, require_value
+from dsl.builder.core.utils import find_child, find_node
+from dsl.builder.core.ast_utils import node_value
+from .expressions import (
+    parse_at,
+    parse_pairwise,
+    parse_check_at,
+    parse_quantifier
+)
+from .assertion import parse_assertion
+
+
+# ============================================================================
+# PROPERTY CORE PARSING
+# ============================================================================
+# This module parses full property definitions:
+#   - LHS (expression)
+#   - RHS (assertion after =>)
+#   - backend configuration
+# ============================================================================
+
+
+# ---------------------------------------------------------------------------
+# Mode detection
+# ---------------------------------------------------------------------------
+
+def detect_mode(prop: Tree) -> str:
+    """
+    Detect which expression type is used in the property LHS.
+    """
+
+    if find_node(prop, "quantifier_expr"):
+        return "quantifier"
+    if find_node(prop, "at_expr"):
+        return "at"
+    if find_node(prop, "check_expr"):
+        return "check_at"
+    if find_node(prop, "pairwise_expr"):
+        return "pairwise"
+
+    return "unknown"
+
+
+# ---------------------------------------------------------------------------
+# RHS extraction
+# ---------------------------------------------------------------------------
+
+from lark import Tree, Token
+
+
+def extract_rhs(prop: Tree) -> Tree:
+    """
+    Extract RHS expression from property.
+
+    IMPORTANT:
+    Lark inline-expands 'assertion', so RHS is directly a logic_* node
+    (e.g. logic_or, logic_and), not an 'assertion' node.
+    """
+
+    found_imply = False
+
+    property = prop.children[0]
+
+    for child in property.children:
+
+        # skip metadata nodes
+        if isinstance(child, Tree) and child.data in (
+            "property_type",
+            "property_expr",
+        ):
+            continue
+
+        # detect implication separator
+        if isinstance(child, Tree) and child.data == "property_imply":
+            found_imply = True
+            continue
+
+        # RHS = first real logic subtree AFTER implication
+        if found_imply and isinstance(child, Tree):
+            return child
+
+    raise ValueError("Missing RHS in property")
+
+# ---------------------------------------------------------------------------
+# Main parser
+# ---------------------------------------------------------------------------
+
+def parse_property(prop: Tree) -> PropertyNode:
+    """
+    Parse full property AST into PropertyNode.
+    """
+
+    mode = detect_mode(prop)
+
+    expr_map = {
+        "at": parse_at,
+        "pairwise": parse_pairwise,
+        "check_at": parse_check_at,
+        "quantifier": parse_quantifier,
+    }
+
+    if mode not in expr_map:
+        raise ValueError(f"Unknown property mode: {mode}")
+
+    # -----------------------------------------------------------------------
+    # Parse LHS expression
+    # -----------------------------------------------------------------------
+    left = expr_map[mode](prop)
+
+    # -----------------------------------------------------------------------
+    # Parse RHS assertion
+    # -----------------------------------------------------------------------
+    right_node = extract_rhs(prop)
+    right = parse_assertion(right_node)
+
+    # -----------------------------------------------------------------------
+    # Parse backend configuration (strict)
+    # -----------------------------------------------------------------------
+    backend_node = find_node(prop, "backend")
+    backend = parse_backend(backend_node)
+
+    # -----------------------------------------------------------------------
+    # Property type (strict extraction)
+    # -----------------------------------------------------------------------
+    property_type_node = find_node(prop, "property_type")
+
+    property_type = require_value(
+        node_value(property_type_node),
+        "Property type is missing"
+    )
+
+    # -----------------------------------------------------------------------
+    # Build AST
+    # -----------------------------------------------------------------------
+    return PropertyNode(
+        type=property_type,
+        rule=PropertyRuleNode(
+            scope=left,
+            assertion=right
+        ),
+        backend=backend
+    )
