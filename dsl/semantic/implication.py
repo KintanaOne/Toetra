@@ -11,33 +11,25 @@ class ImplicationValidator:
     def __init__(self, tracer=None):
         self.tracer = tracer or ValidationTracer()
 
-    def validate(self, imp):
-        self.tracer.log(f"Validating ImplicationNode: {imp}")
+    
+    def validate(self, scope, rhs):
+        self.tracer.log(f"Validating implication with scope={scope} rhs={rhs}")
 
-        lhs = imp.left
-        rhs = imp.right
-
-        # ---------------------------
-        # 1. LHS → create contexte
-        # ---------------------------
+        # 1. LHS → contexte
         lhs_validator = LHSValidator(tracer=self.tracer)
-        context = lhs_validator.validate(lhs)
+        context = lhs_validator.validate(scope)
 
-        # ---------------------------
-        # 2. Binding (CRUCIAL)
-        # ---------------------------
+        # 2. Binding
         BindingValidator(tracer=self.tracer).validate(context, rhs)
 
-        # ---------------------------
         # 3. RHS validation
-        # ---------------------------
         node_type = rhs.__class__.__name__
 
         if node_type in ["ComparisonNode", "AndNode", "OrNode", "NotNode"]:
             LogicValidator(tracer=self.tracer).validate(rhs, context)
 
         elif node_type == "ProblemNode":
-            ProblemValidator().validate(rhs)
+            ProblemValidator(tracer=self.tracer).validate(rhs)
 
         else:
             raise InvalidPropertyError(f"Invalid RHS type: {node_type}")
