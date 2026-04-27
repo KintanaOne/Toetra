@@ -3,15 +3,28 @@ from dsl.ast.nodes.neighborhood import NeighborhoodNode
 from dsl.ast.nodes.primitives import ArgNode
 from dsl.builder.core.utils import find_child, find_all_nodes, find_node
 from dsl.builder.core.ast_utils import node_value, clean_string
+from dsl.builder.core.strict import require_node, require_value
 
-from typing import Optional, Dict, Tuple
+from typing import List, Any
+
 
 # ============================================================================
-# NEIGHBORHOOD
+# NEIGHBORHOOD PARSER
+# ============================================================================
+# This module parses a Neighborhood AST node in a strict manner.
+# All invalid or missing elements raise immediate errors to guarantee
+# AST consistency for downstream processing.
 # ============================================================================
 
-def _parse_numeric(value):
-    """Try to cast value to int or float, fallback to original."""
+
+# ---------------------------------------------------------------------------
+# Numeric parsing helper
+# ---------------------------------------------------------------------------
+def _parse_numeric(value: Any) -> Any:
+    """
+    Try to convert a value into int or float.
+    Falls back to original value if conversion fails.
+    """
     try:
         return int(value)
     except (TypeError, ValueError):
@@ -23,63 +36,94 @@ def _parse_numeric(value):
         return value
 
 
-def _parse_arg(arg_node)-> ArgNode | None:
+# ---------------------------------------------------------------------------
+# Argument parsing
+# ---------------------------------------------------------------------------
+def _parse_arg(arg_node: Tree) -> ArgNode | None:
     """
-    Parse a single arg node into (key, value).
+    Parse a single argument node into an ArgNode.
     """
+
     eq = find_child(arg_node, "arg_identifier_eq")
+    if eq is None:
+        return None
 
-    if eq:
-        key = node_value(find_child(eq, "quoted_identifier"))
-        raw_val = node_value(find_child(eq, "value"))
+    key_node = find_child(eq, "quoted_identifier")
+    val_node = find_child(eq, "value")
 
-        try:
-            val = _parse_numeric(raw_val)
-        except:
-            val = clean_string(raw_val)
+    key = require_value(
+        node_value(key_node),
+        "Missing argument key"
+    )
 
-        return ArgNode(key=key, value=val)
+    raw_val = node_value(val_node)
+    if raw_val is None:
+        raise ValueError("Missing argument value")
 
-    # fallback: standalone arg
-    v = node_value(arg_node)
-    if v:
-        return ArgNode(key=v, value=v)
+    # Try numeric conversion first, fallback to cleaned string
+    try:
+        val = _parse_numeric(raw_val)
+    except Exception:
+        val = clean_string(raw_val)
 
-    return None
+    return ArgNode(key=key, value=val)
 
 
-def _parse_args(args_node):
-    """Parse args node into a dict."""
-    args = []
+# ---------------------------------------------------------------------------
+# Args parsing
+# ---------------------------------------------------------------------------
+def _parse_args(args_node: Tree | None) -> List[ArgNode]:
+    """
+    Parse args node into a list of ArgNode.
+    """
 
-    if not args_node:
-        return args
+    if args_node is None:
+        return []
+
+    args: List[ArgNode] = []
 
     for arg in find_all_nodes(args_node, "arg"):
         parsed = _parse_arg(arg)
-
         if parsed is not None:
             args.append(parsed)
 
     return args
 
-def _extract_metric(node):
-    """Extract metric token from neighborhood node."""
+
+# ---------------------------------------------------------------------------
+# Metric extraction
+# ---------------------------------------------------------------------------
+def _extract_metric(node: Tree) -> str:
+    """
+    Extract metric token from a neighborhood node.
+    """
+
+    if not node.children:
+        raise ValueError("Neighborhood node is empty")
+
     for child in node.children:
         if isinstance(child, Token):
             return child.value
-    return None
+
+    raise ValueError("No metric token found in neighborhood")
 
 
-def parse_neighborhood(node: Tree) -> NeighborhoodNode | None:
+# ---------------------------------------------------------------------------
+# Main parser
+# ---------------------------------------------------------------------------
+def parse_neighborhood(node: Tree) -> NeighborhoodNode:
     """
-    neighborhood = metric + args
+    Parse a neighborhood expression:
+        neighborhood = metric + args
     """
-    n = find_node(node, "neighborhood")
-    if not n:
-        return None
+
+    n = require_node(
+        find_node(node, "neighborhood"),
+        "Neighborhood node not found"
+    )
 
     metric = _extract_metric(n)
+
     args_node = find_child(n, "args")
     args = _parse_args(args_node)
 

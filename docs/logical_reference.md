@@ -9,7 +9,7 @@
 | Not            | ¬      | `not` / `!`  | `not P(x)`                      |
 | And            | ∧      | `and` / `&&` | `P(x) and Q(x)`                 |
 | Or             | ∨      | `or` / `||`  | `P(x) or Q(x)`                  |
-| Implies        | →      | `->`         | `P(x) -> Q(x)`                  |
+| LOGIC_IMPLY    | →      | `->`         | `P(x) -> Q(x)`                  |
 | Equivalent     | ↔      | `<->`        | `P(x) <-> Q(x)`                 |
 | Equality       | =      | `=`          | `f(x) = y`                      |
 | Not equal      | ≠      | `!=`         | `x != y`                        |

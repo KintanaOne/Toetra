@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Optional, Union
+
+from dsl.ast.nodes.base import ASTNode
 
 
 @dataclass
-class DomainNode:
-    name : str
-    values : List[str]
+class DomainNode(ASTNode):
+    name: str
+    values: list[str]

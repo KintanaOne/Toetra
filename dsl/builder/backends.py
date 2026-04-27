@@ -9,19 +9,18 @@ from dsl.ast.nodes.primitives import ArgNode
 # backend
 # ============================================================================
 
-def parse_backend(node: Tree):
-    """
-    backend = name + args
+def parse_backend(node: Tree | None):
+    if node is None:
+        return None
 
-    IMPORTANT DESIGN:
-    - name = Token (non-tree child)
-    - args = key/value optional structure
-    """
     n = find_node(node, "backend")
-    if not n:
+    if n is None:
         return None
 
     name = node_value(n)
+    if name is None:
+        raise ValueError("Backend name missing")
+
     args: list[ArgNode] = []
 
     args_node = find_child(n, "args")
@@ -32,27 +31,11 @@ def parse_backend(node: Tree):
 
             if eq:
                 key = node_value(find_child(eq, "quoted_identifier"))
-                raw_val = node_value(find_child(eq, "value"))
-                val = clean_string(raw_val)
+                val = clean_string(node_value(find_child(eq, "value")))
 
-                if key:
-                    args.append(
-                        ArgNode(
-                            key=key,
-                            value=val
-                        )
-                    )
-            else:
-                v = node_value(arg)
-                if v:
-                    args.append(
-                        ArgNode(
-                            key=v,
-                            value=v
-                        )
-                    )
+                if key is None or val is None:
+                    raise ValueError("Invalid backend arg")
 
-    return BackendNode(
-        name=name,
-        args=args
-    )
+                args.append(ArgNode(key=key, value=val))
+
+    return BackendNode(name=name, args=args)

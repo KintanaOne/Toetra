@@ -1,129 +1,131 @@
+from typing import List, Union
+
 from lark import Tree, Token
+
 from dsl.ast.nodes.assertion import (
     AndNode,
+    AssertionNode,
     ComparisonNode,
+    ImplicationNode,
     OrNode,
     NotNode,
     ProblemNode,
     UnknownNode,
+    LogicalNode,
 )
-from dsl.ast.nodes.implication import ImplicationNode
+
 from dsl.builder.core.utils import find_node, get_token_value
 from dsl.builder.core.ast_utils import parse_attribute, node_value, parse_value
 
 
-def build_logic_expr(node: Tree) -> ComparisonNode:
-    """
-    Build a structured comparison expression.
-    """
+# ============================================================================  
+# COMPARISON  
+# ============================================================================  
+
+def build_logic_expr(node: Tree) -> LogicalNode:
     attribute_node = find_node(node, "attribute")
     value_node = find_node(node, "value")
     op_node = find_node(node, "logic_operation")
 
-    return ComparisonNode(
-        left=parse_attribute(attribute_node),
-        op=get_token_value(op_node),
-        right=parse_value(value_node),
-    )
+    if attribute_node is None or value_node is None or op_node is None:
+        return UnknownNode(raw="invalid_comparison")
+
+    left = parse_attribute(attribute_node)
+    op = str(get_token_value(op_node))
+    right = parse_value(value_node)
+
+    return ComparisonNode(left=left, op=op, right=right)
 
 
-# ============================================================================
-# ASSERTION ENGINE (FUTURE PROOF CORE)
-# ============================================================================
+# ============================================================================  
+# UTILS  
+# ============================================================================  
 
-def _extract_trees(node: Tree):
-    """Utility: keep only Tree children (ignore tokens safely)."""
+def _extract_trees(node: Tree) -> List[Tree]:
     return [c for c in node.children if isinstance(c, Tree)]
 
 
-def parse_assertion(node: Tree):
-    """
-    🔥 POINT CENTRAL DU DSL
-    """
+# ============================================================================  
+# CORE PARSER  
+# ============================================================================  
+
+def parse_assertion(node: Union[Tree, Token, None]) -> AssertionNode:
 
     if node is None:
-        return UnknownNode(raw="None")
+        return AssertionNode(root=UnknownNode(raw="None"))
 
     if isinstance(node, Token):
-        return UnknownNode(raw=node.value)
+        return AssertionNode(root=UnknownNode(raw=node.value))
 
     t = node.data
+    children = _extract_trees(node)
 
-    # ------------------------------------------------------------------------
-    # implication
-    # ------------------------------------------------------------------------
-    if t == "assertion":
-        parts = _extract_trees(node)
+    # ----------------------------------------------------------------------
+    # IMPLY
+    # ----------------------------------------------------------------------
+    if t == "logical_imply":
+        if len(children) != 2:
+            return AssertionNode(root=UnknownNode(raw="invalid_imply"))
 
-        if len(parts) == 1:
-            return parse_assertion(parts[0])
-
-        # safe: first => last (grammar ensures structure)
-        return ImplicationNode(
-            left=parse_assertion(parts[0]),
-            right=parse_assertion(parts[-1])
+        return AssertionNode(
+            root=ImplicationNode(
+                left=parse_assertion(children[0]).root,
+                right=parse_assertion(children[1]).root,
+            )
         )
 
-    # ------------------------------------------------------------------------
-    # OR (variadic, robust)
-    # ------------------------------------------------------------------------
+    # ----------------------------------------------------------------------
+    # OR
+    # ----------------------------------------------------------------------
     if t == "logic_or":
-        children = _extract_trees(node)
-
-        ops = [parse_assertion(c) for c in children]
-
-        if not ops:
-            return UnknownNode(raw="empty_or")
+        ops = [parse_assertion(c).root for c in children]
 
         if len(ops) == 1:
-            return ops[0]
+            return AssertionNode(root=ops[0])
 
-        return OrNode(operands=ops)
+        return AssertionNode(root=OrNode(operands=ops))
 
-    # ------------------------------------------------------------------------
-    # AND (variadic, robust)
-    # ------------------------------------------------------------------------
+    # ----------------------------------------------------------------------
+    # AND
+    # ----------------------------------------------------------------------
     if t == "logic_and":
-        children = _extract_trees(node)
-
-        ops = [parse_assertion(c) for c in children]
-
-        if not ops:
-            return UnknownNode(raw="empty_and")
+        ops = [parse_assertion(c).root for c in children]
 
         if len(ops) == 1:
-            return ops[0]
+            return AssertionNode(root=ops[0])
 
-        return AndNode(operands=ops)
+        return AssertionNode(root=AndNode(operands=ops))
 
-    # ------------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     # NOT
-    # ------------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     if t == "logic_not":
-        inner = _extract_trees(node)
+        if not children:
+            return AssertionNode(root=UnknownNode(raw="empty_not"))
 
-        return NotNode(
-            operand=parse_assertion(inner[-1]) if inner else UnknownNode("empty_not")
+        return AssertionNode(
+            root=NotNode(
+                operand=parse_assertion(children[-1]).root
+            )
         )
 
-    # ------------------------------------------------------------------------
-    # atom (flatten)
-    # ------------------------------------------------------------------------
-    if t == "atom":
-        children = _extract_trees(node)
-        return parse_assertion(children[0]) if children else UnknownNode("empty_atom")
-
-    # ------------------------------------------------------------------------
-    # comparison
-    # ------------------------------------------------------------------------
+    # ----------------------------------------------------------------------
+    # COMPARISON
+    # ----------------------------------------------------------------------
     if t == "logic_expr":
-        return build_logic_expr(node)
+        return AssertionNode(root=build_logic_expr(node))
 
-    # ------------------------------------------------------------------------
-    # problem expr
-    # ------------------------------------------------------------------------
+    # ----------------------------------------------------------------------
+    # ATOM
+    # ----------------------------------------------------------------------
+    if t == "atom":
+        return parse_assertion(children[0]) if children else AssertionNode(root=UnknownNode(raw="empty_atom"))
+
+    # ----------------------------------------------------------------------
+    # PROBLEM
+    # ----------------------------------------------------------------------
     if t == "problem_expr":
-        problem = None
+        problem = "UNKNOWN"
         function = None
 
         for c in node.children:
@@ -132,12 +134,13 @@ def parse_assertion(node: Tree):
             elif isinstance(c, Tree):
                 function = node_value(c)
 
-        return ProblemNode(
-            problem=problem,
-            function=function
+        return AssertionNode(
+            root=UnknownNode(raw="problem_expr"),
+            context=ProblemNode(problem=problem, function=function)
         )
 
-    # ------------------------------------------------------------------------
-    # fallback
-    # ------------------------------------------------------------------------
-    return UnknownNode(raw=str(node))
+    # ----------------------------------------------------------------------
+    # FALLBACK
+    # ----------------------------------------------------------------------
+    return AssertionNode(root=UnknownNode(raw=f"Unhandled node: {t}"))
+

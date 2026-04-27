@@ -1,7 +1,47 @@
 {
+    // 🐍 PYTHON / TESTS
     "python.testing.pytestEnabled": true,
     "python.testing.pytestArgs": [
         "test"
     ],
-    "python.testing.unittestEnabled": false
+    "python.testing.unittestEnabled": false,
+
+    // 🧠 PYTHON INTELLIGENCE (Pylance)
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.completeFunctionParens": true,
+
+    // 🎨 ÉDITEUR - CONFORT VISUEL
+    "editor.minimap.enabled": true,
+    "editor.stickyScroll.enabled": true,
+    "editor.inlineSuggest.enabled": true,
+    "editor.smoothScrolling": true,
+    "editor.semanticHighlighting.enabled": true,
+
+    // ✨ LISIBILITÉ DU CODE
+    "editor.fontFamily": "Fira Code, Consolas, monospace",
+    "editor.fontLigatures": true,
+    "editor.fontSize": 14,
+    "editor.lineHeight": 1.6,
+    "editor.letterSpacing": 0.3,
+
+    // 🌈 STRUCTURE & NAVIGATION
+    "editor.guides.bracketPairs": true,
+    "editor.bracketPairColorization.enabled": true,
+    "editor.renderWhitespace": "selection",
+
+    // ⚡ CURSEUR & ANIMATIONS
+    "editor.cursorSmoothCaretAnimation": "on",
+
+    // 📁 EXPLORER (arborescence)
+    "explorer.compactFolders": false,
+
+    // 🗂️ ONGLET / WORKSPACE
+    "workbench.editor.tabSizing": "shrink",
+    "workbench.editor.highlightModifiedTabs": true,
+
+    // 🖥️ UI GLOBALE
+    "workbench.list.smoothScrolling": true,
+    "workbench.tree.indent": 16,
+    "workbench.activityBar.location": "default"
 }

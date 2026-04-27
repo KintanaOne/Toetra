@@ -1,0 +1,9 @@
+- EBNF
+- CST
+- AST
+- semantic validation
+- IR lvl 1 / logique (NNF + loi de Morgan)
+- IR lvl 2 (CNF et DNNF au besoin)
+- backend router
+- backend translater
+- backend execution

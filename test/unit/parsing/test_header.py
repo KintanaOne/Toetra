@@ -1,12 +1,9 @@
 import pytest
 from lark import Tree
 
+from dsl.builder.header import get_header, parse_header
+from dsl.builder.program import parse_program
 from dsl.parser.parser import parse_forml_code
-from previous_forml.ast.queries import (
-    get_header,
-    get_model_declaration,
-    get_target_declaration,
-)
 from test.fixtures.program_samples import (
     INVALID_HEADER_MISSING_BOTH,
     INVALID_HEADER_MISSING_MODEL,
@@ -25,12 +22,13 @@ def parse(code: str) -> Tree:
 def test_header_valid():
 
     tree = parse(VALID_MINIMAL_PAIRWISE)
-
-    header = get_header(tree)
+    program = parse_program(tree)
+    header = program.header
+    
     assert header is not None
 
-    model = get_model_declaration(tree)
-    target = get_target_declaration(tree)
+    model = header.model
+    target = header.target
 
     assert model is not None
     assert target is not None
@@ -66,7 +64,11 @@ def test_header_invalid_target_type():
 def test_header_with_comments():
 
     tree = parse(VALID_PROGRAM_WITH_HEADER_COMMENTS)
-
-    assert get_header(tree) is not None
-    assert get_model_declaration(tree) is not None
-    assert get_target_declaration(tree) is not None
+    program = parse_program(tree)
+    header = program.header
+    
+    assert header is not None
+    assert header.model is not None
+    assert header.target is not None
+    assert header.model == "model.onnx"
+    assert header.target == "MyTargetColumn"

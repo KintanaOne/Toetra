@@ -6,8 +6,8 @@ from dsl.language.vocabulary.utils import EnumMixin
 official_quantifiers = {
     "FORALL": '"∀"',
     "EXIST": '"∃"',
-    "forall": '"forall"',
-    "exists": '"exists"'
+    "FORALL_WORD ": '"forall"',
+    "EXISTS_WORD ": '"exists"'
 }
 
 class EnumQuantifier(EnumMixin, Enum):

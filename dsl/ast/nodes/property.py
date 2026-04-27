@@ -1,16 +1,20 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Optional, Union
 
 from dsl.ast.nodes.assertion import AssertionNode
-from dsl.ast.nodes.expressions import ExpressionNode
 from dsl.ast.nodes.backends import BackendNode
-from dsl.ast.nodes.implication import ImplicationNode
+from dsl.ast.nodes.expressions import ExpressionNode
 
 
 @dataclass
 class PropertyNode:
     type: str
-    implication: ImplicationNode
-    backend: Optional[BackendNode]
+    rule: PropertyRuleNode
+    backend: BackendNode | None
+
+
+@dataclass
+class PropertyRuleNode:
+    scope: ExpressionNode
+    assertion: AssertionNode

@@ -1,61 +1,39 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Union
 
+from dsl.ast.nodes.base import ASTNode
 from dsl.ast.nodes.neighborhood import NeighborhoodNode
 from dsl.ast.nodes.domain import DomainNode
 
 
-# ============================================================================
-# BASE
-# ============================================================================
-
 @dataclass
-class ExpressionNode:
-    """
-    Base class for all scope/expression constructs.
-    Represents WHERE / IN WHICH CONTEXT a property is evaluated.
-    """
+class ExpressionNode(ASTNode):
+    """WHERE a property is evaluated."""
     pass
 
-
-# ============================================================================
-# AT EXPRESSION
-# ============================================================================
 
 @dataclass
 class AtExprNode(ExpressionNode):
     variable: str
-    neighborhood: NeighborhoodNode
-    domain: DomainNode
+    neighborhood: NeighborhoodNode | None
+    domain: DomainNode | None
 
-
-# ============================================================================
-# PAIRWISE EXPRESSION
-# ============================================================================
 
 @dataclass
 class PairwiseExprNode(ExpressionNode):
     pair: str
     neighborhood: NeighborhoodNode
-    domain: DomainNode
+    domain: DomainNode | None = None
 
-
-# ============================================================================
-# CHECK AT
-# ============================================================================
 
 @dataclass
 class CheckAtExprNode(ExpressionNode):
     variable: str
 
 
-# ============================================================================
-# QUANTIFIER
-# ============================================================================
-
 @dataclass
 class QuantifierExprNode(ExpressionNode):
     quantifier: str
-    domain: DomainNode
+    domain: DomainNode | None
