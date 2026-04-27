@@ -1,23 +1,28 @@
-from typing import Optional, Union
+from __future__ import annotations
+
 from lark import Tree, Token
 
 from dsl.ast.nodes.primitives import AttributeNode, ConstantNode
+from dsl.builder.core.types import LarkNode
 from dsl.builder.core.utils import get_token_value
 
 # ============================================================================
-# AST CORE HELPERS
+# GENERIC NODE VALUE EXTRACTION
 # ============================================================================
+# These helpers provide a uniform way to extract meaningful values
+# from Lark nodes without relying on grammar-specific positions.
 
-def node_value(node: Union[Tree, Token, None]) -> Optional[str]:
+
+def node_value(node: LarkNode | None) -> str | None:
     """
+    Recursively extract the first usable string value from a node.
 
-    Goal :
-    - uniform AST Lark reading
-    - éviter toute logique positionnelle ailleurs
+    Rules:
+    - Token -> return value
+    - Tree -> recursively inspect children
+    - None -> return None
 
-    Règle :
-    - Token => value
-    - Tree => descend récursivement jusqu'à trouver une valeur exploitable
+    This function avoids hardcoding grammar structure elsewhere.
     """
     if node is None:
         return None
@@ -26,89 +31,136 @@ def node_value(node: Union[Tree, Token, None]) -> Optional[str]:
         return node.value
 
     if isinstance(node, Tree):
-        if not node.children:
-            return str(node.data)
-
-        for c in node.children:
-            v = node_value(c)
+        for child in node.children:
+            v = node_value(child)
             if v is not None:
                 return v
 
     return None
 
 
-def clean_string(v: Optional[str]) -> Optional[str]:
+# ============================================================================
+# STRING NORMALIZATION
+# ============================================================================
+
+def clean_string(value: str | None) -> str | None:
     """
-    remove quotes "..." ou '...'
-    """
-    if v is None:
-        return None
-
-    if (v.startswith('"') and v.endswith('"')) or (v.startswith("'") and v.endswith("'")):
-        return v[1:-1]
-
-    return v
-
-
-def parse_attribute(node: Tree) -> Optional[AttributeNode]:
-    """
-    Generic attribute extraction (future-proof).
+    Normalize string literals by removing surrounding quotes.
 
     Supports:
-    - age
-    - x0.age
-    - user.age
-    - xyz.feature
-    - a.b.c.d
-
-    Design:
-    - last element = feature
-    - preceding = entity (or namespace)
+    - "text"
+    - 'text'
     """
-
-    if node is None:
+    if value is None:
         return None
 
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+        return value[1:-1]
+
+    return value
+
+
+# ============================================================================
+# ATTRIBUTE PARSING
+# ============================================================================
+# Converts a Lark subtree into a structured AttributeNode.
+
+
+def parse_attribute(node: Tree) -> AttributeNode:
+    """
+    Parse an attribute expression into an AttributeNode.
+
+    Supported forms:
+    - age
+    - x0.age
+    - user.profile.age
+    - a.b.c.d
+
+    Design rules:
+    - Last identifier = feature
+    - First identifier (if multiple) = entity
+    - Full chain stored in `path`
+    """
+
+    def require_str(value: str | None) -> str:
+        if value is None:
+            raise ValueError("Expected string, got None")
+        return value
+
     identifiers = [
-        get_token_value(child)
+        require_str(get_token_value(child))
         for child in node.children
         if isinstance(child, Tree) and child.data == "identifier"
     ]
 
+    identifiers = [i for i in identifiers if i is not None]
+
     if not identifiers:
-        return None
+        raise ValueError("Invalid attribute: no identifiers found")
 
     return AttributeNode(
         entity=identifiers[0] if len(identifiers) > 1 else None,
-        feature=identifiers[-1] if len(identifiers) > 1 else identifiers[0],
-        path=identifiers
+        feature=identifiers[-1],
+        path=identifiers,
     )
 
 
+# ============================================================================
+# CONSTANT PARSING
+# ============================================================================
+# Converts raw tokens into typed ConstantNode.
+
+
 def parse_value(node: Tree) -> ConstantNode:
+    """
+    Parse a value node into a ConstantNode with inferred type.
+
+    Type inference strategy:
+    1. Try int
+    2. Try float
+    3. Fallback to string
+    """
     raw = get_token_value(node)
+
+    if raw is None:
+        raise ValueError("Invalid value node")
+
     cleaned = clean_string(raw)
 
+    if cleaned is None:
+        raise ValueError("Invalid value: None after cleaning")
+
+    # Integer parsing
     try:
         return ConstantNode(value=int(cleaned), dtype="int")
-    except ValueError:
+    except (ValueError, TypeError):
         pass
 
+    # Float parsing
     try:
         return ConstantNode(value=float(cleaned), dtype="float")
-    except ValueError:
+    except (ValueError, TypeError):
         pass
 
+    # Fallback: string
     return ConstantNode(value=cleaned, dtype="string")
+
+
+# ============================================================================
+# TREE NORMALIZATION
+# ============================================================================
+# Removes syntactic noise from Lark trees.
 
 
 def unwrap_single_child(node: Tree) -> Tree:
     """
-    Remove structural wrappers with a single child.
+    Collapse intermediate nodes that only wrap a single child.
 
-    Purely syntactic:
-    - no domain assumption
-    - safe everywhere
+    This is a purely syntactic normalization step:
+    - No semantic assumption
+    - Safe to apply globally
+
+    Useful to simplify AST construction logic.
     """
     while (
         isinstance(node, Tree)

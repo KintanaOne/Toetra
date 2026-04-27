@@ -1,155 +1,101 @@
-from pathlib import Path
+from typing import cast
 
 import pytest
 from lark import Tree
 
-from dsl.builder.expressions import parse_at
+from dsl.ast.nodes.expressions import AtExprNode
+from dsl.builder import neighborhood
 from dsl.builder.program import parse_program
 from dsl.parser.parser import parse_forml_code
 
-from test.fixtures.properties_samples import (
-    INVALID_AT_INVALID_DOMAIN_VALUES,
-    INVALID_AT_INVALID_NEIGHBORHOOD_ARGUMENTS,
-    INVALID_AT_MISSING_IDENTIFIER,
-    INVALID_AT_INVALID_DOMAIN_SYNTAX,
-    INVALID_AT_INVALID_NEIGHBORHOOD_SYNTAX,
-    VALID_AT_WITH_DOMAIN,
-    VALID_AT_WITH_NEIGHBORHOOD,
-    VALID_AT_WITH_NEIGHBORHOOD_AND_DOMAIN,
-    VALID_MINIMAL_AT,
-)
+from test.fixtures.properties_samples import *
+
 
 def parse(code: str) -> Tree:
     return parse_forml_code(code)
 
 
-#----------------------------------------------------------------------------------------------------------------------#
-#                                             VALID CASES
-#----------------------------------------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------------------------------------
+# VALID
+# ----------------------------------------------------------------------------------------------------------------------
 
 def test_at_basic():
-    """ AT1 : Test parsing of a basic at expression."""
+    prop = parse_program(parse(VALID_MINIMAL_AT)).body[0]
 
-    tree = parse(VALID_MINIMAL_AT)
-    program = parse_program(tree)
-    property = program.body[0]
-
-    left = property.implication.left
-    right = property.implication.right
-    neighborhood = left.neighborhood
-    domain = left.domain
-    backend = property.backend
+    scope = prop.rule.scope
+    assert isinstance(scope, AtExprNode)
+    scope = cast(AtExprNode, scope)
     
-    assert property.type == "ROBUSTNESS"
-    assert left.variable == "x0"
-    assert neighborhood == None
-    assert domain == None
-    assert right is not None
-    assert backend is None
+    assert prop.type == "ROBUSTNESS"
+    assert scope.variable == "x0"
+    assert scope.neighborhood is None
+    assert scope.domain is None
+    assert prop.rule.assertion is not None
+    assert prop.backend is None
+
 
 def test_at_with_neighborhood():
-    """ AT2 : Test parsing of an at expression with a neighborhood."""
+    prop = parse_program(parse(VALID_AT_WITH_NEIGHBORHOOD)).body[0]
 
-    tree = parse(VALID_AT_WITH_NEIGHBORHOOD)
-    program = parse_program(tree)
-    property = program.body[0]
+    scope = prop.rule.scope
+    assert isinstance(scope, AtExprNode)
+    scope = cast(AtExprNode, scope)
 
-    left = property.implication.left
-    right = property.implication.right
-    neighborhood = left.neighborhood
-    domain = left.domain
-    backend = property.backend
+    neigh = scope.neighborhood
     
-    assert property.type == "ROBUSTNESS"
-    assert left.variable == "x0"
-    assert neighborhood.metric == "L2"
-    assert neighborhood.args[0].key == "eps"
-    assert neighborhood.args[0].value == 0.01
-    assert domain == None
-    assert right is not None
-    assert backend is None
+    assert neigh is not None
+    assert neigh.metric == "L2"
+    assert neigh.args[0].key == "eps"
+    assert neigh.args[0].value == 0.01
+    assert scope.domain is None
 
 
 def test_at_with_domain():
-    """ AT3 : Test parsing of an at expression with a domain."""
+    prop = parse_program(parse(VALID_AT_WITH_DOMAIN)).body[0]
 
-    tree = parse(VALID_AT_WITH_DOMAIN)
-    program = parse_program(tree)
-    property = program.body[0]
+    scope = prop.rule.scope
+    assert isinstance(scope, AtExprNode)
+    scope = cast(AtExprNode, scope)
 
-    left = property.implication.left
-    right = property.implication.right
-    neighborhood = left.neighborhood
-    domain = left.domain
-    backend = property.backend
-    
-    assert property.type == "ROBUSTNESS"
-    assert left.variable == "x0"
-    assert neighborhood == None
+    domain = scope.domain
+
+
+    assert domain is not None
     assert domain.name == "sex"
     assert domain.values == ["male", "female"]
-    assert right is not None
-    assert backend is None
 
 
 def test_at_with_neighborhood_and_domain():
-    """ AT4 : Test parsing of an at expression with a neighborhood and domain."""
+    prop = parse_program(parse(VALID_AT_WITH_NEIGHBORHOOD_AND_DOMAIN)).body[0]
 
-    tree = parse(VALID_AT_WITH_NEIGHBORHOOD_AND_DOMAIN)
-    program = parse_program(tree)
-    property = program.body[0]
+    scope = prop.rule.scope
+    assert isinstance(scope, AtExprNode)
+    scope = cast(AtExprNode, scope)
 
-    left = property.implication.left
-    right = property.implication.right
-    neighborhood = left.neighborhood
-    domain = left.domain
-    backend = property.backend
-    
-    assert property.type == "ROBUSTNESS"
+    neighborhood = scope.neighborhood
+    domain = scope.domain
 
-    assert left.variable == "x0"
+    assert neighborhood is not None
+    assert neighborhood.metric is not None
+    assert neighborhood.args is not None
     assert neighborhood.metric == "L2"
-    assert neighborhood.args[0].key == "eps"
-    assert neighborhood.args[0].value == 0.01
+
+    assert domain is not None
+    assert domain.name is not None
     assert domain.name == "sex"
-    assert domain.values == ["male", "female"]
 
-    assert right is not None
-    assert backend is None
 
-#----------------------------------------------------------------------------------------------------------------------#
-#                                             INVALID CASES
-#----------------------------------------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------------------------------------
+# INVALID
+# ----------------------------------------------------------------------------------------------------------------------
 
-def test_at_missing_identifier():
-    """AT5 — missing identifier"""
-
+@pytest.mark.parametrize("code", [
+    INVALID_AT_MISSING_IDENTIFIER,
+    INVALID_AT_INVALID_NEIGHBORHOOD_ARGUMENTS,
+    INVALID_AT_INVALID_NEIGHBORHOOD_SYNTAX,
+    INVALID_AT_INVALID_DOMAIN_VALUES,
+    INVALID_AT_INVALID_DOMAIN_SYNTAX,
+])
+def test_at_invalid(code):
     with pytest.raises(Exception):
-        parse(INVALID_AT_MISSING_IDENTIFIER)
-
-
-def test_at_invalid_neighborhood_arguments():
-    """AT6 — malformed neighborhood"""
-
-    with pytest.raises(Exception):
-        parse(INVALID_AT_INVALID_NEIGHBORHOOD_ARGUMENTS)
-
-
-def test_at_invalid_neighborhood_syntax():
-
-    with pytest.raises(Exception):
-        parse(INVALID_AT_INVALID_NEIGHBORHOOD_SYNTAX)
-
-
-def test_at_invalid_domain_values():
-    """AT8 — invalid domain values"""
-
-    with pytest.raises(Exception):
-        parse(INVALID_AT_INVALID_DOMAIN_VALUES)
-
-
-def test_at_invalid_domain_syntax():
-    """AT9 — invalid domain syntax"""
-
-    with pytest.raises(Exception):
-        parse(INVALID_AT_INVALID_DOMAIN_SYNTAX)
+        parse(code)

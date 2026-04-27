@@ -25,3 +25,7 @@ class TypeMismatchError(SemanticError):
 
 class InvalidOperatorError(SemanticError):
     pass
+
+
+class IncompatibleFunctionError(SemanticError):
+    pass

@@ -1,31 +1,34 @@
+from __future__ import annotations
+
 from lark import Tree, Token
-from typing import Optional, List, Union
+
+from dsl.builder.core.types import LarkNode, LarkTree
+
+# ============================================================================
+# TREE NAVIGATION HELPERS
+# ============================================================================
+# These functions provide safe and reusable traversal utilities over Lark trees.
+# They are intentionally generic and contain NO DSL-specific logic.
 
 
-AST = Tree
-Node = Union[Tree, Token]
-
-
-def find_child(tree: AST, name: str) -> Optional[AST]:
+def find_child(tree: LarkTree, name: str) -> LarkTree | None:
     """
-    Return first direct child Tree matching name.
-    """
-    if not isinstance(tree, Tree):
-        return None
+    Return the first direct child Tree matching a given rule name.
 
+    This is a shallow search (1 level only).
+    """
     for child in tree.children:
         if isinstance(child, Tree) and child.data == name:
             return child
-
     return None
 
-def find_node(tree: AST, name: str) -> Optional[AST]:
-    """
-    Depth-first search: first occurrence of node.
-    """
-    if not isinstance(tree, Tree):
-        return None
 
+def find_node(tree: LarkTree, name: str) -> LarkTree | None:
+    """
+    Depth-first search (DFS) to find the first occurrence of a node.
+
+    Stops at the first match.
+    """
     if tree.data == name:
         return tree
 
@@ -37,14 +40,12 @@ def find_node(tree: AST, name: str) -> Optional[AST]:
 
     return None
 
-def find_all_nodes(tree: AST, name: str) -> List[AST]:
-    """
-    Return all nodes matching name (DFS).
-    """
-    results = []
 
-    if not isinstance(tree, Tree):
-        return results
+def find_all_nodes(tree: LarkTree, name: str) -> list[LarkTree]:
+    """
+    Return ALL nodes matching a given rule name using DFS.
+    """
+    results: list[LarkTree] = []
 
     if tree.data == name:
         results.append(tree)
@@ -55,57 +56,114 @@ def find_all_nodes(tree: AST, name: str) -> List[AST]:
 
     return results
 
-def get_token_value(node: Node):
+
+# ============================================================================
+# TOKEN EXTRACTION
+# ============================================================================
+# Centralized logic to safely extract values from mixed Tree/Token structures.
+
+
+def get_token_value(node: LarkNode) -> str | None:
     """
-    Extract token value safely.
+    Extract a string value from a Lark node.
+
+    Strategy:
+    - If Token -> return value directly
+    - If Tree -> recursively scan children until a Token is found
+
+    This avoids positional assumptions in the grammar.
     """
     if isinstance(node, Token):
         return node.value
 
-    if not isinstance(node, Tree):
-        return None
-
-    # 1. direct single-child case
-    if len(node.children) == 1:
-        child = node.children[0]
-        if isinstance(child, Token):
-            return child.value
-        if isinstance(child, Tree):
-            return get_token_value(child)
-
-    # 2. fallback scan
-    for child in node.children:
-        if isinstance(child, Token):
-            return child.value
+    if isinstance(node, Tree):
+        for child in node.children:
+            val = get_token_value(child)
+            if val is not None:
+                return val
 
     return None
 
-def get_assignment_value_node(decl_tree: AST):
+
+def extract_direct_token(node: Tree) -> str | None:
     """
-    Return RHS of assignment in a safe way.
-    Assumes pattern: IDENT := VALUE
+    Extract token only from immediate children (no deep recursion).
+    More stable for grammar nodes like quantifier.
     """
-    if not isinstance(decl_tree, Tree):
+    for child in node.children:
+        if isinstance(child, Token):
+            return child.value
+        if isinstance(child, Tree):
+            # only go one level deeper for wrapper nodes
+            for sub in child.children:
+                if isinstance(sub, Token):
+                    return sub.value
+    return None
+
+
+def get_node_name_or_value(node: Tree) -> str | None:
+    """
+    Extract semantic value from a node:
+    - Token -> value
+    - Tree with no children -> data (rule name)
+    - Tree with children -> recurse
+    """
+
+    from lark import Token, Tree
+
+    if node is None:
         return None
 
-    children = decl_tree.children
+    if isinstance(node, Token):
+        return node.value
 
-    # find first Tree or Token after ':=' pattern
-    seen_colon = False
+    if isinstance(node, Tree):
+        # ✔ leaf rule (comme "exists")
+        if len(node.children) == 0:
+            return node.data
 
-    for child in children:
+        for child in node.children:
+            v = get_node_name_or_value(child)
+            if v is not None:
+                return v
+
+    return None
+
+
+# ============================================================================
+# ASSIGNMENT EXTRACTION
+# ============================================================================
+
+def get_assignment_value_node(decl_tree: LarkTree) -> LarkNode | None:
+    """
+    Extract the RHS (right-hand side) of an assignment.
+
+    Expected pattern:
+        IDENT := VALUE
+
+    The function scans for ':=' and returns the first node after it.
+
+    This is syntax-driven and does NOT interpret semantics.
+    """
+    seen_assign = False
+
+    for child in decl_tree.children:
         if isinstance(child, Token) and child.value == ":=":
-            seen_colon = True
+            seen_assign = True
             continue
 
-        if seen_colon:
+        if seen_assign:
             return child
 
     return None
 
 
-def debug_tree(tree: AST):
-    if isinstance(tree, Tree):
-        print(tree.pretty())
-    else:
-        print(tree)
+# ============================================================================
+# DEBUG UTILITIES
+# ============================================================================
+
+def debug_tree(tree: LarkTree) -> None:
+    """
+    Pretty-print a Lark tree for debugging purposes.
+    """
+    print(tree.pretty())

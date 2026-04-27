@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Optional, Union, Dict, Any
 
+from dsl.ast.nodes.base import ASTNode
 from dsl.ast.nodes.primitives import ArgNode
 
 
 @dataclass
-class NeighborhoodNode:
+class NeighborhoodNode(ASTNode):
     metric: str
-    args: List[ArgNode]
+    args: list[ArgNode]

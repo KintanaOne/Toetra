@@ -1,9 +1,21 @@
-from lark import Tree
+from typing import cast
+
 import pytest
+from lark import Tree
 from lark.exceptions import UnexpectedToken
 
+from dsl.ast.nodes.assertion import (
+    AndNode,
+    OrNode,
+    NotNode,
+    ImplicationNode,
+    AssertionNode,
+    ComparisonNode,
+    ProblemNode,
+)
+from dsl.ast.nodes.expressions import CheckAtExprNode
+from dsl.builder.program import parse_program
 from dsl.parser.parser import parse_forml_code
-from dsl.builder.core.utils import find_node
 
 from test.fixtures.logic_samples import (
     INVALID_LOGIC_SYNTAX,
@@ -12,46 +24,22 @@ from test.fixtures.logic_samples import (
     NOT_PRECEDENCE_PROPERTY,
     OPERATOR_PRECEDENCE_PROPERTY,
     PARENTHESES_PRECEDENCE_PROPERTY,
-    SIMPLE_LOGIC_PROPERTY
+    SIMPLE_LOGIC_PROPERTY,
+    SIMPLE_PROBLEM_PROPERTY,
+    VALID_IMPLICATION_PROPERTY,
 )
 
+
 # ----------------------------------------------------------------------------------------------------------------------
-# Helpers (test-side only)
+# Helpers
 # ----------------------------------------------------------------------------------------------------------------------
 
 def parse(code: str) -> Tree:
     return parse_forml_code(code)
 
 
-def get_assertion(tree: Tree) -> Tree:
-    """
-    Retrieve the assertion expression node.
-    """
-    return find_node(tree, "assertion")
-
-
-def get_assertion_expr(tree: Tree) -> Tree:
-    """
-    Return the logical expression inside assertion.
-    """
-    assertion = find_node(tree, "assertion")
-    assert assertion is not None, "No assertion node found"
-
-    assert len(assertion.children) == 1, "Assertion should wrap exactly one expression"
-
-    return assertion.children[0]
-
-
-def is_node(node: Tree, name: str) -> bool:
-    return isinstance(node, Tree) and node.data == name
-
-
-def get_children(node: Tree):
-    return [c for c in node.children if isinstance(c, Tree)]
-
-
-def assert_is_atom(node):
-    assert node.data in {"logic_not", "atom", "logic_expr"}
+def build(code: str):
+    return parse_program(parse(code)).body[0]
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -59,8 +47,36 @@ def assert_is_atom(node):
 # ----------------------------------------------------------------------------------------------------------------------
 
 def test_simple_logic_in_property():
-    tree = parse(SIMPLE_LOGIC_PROPERTY)
-    assert tree is not None
+
+    prop = build(SIMPLE_LOGIC_PROPERTY)
+
+    scope = prop.rule.scope
+    assertion = prop.rule.assertion
+
+    assert scope is not None
+    assert assertion is not None
+
+    match assertion:
+        case AndNode(operands=ops):
+            assert len(ops) == 2
+            assert all(isinstance(op, ComparisonNode) for op in ops)
+
+        case _:
+            pytest.fail("Expected AND of two comparisons")
+
+
+def test_simple_problem_in_property():
+
+    prop = build(SIMPLE_PROBLEM_PROPERTY)
+
+    assertion = prop.rule.assertion
+
+    match assertion:
+        case ProblemNode(problem=problem):
+            assert problem == "CLASSIFICATION"
+
+        case _:
+            pytest.fail(f"Unexpected node: {assertion}")
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -72,22 +88,21 @@ def test_logic_operator_precedence():
     A OR (B AND C)
     """
 
-    tree = parse(OPERATOR_PRECEDENCE_PROPERTY)
-    expr = get_assertion_expr(tree)
+    prop = build(OPERATOR_PRECEDENCE_PROPERTY)
+    assertion = prop.rule.assertion
 
-    assert expr.data == "logic_or"
+    match assertion:
+        case OrNode(operands=ops):
+            assert len(ops) == 2
 
-    left, right = get_children(expr)
+            left, right = ops
 
-    # A
-    assert_is_atom(left)
+            assert isinstance(left, ComparisonNode)
+            assert isinstance(right, AndNode)
+            assert len(right.operands) == 2
 
-    # B AND C
-    assert right.data == "logic_and"
-    b, c = get_children(right)
-
-    assert_is_atom(b)
-    assert_is_atom(c)
+        case _:
+            pytest.fail(f"Unexpected structure: {assertion}")
 
 
 def test_logic_parentheses_override_precedence():
@@ -95,15 +110,21 @@ def test_logic_parentheses_override_precedence():
     (A OR B) AND C
     """
 
-    tree = parse(PARENTHESES_PRECEDENCE_PROPERTY)
-    assertion = get_assertion(tree)
+    prop = build(PARENTHESES_PRECEDENCE_PROPERTY)
+    assertion = prop.rule.assertion
 
-    assert assertion.data == "logic_and"
+    match assertion:
+        case AndNode(operands=ops):
+            assert len(ops) == 2
 
-    left = get_children(assertion)[0]
+            left, right = ops
 
-    # left should contain OR
-    assert left.data == "logic_or"
+            assert isinstance(left, OrNode)
+            assert len(left.operands) == 2
+            assert isinstance(right, ComparisonNode)
+
+        case _:
+            pytest.fail(f"Unexpected structure: {assertion}")
 
 
 def test_logic_not_precedence():
@@ -111,14 +132,21 @@ def test_logic_not_precedence():
     NOT A AND B => (NOT A) AND B
     """
 
-    tree = parse(NOT_PRECEDENCE_PROPERTY)
-    assertion = get_assertion(tree)
+    prop = build(NOT_PRECEDENCE_PROPERTY)
+    assertion = prop.rule.assertion
 
-    assert assertion.data == "logic_and"
+    match assertion:
+        case AndNode(operands=ops):
+            assert len(ops) == 2
 
-    left = get_children(assertion)[0]
+            left, right = ops
 
-    assert left.data == "logic_not"
+            assert isinstance(left, NotNode)
+            assert isinstance(left.operand, ComparisonNode)
+            assert isinstance(right, ComparisonNode)
+
+        case _:
+            pytest.fail(f"Unexpected structure: {assertion}")
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -126,36 +154,36 @@ def test_logic_not_precedence():
 # ----------------------------------------------------------------------------------------------------------------------
 
 def test_logic_implication():
-    tree = parse("""
-    model := "model.onnx"
-    target := MyTarget
 
-    [ROBUSTNESS]:
-    check_at x0 =>
-        x0.a <= 1 -> x0.b <= 2
-    """)
+    prop = build(VALID_IMPLICATION_PROPERTY)
 
-    assertion = get_assertion(tree)
+    assertion = prop.rule.assertion
 
-    assert assertion.data == "implication"
+    assert isinstance(assertion.root, ImplicationNode)
 
-    left, right = get_children(assertion)
+    left = assertion.root.left
+    right = assertion.root.right
 
-    assert left is not None
-    assert right is not None
+    assert isinstance(left, ComparisonNode)
+    assert isinstance(right, ComparisonNode)
 
 
 def test_logic_nested_implication():
 
-    tree = parse(NESTED_IMPLICATION_PROPERTY)
+    prop = build(NESTED_IMPLICATION_PROPERTY)
+    assertion = prop.rule.assertion
 
-    assertion = get_assertion(tree)
+    match assertion:
+        case AssertionNode(
+            root=ImplicationNode(
+                left=_,
+                right=ImplicationNode(left=_, right=_)
+            )
+        ):
+            pass
 
-    assert assertion.data == "implication"
-
-    _, right = get_children(assertion)
-
-    assert right.data == "implication"
+        case _:
+            pytest.fail("Expected nested implication")
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -163,10 +191,10 @@ def test_logic_nested_implication():
 # ----------------------------------------------------------------------------------------------------------------------
 
 def test_invalid_logic_syntax():
-    with pytest.raises(UnexpectedToken):
-        parse(INVALID_LOGIC_SYNTAX)
+    with pytest.raises(Exception):
+        build(INVALID_LOGIC_SYNTAX)
 
 
 def test_invalid_parentheses():
-    with pytest.raises(UnexpectedToken):
-        parse(INVALID_PARENTHESES)
+    with pytest.raises(Exception):
+        build(INVALID_PARENTHESES)

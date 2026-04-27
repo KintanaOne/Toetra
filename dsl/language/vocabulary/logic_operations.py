@@ -9,7 +9,8 @@ official_logic_operations = {
     "LT": '"<"',
     "LTE": '"<="',
     "GT": '">"',
-    "GTE": '">="'
+    "GTE": '">="',
+    "IMPLY": '"->"'
 }
 
 class EnumLogicOperation(EnumMixin, Enum):
@@ -19,4 +20,5 @@ class EnumLogicOperation(EnumMixin, Enum):
     LTE = "<="
     GT = ">"
     GTE = ">="
+    IMPLY = "->"
     

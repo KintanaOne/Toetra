@@ -1,8 +1,8 @@
 from lark import Token, Tree
-from dsl.ast.nodes.implication import ImplicationNode
-from dsl.ast.nodes.property import PropertyNode
+from dsl.ast.nodes.property import PropertyNode, PropertyRuleNode
 from dsl.builder.backends import parse_backend
-from dsl.builder.core.utils import find_child, find_all_nodes, find_node
+from dsl.builder.core.strict import require_node, require_value
+from dsl.builder.core.utils import find_child, find_node
 from dsl.builder.core.ast_utils import node_value
 from .expressions import (
     parse_at,
@@ -14,10 +14,24 @@ from .assertion import parse_assertion
 
 
 # ============================================================================
-# PROPERTY CORE
+# PROPERTY CORE PARSING
+# ============================================================================
+# This module parses full property definitions:
+#   - LHS (expression)
+#   - RHS (assertion after =>)
+#   - backend configuration
 # ============================================================================
 
+
+# ---------------------------------------------------------------------------
+# Mode detection
+# ---------------------------------------------------------------------------
+
 def detect_mode(prop: Tree) -> str:
+    """
+    Detect which expression type is used in the property LHS.
+    """
+
     if find_node(prop, "quantifier_expr"):
         return "quantifier"
     if find_node(prop, "at_expr"):
@@ -26,31 +40,59 @@ def detect_mode(prop: Tree) -> str:
         return "check_at"
     if find_node(prop, "pairwise_expr"):
         return "pairwise"
+
     return "unknown"
 
 
-def extract_rhs(prop: Tree):
+# ---------------------------------------------------------------------------
+# RHS extraction
+# ---------------------------------------------------------------------------
+
+from lark import Tree, Token
+
+
+def extract_rhs(prop: Tree) -> Tree:
     """
-    Extract RHS = node after '=>' at property level.
+    Extract RHS expression from property.
+
+    IMPORTANT:
+    Lark inline-expands 'assertion', so RHS is directly a logic_* node
+    (e.g. logic_or, logic_and), not an 'assertion' node.
     """
 
-    found_implies = False
+    found_imply = False
 
-    for child in prop.children:
-        # detect =>
-        if isinstance(child, Token) and child.value == "=>":
-            found_implies = True
+    property = prop.children[0]
+
+    for child in property.children:
+
+        # skip metadata nodes
+        if isinstance(child, Tree) and child.data in (
+            "property_type",
+            "property_expr",
+        ):
             continue
 
-        # first Tree after =>
-        if found_implies and isinstance(child, Tree):
+        # detect implication separator
+        if isinstance(child, Tree) and child.data == "property_imply":
+            found_imply = True
+            continue
+
+        # RHS = first real logic subtree AFTER implication
+        if found_imply and isinstance(child, Tree):
             return child
 
-    # fallback
-    return None
+    raise ValueError("Missing RHS in property")
 
+# ---------------------------------------------------------------------------
+# Main parser
+# ---------------------------------------------------------------------------
 
 def parse_property(prop: Tree) -> PropertyNode:
+    """
+    Parse full property AST into PropertyNode.
+    """
+
     mode = detect_mode(prop)
 
     expr_map = {
@@ -60,20 +102,44 @@ def parse_property(prop: Tree) -> PropertyNode:
         "quantifier": parse_quantifier,
     }
 
-    left = expr_map.get(mode, lambda x: None)(prop)
+    if mode not in expr_map:
+        raise ValueError(f"Unknown property mode: {mode}")
 
-    # 🔥 RIGHT SIDE OF "=>"
+    # -----------------------------------------------------------------------
+    # Parse LHS expression
+    # -----------------------------------------------------------------------
+    left = expr_map[mode](prop)
+
+    # -----------------------------------------------------------------------
+    # Parse RHS assertion
+    # -----------------------------------------------------------------------
     right_node = extract_rhs(prop)
     right = parse_assertion(right_node)
 
-    # 🔥 BACKEND
-    backend = parse_backend(find_node(prop, "backend"))
+    # -----------------------------------------------------------------------
+    # Parse backend configuration (strict)
+    # -----------------------------------------------------------------------
+    backend_node = find_node(prop, "backend")
+    backend = parse_backend(backend_node)
 
+    # -----------------------------------------------------------------------
+    # Property type (strict extraction)
+    # -----------------------------------------------------------------------
+    property_type_node = find_node(prop, "property_type")
+
+    property_type = require_value(
+        node_value(property_type_node),
+        "Property type is missing"
+    )
+
+    # -----------------------------------------------------------------------
+    # Build AST
+    # -----------------------------------------------------------------------
     return PropertyNode(
-        type=node_value(find_node(prop, "property_type")),
-        implication=ImplicationNode(
-            left=left,
-            right=right
+        type=property_type,
+        rule=PropertyRuleNode(
+            scope=left,
+            assertion=right
         ),
         backend=backend
     )

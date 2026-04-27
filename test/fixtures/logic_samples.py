@@ -10,6 +10,14 @@ SIMPLE_LOGIC_PROPERTY = """
     target := MyTarget
 
     [ROBUSTNESS]:
+    at x0 => A==0 AND B==1
+    """
+
+SIMPLE_PROBLEM_PROPERTY = """
+    model := "path/to/model.onnx"
+    target := MyTarget
+
+    [ROBUSTNESS]:
     at x0 => CLASSIFICATION.EQUAL()
     """
 
@@ -93,7 +101,7 @@ INVALID_PARENTHESES = """
     """
 
 #----------------------------------------------------------------------------------------------------------------------#
-#                                             INVALID
+#                                             COMPLEX VALID
 #----------------------------------------------------------------------------------------------------------------------#
 
 VALID_TRIPLE_OR_PROPERTY = """
@@ -113,4 +121,13 @@ VALID_TRIPLE_AND_PROPERTY = """
     [ROBUSTNESS]:
     check_at x0 =>
         x0.a <= 1 AND x0.b <= 2 AND x0.c <= 3
+    """
+
+VALID_IMPLICATION_PROPERTY = """
+    model := "model.onnx"
+    target := MyTarget
+
+    [ROBUSTNESS]:
+    check_at x0 =>
+        x0.a <= 1 -> x0.b <= 2
     """

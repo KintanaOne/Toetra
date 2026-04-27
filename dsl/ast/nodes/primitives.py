@@ -1,22 +1,26 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, List, Optional
+from typing import Union
+
+
+PrimitiveValue = Union[str, int, float, bool, None]
 
 
 @dataclass
 class ArgNode:
     key: str
-    value: str | int | float | bool | None
+    value: PrimitiveValue
+
 
 @dataclass
 class ConstantNode:
-    value: Any
-    dtype: str  # "int", "float", "string"
+    value: PrimitiveValue
+    dtype: str  # TODO: remplacer par Enum
 
 
 @dataclass
 class AttributeNode:
-    entity: Optional[str]
+    entity: str | None
     feature: str
-    path: List[str]
+    path: list[str]

@@ -1,8 +1,7 @@
 from dsl.language.vocabulary.functions import EnumFunction
 from dsl.semantic.compatibility import PROBLEM_FUNCTION_COMPATIBILITY
-from dsl.semantic.errors import InvalidPropertyError
+from dsl.semantic.errors import IncompatibleFunctionError, InvalidPropertyError
 from dsl.semantic.tracer import ValidationTracer
-from dsl.semantic_.errors import IncompatibleFunctionError
 
 
 class ProblemValidator:

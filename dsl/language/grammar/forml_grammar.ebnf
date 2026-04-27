@@ -25,8 +25,6 @@ arg_boolean         = boolean ;
 arg  = arg_identifier_eq | arg_identifier_only | arg_number | arg_boolean ;
 args = arg , { "," , arg } ;
 
-(* === SEPARATORS === *)
-SEPARATOR = ";" ;
 
 (* === NEWLINES === *)
 NEWLINE_SEQUENCE = NEWLINE , { NEWLINE } ;
@@ -50,15 +48,17 @@ logic_operation = ? official_logic_operations ? ;
 (* === FUNCTIONS / PROBLEMS === *)
 function        = ? official_functions ? ;
 function_expr   = function , "(" , [ args ] , ")" ;
-problem_expr    = ? official_problems ? , "." , function_expr ;
+problem_expr    = ( ? official_problems ? ) , "." , function_expr ;
 
 (* === ATTRIBUTES === *)
 attribute = identifier , { "." , identifier } ;
 logic_expr = attribute , logic_operation , value ;
 
-(* === IMPLICATION === *)
+(* === ASSERTION === *)
 
-?assertion      = logic_or | logic_or "->" assertion            -> implication
+?assertion      = logic_imply
+
+?logic_imply    = logic_or | logic_or "->" logic_imply          -> logical_imply
 
 ?logic_or       = logic_and | logic_or "OR" logic_and           -> logic_or
 
@@ -73,9 +73,7 @@ logic_expr = attribute , logic_operation , value ;
 (* ========================================================= *)
 
 (* === NEIGHBORHOOD (CRITICAL ABSTRACTION) === *)
-neighborhood = "in" , "neighborhood" , "(" , [ "metric" , "=" ] , ? official_metrics ? , "," , [ args ] , ")" ;
-
-(* Exemple attendu : hyperball(x, "L2", 0.01) *)
+neighborhood = "in" , "neighborhood" , "(" , [ "metric" , "=" ] , ( ? official_metrics ? ) , "," , [ args ] , ")" ;
 
 (* ========================================================= *)
 (* === PROPERTY EXPRESSIONS ================================ *)
@@ -83,14 +81,14 @@ neighborhood = "in" , "neighborhood" , "(" , [ "metric" , "=" ] , ? official_met
 
 property_expr = quantifier_expr | at_expr | check_expr | pairwise_expr ;
 
-(* === UNIVERSAL (GLOBAL) === *)
+(* ========================================================= *)
+(* === QUANTIFIER ========================================== *)
+(* ========================================================= *)
+
 quantifier = ? official_quantifier ? ;
 
 quantifier_expr = quantifier , [ domain ] ;
 
-(* Exemple : forall -> P() (x implicite) *)
-
-(* ================================== POINTWISE ================================== *)
 
 (* ========================================================= *)
 (* === AT (POINTWISE) ====================================== *)
@@ -125,11 +123,11 @@ domain = "with" , identifier , "(" , value , { "," , value } , ")" ;
 (* === PROPERTY DEFINITION ================================= *)
 (* ========================================================= *)
 
-implies_token = IMPLIES ;
+property_imply = PROPERTY_IMPLY ;
 
 property_type = ? official_properties ? | ? uppercase_string ? ;
 
-property = "[" , property_type , "]" , ":" , property_expr , implies_token , assertion ;
+property = "[" , property_type , "]" , ":" , property_expr , property_imply , assertion ;
 
 property_section = property , [ backend ] ;
 
@@ -137,7 +135,7 @@ property_section = property , [ backend ] ;
 (* === BACKEND ============================================= *)
 (* ========================================================= *)
 
-backend = "using" , ? official_backends ? , [ "(" , args , ")" ] ;
+backend = "using" , ( ? official_backends ? ) , [ "(" , args , ")" ] ;
 
 (* ========================================================= *)
 (* === DECLARATIONS ======================================== *)
@@ -151,7 +149,7 @@ model_declaration = "model" , ":=" , model ;
 
 variable_declaration = identifier , ":=" , value ;
 
-variables_declaration = variable_declaration , { SEPARATOR , variable_declaration } ;
+variables_declaration = variable_declaration , { ";" , variable_declaration } ;
 
 (* ========================================================= *)
 (* === PROGRAM STRUCTURE =================================== *)
@@ -159,6 +157,6 @@ variables_declaration = variable_declaration , { SEPARATOR , variable_declaratio
 
 header = padding , model_declaration , padding , target_declaration , padding , [ variables_declaration , padding ] ;
 
-body = padding , property_section , { padding , property_section } , [ SEPARATOR ] , padding ;
+body = padding , property_section , { padding , property_section } , padding ;
 
 program = header , body ;

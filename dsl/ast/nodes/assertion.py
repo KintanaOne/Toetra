@@ -1,68 +1,72 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List
+from typing import Union
 
+from dsl.ast.nodes.base import ASTNode
 from dsl.ast.nodes.primitives import AttributeNode, ConstantNode
 
 
-# ============================================================================
-# BASE
-# ============================================================================
+# ----------------------------------------------------------------------------------------------------------------------
+# ASSERTION (WRAPPER)
+# ----------------------------------------------------------------------------------------------------------------------
 
 @dataclass
-class AssertionNode:
-    """
-    Base class for all logical assertions.
-    Represents WHAT must be true.
-    """
+class AssertionNode(ASTNode):
+    """Top-level assertion (WHAT must be true)."""
+    root: LogicalNode
+    context: ProblemNode | None = None
+# ----------------------------------------------------------------------------------------------------------------------
+# LOGICAL NODES
+# ----------------------------------------------------------------------------------------------------------------------
+
+class LogicalNode(ASTNode):
+    """Base class for all logical expressions."""
     pass
 
 
-# ============================================================================
-# COMPARISON
-# ============================================================================
-
 @dataclass
-class ComparisonNode(AssertionNode):
+class ComparisonNode(LogicalNode):
     left: AttributeNode
     op: str
     right: ConstantNode
 
 
-# ============================================================================
-# BOOLEAN OPERATORS
-# ============================================================================
-
 @dataclass
-class AndNode(AssertionNode):
-    operands: List[AssertionNode]
+class AndNode(LogicalNode):
+    operands: list[LogicalNode]
 
 
 @dataclass
-class OrNode(AssertionNode):
-    operands: List[AssertionNode]
+class OrNode(LogicalNode):
+    operands: list[LogicalNode]
 
 
 @dataclass
-class NotNode(AssertionNode):
-    operand: AssertionNode
+class NotNode(LogicalNode):
+    operand: LogicalNode
 
-
-# ============================================================================
-# DOMAIN SPECIFIC
-# ============================================================================
 
 @dataclass
-class ProblemNode(AssertionNode):
+class ImplicationNode(LogicalNode):
+    left: LogicalNode
+    right: LogicalNode
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# CONTEXT
+# ----------------------------------------------------------------------------------------------------------------------
+
+@dataclass
+class ProblemNode(ASTNode):
     problem: str
     function: str | None
 
 
-# ============================================================================
+# ----------------------------------------------------------------------------------------------------------------------
 # FALLBACK
-# ============================================================================
+# ----------------------------------------------------------------------------------------------------------------------
 
 @dataclass
-class UnknownNode(AssertionNode):
+class UnknownNode(LogicalNode):
     raw: str
