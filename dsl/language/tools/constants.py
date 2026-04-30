@@ -12,7 +12,7 @@ from dsl.language.vocabulary.functions import official_functions
 from dsl.language.vocabulary.backends import official_backends
 from dsl.language.vocabulary.metrics import official_metrics
 from dsl.language.vocabulary.protected_words import protected_words
-from dsl.language.vocabulary.logic_operations import official_logic_operations
+from dsl.language.vocabulary.operators import official_logic_operations, official_comparaison_operations
 
 
 # =========================
@@ -27,6 +27,7 @@ OFFICIAL_MAPS = {
     "backends": official_backends,
     "metrics": official_metrics,
     "logic_operations": official_logic_operations,
+    "comparison_operators": official_comparaison_operations,
 }
 
 # protected_words volontairement exclu du header rules

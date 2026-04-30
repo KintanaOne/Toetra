@@ -268,33 +268,25 @@ class ImplicationValidator:
     def __init__(self, tracer=None):
         self.tracer = tracer or ValidationTracer()
 
-    def validate(self, imp):
-        self.tracer.log(f"Validating ImplicationNode: {imp}")
+    
+    def validate(self, scope, rhs):
+        self.tracer.log(f"Validating implication with scope={scope} rhs={rhs}")
 
-        lhs = imp.left
-        rhs = imp.right
-
-        # ---------------------------
-        # 1. LHS → create contexte
-        # ---------------------------
+        # 1. LHS → contexte
         lhs_validator = LHSValidator(tracer=self.tracer)
-        context = lhs_validator.validate(lhs)
+        context = lhs_validator.validate(scope)
 
-        # ---------------------------
-        # 2. Binding (CRUCIAL)
-        # ---------------------------
+        # 2. Binding
         BindingValidator(tracer=self.tracer).validate(context, rhs)
 
-        # ---------------------------
         # 3. RHS validation
-        # ---------------------------
         node_type = rhs.__class__.__name__
 
         if node_type in ["ComparisonNode", "AndNode", "OrNode", "NotNode"]:
             LogicValidator(tracer=self.tracer).validate(rhs, context)
 
         elif node_type == "ProblemNode":
-            ProblemValidator().validate(rhs)
+            ProblemValidator(tracer=self.tracer).validate(rhs)
 
         else:
             raise InvalidPropertyError(f"Invalid RHS type: {node_type}")
@@ -522,6 +514,10 @@ class LogicValidator:
     It is assumed that BindingValidator has already run.
     """
 
+    # LogicalNode hierarchy:
+    # - Structural logic nodes: And, Or, Not, Implication
+    # - Leaf / terminal logic nodes: Comparison, Problem
+
     def __init__(self, tracer=None):
         self.tracer = tracer or ValidationTracer()
 
@@ -573,18 +569,15 @@ class LogicValidator:
     def _validate_and(self, node, context):
         self.tracer.log(f"Validating AndNode: {node}")
 
-        self.validate(node.left, context)
-        self.validate(node.right, context)
+        for operand in node.operands:
+            self.validate(operand, context)
 
-    # ─────────────────────────────
-    # OR
-    # ─────────────────────────────
 
     def _validate_or(self, node, context):
         self.tracer.log(f"Validating OrNode: {node}")
 
-        self.validate(node.left, context)
-        self.validate(node.right, context)
+        for operand in node.operands:
+            self.validate(operand, context)
 
     # ─────────────────────────────
     # NOT
@@ -593,10 +586,10 @@ class LogicValidator:
     def _validate_not(self, node, context):
         self.tracer.log(f"Validating NotNode: {node}")
 
-        if not node.child:
-            raise InvalidPropertyError("NOT expression missing child")
+        if not node.operand:
+            raise InvalidPropertyError("NOT expression missing operand")
 
-        self.validate(node.child, context)
+        self.validate(node.operand, context)
 
     # ─────────────────────────────
     # OPERANDS
@@ -698,35 +691,29 @@ class PropertyValidator:
     def validate(self, prop):
         self.tracer.log(f"Validating Property: {prop.type}")
 
-        # ---------------------------
-        # 1. Base verification
-        # ---------------------------
-        if not hasattr(prop, "implication") or prop.implication is None:
+        if not hasattr(prop, "rule") or prop.rule is None:
             raise InvalidPropertyError(
-                message="Missing implication",
+                message="Missing rule",
                 node=prop,
                 context="PropertyValidator"
             )
 
-        # ---------------------------
-        # 2. implication Validation 
-        # ---------------------------
+        rule = prop.rule
+        scope = rule.scope              # LHS
+        assertion = rule.assertion      # AssertionNode
+        root = assertion.root           # LogicalNode
+
         try:
-            ImplicationValidator(tracer=self.tracer).validate(prop.implication)
+            ImplicationValidator(tracer=self.tracer).validate(scope, root)
 
         except SemanticError as e:
-            # Enrichir le contexte
             raise InvalidPropertyError(
                 message=f"Property '{prop.type}' invalid: {e}",
                 node=prop,
                 context="PropertyValidator"
             ) from e
 
-        # ---------------------------
-        # 3. Succees
-        # ---------------------------
         self.tracer.log(f"✔ Property '{prop.type}' validated")
-
         return True
 
 ===== dsl\semantic\scope.py =====

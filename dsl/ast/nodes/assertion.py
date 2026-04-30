@@ -5,7 +5,7 @@ from typing import Union
 
 from dsl.ast.nodes.base import ASTNode
 from dsl.ast.nodes.primitives import AttributeNode, ConstantNode
-from dsl.language.vocabulary.logic_operations import EnumLogicOperation
+from dsl.language.vocabulary.operators import EnumComparisonOperator
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -29,7 +29,7 @@ class LogicalNode(ASTNode):
 @dataclass
 class ComparisonNode(LogicalNode):
     left: AttributeNode
-    op: EnumLogicOperation
+    op: EnumComparisonOperator
     right: ConstantNode
 
 

@@ -1,153 +1,257 @@
 from dsl.semantic.errors import UnboundVariableError
 from dsl.semantic.tracer import ValidationTracer
 
+from dsl.ast.nodes.assertion import (
+    ComparisonNode,
+    AndNode,
+    OrNode,
+    NotNode,
+    ImplicationNode,
+    ProblemNode,
+)
+
+from dsl.ast.nodes.primitives import AttributeNode
+
+from dsl.ast.nodes.expressions import (
+    AtExprNode,
+    CheckAtExprNode,
+    PairwiseExprNode,
+    QuantifierExprNode,
+)
+
 
 class BindingValidator:
     """
-    BindingValidator is responsible for resolving variable references in the RHS.
+    Resolves variable bindings in RHS expressions.
 
-    It ensures that:
-    - all variables used in expressions are declared in the LHS context
-    - implicit feature access (e.g., `a <= 1`) is resolved to a valid entity
-    - user-defined variable names can be mapped to internal symbolic variables
-
-    This phase is equivalent to:
-        🔥 name resolution / symbol binding in a compiler
-
-    It may also rewrite the AST in-place:
-        - inject missing entities
-        - normalize variable names
+    Responsibilities:
+    - resolve explicit entities (x.a)
+    - resolve implicit entities (a <= 1)
+    - ensure all variables are declared in scope
     """
 
     def __init__(self, tracer=None):
         self.tracer = tracer or ValidationTracer()
 
-    # ─────────────────────────────
+    # ─────────────────────────────────────────────
     # ENTRY POINT
-    # ─────────────────────────────
+    # ─────────────────────────────────────────────
 
-    def validate(self, context, rhs):
-        """
-        Validates and resolves all variable bindings in the RHS.
+    def validate(self, scope, rhs):
 
-        Parameters:
-            context: dict produced by LHSValidator
-            rhs: AST node (logical expression or problem node)
-        """
+        context = self._extract_context(scope)
 
-        self.tracer.log(f"Binding validation with context: {context}")
+        self.tracer.log(
+            f"Binding validation context: {context}"
+        )
 
         self._check_node(rhs, context)
 
-    # ─────────────────────────────
-    # CORE RECURSIVE WALK
-    # ─────────────────────────────
+    # ─────────────────────────────────────────────
+    # CONTEXT EXTRACTION
+    # ─────────────────────────────────────────────
+
+    def _extract_context(self, scope):
+
+        # --------------------------------------------------
+        # CHECK_AT
+        # --------------------------------------------------
+
+        if isinstance(scope, CheckAtExprNode):
+
+            return {
+                "type": "pointwise",
+                "variables": {
+                    scope.variable: "anchor"
+                },
+                "default_entity": scope.variable,
+            }
+
+        # --------------------------------------------------
+        # AT
+        # --------------------------------------------------
+
+        if isinstance(scope, AtExprNode):
+
+            return {
+                "type": "local",
+                "variables": {
+                    scope.variable: "anchor"
+                },
+                "default_entity": scope.variable,
+            }
+
+        # --------------------------------------------------
+        # PAIRWISE
+        # --------------------------------------------------
+
+        if isinstance(scope, PairwiseExprNode):
+
+            left, right = scope.pair.split("~")
+
+            left = left.strip()
+            right = right.strip()
+
+            return {
+                "type": "pairwise",
+                "variables": {
+                    left: "anchor",
+                    right: "perturbation",
+                },
+                "default_entity": None,
+            }
+
+        # --------------------------------------------------
+        # QUANTIFIER
+        # --------------------------------------------------
+
+        if isinstance(scope, QuantifierExprNode):
+
+            return {
+                "type": "quantifier",
+                "variables": {},
+                "default_entity": None,
+            }
+
+        raise TypeError(
+            f"Unsupported scope type: {type(scope)}"
+        )
+
+    # ─────────────────────────────────────────────
+    # CORE DISPATCH
+    # ─────────────────────────────────────────────
 
     def _check_node(self, node, context):
-        """
-        Recursively traverses the AST and resolves:
-        - explicit variable references
-        - implicit feature accesses
-        """
 
         variables = context["variables"]
         default_entity = context.get("default_entity")
 
-        # ─────────────────────────────
-        # CASE 1 — AttributeNode (feature access)
-        # ─────────────────────────────
+        # --------------------------------------------------
+        # COMPARISON
+        # --------------------------------------------------
 
-        if hasattr(node, "feature"):
+        if isinstance(node, ComparisonNode):
 
-            # --------------------------------
-            # 1A — Explicit entity (x.a)
-            # --------------------------------
-            if getattr(node, "entity", None):
+            self._resolve_attribute(
+                node.left,
+                variables,
+                default_entity
+            )
 
-                if node.entity not in variables:
+            return
 
-                    # 🔥 Alias resolution (quantifier case)
-                    if len(variables) == 1:
-                        target_var = next(iter(variables.keys()))
+        # --------------------------------------------------
+        # PROBLEM NODE
+        # --------------------------------------------------
 
-                        self.tracer.log(
-                            f"Alias binding: {node.entity} → {target_var}"
-                        )
+        if isinstance(node, ProblemNode):
+            return
 
-                        # Alias resolution
-                        node.entity = target_var
+        # --------------------------------------------------
+        # AND
+        # --------------------------------------------------
 
-                        # 🔥 keep path consistent
-                        if hasattr(node, "path") and node.path:
-                            node.path[0] = target_var
+        if isinstance(node, AndNode):
 
-                    else:
-                        raise UnboundVariableError(
-                            f"Variable '{node.entity}' not allowed. "
-                            f"Expected one of {list(variables.keys())}"
-                        )
+            for child in node.operands:
+                self._check_node(child, context)
 
-            # --------------------------------
-            # 1B — Implicit entity (a <= 1)
-            # --------------------------------
-            else:
-                if default_entity:
-                    node.entity = default_entity
+            return
+
+        # --------------------------------------------------
+        # OR
+        # --------------------------------------------------
+
+        if isinstance(node, OrNode):
+
+            for child in node.operands:
+                self._check_node(child, context)
+
+            return
+
+        # --------------------------------------------------
+        # NOT
+        # --------------------------------------------------
+
+        if isinstance(node, NotNode):
+
+            self._check_node(node.operand, context)
+
+            return
+
+        # --------------------------------------------------
+        # IMPLICATION
+        # --------------------------------------------------
+
+        if isinstance(node, ImplicationNode):
+
+            self._check_node(node.left, context)
+            self._check_node(node.right, context)
+
+            return
+
+        raise TypeError(
+            f"Unsupported node type: {type(node)}"
+        )
+
+    # ─────────────────────────────────────────────
+    # ATTRIBUTE RESOLUTION
+    # ─────────────────────────────────────────────
+
+    def _resolve_attribute(
+        self,
+        attr: AttributeNode,
+        variables,
+        default_entity,
+    ):
+
+        # --------------------------------------------------
+        # EXPLICIT ENTITY
+        # --------------------------------------------------
+
+        if attr.entity is not None:
+
+            if attr.entity not in variables:
+
+                if len(variables) == 1:
+
+                    resolved = next(iter(variables.keys()))
 
                     self.tracer.log(
-                        f"Implicit binding: {node.feature} → "
-                        f"{default_entity}.{node.feature}"
+                        f"Alias resolution: "
+                        f"{attr.entity} → {resolved}"
                     )
 
-                elif len(variables) == 1:
-                    var = next(iter(variables.keys()))
-                    node.entity = var
+                    attr.entity = resolved
 
-                    self.tracer.log(
-                        f"Implicit binding: {node.feature} → "
-                        f"{var}.{node.feature}"
-                    )
+                    if attr.path:
+                        attr.path[0] = resolved
 
                 else:
                     raise UnboundVariableError(
-                        f"Ambiguous feature '{node.feature}' "
-                        f"with variables {list(variables.keys())}"
+                        f"Unknown variable '{attr.entity}', "
+                        f"expected {list(variables.keys())}"
                     )
 
-        # ─────────────────────────────
-        # RECURSIVE DESCENT
-        # ─────────────────────────────
+            return
 
-        for child in self._children(node):
-            self._check_node(child, context)
+        # --------------------------------------------------
+        # IMPLICIT ENTITY
+        # --------------------------------------------------
 
-    # ─────────────────────────────
-    # CHILD EXTRACTION
-    # ─────────────────────────────
+        if default_entity is not None:
 
-    def _children(self, node):
-        """
-        Extracts child nodes from an AST node.
+            attr.entity = default_entity
 
-        Supports:
-        - nested objects
-        - lists of nodes
-        - ignores primitives (int, str, etc.)
-        """
+            return
 
-        if not hasattr(node, "__dict__"):
-            return []
+        if len(variables) == 1:
 
-        children = []
+            attr.entity = next(iter(variables.keys()))
 
-        for value in node.__dict__.values():
+            return
 
-            if isinstance(value, list):
-                children.extend(
-                    v for v in value if hasattr(v, "__dict__")
-                )
-
-            elif hasattr(value, "__dict__"):
-                children.append(value)
-
-        return children
+        raise UnboundVariableError(
+            f"Ambiguous feature '{attr.feature}' "
+            f"with variables {list(variables.keys())}"
+        )

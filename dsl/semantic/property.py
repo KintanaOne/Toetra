@@ -1,6 +1,8 @@
-from dsl.semantic.implication import ImplicationValidator
 from dsl.semantic.errors import InvalidPropertyError, SemanticError
 from dsl.semantic.tracer import ValidationTracer
+
+from dsl.semantic.binding import BindingValidator
+from dsl.semantic.logic import LogicValidator
 
 
 class PropertyValidator:
@@ -19,12 +21,33 @@ class PropertyValidator:
             )
 
         rule = prop.rule
-        scope = rule.scope              # LHS
-        assertion = rule.assertion      # AssertionNode
-        root = assertion.root           # LogicalNode
+        scope = rule.scope
+        assertion = rule.assertion
+        root = assertion.root
+
+        print(f"SCOPE : {scope}")
 
         try:
-            ImplicationValidator(tracer=self.tracer).validate(scope, root)
+            # ------------------------------------------------------------------
+            # 1. LHS validation (context creation)
+            # ------------------------------------------------------------------
+            context = scope 
+
+            # ------------------------------------------------------------------
+            # 2. Binding phase (variable resolution)
+            # ------------------------------------------------------------------
+            BindingValidator(tracer=self.tracer).validate(
+                context,
+                root
+            )
+
+            # ------------------------------------------------------------------
+            # 3. Logic validation (structure check only)
+            # ------------------------------------------------------------------
+            LogicValidator(tracer=self.tracer).validate(
+                root,
+                context
+            )
 
         except SemanticError as e:
             raise InvalidPropertyError(
