@@ -1,64 +1,66 @@
 from dsl.semantic.errors import InvalidPropertyError
 from dsl.semantic.tracer import ValidationTracer
 
+from dsl.ast.nodes.assertion import (
+    ComparisonNode,
+    AndNode,
+    OrNode,
+    NotNode,
+    ImplicationNode,
+)
+
+from dsl.ast.nodes.primitives import AttributeNode, ConstantNode
+
 
 class LogicValidator:
     """
-    LogicValidator validates logical expressions on the RHS of an implication.
+    Validates logical expressions AFTER:
+        - parsing
+        - binding
 
-    It ensures:
-    - structural correctness (AND, OR, NOT, comparisons)
-    - recursive validation of sub-expressions
-    - compatibility with the semantic context (variables already bound)
-
-    NOTE:
-    Variable binding is NOT handled here.
-    It is assumed that BindingValidator has already run.
+    Responsibilities:
+        - structural correctness
+        - recursive validation
+        - leaf validation
     """
-
-    # LogicalNode hierarchy:
-    # - Structural logic nodes: And, Or, Not, Implication
-    # - Leaf / terminal logic nodes: Comparison, Problem
 
     def __init__(self, tracer=None):
         self.tracer = tracer or ValidationTracer()
 
+    # ─────────────────────────────
+    # ENTRY POINT
+    # ─────────────────────────────
+
     def validate(self, node, context):
         self.tracer.log(f"Validating logic node: {node}")
 
-        node_type = node.__class__.__name__
+        if isinstance(node, ComparisonNode):
+            return self._validate_comparison(node, context)
 
-        if node_type == "ComparisonNode":
-            self._validate_comparison(node, context)
+        if isinstance(node, AndNode):
+            return self._validate_and(node, context)
 
-        elif node_type == "AndNode":
-            self._validate_and(node, context)
+        if isinstance(node, OrNode):
+            return self._validate_or(node, context)
 
-        elif node_type == "OrNode":
-            self._validate_or(node, context)
+        if isinstance(node, NotNode):
+            return self._validate_not(node, context)
 
-        elif node_type == "NotNode":
-            self._validate_not(node, context)
+        if isinstance(node, ImplicationNode):
+            return self._validate_implication(node, context)
 
-        else:
-            raise InvalidPropertyError(
-                f"Unknown logical node type: {node_type}"
-            )
+        raise InvalidPropertyError(
+            f"Unknown logical node type: {type(node)}"
+        )
 
     # ─────────────────────────────
     # COMPARISON
     # ─────────────────────────────
 
     def _validate_comparison(self, node, context):
-        """
-        Example:
-            x.a <= 1
-            a <= 1  (after binding → x'.a <= 1)
-        """
-
         self.tracer.log(f"Validating ComparisonNode: {node}")
 
-        if not node.left or not node.right:
+        if node.left is None or node.right is None:
             raise InvalidPropertyError("Invalid comparison: missing operands")
 
         self._validate_operand(node.left, context)
@@ -71,15 +73,24 @@ class LogicValidator:
     def _validate_and(self, node, context):
         self.tracer.log(f"Validating AndNode: {node}")
 
-        for operand in node.operands:
-            self.validate(operand, context)
+        if not node.operands:
+            raise InvalidPropertyError("AND node has no operands")
 
+        for op in node.operands:
+            self.validate(op, context)
+
+    # ─────────────────────────────
+    # OR
+    # ─────────────────────────────
 
     def _validate_or(self, node, context):
         self.tracer.log(f"Validating OrNode: {node}")
 
-        for operand in node.operands:
-            self.validate(operand, context)
+        if not node.operands:
+            raise InvalidPropertyError("OR node has no operands")
+
+        for op in node.operands:
+            self.validate(op, context)
 
     # ─────────────────────────────
     # NOT
@@ -88,48 +99,50 @@ class LogicValidator:
     def _validate_not(self, node, context):
         self.tracer.log(f"Validating NotNode: {node}")
 
-        if not node.operand:
+        if node.operand is None:
             raise InvalidPropertyError("NOT expression missing operand")
 
         self.validate(node.operand, context)
 
     # ─────────────────────────────
-    # OPERANDS
+    # IMPLICATION (NOW NORMALIZED LOGIC NODE)
+    # ─────────────────────────────
+
+    def _validate_implication(self, node, context):
+        self.tracer.log(f"Validating ImplicationNode: {node}")
+
+        if node.left is None or node.right is None:
+            raise InvalidPropertyError("Implication missing left or right operand")
+
+        self.validate(node.left, context)
+        self.validate(node.right, context)
+
+    # ─────────────────────────────
+    # OPERANDS (LEAVES)
     # ─────────────────────────────
 
     def _validate_operand(self, node, context):
         """
-        Validates leaf-level elements:
-        - AttributeNode
-        - ConstantNode
-
-        NOTE:
-        Binding (entity resolution) has already been done upstream.
+        Leaf validation only.
+        Binding already done upstream.
         """
 
-        node_type = node.__class__.__name__
+        if isinstance(node, AttributeNode):
+            return self._validate_attribute(node, context)
 
-        if node_type == "AttributeNode":
-            self._validate_attribute(node, context)
+        if isinstance(node, ConstantNode):
+            return
 
-        elif node_type == "ConstantNode":
-            pass  # Always valid
-
-        else:
-            raise InvalidPropertyError(
-                f"Invalid operand type: {node_type}"
-            )
+        raise InvalidPropertyError(
+            f"Invalid operand type: {type(node)}"
+        )
 
     # ─────────────────────────────
     # ATTRIBUTE
     # ─────────────────────────────
 
     def _validate_attribute(self, node, context):
-        """
-        Ensures:
-        - attribute has a resolved entity (after binding)
-        - feature name is valid (basic check only)
-        """
+        self.tracer.log(f"Validating AttributeNode: {node}")
 
         if not node.feature:
             raise InvalidPropertyError("Attribute missing feature name")

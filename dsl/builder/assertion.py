@@ -16,7 +16,7 @@ from dsl.ast.nodes.assertion import (
 
 from dsl.builder.core.utils import find_node, get_token_value
 from dsl.builder.core.ast_utils import parse_attribute, node_value, parse_value
-from dsl.language.vocabulary.logic_operations import EnumLogicOperation
+from dsl.language.vocabulary.operators import EnumComparisonOperator
 
 
 # ============================================================================  
@@ -32,7 +32,7 @@ def build_logic_expr(node: Tree) -> LogicalNode:
         raise ValueError("Invalid comparison")
 
     left = parse_attribute(attribute_node)
-    op = EnumLogicOperation(get_token_value(op_node))
+    op = EnumComparisonOperator(get_token_value(op_node))
     right = parse_value(value_node)
 
     return ComparisonNode(left=left, op=op, right=right)

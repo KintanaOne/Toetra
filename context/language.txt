@@ -668,7 +668,7 @@ official_logic_operations = {
     "IMPLY": '"->"'
 }
 
-class EnumLogicOperation(EnumMixin, Enum):
+class EnumComparisonOperator(EnumMixin, Enum):
     EQ = "=="
     NEQ = "!="
     LT = "<"

@@ -12,6 +12,7 @@ from typing import Union
 
 from dsl.ast.nodes.base import ASTNode
 from dsl.ast.nodes.primitives import AttributeNode, ConstantNode
+from dsl.language.vocabulary.logic_operations import EnumComparisonOperator
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -35,7 +36,7 @@ class LogicalNode(ASTNode):
 @dataclass
 class ComparisonNode(LogicalNode):
     left: AttributeNode
-    op: str
+    op: EnumComparisonOperator
     right: ConstantNode
 
 
@@ -65,7 +66,7 @@ class ImplicationNode(LogicalNode):
 # ----------------------------------------------------------------------------------------------------------------------
 
 @dataclass
-class ProblemNode(ASTNode):
+class ProblemNode(LogicalNode):
     problem: str
     function: str | None
 
@@ -285,6 +286,7 @@ from dsl.ast.nodes.assertion import (
 
 from dsl.builder.core.utils import find_node, get_token_value
 from dsl.builder.core.ast_utils import parse_attribute, node_value, parse_value
+from dsl.language.vocabulary.logic_operations import EnumComparisonOperator
 
 
 # ============================================================================  
@@ -297,14 +299,13 @@ def build_logic_expr(node: Tree) -> LogicalNode:
     op_node = find_node(node, "logic_operation")
 
     if attribute_node is None or value_node is None or op_node is None:
-        return UnknownNode(raw="invalid_comparison")
+        raise ValueError("Invalid comparison")
 
     left = parse_attribute(attribute_node)
-    op = str(get_token_value(op_node))
+    op = EnumComparisonOperator(get_token_value(op_node))
     right = parse_value(value_node)
 
     return ComparisonNode(left=left, op=op, right=right)
-
 
 # ============================================================================  
 # UTILS  
@@ -318,13 +319,13 @@ def _extract_trees(node: Tree) -> List[Tree]:
 # CORE PARSER  
 # ============================================================================  
 
-def parse_assertion(node: Union[Tree, Token, None]) -> AssertionNode:
+def parse_assertion(node: Tree | Token | None) -> LogicalNode:
 
     if node is None:
-        return AssertionNode(root=UnknownNode(raw="None"))
+        raise ValueError("Assertion node is None")
 
     if isinstance(node, Token):
-        return AssertionNode(root=UnknownNode(raw=node.value))
+        raise ValueError(f"Unexpected token: {node.value}")
 
     t = node.data
     children = _extract_trees(node)
@@ -334,64 +335,56 @@ def parse_assertion(node: Union[Tree, Token, None]) -> AssertionNode:
     # ----------------------------------------------------------------------
     if t == "logical_imply":
         if len(children) != 2:
-            return AssertionNode(root=UnknownNode(raw="invalid_imply"))
+            raise ValueError("Invalid implication")
 
-        return AssertionNode(
-            root=ImplicationNode(
-                left=parse_assertion(children[0]).root,
-                right=parse_assertion(children[1]).root,
-            )
+        return ImplicationNode(
+            left=parse_assertion(children[0]),
+            right=parse_assertion(children[1]),
         )
 
     # ----------------------------------------------------------------------
     # OR
     # ----------------------------------------------------------------------
     if t == "logic_or":
-        ops = [parse_assertion(c).root for c in children]
-
-        if len(ops) == 1:
-            return AssertionNode(root=ops[0])
-
-        return AssertionNode(root=OrNode(operands=ops))
+        return OrNode(
+            operands=[parse_assertion(c) for c in children]
+        )
 
     # ----------------------------------------------------------------------
     # AND
     # ----------------------------------------------------------------------
     if t == "logic_and":
-        ops = [parse_assertion(c).root for c in children]
-
-        if len(ops) == 1:
-            return AssertionNode(root=ops[0])
-
-        return AssertionNode(root=AndNode(operands=ops))
+        return AndNode(
+            operands=[parse_assertion(c) for c in children]
+        )
 
     # ----------------------------------------------------------------------
     # NOT
     # ----------------------------------------------------------------------
     if t == "logic_not":
         if not children:
-            return AssertionNode(root=UnknownNode(raw="empty_not"))
+            raise ValueError("NOT requires an operand")
 
-        return AssertionNode(
-            root=NotNode(
-                operand=parse_assertion(children[-1]).root
-            )
+        return NotNode(
+            operand=parse_assertion(children[-1])
         )
 
     # ----------------------------------------------------------------------
     # COMPARISON
     # ----------------------------------------------------------------------
     if t == "logic_expr":
-        return AssertionNode(root=build_logic_expr(node))
+        return build_logic_expr(node)
 
     # ----------------------------------------------------------------------
     # ATOM
     # ----------------------------------------------------------------------
     if t == "atom":
-        return parse_assertion(children[0]) if children else AssertionNode(root=UnknownNode(raw="empty_atom"))
+        if not children:
+            raise ValueError("Empty atom")
+        return parse_assertion(children[0])
 
     # ----------------------------------------------------------------------
-    # PROBLEM
+    # PROBLEM (IMPORTANT)
     # ----------------------------------------------------------------------
     if t == "problem_expr":
         problem = "UNKNOWN"
@@ -403,16 +396,12 @@ def parse_assertion(node: Union[Tree, Token, None]) -> AssertionNode:
             elif isinstance(c, Tree):
                 function = node_value(c)
 
-        return AssertionNode(
-            root=UnknownNode(raw="problem_expr"),
-            context=ProblemNode(problem=problem, function=function)
-        )
+        return ProblemNode(problem=problem, function=function)
 
     # ----------------------------------------------------------------------
     # FALLBACK
     # ----------------------------------------------------------------------
-    return AssertionNode(root=UnknownNode(raw=f"Unhandled node: {t}"))
-
+    raise ValueError(f"Unhandled node: {t}")
 
 
 ===== dsl\builder\backends.py =====
@@ -615,6 +604,10 @@ def parse_value(node: Tree) -> ConstantNode:
 
     if cleaned is None:
         raise ValueError("Invalid value: None after cleaning")
+    
+    if cleaned.lower() == "true": return ConstantNode(True, "bool")
+    if cleaned.lower() == "false": return ConstantNode(False, "bool")
+    if cleaned.lower() == "null": return ConstantNode(None, "null")
 
     # Integer parsing
     try:
@@ -1843,6 +1836,7 @@ def parse_program(tree: Tree) -> ProgramNode:
 ===== dsl\builder\property.py =====
 
 from lark import Token, Tree
+from dsl.ast.nodes.assertion import AssertionNode
 from dsl.ast.nodes.property import PropertyNode, PropertyRuleNode
 from dsl.builder.backends import parse_backend
 from dsl.builder.core.strict import require_node, require_value
@@ -1952,17 +1946,23 @@ def parse_property(prop: Tree) -> PropertyNode:
     # -----------------------------------------------------------------------
     # Parse LHS expression
     # -----------------------------------------------------------------------
+    
     left = expr_map[mode](prop)
 
     # -----------------------------------------------------------------------
     # Parse RHS assertion
     # -----------------------------------------------------------------------
+    
     right_node = extract_rhs(prop)
-    right = parse_assertion(right_node)
+
+    logical_root = parse_assertion(right_node)
+
+    right = AssertionNode(root=logical_root)
 
     # -----------------------------------------------------------------------
     # Parse backend configuration (strict)
     # -----------------------------------------------------------------------
+    
     backend_node = find_node(prop, "backend")
     backend = parse_backend(backend_node)
 
@@ -1987,6 +1987,109 @@ def parse_property(prop: Tree) -> PropertyNode:
         ),
         backend=backend
     )
+
+===== dsl\ir\ir1\__init__.py =====
+
+
+
+===== dsl\ir\ir1\nodes.py =====
+
+# /dsl/ir/ir1/nodes.py
+
+
+from dataclasses import dataclass
+from typing import Any
+
+from dsl.language.vocabulary.backends import EnumBackend
+from dsl.language.vocabulary.functions import EnumFunction
+from dsl.language.vocabulary.logic_operations import EnumComparisonOperator
+from dsl.language.vocabulary.problems import EnumProblem
+from dsl.language.vocabulary.properties import EnumProperty
+
+
+@dataclass
+class VerificationTask:
+    property_type: EnumProperty
+    scope: ScopeIR
+    query: QueryIR
+    backend: EnumBackend
+
+
+@dataclass
+class ScopeIR:
+    kind: str                       # "local", "pairwise", "quantifier"...
+    variables: dict[str, str]       # {"x": "anchor", "x'": "perturbation"}
+    neighborhood: NeighborhoodIR | None
+    domain: DomainIR | None
+
+
+@dataclass
+class NeighborhoodIR:
+    metric: str                     # "L1", "L2", "Linf"
+    epsilon: float | None
+    args: dict[str, Any]
+
+
+@dataclass
+class DomainIR:
+    name: str
+    args: dict[str, Any]
+
+@dataclass
+class ConstraintIR:
+    """Une contrainte atomique sur un attribut."""
+    entity: str                     # "x'"
+    feature: str                    # "age"
+    op: EnumComparisonOperator                         # "<="
+    value: Any                      # 30
+
+
+@dataclass
+class QueryIR:
+    """Ce que le backend doit vérifier."""
+    kind: str                       # "comparison", "logical", "problem"
+    expression: LogicalIR | ProblemIR
+
+
+# ------------------------------------------------------------------------------ #
+# ----------------------------------- LOGIC ------------------------------------ #
+# ------------------------------------------------------------------------------ #
+
+@dataclass
+class LogicalIR:
+    op: EnumComparisonOperator                         # "and", "or", "not"
+    operand: list[ConstraintIR]           
+
+@dataclass
+class ComparisonIR(LogicalIR):
+    constraint: ConstraintIR
+
+@dataclass
+class AndIR(LogicalIR):
+    operands: list[LogicalIR]
+
+@dataclass
+class OrIR(LogicalIR):
+    operands: list[LogicalIR]
+
+@dataclass
+class NotIR(LogicalIR):
+    operand: LogicalIR
+
+@dataclass
+class ImplyIR(LogicalIR):
+    left: LogicalIR
+    right: LogicalIR
+
+# ------------------------------------------------------------------------------ #
+# ---------------------------------- PROBLEM ----------------------------------- #
+# ------------------------------------------------------------------------------ #
+
+@dataclass
+class ProblemIR:
+    problem: EnumProblem
+    function: EnumFunction
+    args: dict[str, Any] | None = None
 
 ===== dsl\language\tools\constants.py =====
 
@@ -2657,7 +2760,7 @@ official_logic_operations = {
     "IMPLY": '"->"'
 }
 
-class EnumLogicOperation(EnumMixin, Enum):
+class EnumComparisonOperator(EnumMixin, Enum):
     EQ = "=="
     NEQ = "!="
     LT = "<"
@@ -3262,33 +3365,25 @@ class ImplicationValidator:
     def __init__(self, tracer=None):
         self.tracer = tracer or ValidationTracer()
 
-    def validate(self, imp):
-        self.tracer.log(f"Validating ImplicationNode: {imp}")
+    
+    def validate(self, scope, rhs):
+        self.tracer.log(f"Validating implication with scope={scope} rhs={rhs}")
 
-        lhs = imp.left
-        rhs = imp.right
-
-        # ---------------------------
-        # 1. LHS → create contexte
-        # ---------------------------
+        # 1. LHS → contexte
         lhs_validator = LHSValidator(tracer=self.tracer)
-        context = lhs_validator.validate(lhs)
+        context = lhs_validator.validate(scope)
 
-        # ---------------------------
-        # 2. Binding (CRUCIAL)
-        # ---------------------------
+        # 2. Binding
         BindingValidator(tracer=self.tracer).validate(context, rhs)
 
-        # ---------------------------
         # 3. RHS validation
-        # ---------------------------
         node_type = rhs.__class__.__name__
 
         if node_type in ["ComparisonNode", "AndNode", "OrNode", "NotNode"]:
             LogicValidator(tracer=self.tracer).validate(rhs, context)
 
         elif node_type == "ProblemNode":
-            ProblemValidator().validate(rhs)
+            ProblemValidator(tracer=self.tracer).validate(rhs)
 
         else:
             raise InvalidPropertyError(f"Invalid RHS type: {node_type}")
@@ -3516,6 +3611,10 @@ class LogicValidator:
     It is assumed that BindingValidator has already run.
     """
 
+    # LogicalNode hierarchy:
+    # - Structural logic nodes: And, Or, Not, Implication
+    # - Leaf / terminal logic nodes: Comparison, Problem
+
     def __init__(self, tracer=None):
         self.tracer = tracer or ValidationTracer()
 
@@ -3567,18 +3666,15 @@ class LogicValidator:
     def _validate_and(self, node, context):
         self.tracer.log(f"Validating AndNode: {node}")
 
-        self.validate(node.left, context)
-        self.validate(node.right, context)
+        for operand in node.operands:
+            self.validate(operand, context)
 
-    # ─────────────────────────────
-    # OR
-    # ─────────────────────────────
 
     def _validate_or(self, node, context):
         self.tracer.log(f"Validating OrNode: {node}")
 
-        self.validate(node.left, context)
-        self.validate(node.right, context)
+        for operand in node.operands:
+            self.validate(operand, context)
 
     # ─────────────────────────────
     # NOT
@@ -3587,10 +3683,10 @@ class LogicValidator:
     def _validate_not(self, node, context):
         self.tracer.log(f"Validating NotNode: {node}")
 
-        if not node.child:
-            raise InvalidPropertyError("NOT expression missing child")
+        if not node.operand:
+            raise InvalidPropertyError("NOT expression missing operand")
 
-        self.validate(node.child, context)
+        self.validate(node.operand, context)
 
     # ─────────────────────────────
     # OPERANDS
@@ -3692,35 +3788,29 @@ class PropertyValidator:
     def validate(self, prop):
         self.tracer.log(f"Validating Property: {prop.type}")
 
-        # ---------------------------
-        # 1. Base verification
-        # ---------------------------
-        if not hasattr(prop, "implication") or prop.implication is None:
+        if not hasattr(prop, "rule") or prop.rule is None:
             raise InvalidPropertyError(
-                message="Missing implication",
+                message="Missing rule",
                 node=prop,
                 context="PropertyValidator"
             )
 
-        # ---------------------------
-        # 2. implication Validation 
-        # ---------------------------
+        rule = prop.rule
+        scope = rule.scope              # LHS
+        assertion = rule.assertion      # AssertionNode
+        root = assertion.root           # LogicalNode
+
         try:
-            ImplicationValidator(tracer=self.tracer).validate(prop.implication)
+            ImplicationValidator(tracer=self.tracer).validate(scope, root)
 
         except SemanticError as e:
-            # Enrichir le contexte
             raise InvalidPropertyError(
                 message=f"Property '{prop.type}' invalid: {e}",
                 node=prop,
                 context="PropertyValidator"
             ) from e
 
-        # ---------------------------
-        # 3. Succees
-        # ---------------------------
         self.tracer.log(f"✔ Property '{prop.type}' validated")
-
         return True
 
 ===== dsl\semantic\scope.py =====

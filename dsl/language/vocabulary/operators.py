@@ -4,21 +4,33 @@ from enum import Enum
 from dsl.language.vocabulary.utils import EnumMixin
 
 official_logic_operations = {
+    "AND": '"and"',
+    "OR": '"or"',
+    "NOT": '"not"',
+    "XOR": '"xor"',
+    "IMPLY": '"->"'
+}
+
+official_comparaison_operations = {
     "EQ": '"=="',
     "NEQ": '"!="',
     "LT": '"<"',
     "LTE": '"<="',
     "GT": '">"',
     "GTE": '">="',
-    "IMPLY": '"->"'
 }
 
-class EnumLogicOperation(EnumMixin, Enum):
+class EnumComparisonOperator(EnumMixin, Enum):
     EQ = "=="
     NEQ = "!="
     LT = "<"
     LTE = "<="
     GT = ">"
     GTE = ">="
+
+class EnumLogicalOperator(EnumMixin, Enum):
+    AND = "and"
+    OR = "or"
+    NOT = "not"
     IMPLY = "->"
     
