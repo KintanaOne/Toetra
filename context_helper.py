@@ -50,3 +50,4 @@ if __name__ == "__main__":
     concat_files_in_folder("dsl/builder", recursive=True, output_file="context/builder.txt")
     concat_files_in_folder("dsl/language", recursive=True, output_file="context/language.txt")
     concat_files_in_folder("dsl/parser", recursive=True, output_file="context/parser.txt")
+    concat_files_in_folder("dsl/ir", recursive=True, output_file="context/ir.txt")
