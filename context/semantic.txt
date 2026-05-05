@@ -4,156 +4,260 @@
 from dsl.semantic.errors import UnboundVariableError
 from dsl.semantic.tracer import ValidationTracer
 
+from dsl.ast.nodes.assertion import (
+    ComparisonNode,
+    AndNode,
+    OrNode,
+    NotNode,
+    ImplicationNode,
+    ProblemNode,
+)
+
+from dsl.ast.nodes.primitives import AttributeNode
+
+from dsl.ast.nodes.expressions import (
+    AtExprNode,
+    CheckAtExprNode,
+    PairwiseExprNode,
+    QuantifierExprNode,
+)
+
 
 class BindingValidator:
     """
-    BindingValidator is responsible for resolving variable references in the RHS.
+    Resolves variable bindings in RHS expressions.
 
-    It ensures that:
-    - all variables used in expressions are declared in the LHS context
-    - implicit feature access (e.g., `a <= 1`) is resolved to a valid entity
-    - user-defined variable names can be mapped to internal symbolic variables
-
-    This phase is equivalent to:
-        🔥 name resolution / symbol binding in a compiler
-
-    It may also rewrite the AST in-place:
-        - inject missing entities
-        - normalize variable names
+    Responsibilities:
+    - resolve explicit entities (x.a)
+    - resolve implicit entities (a <= 1)
+    - ensure all variables are declared in scope
     """
 
     def __init__(self, tracer=None):
         self.tracer = tracer or ValidationTracer()
 
-    # ─────────────────────────────
+    # ─────────────────────────────────────────────
     # ENTRY POINT
-    # ─────────────────────────────
+    # ─────────────────────────────────────────────
 
-    def validate(self, context, rhs):
-        """
-        Validates and resolves all variable bindings in the RHS.
+    def validate(self, scope, rhs):
 
-        Parameters:
-            context: dict produced by LHSValidator
-            rhs: AST node (logical expression or problem node)
-        """
+        context = self._extract_context(scope)
 
-        self.tracer.log(f"Binding validation with context: {context}")
+        self.tracer.log(
+            f"Binding validation context: {context}"
+        )
 
         self._check_node(rhs, context)
 
-    # ─────────────────────────────
-    # CORE RECURSIVE WALK
-    # ─────────────────────────────
+    # ─────────────────────────────────────────────
+    # CONTEXT EXTRACTION
+    # ─────────────────────────────────────────────
+
+    def _extract_context(self, scope):
+
+        # --------------------------------------------------
+        # CHECK_AT
+        # --------------------------------------------------
+
+        if isinstance(scope, CheckAtExprNode):
+
+            return {
+                "type": "pointwise",
+                "variables": {
+                    scope.variable: "anchor"
+                },
+                "default_entity": scope.variable,
+            }
+
+        # --------------------------------------------------
+        # AT
+        # --------------------------------------------------
+
+        if isinstance(scope, AtExprNode):
+
+            return {
+                "type": "local",
+                "variables": {
+                    scope.variable: "anchor"
+                },
+                "default_entity": scope.variable,
+            }
+
+        # --------------------------------------------------
+        # PAIRWISE
+        # --------------------------------------------------
+
+        if isinstance(scope, PairwiseExprNode):
+
+            left, right = scope.pair.split("~")
+
+            left = left.strip()
+            right = right.strip()
+
+            return {
+                "type": "pairwise",
+                "variables": {
+                    left: "anchor",
+                    right: "perturbation",
+                },
+                "default_entity": None,
+            }
+
+        # --------------------------------------------------
+        # QUANTIFIER
+        # --------------------------------------------------
+
+        if isinstance(scope, QuantifierExprNode):
+
+            return {
+                "type": "quantifier",
+                "variables": {},
+                "default_entity": None,
+            }
+
+        raise TypeError(
+            f"Unsupported scope type: {type(scope)}"
+        )
+
+    # ─────────────────────────────────────────────
+    # CORE DISPATCH
+    # ─────────────────────────────────────────────
 
     def _check_node(self, node, context):
-        """
-        Recursively traverses the AST and resolves:
-        - explicit variable references
-        - implicit feature accesses
-        """
 
         variables = context["variables"]
         default_entity = context.get("default_entity")
 
-        # ─────────────────────────────
-        # CASE 1 — AttributeNode (feature access)
-        # ─────────────────────────────
+        # --------------------------------------------------
+        # COMPARISON
+        # --------------------------------------------------
 
-        if hasattr(node, "feature"):
+        if isinstance(node, ComparisonNode):
 
-            # --------------------------------
-            # 1A — Explicit entity (x.a)
-            # --------------------------------
-            if getattr(node, "entity", None):
+            self._resolve_attribute(
+                node.left,
+                variables,
+                default_entity
+            )
 
-                if node.entity not in variables:
+            return
 
-                    # 🔥 Alias resolution (quantifier case)
-                    if len(variables) == 1:
-                        target_var = next(iter(variables.keys()))
+        # --------------------------------------------------
+        # PROBLEM NODE
+        # --------------------------------------------------
 
-                        self.tracer.log(
-                            f"Alias binding: {node.entity} → {target_var}"
-                        )
+        if isinstance(node, ProblemNode):
+            return
 
-                        # Alias resolution
-                        node.entity = target_var
+        # --------------------------------------------------
+        # AND
+        # --------------------------------------------------
 
-                        # 🔥 keep path consistent
-                        if hasattr(node, "path") and node.path:
-                            node.path[0] = target_var
+        if isinstance(node, AndNode):
 
-                    else:
-                        raise UnboundVariableError(
-                            f"Variable '{node.entity}' not allowed. "
-                            f"Expected one of {list(variables.keys())}"
-                        )
+            for child in node.operands:
+                self._check_node(child, context)
 
-            # --------------------------------
-            # 1B — Implicit entity (a <= 1)
-            # --------------------------------
-            else:
-                if default_entity:
-                    node.entity = default_entity
+            return
+
+        # --------------------------------------------------
+        # OR
+        # --------------------------------------------------
+
+        if isinstance(node, OrNode):
+
+            for child in node.operands:
+                self._check_node(child, context)
+
+            return
+
+        # --------------------------------------------------
+        # NOT
+        # --------------------------------------------------
+
+        if isinstance(node, NotNode):
+
+            self._check_node(node.operand, context)
+
+            return
+
+        # --------------------------------------------------
+        # IMPLICATION
+        # --------------------------------------------------
+
+        if isinstance(node, ImplicationNode):
+
+            self._check_node(node.left, context)
+            self._check_node(node.right, context)
+
+            return
+
+        raise TypeError(
+            f"Unsupported node type: {type(node)}"
+        )
+
+    # ─────────────────────────────────────────────
+    # ATTRIBUTE RESOLUTION
+    # ─────────────────────────────────────────────
+
+    def _resolve_attribute(
+        self,
+        attr: AttributeNode,
+        variables,
+        default_entity,
+    ):
+
+        # --------------------------------------------------
+        # EXPLICIT ENTITY
+        # --------------------------------------------------
+
+        if attr.entity is not None:
+
+            if attr.entity not in variables:
+
+                if len(variables) == 1:
+
+                    resolved = next(iter(variables.keys()))
 
                     self.tracer.log(
-                        f"Implicit binding: {node.feature} → "
-                        f"{default_entity}.{node.feature}"
+                        f"Alias resolution: "
+                        f"{attr.entity} → {resolved}"
                     )
 
-                elif len(variables) == 1:
-                    var = next(iter(variables.keys()))
-                    node.entity = var
+                    attr.entity = resolved
 
-                    self.tracer.log(
-                        f"Implicit binding: {node.feature} → "
-                        f"{var}.{node.feature}"
-                    )
+                    if attr.path:
+                        attr.path[0] = resolved
 
                 else:
                     raise UnboundVariableError(
-                        f"Ambiguous feature '{node.feature}' "
-                        f"with variables {list(variables.keys())}"
+                        f"Unknown variable '{attr.entity}', "
+                        f"expected {list(variables.keys())}"
                     )
 
-        # ─────────────────────────────
-        # RECURSIVE DESCENT
-        # ─────────────────────────────
+            return
 
-        for child in self._children(node):
-            self._check_node(child, context)
+        # --------------------------------------------------
+        # IMPLICIT ENTITY
+        # --------------------------------------------------
 
-    # ─────────────────────────────
-    # CHILD EXTRACTION
-    # ─────────────────────────────
+        if default_entity is not None:
 
-    def _children(self, node):
-        """
-        Extracts child nodes from an AST node.
+            attr.entity = default_entity
 
-        Supports:
-        - nested objects
-        - lists of nodes
-        - ignores primitives (int, str, etc.)
-        """
+            return
 
-        if not hasattr(node, "__dict__"):
-            return []
+        if len(variables) == 1:
 
-        children = []
+            attr.entity = next(iter(variables.keys()))
 
-        for value in node.__dict__.values():
+            return
 
-            if isinstance(value, list):
-                children.extend(
-                    v for v in value if hasattr(v, "__dict__")
-                )
-
-            elif hasattr(value, "__dict__"):
-                children.append(value)
-
-        return children
+        raise UnboundVariableError(
+            f"Ambiguous feature '{attr.feature}' "
+            f"with variables {list(variables.keys())}"
+        )
 
 ===== dsl\semantic\compatibility.py =====
 
@@ -252,44 +356,6 @@ class InvalidOperatorError(SemanticError):
 
 class IncompatibleFunctionError(SemanticError):
     pass
-
-===== dsl\semantic\implication.py =====
-
-from dsl.semantic.lhs import LHSValidator
-from dsl.semantic.logic import LogicValidator
-from dsl.semantic.problem import ProblemValidator
-from dsl.semantic.binding import BindingValidator
-from dsl.semantic.errors import InvalidPropertyError
-from dsl.semantic.tracer import ValidationTracer
-
-
-class ImplicationValidator:
-
-    def __init__(self, tracer=None):
-        self.tracer = tracer or ValidationTracer()
-
-    
-    def validate(self, scope, rhs):
-        self.tracer.log(f"Validating implication with scope={scope} rhs={rhs}")
-
-        # 1. LHS → contexte
-        lhs_validator = LHSValidator(tracer=self.tracer)
-        context = lhs_validator.validate(scope)
-
-        # 2. Binding
-        BindingValidator(tracer=self.tracer).validate(context, rhs)
-
-        # 3. RHS validation
-        node_type = rhs.__class__.__name__
-
-        if node_type in ["ComparisonNode", "AndNode", "OrNode", "NotNode"]:
-            LogicValidator(tracer=self.tracer).validate(rhs, context)
-
-        elif node_type == "ProblemNode":
-            ProblemValidator(tracer=self.tracer).validate(rhs)
-
-        else:
-            raise InvalidPropertyError(f"Invalid RHS type: {node_type}")
 
 ===== dsl\semantic\lhs.py =====
 
@@ -499,64 +565,66 @@ class LHSValidator:
 from dsl.semantic.errors import InvalidPropertyError
 from dsl.semantic.tracer import ValidationTracer
 
+from dsl.ast.nodes.assertion import (
+    ComparisonNode,
+    AndNode,
+    OrNode,
+    NotNode,
+    ImplicationNode,
+)
+
+from dsl.ast.nodes.primitives import AttributeNode, ConstantNode
+
 
 class LogicValidator:
     """
-    LogicValidator validates logical expressions on the RHS of an implication.
+    Validates logical expressions AFTER:
+        - parsing
+        - binding
 
-    It ensures:
-    - structural correctness (AND, OR, NOT, comparisons)
-    - recursive validation of sub-expressions
-    - compatibility with the semantic context (variables already bound)
-
-    NOTE:
-    Variable binding is NOT handled here.
-    It is assumed that BindingValidator has already run.
+    Responsibilities:
+        - structural correctness
+        - recursive validation
+        - leaf validation
     """
-
-    # LogicalNode hierarchy:
-    # - Structural logic nodes: And, Or, Not, Implication
-    # - Leaf / terminal logic nodes: Comparison, Problem
 
     def __init__(self, tracer=None):
         self.tracer = tracer or ValidationTracer()
 
+    # ─────────────────────────────
+    # ENTRY POINT
+    # ─────────────────────────────
+
     def validate(self, node, context):
         self.tracer.log(f"Validating logic node: {node}")
 
-        node_type = node.__class__.__name__
+        if isinstance(node, ComparisonNode):
+            return self._validate_comparison(node, context)
 
-        if node_type == "ComparisonNode":
-            self._validate_comparison(node, context)
+        if isinstance(node, AndNode):
+            return self._validate_and(node, context)
 
-        elif node_type == "AndNode":
-            self._validate_and(node, context)
+        if isinstance(node, OrNode):
+            return self._validate_or(node, context)
 
-        elif node_type == "OrNode":
-            self._validate_or(node, context)
+        if isinstance(node, NotNode):
+            return self._validate_not(node, context)
 
-        elif node_type == "NotNode":
-            self._validate_not(node, context)
+        if isinstance(node, ImplicationNode):
+            return self._validate_implication(node, context)
 
-        else:
-            raise InvalidPropertyError(
-                f"Unknown logical node type: {node_type}"
-            )
+        raise InvalidPropertyError(
+            f"Unknown logical node type: {type(node)}"
+        )
 
     # ─────────────────────────────
     # COMPARISON
     # ─────────────────────────────
 
     def _validate_comparison(self, node, context):
-        """
-        Example:
-            x.a <= 1
-            a <= 1  (after binding → x'.a <= 1)
-        """
-
         self.tracer.log(f"Validating ComparisonNode: {node}")
 
-        if not node.left or not node.right:
+        if node.left is None or node.right is None:
             raise InvalidPropertyError("Invalid comparison: missing operands")
 
         self._validate_operand(node.left, context)
@@ -569,15 +637,24 @@ class LogicValidator:
     def _validate_and(self, node, context):
         self.tracer.log(f"Validating AndNode: {node}")
 
-        for operand in node.operands:
-            self.validate(operand, context)
+        if not node.operands:
+            raise InvalidPropertyError("AND node has no operands")
 
+        for op in node.operands:
+            self.validate(op, context)
+
+    # ─────────────────────────────
+    # OR
+    # ─────────────────────────────
 
     def _validate_or(self, node, context):
         self.tracer.log(f"Validating OrNode: {node}")
 
-        for operand in node.operands:
-            self.validate(operand, context)
+        if not node.operands:
+            raise InvalidPropertyError("OR node has no operands")
+
+        for op in node.operands:
+            self.validate(op, context)
 
     # ─────────────────────────────
     # NOT
@@ -586,48 +663,50 @@ class LogicValidator:
     def _validate_not(self, node, context):
         self.tracer.log(f"Validating NotNode: {node}")
 
-        if not node.operand:
+        if node.operand is None:
             raise InvalidPropertyError("NOT expression missing operand")
 
         self.validate(node.operand, context)
 
     # ─────────────────────────────
-    # OPERANDS
+    # IMPLICATION (NOW NORMALIZED LOGIC NODE)
+    # ─────────────────────────────
+
+    def _validate_implication(self, node, context):
+        self.tracer.log(f"Validating ImplicationNode: {node}")
+
+        if node.left is None or node.right is None:
+            raise InvalidPropertyError("Implication missing left or right operand")
+
+        self.validate(node.left, context)
+        self.validate(node.right, context)
+
+    # ─────────────────────────────
+    # OPERANDS (LEAVES)
     # ─────────────────────────────
 
     def _validate_operand(self, node, context):
         """
-        Validates leaf-level elements:
-        - AttributeNode
-        - ConstantNode
-
-        NOTE:
-        Binding (entity resolution) has already been done upstream.
+        Leaf validation only.
+        Binding already done upstream.
         """
 
-        node_type = node.__class__.__name__
+        if isinstance(node, AttributeNode):
+            return self._validate_attribute(node, context)
 
-        if node_type == "AttributeNode":
-            self._validate_attribute(node, context)
+        if isinstance(node, ConstantNode):
+            return
 
-        elif node_type == "ConstantNode":
-            pass  # Always valid
-
-        else:
-            raise InvalidPropertyError(
-                f"Invalid operand type: {node_type}"
-            )
+        raise InvalidPropertyError(
+            f"Invalid operand type: {type(node)}"
+        )
 
     # ─────────────────────────────
     # ATTRIBUTE
     # ─────────────────────────────
 
     def _validate_attribute(self, node, context):
-        """
-        Ensures:
-        - attribute has a resolved entity (after binding)
-        - feature name is valid (basic check only)
-        """
+        self.tracer.log(f"Validating AttributeNode: {node}")
 
         if not node.feature:
             raise InvalidPropertyError("Attribute missing feature name")
@@ -678,9 +757,11 @@ class ProblemValidator:
 
 ===== dsl\semantic\property.py =====
 
-from dsl.semantic.implication import ImplicationValidator
 from dsl.semantic.errors import InvalidPropertyError, SemanticError
 from dsl.semantic.tracer import ValidationTracer
+
+from dsl.semantic.binding import BindingValidator
+from dsl.semantic.logic import LogicValidator
 
 
 class PropertyValidator:
@@ -699,12 +780,33 @@ class PropertyValidator:
             )
 
         rule = prop.rule
-        scope = rule.scope              # LHS
-        assertion = rule.assertion      # AssertionNode
-        root = assertion.root           # LogicalNode
+        scope = rule.scope
+        assertion = rule.assertion
+        root = assertion.root
+
+        print(f"SCOPE : {scope}")
 
         try:
-            ImplicationValidator(tracer=self.tracer).validate(scope, root)
+            # ------------------------------------------------------------------
+            # 1. LHS validation (context creation)
+            # ------------------------------------------------------------------
+            context = scope 
+
+            # ------------------------------------------------------------------
+            # 2. Binding phase (variable resolution)
+            # ------------------------------------------------------------------
+            BindingValidator(tracer=self.tracer).validate(
+                context,
+                root
+            )
+
+            # ------------------------------------------------------------------
+            # 3. Logic validation (structure check only)
+            # ------------------------------------------------------------------
+            LogicValidator(tracer=self.tracer).validate(
+                root,
+                context
+            )
 
         except SemanticError as e:
             raise InvalidPropertyError(

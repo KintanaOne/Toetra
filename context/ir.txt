@@ -1,0 +1,757 @@
+
+===== dsl\ir\ir1\__init__.py =====
+
+
+
+===== dsl\ir\ir1\nodes.py =====
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any
+
+from dsl.language.vocabulary.backends import EnumBackend
+from dsl.language.vocabulary.functions import EnumFunction
+from dsl.language.vocabulary.operators import EnumComparisonOperator, EnumLogicalOperator
+from dsl.language.vocabulary.problems import EnumProblem
+from dsl.language.vocabulary.properties import EnumProperty
+
+
+# =============================================================================
+# ROOT EXECUTION UNIT
+# =============================================================================
+
+@dataclass
+class VerificationTask:
+    """
+    Top-level IR unit sent to a backend for verification.
+
+    A task represents:
+        - a property type (ROBUSTNESS, FAIRNESS, etc.)
+        - a semantic scope (LHS context)
+        - a logical query (RHS expression)
+        - a target backend (Z3, ONNX checker, etc.)
+    """
+    property_type: EnumProperty
+    scope: ScopeIR
+    query: QueryIR
+    backend: EnumBackend | None
+
+
+# =============================================================================
+# SCOPE (LHS SEMANTIC CONTEXT)
+# =============================================================================
+
+@dataclass
+class ScopeIR:
+    """
+    Semantic context extracted from the LHS of a FORML property.
+
+    Defines:
+        - variables (anchor, perturbation, symbolic variables)
+        - neighborhood constraints (e.g. L2 epsilon ball)
+        - optional domain constraints
+    """
+
+    kind: str  # "local", "pairwise", "quantifier", "pointwise"
+
+    variables: dict[str, str]
+    # Example:
+    # {
+    #   "x": "anchor",
+    #   "x'": "perturbation"
+    # }
+
+    neighborhood: NeighborhoodIR | None
+    domain: DomainIR | None
+
+
+@dataclass
+class NeighborhoodIR:
+    """
+    Defines perturbation space around a point.
+    Example: L2 ball with epsilon.
+    """
+    metric: str
+    args: dict[str, Any]
+
+
+@dataclass
+class DomainIR:
+    """
+    Optional domain restriction (categorical, numeric bounds, etc.)
+    """
+    name: str
+    args: dict[str, Any]
+
+
+# =============================================================================
+# QUERY (RHS SEMANTIC EXPRESSION)
+# =============================================================================
+
+@dataclass
+class QueryIR:
+    """
+    Represents the entire RHS of a FORML property.
+
+    This can be:
+        - a logical expression (AND/OR/NOT/IMPLY)
+        - a problem-level predicate (CLASSIFICATION.EQUAL, etc.)
+    """
+    expression: LogicalIR | ProblemIR
+
+
+# =============================================================================
+# LOGICAL IR (PURE BOOLEAN STRUCTURE)
+# =============================================================================
+
+@dataclass
+class LogicalIR:
+    """
+    Base logical structure for boolean reasoning.
+
+    This is the core representation used for:
+        - SAT solving
+        - CNF/DNF transformations
+        - Z3 encoding
+    """
+    pass
+
+
+# =============================================================================
+# LEAF COMPARISON NODE
+# =============================================================================
+
+@dataclass
+class ComparisonIR(LogicalIR):
+    """
+    Atomic predicate:
+        x'.age <= 30
+
+    Represents a leaf condition in the logical tree.
+    """
+    entity: str
+    feature: str
+    op: EnumComparisonOperator
+    value: Any
+
+
+# =============================================================================
+# LOGICAL OPERATORS
+# =============================================================================
+
+@dataclass
+class AndIR(LogicalIR):
+    """
+    Logical AND over multiple operands.
+    """
+    operands: list[LogicalIR]
+
+
+@dataclass
+class OrIR(LogicalIR):
+    """
+    Logical OR over multiple operands.
+    """
+    operands: list[LogicalIR]
+
+
+@dataclass
+class NotIR(LogicalIR):
+    """
+    Logical negation of a single operand.
+    """
+    operand: LogicalIR
+
+
+@dataclass
+class ImplyIR(LogicalIR):
+    """
+    Logical implication:
+        A → B
+    """
+    left: LogicalIR
+    right: LogicalIR
+
+
+# =============================================================================
+# PROBLEM-LEVEL SEMANTIC OPERATOR
+# =============================================================================
+
+@dataclass
+class ProblemIR(LogicalIR):
+    """
+    High-level semantic operator coming from FORML DSL.
+
+    Example:
+        CLASSIFICATION.EQUAL()
+        REGRESSION.BETWEEN()
+    """
+    problem: EnumProblem
+    function: EnumFunction | None
+    args: dict[str, Any] | None = None
+
+===== dsl\ir\ir1\pretty.py =====
+
+# /dsl/ir/pretty.py
+
+from dsl.ir.ir1.nodes import (
+    VerificationTask,
+    ScopeIR,
+    QueryIR,
+    LogicalIR,
+    ComparisonIR,
+    AndIR,
+    OrIR,
+    NotIR,
+    ImplyIR,
+    ProblemIR,
+)
+
+
+# =============================================================================
+# ENTRY POINT
+# =============================================================================
+
+def pretty_print_tasks(tasks: list[VerificationTask]):
+    for i, task in enumerate(tasks):
+        print(f"\n=== TASK {i} ===")
+        print(pretty_task(task))
+
+
+# =============================================================================
+# TASK
+# =============================================================================
+
+def pretty_task(task: VerificationTask) -> str:
+    lines = []
+
+    lines.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    lines.append("🧠 Verification Task")
+    lines.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+    lines.append(f"Property : {task.property_type}")
+    lines.append(f"Backend  : {task.backend}")
+
+    # Scope
+    lines.append("\n📍 Scope")
+    lines.extend(_pretty_scope(task.scope))
+
+    # Query
+    lines.append("\n🔍 Query")
+    lines.extend(_pretty_query(task.query))
+
+    lines.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+    return "\n".join(lines)
+
+
+# =============================================================================
+# SCOPE
+# =============================================================================
+
+def _pretty_scope(scope: ScopeIR) -> list[str]:
+    lines = []
+
+    lines.append(f"  Type        : {scope.kind}")
+
+    # Variables
+    lines.append("  Variables   :")
+    for var, role in scope.variables.items():
+        lines.append(f"    - {var:<4} → {role}")
+
+    # Neighborhood
+    if scope.neighborhood:
+        n = scope.neighborhood
+        lines.append("\n  Neighborhood :")
+        lines.append(f"    metric  : {n.metric}")
+
+        for k, v in n.args.items():
+            lines.append(f"    {k:<8}: {v}")
+
+    # Domain
+    if scope.domain:
+        d = scope.domain
+        lines.append("\n  Domain :")
+        lines.append(f"    name   : {d.name}")
+
+        if hasattr(d, "args") and d.args:
+            for k, v in d.args.items():
+                lines.append(f"    {k:<6}: {v}")
+
+        if hasattr(d, "values"):
+            lines.append(f"    values : {d.args.values}")
+
+    return lines
+
+
+# =============================================================================
+# QUERY
+# =============================================================================
+
+def _pretty_query(query: QueryIR) -> list[str]:
+    return _pretty_logical(query.expression, indent=2)
+
+
+# =============================================================================
+# LOGICAL TREE
+# =============================================================================
+
+def _pretty_logical(node: LogicalIR, indent=0) -> list[str]:
+    space = " " * indent
+    lines = []
+
+    # -----------------------------
+    # Comparison
+    # -----------------------------
+    if isinstance(node, ComparisonIR):
+        lines.append(
+            f"{space}- {node.entity}.{node.feature} == {node.value}"
+        )
+        return lines
+
+    # -----------------------------
+    # Problem
+    # -----------------------------
+    if isinstance(node, ProblemIR):
+        lines.append(f"{space}Problem :")
+        lines.append(f"{space}  type      : {node.problem}")
+        lines.append(f"{space}  function  : {node.function}")
+        return lines
+
+    # -----------------------------
+    # AND
+    # -----------------------------
+    if isinstance(node, AndIR):
+        lines.append(f"{space}AND")
+        for op in node.operands:
+            lines.extend(_pretty_logical(op, indent + 2))
+        return lines
+
+    # -----------------------------
+    # OR
+    # -----------------------------
+    if isinstance(node, OrIR):
+        lines.append(f"{space}OR")
+        for op in node.operands:
+            lines.extend(_pretty_logical(op, indent + 2))
+        return lines
+
+    # -----------------------------
+    # NOT
+    # -----------------------------
+    if isinstance(node, NotIR):
+        lines.append(f"{space}NOT")
+        lines.extend(_pretty_logical(node.operand, indent + 2))
+        return lines
+
+    # -----------------------------
+    # IMPLY
+    # -----------------------------
+    if isinstance(node, ImplyIR):
+        lines.append(f"{space}IMPLY")
+        lines.append(f"{space}  IF:")
+        lines.extend(_pretty_logical(node.left, indent + 4))
+        lines.append(f"{space}  THEN:")
+        lines.extend(_pretty_logical(node.right, indent + 4))
+        return lines
+
+    # -----------------------------
+    # FALLBACK
+    # -----------------------------
+    lines.append(f"{space}UNKNOWN NODE: {node}")
+    return lines
+
+===== dsl\ir\ir1\run_ir1.py =====
+
+# /dsl/ir/run_ir.py
+
+from dsl.builder.core import pretty
+from dsl.ir.ir1.pretty import pretty_print_tasks
+from dsl.parser.parser import parse_forml_code
+from dsl.builder.program import parse_program
+from dsl.semantic.tracer import ValidationTracer
+from dsl.semantic.validator import FORMLValidator
+
+from dsl.ir.ir1.translator import IRTranslator
+from test.fixtures.logic_samples import NESTED_IMPLICATION_PROPERTY, PARENTHESES_PRECEDENCE_PROPERTY, VALID_TRIPLE_AND_PROPERTY
+from test.fixtures.properties_samples import VALID_AT_WITH_NEIGHBORHOOD, VALID_CHECK_AT_WITH_COMPLEX_ASSERTION
+
+
+def run_ir(source: str):
+    """
+    Full pipeline until IR generation.
+
+    Steps:
+        1. Parse (CST)
+        2. Build AST
+        3. Semantic validation
+        4. Translate to IR
+    """
+
+    # ---------------------------
+    # 1. Parse → CST
+    # ---------------------------
+    cst = parse_forml_code(source)
+
+    # ---------------------------
+    # 2. CST → AST
+    # ---------------------------
+    ast = parse_program(cst)
+
+    # ---------------------------
+    # 3. Semantic validation
+    # ---------------------------
+    FORMLValidator().validate(ast, tracer=ValidationTracer(enabled=True))
+
+    # ---------------------------
+    # 4. AST → IR
+    # ---------------------------
+    translator = IRTranslator()
+    tasks = translator.translate(ast)
+
+    return tasks
+
+
+# -----------------------------------------------------------------------------
+# QUICK TEST
+# -----------------------------------------------------------------------------
+
+if __name__ == "__main__":
+
+    SAMPLE = PARENTHESES_PRECEDENCE_PROPERTY
+
+    tasks = run_ir(SAMPLE)
+
+    print("\n=== IR OUTPUT ===\n")
+
+    pretty_print_tasks(tasks)
+
+===== dsl\ir\ir1\translator.py =====
+
+from __future__ import annotations
+
+from dsl.ast.nodes.expressions import AtExprNode, CheckAtExprNode, PairwiseExprNode, QuantifierExprNode
+from dsl.ast.nodes.program import ProgramNode
+from dsl.ast.nodes.property import PropertyNode
+
+from dsl.ast.nodes.assertion import (
+    LogicalNode,
+    ComparisonNode,
+    AndNode,
+    OrNode,
+    NotNode,
+    ImplicationNode,
+    ProblemNode,
+)
+
+from dsl.ast.nodes.primitives import AttributeNode, ConstantNode
+
+from dsl.ir.ir1.nodes import (
+    VerificationTask,
+    ScopeIR,
+    QueryIR,
+    LogicalIR,
+    ComparisonIR,
+    AndIR,
+    OrIR,
+    NotIR,
+    ImplyIR,
+    ProblemIR,
+    NeighborhoodIR,
+    DomainIR
+)
+
+from dsl.language.vocabulary.problems import EnumProblem
+from dsl.language.vocabulary.functions import EnumFunction
+from dsl.language.vocabulary.backends import EnumBackend
+from dsl.language.vocabulary.operators import EnumLogicalOperator
+from dsl.language.vocabulary.operators import EnumComparisonOperator
+
+
+class IRTranslator:
+    """
+    AST (semantic validated) → IR executable layer
+    """
+
+    # --------------------------------------------------------------------------
+    # ENTRY POINT
+    # --------------------------------------------------------------------------
+
+    def translate(self, program: ProgramNode) -> list[VerificationTask]:
+        return [self._translate_property(p) for p in program.body]
+
+    # --------------------------------------------------------------------------
+    # PROPERTY
+    # --------------------------------------------------------------------------
+
+    def _translate_property(self, prop: PropertyNode) -> VerificationTask:
+
+        scope_ir = self._translate_scope(prop.rule.scope)
+        query_ir = self._translate_assertion(prop.rule.assertion.root)
+
+        backend = prop.backend.name if prop.backend else None
+
+        return VerificationTask(
+            property_type=prop.type,
+            scope=scope_ir,
+            query=query_ir,
+            backend=EnumBackend[backend] if backend else None
+        )
+
+    # --------------------------------------------------------------------------
+    # SCOPE
+    # --------------------------------------------------------------------------
+
+    def _translate_scope(self, scope) -> ScopeIR:
+
+        variables = {}
+        neighborhood_ir = None
+        domain_ir = None
+        kind = "unknown"
+
+        # ------------------------------------------------------------------
+        # AT
+        # ------------------------------------------------------------------
+
+        if isinstance(scope, AtExprNode):
+
+            kind = "local"
+
+            variables = {
+                scope.variable: "anchor",
+                f"{scope.variable}'": "perturbation"
+            }
+
+            # --------------------------
+            # neighborhood
+            # --------------------------
+
+            if scope.neighborhood is not None:
+
+                args_dict = {
+                    arg.key: arg.value
+                    for arg in scope.neighborhood.args
+                }
+
+                eps = args_dict.get("eps")
+
+                neighborhood_ir = NeighborhoodIR(
+                    metric=scope.neighborhood.metric,
+                    args=args_dict
+                )
+
+            # --------------------------
+            # domain
+            # --------------------------
+
+            if scope.domain is not None:
+
+                domain_ir = DomainIR(
+                    name=scope.domain.name,
+                    args={
+                        "values": scope.domain.values
+                    }
+                )
+
+        # ------------------------------------------------------------------
+        # PAIRWISE
+        # ------------------------------------------------------------------
+
+        elif isinstance(scope, PairwiseExprNode):
+
+            kind = "pairwise"
+
+            left, right = [
+                x.strip()
+                for x in scope.pair.split(",")
+            ]
+
+            variables = {
+                left: "left",
+                right: "right"
+            }
+
+        # ------------------------------------------------------------------
+        # CHECK AT
+        # ------------------------------------------------------------------
+
+        elif isinstance(scope, CheckAtExprNode):
+
+            kind = "pointwise"
+
+            variables = {
+                scope.variable: "point"
+            }
+
+        # ------------------------------------------------------------------
+        # QUANTIFIER
+        # ------------------------------------------------------------------
+
+        elif isinstance(scope, QuantifierExprNode):
+
+            kind = "quantifier"
+
+            if scope.domain is not None:
+
+                domain_ir = DomainIR(
+                    name=scope.domain.name,
+                    args={}
+                )
+
+        # ------------------------------------------------------------------
+        # FINAL
+        # ------------------------------------------------------------------
+
+        return ScopeIR(
+            kind=kind,
+            variables=variables,
+            neighborhood=neighborhood_ir,
+            domain=domain_ir,
+        )
+
+    # --------------------------------------------------------------------------
+    # ASSERTION → QUERY
+    # --------------------------------------------------------------------------
+
+    def _flatten_and(self, node: AndNode) -> list[LogicalNode]:
+        result = []
+
+        for n in node.operands:
+            if isinstance(n, AndNode):
+                result.extend(self._flatten_and(n))
+            else:
+                result.append(n)
+
+        return result
+    
+    def _flatten_or(self, node: OrNode) -> list[LogicalNode]:
+        result = []
+
+        for n in node.operands:
+            if isinstance(n, OrNode):
+                result.extend(self._flatten_or(n))
+            else:
+                result.append(n)
+
+        return result
+    
+
+
+    def _translate_assertion(self, node: LogicalNode) -> QueryIR:
+
+        if isinstance(node, AndNode):
+
+            operands = [
+                self._translate_logical(n)
+                for n in self._flatten_and(node)
+            ]
+
+            return QueryIR(
+                expression=AndIR(
+                    operands=operands
+                )
+            )
+        
+        if isinstance(node, OrNode):
+
+            operands = [
+                self._translate_logical(n)
+                for n in self._flatten_or(node)
+            ]
+
+            return QueryIR(
+                expression=OrIR(
+                    operands=operands
+                )
+            )
+        return QueryIR(
+            expression=self._translate_logical(node)
+        )
+    
+
+    def _translate_logical(self, node: LogicalNode) -> LogicalIR:
+        """
+        Recursively converts AST LogicalNode → IR LogicalIR.
+
+        This function produces a PURE logical tree:
+            - ComparisonIR (leaf)
+            - AndIR / OrIR / NotIR / ImplyIR (structure)
+            - ProblemIR (semantic leaf)
+
+        No QueryIR wrapping here.
+        """
+
+        # -----------------------------
+        # COMPARISON
+        # -----------------------------
+        if isinstance(node, ComparisonNode):
+
+            assert node.left.entity is not None, "Left entity cannot be None"
+            assert node.left.feature is not None, "Left feature cannot be None"
+
+            return ComparisonIR(
+                entity=node.left.entity,
+                feature=node.left.feature,
+                op=node.op,  # 🔥 important
+                value=node.right.value
+            )
+
+        # -----------------------------
+        # AND
+        # -----------------------------
+        if isinstance(node, AndNode):
+
+            return AndIR(
+                operands=[
+                    self._translate_logical(n)
+                    for n in node.operands
+                ]
+            )
+
+        # -----------------------------
+        # OR
+        # -----------------------------
+        if isinstance(node, OrNode):
+
+            return OrIR(
+                operands=[
+                    self._translate_logical(n)
+                    for n in node.operands
+                ]
+            )
+
+        # -----------------------------
+        # NOT
+        # -----------------------------
+        if isinstance(node, NotNode):
+
+            return NotIR(
+                operand=self._translate_logical(node.operand)
+            )
+
+        # -----------------------------
+        # IMPLICATION
+        # -----------------------------
+        if isinstance(node, ImplicationNode):
+
+            return ImplyIR(
+                left=self._translate_logical(node.left),
+                right=self._translate_logical(node.right)
+            )
+
+        # -----------------------------
+        # PROBLEM NODE
+        # -----------------------------
+        if isinstance(node, ProblemNode):
+
+            return ProblemIR(
+                problem=EnumProblem[node.problem],
+                function=EnumFunction[node.function] if node.function else None,
+                args={}
+            )
+
+        # -----------------------------
+        # FAIL SAFE
+        # -----------------------------
+        raise ValueError(f"Unsupported LogicalNode type: {type(node)}")
