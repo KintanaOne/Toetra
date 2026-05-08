@@ -5,7 +5,9 @@ from typing import Union
 
 from dsl.ast.nodes.base import ASTNode
 from dsl.ast.nodes.primitives import AttributeNode, ConstantNode
+from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.operators import EnumComparisonOperator
+from dsl.language.vocabulary.properties import EnumProperty
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -60,8 +62,8 @@ class ImplicationNode(LogicalNode):
 
 @dataclass
 class ProblemNode(LogicalNode):
-    problem: str
-    function: str | None
+    problem: EnumProperty
+    function: EnumFunction | None = None
 
 
 # ----------------------------------------------------------------------------------------------------------------------

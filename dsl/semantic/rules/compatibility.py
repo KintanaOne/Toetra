@@ -1,26 +1,27 @@
 # forml/semantic/compatibility.py
 
 from dsl.language.vocabulary.functions import EnumFunction
+from dsl.language.vocabulary.problems import EnumProblem
 from dsl.language.vocabulary.properties import EnumProperty
-from dsl.semantic.scope import SemanticScope
+from dsl.semantic.context.scope import SemanticScope
 
 
 # -------------------------------
 # Problem ↔ Function
 # -------------------------------
 PROBLEM_FUNCTION_COMPATIBILITY = {
-    "CLASSIFICATION": {
+    EnumProblem.CLASSIFICATION: {
         EnumFunction.EQUAL,
         EnumFunction.EQUITY,
         EnumFunction.BETWEEN,
     },
-    "REGRESSION": {
+    EnumProblem.REGRESSION: {
         EnumFunction.EQUAL,
         EnumFunction.INCREASING,
         EnumFunction.DECREASING,
         EnumFunction.BETWEEN,
     },
-    "CLUSTERING": set()
+    EnumProblem.CLUSTERING: set()
 }
 
 
@@ -28,23 +29,23 @@ PROBLEM_FUNCTION_COMPATIBILITY = {
 # Property ↔ Scope (IMPORTANT 🔥)
 # -------------------------------
 PROPERTY_SCOPE_COMPATIBILITY = {
-    "ROBUSTNESS": {
+    EnumProperty.ROBUSTNESS: {
         SemanticScope.QUANTIFIER,
         SemanticScope.LOCAL,
         SemanticScope.POINTWISE,
     },
-    "FAIRNESS": {
+    EnumProperty.FAIRNESS: {
         SemanticScope.PAIRWISE,
     },
-    "MONOTONICITY": {
+    EnumProperty.MONOTONICITY: {
         SemanticScope.PAIRWISE,
         SemanticScope.QUANTIFIER,
     },
-    "STABILITY": {
+    EnumProperty.STABILITY: {
         SemanticScope.LOCAL,
         SemanticScope.QUANTIFIER,
     },
-    "BOUNDS": {
+    EnumProperty.BOUND: {
         SemanticScope.POINTWISE,
         SemanticScope.QUANTIFIER,
     },
@@ -55,7 +56,7 @@ PROPERTY_SCOPE_COMPATIBILITY = {
 # Property ↔ Backend
 # -------------------------------
 PROPERTY_MODEL_COMPATIBILITY = {
-    "ONNX": {"ROBUSTNESS", "STABILITY", "FAIRNESS"},
-    "SKLEARN": {"FAIRNESS", "BOUNDS"},
-    "PYTORCH": {"ROBUSTNESS", "MONOTONICITY", "STABILITY"},
+    "ONNX": {EnumProperty.ROBUSTNESS, EnumProperty.STABILITY, EnumProperty.FAIRNESS},
+    "SKLEARN": {EnumProperty.FAIRNESS, EnumProperty.BOUND},
+    "PYTORCH": {EnumProperty.ROBUSTNESS, EnumProperty.MONOTONICITY, EnumProperty.STABILITY},
 }

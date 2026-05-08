@@ -12,7 +12,9 @@ from typing import Union
 
 from dsl.ast.nodes.base import ASTNode
 from dsl.ast.nodes.primitives import AttributeNode, ConstantNode
+from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.operators import EnumComparisonOperator
+from dsl.language.vocabulary.properties import EnumProperty
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -67,8 +69,8 @@ class ImplicationNode(LogicalNode):
 
 @dataclass
 class ProblemNode(LogicalNode):
-    problem: str
-    function: str | None
+    problem: EnumProperty
+    function: EnumFunction | None = None
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -102,16 +104,25 @@ class BackendNode(ASTNode):
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+
+from dsl.semantic.runtime.annotations import SemanticAnnotations
 
 
 @dataclass
 class ASTNode:
     """
     Root class for all AST nodes in FORML DSL.
-    Enables polymorphism and tree traversal.
+
+    Semantic annotations are attached AFTER parsing
+    during semantic validation phases.
     """
-    pass
+
+    semantic: SemanticAnnotations | None = field(
+        default=None,
+        init=False,
+        repr=False,
+    )
 
 ===== dsl\ast\nodes\domain.py =====
 
@@ -202,9 +213,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Union
 
+from dsl.semantic.runtime.annotations import SemanticAnnotations
+from dsl.semantic.symbols.symbol import Symbol
+from dsl.semantic.types.enums import EnumDataType
+
 
 PrimitiveValue = Union[str, int, float, bool, None]
 
+from enum import Enum
 
 @dataclass
 class ArgNode:
@@ -215,14 +231,34 @@ class ArgNode:
 @dataclass
 class ConstantNode:
     value: PrimitiveValue
-    dtype: str  # TODO: remplacer par Enum
+    dtype: EnumDataType
 
 
 @dataclass
 class AttributeNode:
+    """
+    Semantic attribute access node.
+
+    Examples:
+        x.age
+        x'.salary
+        a            (implicit entity)
+
+    During semantic binding:
+        - entity may be rewritten
+        - resolved_* fields are populated
+    """
+
+    # Raw parsed entity
     entity: str | None
+
+    # Feature name
     feature: str
+
+    # Full parsed path
     path: list[str]
+
+
 
 ===== dsl\ast\nodes\program.py =====
 

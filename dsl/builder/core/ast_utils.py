@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from lark import Tree, Token
 
-from dsl.ast.nodes.primitives import AttributeNode, ConstantNode
+from dsl.ast.nodes.primitives import AttributeNode, ConstantNode, EnumDataType
 from dsl.builder.core.types import LarkNode
 from dsl.builder.core.utils import get_token_value
 
@@ -130,24 +130,24 @@ def parse_value(node: Tree) -> ConstantNode:
     if cleaned is None:
         raise ValueError("Invalid value: None after cleaning")
     
-    if cleaned.lower() == "true": return ConstantNode(True, "bool")
-    if cleaned.lower() == "false": return ConstantNode(False, "bool")
-    if cleaned.lower() == "null": return ConstantNode(None, "null")
+    if cleaned.lower() == "true": return ConstantNode(True, EnumDataType.BOOL)
+    if cleaned.lower() == "false": return ConstantNode(False, EnumDataType.BOOL)
+    if cleaned.lower() == "null": return ConstantNode(None, EnumDataType.NoneType)
 
     # Integer parsing
     try:
-        return ConstantNode(value=int(cleaned), dtype="int")
+        return ConstantNode(value=int(cleaned), dtype=EnumDataType.INT)
     except (ValueError, TypeError):
         pass
 
     # Float parsing
     try:
-        return ConstantNode(value=float(cleaned), dtype="float")
+        return ConstantNode(value=float(cleaned), dtype=EnumDataType.FLOAT)
     except (ValueError, TypeError):
         pass
 
     # Fallback: string
-    return ConstantNode(value=cleaned, dtype="string")
+    return ConstantNode(value=cleaned, dtype=EnumDataType.STRING)
 
 
 # ============================================================================

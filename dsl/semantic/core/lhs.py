@@ -1,6 +1,17 @@
-from dsl.semantic.errors import InvalidPropertyError
-from dsl.semantic.tracer import ValidationTracer
+from dsl.semantic.context.context import SemanticContext
+from dsl.semantic.context.scope import SemanticScope
+from dsl.semantic.errors.errors import InvalidPropertyError
+from dsl.semantic.runtime.tracer import ValidationTracer
 
+from dsl.ast.nodes.expressions import (
+    CheckAtExprNode,
+    AtExprNode,
+    PairwiseExprNode,
+    QuantifierExprNode,
+)
+
+from dsl.semantic.symbols.table import Symbol
+from dsl.semantic.context.context import SemanticContext
 
 class LHSValidator:
     """
@@ -23,22 +34,20 @@ class LHSValidator:
     def validate(self, lhs):
         self.tracer.log(f"Validating LHS: {lhs}")
 
-        node_type = lhs.__class__.__name__
-
-        if node_type == "CheckAtExprNode":
+        if isinstance(lhs, CheckAtExprNode):
             return self._validate_check_at(lhs)
 
-        elif node_type == "AtExprNode":
+        if isinstance(lhs, AtExprNode):
             return self._validate_at(lhs)
 
-        elif node_type == "PairwiseExprNode":
+        if isinstance(lhs, PairwiseExprNode):
             return self._validate_pairwise(lhs)
 
-        elif node_type == "QuantifierExprNode":
+        if isinstance(lhs, QuantifierExprNode):
             return self._validate_quantifier(lhs)
 
         else:
-            raise InvalidPropertyError(f"Unknown LHS type: {node_type}")
+            raise InvalidPropertyError(f"Unknown LHS type: {type(lhs)}")
 
     # ─────────────────────────────
     # CHECK_AT (point evaluation)
@@ -58,13 +67,26 @@ class LHSValidator:
         if not lhs.variable:
             raise InvalidPropertyError("Missing variable in check_at")
 
-        return {
-            "type": "pointwise",
-            "variables": {
+        context = SemanticContext(
+            type=SemanticScope.POINTWISE,
+            variables={
                 lhs.variable: "anchor"
             },
-            "default_entity": lhs.variable
-        }
+            default_entity=lhs.variable
+        )
+
+        # ---------------------------------------------
+        # Register semantic symbol
+        # ---------------------------------------------
+
+        context.symbol_table.register(
+            Symbol(
+                name=lhs.variable,
+                kind="anchor",
+            )
+        )
+
+        return context
 
     # ─────────────────────────────
     # AT (local neighborhood)
@@ -91,16 +113,36 @@ class LHSValidator:
         x = lhs.variable
         x_prime = f"{x}'"
 
-        return {
-            "type": "local",
-            "variables": {
+        context = SemanticContext(
+            type=SemanticScope.LOCAL,
+            variables={
                 x: "anchor",
                 x_prime: "perturbation"
             },
-            "default_entity": x_prime,  # 🔥 implicit resolution goes to x'
-            "domain": lhs.domain,
-            "neighborhood": lhs.neighborhood
-        }
+            default_entity=x_prime,
+            domain=lhs.domain,
+            neighborhood=lhs.neighborhood
+        )
+
+        # ---------------------------------------------
+        # Register semantic symbols
+        # ---------------------------------------------
+
+        context.symbol_table.register(
+            Symbol(
+                name=x,
+                kind="anchor",
+            )
+        )
+
+        context.symbol_table.register(
+            Symbol(
+                name=x_prime,
+                kind="perturbation",
+            )
+        )
+
+        return context
 
     # ─────────────────────────────
     # PAIRWISE (x ~ x')
@@ -144,16 +186,36 @@ class LHSValidator:
                 f"Invalid pair '{lhs.pair}': expected '{left} ~ {left}\\''"
             )
 
-        return {
-            "type": "pairwise",
-            "variables": {
+        context = SemanticContext(
+            type=SemanticScope.PAIRWISE,
+            variables={
                 left: "anchor",
                 right: "perturbation"
             },
-            "default_entity": right,  # 🔥 implicit resolution goes to x'
-            "domain": lhs.domain,
-            "neighborhood": lhs.neighborhood
-        }
+            default_entity=right,
+            domain=lhs.domain,
+            neighborhood=lhs.neighborhood
+        )
+
+        # ---------------------------------------------
+        # Register semantic symbols
+        # ---------------------------------------------
+
+        context.symbol_table.register(
+            Symbol(
+                name=left,
+                kind="anchor",
+            )
+        )
+
+        context.symbol_table.register(
+            Symbol(
+                name=right,
+                kind="perturbation",
+            )
+        )
+
+        return context
 
     # ─────────────────────────────
     # QUANTIFIER (forall / exists)
@@ -189,12 +251,25 @@ class LHSValidator:
 
         var = "_x"
 
-        return {
-            "type": "quantifier",
-            "quantifier": quantifier,
-            "variables": {
+        context = SemanticContext(
+            type=SemanticScope.QUANTIFIER,
+            quantifier=quantifier,
+            variables={
                 var: "symbolic"
             },
-            "default_entity": var,
-            "domain": lhs.domain
-        }
+            default_entity=var,
+            domain=lhs.domain
+        )
+
+        # ---------------------------------------------
+        # Register semantic symbol
+        # ---------------------------------------------
+
+        context.symbol_table.register(
+            Symbol(
+                name=var,
+                kind="symbolic",
+            )
+        )
+
+        return context
