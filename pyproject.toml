@@ -18,7 +18,8 @@ dependencies = [
     "Pygments==2.19.2",
     "pytest==9.0.1",
     "sortedcontainers==2.4.0",
-    "joblib==1.5.3"
+    "joblib==1.5.3",
+    "scikit-learn==1.8.0"
 ]
 
 [tool.setuptools.packages.find]

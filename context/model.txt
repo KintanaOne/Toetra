@@ -1,0 +1,67 @@
+
+===== model\loader\base_loader.py =====
+
+
+class BaseModelLoader:
+    def __init__(self, path: str) -> None:
+        """Base class for model loaders."""
+        
+
+    def load(self):
+        """Load the model."""
+        raise NotImplementedError("Subclasses must implement this method.")
+
+===== model\loader\joblib_loader.py =====
+
+import joblib
+
+from model.loader.base_loader import BaseModelLoader
+
+
+class JoblibModelLoader(BaseModelLoader):
+    def __init__(self, path: str) -> None:
+        """Loader for joblib models."""
+        super().__init__(path)
+        self.path = path
+
+    def load(self):
+        """Load the model using joblib."""
+        return joblib.load(self.path)
+
+===== model\loader\json_loader.py =====
+
+
+from model.loader.base_loader import BaseModelLoader
+
+
+class JsonModelLoader(BaseModelLoader):
+    def __init__(self, path: str) -> None:
+        """Loader for JSON models."""
+        super().__init__(path)
+        self.path = path
+
+    def load(self):
+        """Load the model from a JSON file."""
+        import json
+        with open(self.path, 'r') as f:
+            model_data = json.load(f)
+        return model_data
+
+===== model\loader\pkl_loader.py =====
+
+
+from model.loader.base_loader import BaseModelLoader
+
+
+class PklModelLoader(BaseModelLoader):
+    def __init__(self, path: str) -> None:
+        """Loader for models saved in .pkl format."""
+        super().__init__(path)
+        self.path = path
+
+    def load(self):
+        """Load the model from a .pkl file."""
+        import pickle
+        with open(self.path, 'rb') as f:
+            model = pickle.load(f)
+        return model

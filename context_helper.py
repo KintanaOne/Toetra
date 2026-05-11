@@ -51,3 +51,5 @@ if __name__ == "__main__":
     concat_files_in_folder("dsl/language", recursive=True, output_file="context/language.txt")
     concat_files_in_folder("dsl/parser", recursive=True, output_file="context/parser.txt")
     concat_files_in_folder("dsl/ir", recursive=True, output_file="context/ir.txt")
+
+    concat_files_in_folder("model", recursive=True, output_file="context/model.txt")
