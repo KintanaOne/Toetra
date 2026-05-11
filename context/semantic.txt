@@ -458,6 +458,7 @@ class BindingValidator:
 ===== dsl\semantic\core\lhs.py =====
 
 from dsl.semantic.context.context import SemanticContext
+from dsl.semantic.context.scope import SemanticScope
 from dsl.semantic.errors.errors import InvalidPropertyError
 from dsl.semantic.runtime.tracer import ValidationTracer
 
@@ -526,7 +527,7 @@ class LHSValidator:
             raise InvalidPropertyError("Missing variable in check_at")
 
         context = SemanticContext(
-            type="pointwise",
+            type=SemanticScope.POINTWISE,
             variables={
                 lhs.variable: "anchor"
             },
@@ -572,7 +573,7 @@ class LHSValidator:
         x_prime = f"{x}'"
 
         context = SemanticContext(
-            type="local",
+            type=SemanticScope.LOCAL,
             variables={
                 x: "anchor",
                 x_prime: "perturbation"
@@ -645,7 +646,7 @@ class LHSValidator:
             )
 
         context = SemanticContext(
-            type="pairwise",
+            type=SemanticScope.PAIRWISE,
             variables={
                 left: "anchor",
                 right: "perturbation"
@@ -710,7 +711,7 @@ class LHSValidator:
         var = "_x"
 
         context = SemanticContext(
-            type="quantifier",
+            type=SemanticScope.QUANTIFIER,
             quantifier=quantifier,
             variables={
                 var: "symbolic"
@@ -995,6 +996,8 @@ class ProblemValidator:
 
 ===== dsl\semantic\core\property.py =====
 
+from dsl.language.vocabulary.properties import EnumProperty
+from dsl.semantic.rules.compatibility import PROPERTY_SCOPE_COMPATIBILITY
 from dsl.semantic.runtime.annotations import SemanticAnnotations
 
 from dsl.semantic.errors.errors import (
@@ -1155,6 +1158,34 @@ class PropertyValidator:
                 root,
                 context
             )
+
+            # ==================================================
+            # PROPERTY ↔ SCOPE COMPATIBILITY
+            # ==================================================
+
+            try:
+                property_type = EnumProperty[prop.type.upper()]
+            except KeyError:
+                raise InvalidPropertyError(
+                    f"Unknown property type '{prop.type}'"
+                )
+
+            allowed_scopes = PROPERTY_SCOPE_COMPATIBILITY.get(
+                property_type,
+                set()
+            )
+
+            if context.type not in allowed_scopes:
+
+                allowed = ", ".join(
+                    s.value for s in allowed_scopes
+                )
+
+                raise InvalidPropertyError(
+                    f"Property '{prop.type}' does not support "
+                    f"scope '{context.type.value}'. "
+                    f"Allowed scopes: {allowed}"
+                )
 
             # ==================================================
             # 4. CACHE SEMANTIC ROOT

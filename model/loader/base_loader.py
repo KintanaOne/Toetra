@@ -2,6 +2,7 @@
 class BaseModelLoader:
     def __init__(self, path: str) -> None:
         """Base class for model loaders."""
+        self.path = path
         
 
     def load(self):
