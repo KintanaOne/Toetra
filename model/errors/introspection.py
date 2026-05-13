@@ -5,7 +5,8 @@ class ModelIntrospectionError(ModelError):
     pass
 
 
-class MissingFeatureMetadataError(
-    ModelIntrospectionError
-):
+class MissingFeatureMetadataError(ModelIntrospectionError):
+    pass
+
+class UnsupportedIntrospectorError(ModelIntrospectionError):
     pass

@@ -9,3 +9,4 @@ class FeatureSchema:
 
     name: str
     dtype: EnumDataType
+    nullable: bool = False

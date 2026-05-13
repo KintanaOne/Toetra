@@ -15,6 +15,7 @@ from dsl.ast.nodes.assertion import (
 )
 from dsl.ast.nodes.expressions import CheckAtExprNode
 from dsl.builder.program import parse_program
+from dsl.language.vocabulary.problems import EnumProblem
 from dsl.parser.parser import parse_forml_code
 
 from test.fixtures.logic_samples import (
@@ -51,7 +52,7 @@ def test_simple_logic_in_property():
     prop = build(SIMPLE_LOGIC_PROPERTY)
 
     scope = prop.rule.scope
-    assertion = prop.rule.assertion
+    assertion = prop.rule.assertion.root
 
     assert scope is not None
     assert assertion is not None
@@ -69,11 +70,11 @@ def test_simple_problem_in_property():
 
     prop = build(SIMPLE_PROBLEM_PROPERTY)
 
-    assertion = prop.rule.assertion
+    assertion = prop.rule.assertion.root
 
     match assertion:
         case ProblemNode(problem=problem):
-            assert problem == "CLASSIFICATION"
+            assert problem == EnumProblem.CLASSIFICATION
 
         case _:
             pytest.fail(f"Unexpected node: {assertion}")
@@ -89,7 +90,7 @@ def test_logic_operator_precedence():
     """
 
     prop = build(OPERATOR_PRECEDENCE_PROPERTY)
-    assertion = prop.rule.assertion
+    assertion = prop.rule.assertion.root
 
     match assertion:
         case OrNode(operands=ops):
@@ -111,7 +112,7 @@ def test_logic_parentheses_override_precedence():
     """
 
     prop = build(PARENTHESES_PRECEDENCE_PROPERTY)
-    assertion = prop.rule.assertion
+    assertion = prop.rule.assertion.root
 
     match assertion:
         case AndNode(operands=ops):
@@ -133,7 +134,7 @@ def test_logic_not_precedence():
     """
 
     prop = build(NOT_PRECEDENCE_PROPERTY)
-    assertion = prop.rule.assertion
+    assertion = prop.rule.assertion.root
 
     match assertion:
         case AndNode(operands=ops):

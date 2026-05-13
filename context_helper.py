@@ -53,3 +53,8 @@ if __name__ == "__main__":
     concat_files_in_folder("dsl/ir", recursive=True, output_file="context/ir.txt")
 
     concat_files_in_folder("model", recursive=True, output_file="context/model.txt")
+
+    concat_files_in_folder("test/unit", recursive=True, output_file="context/test/unit.txt")
+    concat_files_in_folder("test/hypothesis", recursive=True, output_file="context/test/hypothesis.txt")
+
+

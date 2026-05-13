@@ -75,13 +75,21 @@ LINF : "Linf"
 
 # === LOGIC_OPERATIONS ===
 
+AND : "and"
+OR : "or"
+NOT : "not"
+XOR : "xor"
+IMPLY : "->"
+
+
+# === COMPARISON_OPERATORS ===
+
 EQ : "=="
 NEQ : "!="
 LT : "<"
 LTE : "<="
 GT : ">"
 GTE : ">="
-IMPLY : "->"
 
 
 # === TOKENS ===
@@ -152,13 +160,17 @@ padding : (NEWLINE_SEQUENCE
 # =========================================================
 # === LOGIC OPERATIONS ===
 
-logic_operation : EQ
+logic_operation : AND
+    | OR
+    | NOT
+    | XOR
+    | IMPLY
+comparison_operation : EQ
     | NEQ
     | LT
     | LTE
     | GT
     | GTE
-    | IMPLY
 
 # === FUNCTIONS / PROBLEMS ===
 
@@ -179,6 +191,7 @@ problem_expr : (CLASSIFICATION
 
 attribute : identifier ("." identifier)*
 logic_expr : attribute logic_operation value
+comparison_expr : attribute comparison_operation value
 
 # === ASSERTION ===
 
@@ -191,7 +204,8 @@ logic_expr : attribute logic_operation value
     | logic_and "AND" logic_not -> logic_and
 ?logic_not : "NOT" atom -> logic_not
     | atom
-?atom : logic_expr
+?atom : comparison_expr
+    | logic_expr
     | problem_expr
     | "(" assertion ")"
 
@@ -285,6 +299,8 @@ backend : "using" (eran
 target_declaration : "target" ":=" identifier
 model : quoted_identifier
 model_declaration : "model" ":=" model
+dataset : quoted_identifier
+dataset_declaration : "dataset" ":=" dataset
 variable_declaration : identifier ":=" value
 variables_declaration : variable_declaration (";" variable_declaration)*
 
@@ -292,6 +308,6 @@ variables_declaration : variable_declaration (";" variable_declaration)*
 # === PROGRAM STRUCTURE ===================================
 # =========================================================
 
-header : padding model_declaration padding target_declaration padding (variables_declaration padding)?
+header : padding model_declaration padding target_declaration padding (dataset_declaration padding)? (variables_declaration padding)?
 body : padding property_section (padding property_section)* padding
 program : header body

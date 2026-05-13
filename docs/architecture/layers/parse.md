@@ -291,7 +291,7 @@ Examples:
 ```text
 ?official_properties?
 ?official_backends?
-?official_logic_operations?
+?official_logic_operators?
 ```
 
 These placeholders are dynamically resolved during grammar generation.
