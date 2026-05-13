@@ -11,7 +11,8 @@ SPECIAL_SEQ = {
     "official_functions": " | ".join(OFFICIAL_MAPS["functions"].keys()),
     "official_backends": " | ".join(OFFICIAL_MAPS["backends"].keys()),
     "official_metrics": " | ".join(OFFICIAL_MAPS["metrics"].keys()),
-    "official_logic_operations": " | ".join(OFFICIAL_MAPS["logic_operations"].keys()),
+    "official_logic_operators": " | ".join(OFFICIAL_MAPS["logic_operations"].keys()),
+    "comparison_operators": " | ".join(OFFICIAL_MAPS["comparison_operators"].keys()),
 }
 
 

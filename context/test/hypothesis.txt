@@ -1,0 +1,387 @@
+
+===== test\hypothesis\settings.py =====
+
+from hypothesis import settings
+
+DEFAULT_SETTINGS = settings(
+    max_examples=200,
+    deadline=None,           # important pour parser
+    suppress_health_check=[], 
+)
+
+===== test\hypothesis\strategies\__init__.py =====
+
+
+
+===== test\hypothesis\strategies\args.py =====
+
+from hypothesis import strategies as st
+from .primitives import identifiers
+from .values import values
+
+
+@st.composite
+def arg(draw):
+    choice = draw(st.integers(min_value=0, max_value=3))
+
+    if choice == 0:
+        key = draw(identifiers)
+        val = draw(values)
+        return f"{key}={val}"
+
+    elif choice == 1:
+        return draw(identifiers)
+
+    else:
+        return draw(values)
+
+
+@st.composite
+def args(draw):
+    args_list = draw(st.lists(arg(), min_size=1, max_size=3))
+    return ", ".join(args_list)
+
+===== test\hypothesis\strategies\body.py =====
+
+from hypothesis import strategies as st
+from .properties import property_section
+
+
+@st.composite
+def body(draw):
+    props = draw(st.lists(property_section(), min_size=1, max_size=3))
+    return "\n\n".join(props)
+
+===== test\hypothesis\strategies\header.py =====
+
+from hypothesis import strategies as st
+from .primitives import identifiers, escaped_strings
+
+
+@st.composite
+def model_declaration(draw):
+    path = draw(escaped_strings)
+    return f"model := {path}"
+
+
+@st.composite
+def target_declaration(draw):
+    target = draw(identifiers)
+    return f"target := {target}"
+
+
+@st.composite
+def header(draw):
+    model = draw(model_declaration())
+    target = draw(target_declaration())
+
+    return f"{model}\n{target}"
+
+===== test\hypothesis\strategies\logic.py =====
+
+from hypothesis import strategies as st
+from .primitives import identifiers
+from .values import values
+
+logic_ops = st.sampled_from(["==", "!=", "<", "<=", ">", ">="])
+
+
+@st.composite
+def logic_expr(draw):
+    attr = draw(identifiers)
+    op = draw(logic_ops)
+    val = draw(values)
+
+    return f"{attr} {op} {val}"
+
+
+@st.composite
+def assertion(draw):
+    left = draw(logic_expr())
+
+    if draw(st.booleans()):
+        right = draw(logic_expr())
+        return f"{left} -> {right}"
+
+    return left
+
+===== test\hypothesis\strategies\primitives.py =====
+
+from hypothesis import strategies as st
+
+IDENTIFIER_REGEX = r"[a-zA-Z_][a-zA-Z0-9_]*"
+
+identifiers = st.from_regex(IDENTIFIER_REGEX, fullmatch=True)
+
+escaped_strings = st.text(
+    alphabet="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_./-",
+    min_size=1,
+    max_size=30
+).map(lambda s: f'"{s}"')
+
+numbers = st.floats(
+    min_value=0,
+    max_value=100,
+    allow_nan=False,
+    allow_infinity=False
+).map(lambda x: str(round(x, 3)))
+
+booleans = st.sampled_from(["true", "false", "True", "False"])
+
+===== test\hypothesis\strategies\program.py =====
+
+from hypothesis import strategies as st
+from .header import header
+from .body import body
+
+
+@st.composite
+def program(draw):
+    h = draw(header())
+    b = draw(body())
+
+    return f"{h}\n\n{b}"
+
+===== test\hypothesis\strategies\properties.py =====
+
+from hypothesis import strategies as st
+from .logic import assertion
+from .args import args
+from .primitives import identifiers
+
+property_types = st.sampled_from([
+    "ROBUSTNESS", "STABILITY", "FAIRNESS",
+    "MONOTONICITY", "BOUND", "LOGIC"
+])
+
+metrics = st.sampled_from(["L1", "L2", "Linf"])
+
+
+@st.composite
+def neighborhood(draw):
+    metric = draw(metrics)
+    arg_str = draw(args())
+    return f"in neighborhood({metric}, {arg_str})"
+
+
+st.composite
+def domain(draw):
+    domain_name = draw(identifiers)
+    values = draw(st.lists(identifiers, min_size=1))
+    values_str = ", ".join(f'"{v}"' for v in values)
+    return f"with {domain_name}({values_str})"
+
+
+st.composite
+def quantifier_expr(draw):
+    q = draw(st.sampled_from(["forall", "exists"]))
+    return q
+
+
+st.composite
+def at_expr(draw):
+    x = draw(identifiers)
+    return f"at {x}"
+
+
+st.composite
+def check_at_expr(draw):
+    x = draw(identifiers)
+    return f"check_at {x}"
+
+
+@st.composite
+def pairwise_expr(draw):
+    x = draw(identifiers)
+    x2 = f"{x}'"
+    neigh = draw(neighborhood())
+
+    return f"{x} ~ {x2} in {neigh}"
+
+
+@st.composite
+def property_expr(draw):
+    return draw(st.one_of(
+        st.just("forall"),
+        pairwise_expr()
+    ))
+
+
+@st.composite
+def property(draw):
+    ptype = draw(property_types)
+    expr = draw(property_expr())
+    ass = draw(assertion())
+
+    return f"[{ptype}]: {expr} => {ass}"
+
+
+backends = st.sampled_from(["z3", "Z3", "eran", "ERAN"])
+
+
+@st.composite
+def abstractor(draw):
+    backend = draw(backends)
+
+    if draw(st.booleans()):
+        arg_str = draw(args())
+        return f"using {backend}({arg_str})"
+
+    return f"using {backend}"
+
+
+@st.composite
+def property_section(draw):
+    prop = draw(property())
+
+    if draw(st.booleans()):
+        abs_ = draw(abstractor())
+        return f"{prop} {abs_}"
+
+    return prop
+
+===== test\hypothesis\strategies\values.py =====
+
+from hypothesis import strategies as st
+from .primitives import numbers, booleans, escaped_strings
+
+values = st.one_of(numbers, booleans, escaped_strings)
+
+===== test\hypothesis\test_determinism.py =====
+
+from hypothesis import given
+import pytest
+from test.hypothesis.settings import DEFAULT_SETTINGS
+from test.hypothesis.strategies.program import program
+
+from dsl.parser.parser import parse_forml_code
+
+@given(program())
+def test_parse_deterministic(prog):
+    ast1 = parse_forml_code(prog)
+    ast2 = parse_forml_code(prog)
+
+    assert ast1 == ast2
+
+===== test\hypothesis\test_invariant_semantic.py =====
+
+from hypothesis import given
+
+from dsl.builder.program import parse_program
+from dsl.parser.parser import parse_forml_code
+from test.hypothesis.strategies.program import program
+
+
+@given(program())
+def test_semantic_roundtrip(prog):
+    ast1 = parse_forml_code(prog)
+    obj1 = parse_program(ast1)
+
+    # reparse même programme
+    ast2 = parse_forml_code(prog)
+    obj2 = parse_program(ast2)
+
+    assert obj1 == obj2
+
+
+@given(program())
+def test_program_has_valid_structure(prog):
+    ast = parse_forml_code(prog)
+    d = parse_program(ast)
+
+    assert d.model is not None
+    assert d.target is not None
+    assert len(d.properties) >= 1
+
+===== test\hypothesis\test_parser.py =====
+
+from hypothesis import given
+from test.hypothesis.settings import DEFAULT_SETTINGS
+from test.hypothesis.strategies.program import program
+
+from dsl.parser.parser import parse_forml_code
+
+
+@DEFAULT_SETTINGS
+@given(program())
+def test_parser_never_crashes(program):
+    try:
+        parse_forml_code(program)
+    except Exception as e:
+        assert False, f"Crash with input:\n{program}\n\nError: {e}"
+
+===== test\hypothesis\test_roundtrip.py =====
+
+from hypothesis import given
+import pytest
+from test.hypothesis.settings import DEFAULT_SETTINGS
+from test.hypothesis.strategies.program import program
+
+from dsl.parser.parser import parse_forml_code
+from test.hypothesis.utils.serialize import serialize
+
+@pytest.mark.skip(reason="no serialization implemented yet")
+@given(program())
+def test_roundtrip(program):
+    ast1 = parse_forml_code(program)
+    serialized = serialize(ast1)
+    ast2 = parse_forml_code(serialized)
+
+    assert ast1 == ast2
+
+===== test\hypothesis\test_semantic_extraction.py =====
+
+from hypothesis import given
+
+from dsl.builder.program import parse_program
+from dsl.parser.parser import parse_forml_code
+from test.hypothesis.strategies.program import program
+
+
+@given(program())
+def test_semantic_extraction(prog):
+    ast = parse_forml_code(prog)
+    d = parse_program(ast)
+
+    assert d["model"] is not None
+    assert d["target"] is not None
+
+===== test\hypothesis\test_semantic_roundtrip.py =====
+
+from hypothesis import given
+
+from dsl.builder.program import parse_program
+from dsl.parser.parser import parse_forml_code
+from test.hypothesis.strategies.program import program
+
+
+@given(program())
+def test_semantic_roundtrip(prog):
+    ast1 = parse_forml_code(prog)
+    obj1 = parse_program(ast1)
+
+    # reparse même programme
+    ast2 = parse_forml_code(prog)
+    obj2 = parse_program(ast2)
+
+    assert obj1 == obj2
+
+===== test\hypothesis\utils\compare_ast.py =====
+
+def ast_equal(a, b):
+    return a == b
+
+===== test\hypothesis\utils\serialize.py =====
+
+from hypothesis import strategies as st
+
+def serialize(ast):
+    if isinstance(ast, str):
+        return f'"{ast}"'
+    elif isinstance(ast, list):
+        return "[" + ", ".join(serialize(x) for x in ast) + "]"
+    elif isinstance(ast, dict):
+        items = ", ".join(f"{serialize(k)}: {serialize(v)}" for k, v in ast.items())
+        return "{" + items + "}"
+    else:
+        return str(ast)

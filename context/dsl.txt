@@ -14,6 +14,7 @@ from dsl.ast.nodes.base import ASTNode
 from dsl.ast.nodes.primitives import AttributeNode, ConstantNode
 from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.operators import EnumComparisonOperator
+from dsl.language.vocabulary.problems import EnumProblem
 from dsl.language.vocabulary.properties import EnumProperty
 
 
@@ -69,7 +70,7 @@ class ImplicationNode(LogicalNode):
 
 @dataclass
 class ProblemNode(LogicalNode):
-    problem: EnumProperty
+    problem: EnumProblem
     function: EnumFunction | None = None
 
 
@@ -323,17 +324,19 @@ from dsl.ast.nodes.assertion import (
 
 from dsl.builder.core.utils import find_node, get_token_value
 from dsl.builder.core.ast_utils import parse_attribute, node_value, parse_value
+from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.operators import EnumComparisonOperator
+from dsl.language.vocabulary.problems import EnumProblem
 
 
 # ============================================================================  
 # COMPARISON  
 # ============================================================================  
 
-def build_logic_expr(node: Tree) -> LogicalNode:
+def build_comparison_expr(node: Tree) -> ComparisonNode:
     attribute_node = find_node(node, "attribute")
     value_node = find_node(node, "value")
-    op_node = find_node(node, "logic_operation")
+    op_node = find_node(node, "comparison_operation")
 
     if attribute_node is None or value_node is None or op_node is None:
         raise ValueError("Invalid comparison")
@@ -409,8 +412,9 @@ def parse_assertion(node: Tree | Token | None) -> LogicalNode:
     # ----------------------------------------------------------------------
     # COMPARISON
     # ----------------------------------------------------------------------
-    if t == "logic_expr":
-        return build_logic_expr(node)
+        
+    if t == "comparison_expr":
+        return build_comparison_expr(node)
 
     # ----------------------------------------------------------------------
     # ATOM
@@ -424,14 +428,24 @@ def parse_assertion(node: Tree | Token | None) -> LogicalNode:
     # PROBLEM (IMPORTANT)
     # ----------------------------------------------------------------------
     if t == "problem_expr":
-        problem = "UNKNOWN"
-        function = None
+        problem: EnumProblem | None = None
+        function: EnumFunction | None = None
 
         for c in node.children:
             if isinstance(c, Token):
-                problem = c.value
+                try:
+                    problem = EnumProblem(c.value)
+                except ValueError:
+                    raise ValueError(f"Unknown problem: {c.value}")
+
             elif isinstance(c, Tree):
-                function = node_value(c)
+                try:
+                    function = EnumFunction(node_value(c))
+                except ValueError:
+                    raise ValueError(f"Unknown function: {node_value(c)}")
+                
+        if problem is None:
+            raise ValueError("Missing problem")
 
         return ProblemNode(problem=problem, function=function)
 
@@ -491,13 +505,13 @@ from dsl.builder.core.pretty_ast import pretty
 
 from dsl.builder.program import parse_program
 from dsl.parser.parser import parse_forml_code
-from test.fixtures.properties_samples import VALID_AT_WITH_NEIGHBORHOOD, VALID_CHECK_AT_WITH_COMPLEX_ASSERTION, VALID_FORALL_WITH_DOMAIN, VALID_MINIMAL_AT
+from test.fixtures.properties_samples import VALID_AT_WITH_NEIGHBORHOOD, VALID_CHECK_AT_WITH_COMPLEX_ASSERTION, VALID_FORALL_WITH_DOMAIN, VALID_MINIMAL_AT, VALID_MINIMAL_CHECK_AT
 from test.fixtures.logic_samples import OPERATOR_PRECEDENCE_PROPERTY
 
 if __name__ == "__main__":
     """ This script is for quick testing of the builder. It parses a sample property and prints the resulting AST """
     # LARK
-    CST = parse_forml_code(VALID_AT_WITH_NEIGHBORHOOD)
+    CST = parse_forml_code(VALID_MINIMAL_CHECK_AT)
     print(CST.pretty())
 
     # BUILDER
@@ -2798,7 +2812,7 @@ from dsl.language.vocabulary.functions import official_functions
 from dsl.language.vocabulary.backends import official_backends
 from dsl.language.vocabulary.metrics import official_metrics
 from dsl.language.vocabulary.protected_words import protected_words
-from dsl.language.vocabulary.operators import official_logic_operations, official_comparaison_operations
+from dsl.language.vocabulary.operators import official_logic_operators, official_comparaison_operations
 
 
 # =========================
@@ -2812,7 +2826,7 @@ OFFICIAL_MAPS = {
     "functions": official_functions,
     "backends": official_backends,
     "metrics": official_metrics,
-    "logic_operations": official_logic_operations,
+    "logic_operations": official_logic_operators,
     "comparison_operators": official_comparaison_operations,
 }
 
@@ -3092,7 +3106,8 @@ SPECIAL_SEQ = {
     "official_functions": " | ".join(OFFICIAL_MAPS["functions"].keys()),
     "official_backends": " | ".join(OFFICIAL_MAPS["backends"].keys()),
     "official_metrics": " | ".join(OFFICIAL_MAPS["metrics"].keys()),
-    "official_logic_operations": " | ".join(OFFICIAL_MAPS["logic_operations"].keys()),
+    "official_logic_operators": " | ".join(OFFICIAL_MAPS["logic_operations"].keys()),
+    "comparison_operators": " | ".join(OFFICIAL_MAPS["comparison_operators"].keys()),
 }
 
 
@@ -3461,7 +3476,7 @@ class EnumMetric(EnumMixin, Enum):
 from enum import Enum
 from dsl.language.vocabulary.utils import EnumMixin
 
-official_logic_operations = {
+official_logic_operators = {
     "AND": '"and"',
     "OR": '"or"',
     "NOT": '"not"',

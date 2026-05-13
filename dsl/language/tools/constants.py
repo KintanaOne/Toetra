@@ -12,7 +12,7 @@ from dsl.language.vocabulary.functions import official_functions
 from dsl.language.vocabulary.backends import official_backends
 from dsl.language.vocabulary.metrics import official_metrics
 from dsl.language.vocabulary.protected_words import protected_words
-from dsl.language.vocabulary.operators import official_logic_operations, official_comparaison_operations
+from dsl.language.vocabulary.operators import official_logic_operators, official_comparaison_operations
 
 
 # =========================
@@ -26,7 +26,7 @@ OFFICIAL_MAPS = {
     "functions": official_functions,
     "backends": official_backends,
     "metrics": official_metrics,
-    "logic_operations": official_logic_operations,
+    "logic_operations": official_logic_operators,
     "comparison_operators": official_comparaison_operations,
 }
 

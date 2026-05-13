@@ -16,17 +16,19 @@ from dsl.ast.nodes.assertion import (
 
 from dsl.builder.core.utils import find_node, get_token_value
 from dsl.builder.core.ast_utils import parse_attribute, node_value, parse_value
+from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.operators import EnumComparisonOperator
+from dsl.language.vocabulary.problems import EnumProblem
 
 
 # ============================================================================  
 # COMPARISON  
 # ============================================================================  
 
-def build_logic_expr(node: Tree) -> LogicalNode:
+def build_comparison_expr(node: Tree) -> ComparisonNode:
     attribute_node = find_node(node, "attribute")
     value_node = find_node(node, "value")
-    op_node = find_node(node, "logic_operation")
+    op_node = find_node(node, "comparison_operation")
 
     if attribute_node is None or value_node is None or op_node is None:
         raise ValueError("Invalid comparison")
@@ -102,8 +104,9 @@ def parse_assertion(node: Tree | Token | None) -> LogicalNode:
     # ----------------------------------------------------------------------
     # COMPARISON
     # ----------------------------------------------------------------------
-    if t == "logic_expr":
-        return build_logic_expr(node)
+        
+    if t == "comparison_expr":
+        return build_comparison_expr(node)
 
     # ----------------------------------------------------------------------
     # ATOM
@@ -117,14 +120,24 @@ def parse_assertion(node: Tree | Token | None) -> LogicalNode:
     # PROBLEM (IMPORTANT)
     # ----------------------------------------------------------------------
     if t == "problem_expr":
-        problem = "UNKNOWN"
-        function = None
+        problem: EnumProblem | None = None
+        function: EnumFunction | None = None
 
         for c in node.children:
             if isinstance(c, Token):
-                problem = c.value
+                try:
+                    problem = EnumProblem(c.value)
+                except ValueError:
+                    raise ValueError(f"Unknown problem: {c.value}")
+
             elif isinstance(c, Tree):
-                function = node_value(c)
+                try:
+                    function = EnumFunction(node_value(c))
+                except ValueError:
+                    raise ValueError(f"Unknown function: {node_value(c)}")
+                
+        if problem is None:
+            raise ValueError("Missing problem")
 
         return ProblemNode(problem=problem, function=function)
 

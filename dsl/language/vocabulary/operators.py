@@ -3,7 +3,7 @@
 from enum import Enum
 from dsl.language.vocabulary.utils import EnumMixin
 
-official_logic_operations = {
+official_logic_operators = {
     "AND": '"and"',
     "OR": '"or"',
     "NOT": '"not"',

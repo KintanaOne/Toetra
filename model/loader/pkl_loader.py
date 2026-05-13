@@ -1,21 +1,24 @@
 import pickle
 
-from model.errors.loading import ModelLoadError
+from model.errors.loading import (
+    ModelDeserializationError,
+    ModelFileNotFoundError,
+)
 from model.loader.base_loader import BaseModelLoader
 
 
 class PklModelLoader(BaseModelLoader):
 
     def load(self):
-        """Load the model using pickle."""
-        try:
 
+        try:
             with open(self.path, "rb") as f:
                 return pickle.load(f)
 
-        except Exception as e:
+        except FileNotFoundError as e:
+            raise ModelFileNotFoundError(str(self.path)) from e
 
-            raise ModelLoadError(
-                f"Failed to load pickle model "
-                f"'{self.path}': {e}"
+        except Exception as e:
+            raise ModelDeserializationError(
+                f"Failed to deserialize pickle model: {self.path}"
             ) from e

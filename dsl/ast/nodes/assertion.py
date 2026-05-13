@@ -7,6 +7,7 @@ from dsl.ast.nodes.base import ASTNode
 from dsl.ast.nodes.primitives import AttributeNode, ConstantNode
 from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.operators import EnumComparisonOperator
+from dsl.language.vocabulary.problems import EnumProblem
 from dsl.language.vocabulary.properties import EnumProperty
 
 
@@ -62,7 +63,7 @@ class ImplicationNode(LogicalNode):
 
 @dataclass
 class ProblemNode(LogicalNode):
-    problem: EnumProperty
+    problem: EnumProblem
     function: EnumFunction | None = None
 
 

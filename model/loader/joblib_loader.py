@@ -1,6 +1,6 @@
 import joblib
 
-from model.errors.loading import ModelLoadError
+from model.errors.loading import ModelDeserializationError, ModelFileNotFoundError
 from model.loader.base_loader import BaseModelLoader
 
 
@@ -13,9 +13,10 @@ class JoblibModelLoader(BaseModelLoader):
 
             return joblib.load(self.path)
         
+        except FileNotFoundError as e:
+            raise ModelFileNotFoundError(str(self.path)) from e
+        
         except Exception as e:
-            
-            raise ModelLoadError(
-                f"Failed to load joblib model "
-                f"'{self.path}': {e}"
+            raise ModelDeserializationError(
+                f"Failed to deserialize joblib model: {self.path}"
             ) from e
