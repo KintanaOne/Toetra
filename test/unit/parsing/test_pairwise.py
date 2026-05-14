@@ -1,11 +1,7 @@
-from typing import cast
+# test/unit/parsing/test_pairwise.py
 
 import pytest
-from lark import Tree
 
-from dsl.ast.nodes.expressions import PairwiseExprNode
-from dsl.builder.program import parse_program
-from dsl.parser.parser import parse_forml_code
 from test.fixtures.properties_samples import (
     INVALID_PAIRWISE_MALFORMED_ABSTRACTOR,
     INVALID_PAIRWISE_MALFORMED_NEIGHBORHOOD,
@@ -14,13 +10,20 @@ from test.fixtures.properties_samples import (
     INVALID_PAIRWISE_MISSING_IDENTIFIER,
     INVALID_PAIRWISE_MISSING_IDENTIFIER_PRIME,
     INVALID_PAIRWISE_MISSING_NEIGHBORHOOD_SYNTAX,
-    VALID_PAIRWISE_WITH_ABSTRACTOR,
     VALID_MINIMAL_PAIRWISE,
+    VALID_PAIRWISE_WITH_ABSTRACTOR,
 )
 
-
-def parse(code: str) -> Tree:
-    return parse_forml_code(code)
+from test.unit.parsing.helper import (
+    assert_backend,
+    assert_neighborhood,
+    assert_no_backend,
+    assert_pair,
+    assert_pairwise_scope,
+    assert_property_basics,
+    build_property,
+    parse,
+)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -29,77 +32,64 @@ def parse(code: str) -> Tree:
 
 def test_pairwise_basic():
 
-    prop = parse_program(parse(VALID_MINIMAL_PAIRWISE)).body[0]
+    prop = build_property(VALID_MINIMAL_PAIRWISE)
 
-    scope = prop.rule.scope
-    assert isinstance(scope, PairwiseExprNode)
-    scope = cast(PairwiseExprNode, scope)
+    scope = assert_pairwise_scope(prop)
 
-    pair = scope.pair
-    
-    parts = pair.split("~")
-    if len(parts) != 2:
-        raise ValueError(f"Invalid pair format: {pair}")
+    assert_property_basics(prop)
 
-    left, right = [x.strip() for x in parts]
+    assert_pair(
+        scope.pair,
+        "x",
+        "x'",
+    )
 
-    neigh = scope.neighborhood
-    domain = scope.domain
-    backend = prop.backend
+    assert_neighborhood(
+        scope.neighborhood,
+        "L2",
+        eps=0.01,
+    )
 
-    assert prop.type == "ROBUSTNESS"
+    assert scope.domain is None
 
-    assert left == "x"
-    assert right == "x'"
-
-    assert neigh.metric == "L2"
-    assert neigh.args[0].key == "eps"
-    assert neigh.args[0].value == 0.01
-
-    assert domain is None
-
-    assert backend is None
+    assert_no_backend(prop)
 
 
 def test_pairwise_with_backend():
 
-    prop = parse_program(parse(VALID_PAIRWISE_WITH_ABSTRACTOR)).body[0]
+    prop = build_property(
+        VALID_PAIRWISE_WITH_ABSTRACTOR
+    )
 
-    scope = prop.rule.scope
-    assert isinstance(scope, PairwiseExprNode)
-    scope = cast(PairwiseExprNode, scope)
+    scope = assert_pairwise_scope(prop)
 
-    pair = scope.pair
-    
-    parts = pair.split("~")
-    if len(parts) != 2:
-        raise ValueError(f"Invalid pair format: {pair}")
+    assert_property_basics(prop)
 
-    left, right = [x.strip() for x in parts]
+    assert_pair(
+        scope.pair,
+        "x",
+        "x'",
+    )
 
-    neigh = scope.neighborhood
-    domain = scope.domain
-    backend = prop.backend
+    assert_neighborhood(
+        scope.neighborhood,
+        "L2",
+        eps=0.01,
+    )
 
-    assert prop.type == "ROBUSTNESS"
+    assert scope.domain is None
 
-    assert left == "x"
-    assert right == "x'"
+    assert_backend(
+        prop,
+        "Z3",
+    )
 
-    assert neigh.metric == "L2"
-    assert neigh.args[0].key == "eps"
-    assert neigh.args[0].value == 0.01
-
-    assert domain is None
-
-    assert backend is not None
-    assert backend.name == "Z3"
 
 # ----------------------------------------------------------------------------------------------------------------------
 # INVALID
 # ----------------------------------------------------------------------------------------------------------------------
 
-@pytest.mark.parametrize("code", [
+INVALID_CASES = [
     INVALID_PAIRWISE_MALFORMED_ABSTRACTOR,
     INVALID_PAIRWISE_MISSING_NEIGHBORHOOD_SYNTAX,
     INVALID_PAIRWISE_MALFORMED_NEIGHBORHOOD,
@@ -107,7 +97,11 @@ def test_pairwise_with_backend():
     INVALID_PAIRWISE_MISSING_IDENTIFIER,
     INVALID_PAIRWISE_MISSING_IDENTIFIER_PRIME,
     INVALID_PAIRWISE_MISSING_BOTH_IDENTIFIERS,
-])
+]
+
+
+@pytest.mark.parametrize("code", INVALID_CASES)
 def test_pairwise_invalid(code):
+
     with pytest.raises(Exception):
         parse(code)

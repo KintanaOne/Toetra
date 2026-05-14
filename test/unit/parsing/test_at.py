@@ -1,3 +1,5 @@
+# test/unit/parsing/test_at.py
+
 import pytest
 
 from test.fixtures.properties_samples import *
@@ -26,6 +28,7 @@ def test_at_basic():
     assert_property_basics(prop)
 
     assert scope.variable == "x0"
+
     assert scope.neighborhood is None
     assert scope.domain is None
 
@@ -48,6 +51,8 @@ def test_at_with_neighborhood():
 
     assert scope.domain is None
 
+    assert_no_backend(prop)
+
 
 def test_at_with_domain():
 
@@ -59,14 +64,20 @@ def test_at_with_domain():
 
     assert_domain(
         scope.domain,
-        name="sex",
-        values=["male", "female"],
+        "sex",
+        ["male", "female"],
     )
+
+    assert scope.neighborhood is None
+
+    assert_no_backend(prop)
 
 
 def test_at_with_neighborhood_and_domain():
 
-    prop = build_property(VALID_AT_WITH_NEIGHBORHOOD_AND_DOMAIN)
+    prop = build_property(
+        VALID_AT_WITH_NEIGHBORHOOD_AND_DOMAIN
+    )
 
     scope = assert_at_scope(prop)
 
@@ -80,9 +91,11 @@ def test_at_with_neighborhood_and_domain():
 
     assert_domain(
         scope.domain,
-        name="sex",
-        values=["male", "female"],
+        "sex",
+        ["male", "female"],
     )
+
+    assert_no_backend(prop)
 
 
 # ----------------------------------------------------------------------------------------------------------------------

@@ -1,39 +1,49 @@
-from typing import cast
+# test/unit/parsing/test_forall.py
 
-from lark import Tree
-
-from dsl.ast.nodes.expressions import QuantifierExprNode
-from dsl.builder.program import parse_program
-from dsl.parser.parser import parse_forml_code
 from test.fixtures.properties_samples import *
 
+from test.unit.parsing.helper import (
+    assert_domain,
+    assert_no_backend,
+    assert_property_basics,
+    assert_quantifier_scope,
+    build_property,
+)
 
-def parse(code: str) -> Tree:
-    return parse_forml_code(code)
 
+# ----------------------------------------------------------------------------------------------------------------------
+# VALID
+# ----------------------------------------------------------------------------------------------------------------------
 
 def test_forall_basic():
-    prop = parse_program(parse(VALID_MINIMAL_FORALL)).body[0]
 
-    scope = prop.rule.scope
-    assert isinstance(scope, QuantifierExprNode)
-    scope = cast(QuantifierExprNode, scope)    
+    prop = build_property(VALID_MINIMAL_FORALL)
+
+    scope = assert_quantifier_scope(prop)
+
+    assert_property_basics(prop)
 
     assert scope.quantifier == "forall"
+
     assert scope.domain is None
-    assert prop.backend is None
+
+    assert_no_backend(prop)
 
 
 def test_forall_with_domain():
-    prop = parse_program(parse(VALID_FORALL_WITH_DOMAIN)).body[0]
 
-    scope = prop.rule.scope
-    assert isinstance(scope, QuantifierExprNode)
-    scope = cast(QuantifierExprNode, scope)    
+    prop = build_property(VALID_FORALL_WITH_DOMAIN)
 
-    domain = scope.domain
+    scope = assert_quantifier_scope(prop)
+
+    assert_property_basics(prop)
 
     assert scope.quantifier == "forall"
-    assert domain is not None
-    assert domain.name == "gender"
-    assert domain.values == ["male", "female"]
+
+    assert_domain(
+        scope.domain,
+        "gender",
+        ["male", "female"],
+    )
+
+    assert_no_backend(prop)
