@@ -1,5 +1,5 @@
 from lark import Tree
-from dsl.builder.core.utils import find_child, find_all_nodes, find_node
+from dsl.builder.core.utils import extract_direct_token, find_child, find_all_nodes, find_node, get_node_name_or_value
 from dsl.builder.core.ast_utils import node_value, clean_string
 
 from dsl.ast.nodes.backends import BackendNode
@@ -17,7 +17,9 @@ def parse_backend(node: Tree | None):
     if n is None:
         return None
 
-    name = node_value(n)
+    name_node = n.children[0]
+    name = get_node_name_or_value(name_node)
+    
     if name is None:
         raise ValueError("Backend name missing")
 
