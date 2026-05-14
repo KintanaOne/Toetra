@@ -1,18 +1,16 @@
-from typing import cast
-
 import pytest
-from lark import Tree
-
-from dsl.ast.nodes.expressions import AtExprNode
-from dsl.builder import neighborhood
-from dsl.builder.program import parse_program
-from dsl.parser.parser import parse_forml_code
 
 from test.fixtures.properties_samples import *
 
-
-def parse(code: str) -> Tree:
-    return parse_forml_code(code)
+from test.unit.parsing.helper import (
+    assert_at_scope,
+    assert_domain,
+    assert_neighborhood,
+    assert_no_backend,
+    assert_property_basics,
+    build_property,
+    parse,
+)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -20,82 +18,88 @@ def parse(code: str) -> Tree:
 # ----------------------------------------------------------------------------------------------------------------------
 
 def test_at_basic():
-    prop = parse_program(parse(VALID_MINIMAL_AT)).body[0]
 
-    scope = prop.rule.scope
-    assert isinstance(scope, AtExprNode)
-    scope = cast(AtExprNode, scope)
-    
-    assert prop.type == "ROBUSTNESS"
+    prop = build_property(VALID_MINIMAL_AT)
+
+    scope = assert_at_scope(prop)
+
+    assert_property_basics(prop)
+
     assert scope.variable == "x0"
     assert scope.neighborhood is None
     assert scope.domain is None
-    assert prop.rule.assertion is not None
-    assert prop.backend is None
+
+    assert_no_backend(prop)
 
 
 def test_at_with_neighborhood():
-    prop = parse_program(parse(VALID_AT_WITH_NEIGHBORHOOD)).body[0]
 
-    scope = prop.rule.scope
-    assert isinstance(scope, AtExprNode)
-    scope = cast(AtExprNode, scope)
+    prop = build_property(VALID_AT_WITH_NEIGHBORHOOD)
 
-    neigh = scope.neighborhood
-    
-    assert neigh is not None
-    assert neigh.metric == "L2"
-    assert neigh.args[0].key == "eps"
-    assert neigh.args[0].value == 0.01
+    scope = assert_at_scope(prop)
+
+    assert_property_basics(prop)
+
+    assert_neighborhood(
+        scope.neighborhood,
+        "L2",
+        eps=0.01,
+    )
+
     assert scope.domain is None
 
 
 def test_at_with_domain():
-    prop = parse_program(parse(VALID_AT_WITH_DOMAIN)).body[0]
 
-    scope = prop.rule.scope
-    assert isinstance(scope, AtExprNode)
-    scope = cast(AtExprNode, scope)
+    prop = build_property(VALID_AT_WITH_DOMAIN)
 
-    domain = scope.domain
+    scope = assert_at_scope(prop)
 
+    assert_property_basics(prop)
 
-    assert domain is not None
-    assert domain.name == "sex"
-    assert domain.values == ["male", "female"]
+    assert_domain(
+        scope.domain,
+        name="sex",
+        values=["male", "female"],
+    )
 
 
 def test_at_with_neighborhood_and_domain():
-    prop = parse_program(parse(VALID_AT_WITH_NEIGHBORHOOD_AND_DOMAIN)).body[0]
 
-    scope = prop.rule.scope
-    assert isinstance(scope, AtExprNode)
-    scope = cast(AtExprNode, scope)
+    prop = build_property(VALID_AT_WITH_NEIGHBORHOOD_AND_DOMAIN)
 
-    neighborhood = scope.neighborhood
-    domain = scope.domain
+    scope = assert_at_scope(prop)
 
-    assert neighborhood is not None
-    assert neighborhood.metric is not None
-    assert neighborhood.args is not None
-    assert neighborhood.metric == "L2"
+    assert_property_basics(prop)
 
-    assert domain is not None
-    assert domain.name is not None
-    assert domain.name == "sex"
+    assert_neighborhood(
+        scope.neighborhood,
+        "L2",
+        eps=0.01,
+    )
+
+    assert_domain(
+        scope.domain,
+        name="sex",
+        values=["male", "female"],
+    )
 
 
 # ----------------------------------------------------------------------------------------------------------------------
 # INVALID
 # ----------------------------------------------------------------------------------------------------------------------
 
-@pytest.mark.parametrize("code", [
+INVALID_CASES = [
     INVALID_AT_MISSING_IDENTIFIER,
     INVALID_AT_INVALID_NEIGHBORHOOD_ARGUMENTS,
     INVALID_AT_INVALID_NEIGHBORHOOD_SYNTAX,
     INVALID_AT_INVALID_DOMAIN_VALUES,
     INVALID_AT_INVALID_DOMAIN_SYNTAX,
-])
+]
+
+
+@pytest.mark.parametrize("code", INVALID_CASES)
 def test_at_invalid(code):
+
     with pytest.raises(Exception):
         parse(code)
