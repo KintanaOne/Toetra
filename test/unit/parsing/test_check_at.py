@@ -1,40 +1,63 @@
-from typing import cast
+# test/unit/parsing/test_check_at.py
 
 import pytest
-from lark import Tree
 
-from dsl.ast.nodes.expressions import CheckAtExprNode
-from dsl.builder.program import parse_program
-from dsl.parser.parser import parse_forml_code
 from test.fixtures.properties_samples import *
 
+from test.unit.parsing.helper import (
+    assert_check_at_scope,
+    assert_no_backend,
+    assert_property_basics,
+    build_property,
+    parse,
+)
 
-def parse(code: str) -> Tree:
-    return parse_forml_code(code)
 
+# ----------------------------------------------------------------------------------------------------------------------
+# VALID
+# ----------------------------------------------------------------------------------------------------------------------
 
 def test_check_at_basic():
-    prop = parse_program(parse(VALID_MINIMAL_CHECK_AT)).body[0]
 
-    scope = prop.rule.scope
-    assert isinstance(scope, CheckAtExprNode)
-    scope = cast(CheckAtExprNode, scope)
-    
+    prop = build_property(VALID_MINIMAL_CHECK_AT)
+
+    scope = assert_check_at_scope(prop)
+
+    assert_property_basics(prop)
+
     assert scope.variable == "x0"
-    assert prop.rule.assertion is not None
 
-
-@pytest.mark.parametrize("code", [
-    INVALID_CHECK_AT_MISSING_IDENTIFIER,
-    INVALID_CHECK_AT_MISSING_ASSERTION,
-    INVALID_CHECK_AT_INVALID_IDENTIFIER,
-])
-def test_check_at_invalid(code):
-    with pytest.raises(Exception):
-        parse(code)
+    assert_no_backend(prop)
 
 
 def test_check_at_complex_assertion():
-    prop = parse_program(parse(VALID_CHECK_AT_WITH_COMPLEX_ASSERTION)).body[0]
 
-    assert prop.rule.assertion is not None
+    prop = build_property(
+        VALID_CHECK_AT_WITH_COMPLEX_ASSERTION
+    )
+
+    scope = assert_check_at_scope(prop)
+
+    assert_property_basics(prop)
+
+    assert scope.variable == "x0"
+
+    assert_no_backend(prop)
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# INVALID
+# ----------------------------------------------------------------------------------------------------------------------
+
+INVALID_CASES = [
+    INVALID_CHECK_AT_MISSING_IDENTIFIER,
+    INVALID_CHECK_AT_MISSING_ASSERTION,
+    INVALID_CHECK_AT_INVALID_IDENTIFIER,
+]
+
+
+@pytest.mark.parametrize("code", INVALID_CASES)
+def test_check_at_invalid(code):
+
+    with pytest.raises(Exception):
+        parse(code)

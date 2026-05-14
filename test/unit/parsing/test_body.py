@@ -1,3 +1,5 @@
+# test/unit/parsing/test_body.py
+
 import pytest
 
 from test.fixtures.program_samples import (
@@ -24,7 +26,9 @@ from test.unit.parsing.helper import (
 
 def test_body_simple_assertion():
 
-    prop = build_property(VALID_PROGRAM_WITH_BODY_SIMPLE_ASSERTION)
+    prop = build_property(
+        VALID_PROGRAM_WITH_BODY_SIMPLE_ASSERTION
+    )
 
     scope = assert_pairwise_scope(prop)
 
@@ -43,9 +47,15 @@ def test_body_with_backend():
 
     prop = build_property(VALID_PROGRAM_WITH_BACKEND)
 
-    assert_pairwise_scope(prop)
+    scope = assert_pairwise_scope(prop)
 
     assert_property_basics(prop)
+
+    assert_neighborhood(
+        scope.neighborhood,
+        "L2",
+        eps=0.01,
+    )
 
     assert_backend(
         prop,

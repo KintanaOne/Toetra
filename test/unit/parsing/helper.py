@@ -14,6 +14,27 @@ from dsl.parser.parser import parse_forml_code
 
 T = TypeVar("T")
 
+# ======================================================================================================================
+# HEADER
+# ======================================================================================================================
+
+def assert_header(
+    program,
+    *,
+    model: str,
+    target: str,
+) -> None:
+    """
+    Assert program header structure.
+    """
+
+    assert program.header is not None
+
+    header = program.header
+
+    assert header.model == model
+    assert header.target == target
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Parse / Build helpers
@@ -161,18 +182,26 @@ def assert_no_backend(prop) -> None:
 # Pairwise helpers
 # ----------------------------------------------------------------------------------------------------------------------
 
-def assert_pair(scope: PairwiseExprNode, left_expected: str, right_expected: str) -> None:
+def assert_pair(
+    pair: str,
+    left_expected: str,
+    right_expected: str,
+) -> None:
     """
-    Assert pairwise expression structure.
+    Assert pairwise pair structure.
     """
-
-    pair = scope.pair
 
     parts = pair.split("~")
 
-    assert len(parts) == 2, f"Invalid pair format: {pair}"
+    if len(parts) != 2:
+        raise ValueError(
+            f"Invalid pair format: {pair}"
+        )
 
-    left, right = [x.strip() for x in parts]
+    left, right = [
+        x.strip()
+        for x in parts
+    ]
 
     assert left == left_expected
     assert right == right_expected
