@@ -1,7 +1,7 @@
 from hypothesis import strategies as st
 from .logic import assertion
-from .args import args
-from .primitives import identifiers
+from ..primitives.args import args
+from ..primitives.primitives import identifiers
 
 property_types = st.sampled_from([
     "ROBUSTNESS", "STABILITY", "FAIRNESS",
@@ -18,7 +18,7 @@ def neighborhood(draw):
     return f"in neighborhood({metric}, {arg_str})"
 
 
-st.composite
+@st.composite
 def domain(draw):
     domain_name = draw(identifiers)
     values = draw(st.lists(identifiers, min_size=1))
@@ -26,19 +26,13 @@ def domain(draw):
     return f"with {domain_name}({values_str})"
 
 
-st.composite
-def quantifier_expr(draw):
-    q = draw(st.sampled_from(["forall", "exists"]))
-    return q
-
-
-st.composite
+@st.composite
 def at_expr(draw):
     x = draw(identifiers)
     return f"at {x}"
 
 
-st.composite
+@st.composite
 def check_at_expr(draw):
     x = draw(identifiers)
     return f"check_at {x}"
@@ -49,8 +43,7 @@ def pairwise_expr(draw):
     x = draw(identifiers)
     x2 = f"{x}'"
     neigh = draw(neighborhood())
-
-    return f"{x} ~ {x2} in {neigh}"
+    return f"{x} ~ {x2} {neigh}"   # FIX IMPORTANT
 
 
 @st.composite

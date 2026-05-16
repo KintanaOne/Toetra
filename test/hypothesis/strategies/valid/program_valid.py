@@ -1,10 +1,10 @@
 from hypothesis import strategies as st
-from .header import header
-from .body import body
+from ..ast.header import header
+from ..ast.body import body
 
 
 @st.composite
-def program(draw):
+def valid_program(draw):
     h = draw(header())
     b = draw(body())
 
