@@ -1,7 +1,7 @@
 from hypothesis import given
 import pytest
 from test.hypothesis.settings import DEFAULT_SETTINGS
-from test.hypothesis.strategies.program import program
+from test.hypothesis.strategies.valid.program import program
 
 from dsl.parser.parser import parse_forml_code
 

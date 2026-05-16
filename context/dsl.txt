@@ -458,7 +458,7 @@ def parse_assertion(node: Tree | Token | None) -> LogicalNode:
 ===== dsl\builder\backends.py =====
 
 from lark import Tree
-from dsl.builder.core.utils import find_child, find_all_nodes, find_node
+from dsl.builder.core.utils import extract_direct_token, find_child, find_all_nodes, find_node, get_node_name_or_value
 from dsl.builder.core.ast_utils import node_value, clean_string
 
 from dsl.ast.nodes.backends import BackendNode
@@ -476,7 +476,9 @@ def parse_backend(node: Tree | None):
     if n is None:
         return None
 
-    name = node_value(n)
+    name_node = n.children[0]
+    name = get_node_name_or_value(name_node)
+    
     if name is None:
         raise ValueError("Backend name missing")
 
@@ -505,13 +507,14 @@ from dsl.builder.core.pretty_ast import pretty
 
 from dsl.builder.program import parse_program
 from dsl.parser.parser import parse_forml_code
-from test.fixtures.properties_samples import VALID_AT_WITH_NEIGHBORHOOD, VALID_CHECK_AT_WITH_COMPLEX_ASSERTION, VALID_FORALL_WITH_DOMAIN, VALID_MINIMAL_AT, VALID_MINIMAL_CHECK_AT
+from test.fixtures.program_samples import VALID_PROGRAM_WITH_BACKEND
+from test.fixtures.properties_samples import VALID_AT_WITH_NEIGHBORHOOD, VALID_CHECK_AT_WITH_COMPLEX_ASSERTION, VALID_FORALL_WITH_DOMAIN, VALID_MINIMAL_AT, VALID_MINIMAL_CHECK_AT, VALID_PAIRWISE_WITH_ABSTRACTOR
 from test.fixtures.logic_samples import OPERATOR_PRECEDENCE_PROPERTY
 
 if __name__ == "__main__":
     """ This script is for quick testing of the builder. It parses a sample property and prints the resulting AST """
     # LARK
-    CST = parse_forml_code(VALID_MINIMAL_CHECK_AT)
+    CST = parse_forml_code(VALID_PROGRAM_WITH_BACKEND)
     print(CST.pretty())
 
     # BUILDER

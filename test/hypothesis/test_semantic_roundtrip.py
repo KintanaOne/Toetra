@@ -2,7 +2,7 @@ from hypothesis import given
 
 from dsl.builder.program import parse_program
 from dsl.parser.parser import parse_forml_code
-from test.hypothesis.strategies.program import program
+from test.hypothesis.strategies.valid.program import program
 
 
 @given(program())

@@ -1,21 +1,251 @@
 
-===== test\unit\parsing\test_at.py =====
+===== test\unit\parsing\helper.py =====
 
-from typing import cast
+from typing import Type, TypeVar, cast
 
-import pytest
 from lark import Tree
 
-from dsl.ast.nodes.expressions import AtExprNode
-from dsl.builder import neighborhood
+from dsl.ast.nodes.expressions import (
+    AtExprNode,
+    CheckAtExprNode,
+    PairwiseExprNode,
+    QuantifierExprNode,
+)
 from dsl.builder.program import parse_program
 from dsl.parser.parser import parse_forml_code
 
-from test.fixtures.properties_samples import *
 
+T = TypeVar("T")
+
+# ======================================================================================================================
+# HEADER
+# ======================================================================================================================
+
+def assert_header(
+    program,
+    *,
+    model: str,
+    target: str,
+) -> None:
+    """
+    Assert program header structure.
+    """
+
+    assert program.header is not None
+
+    header = program.header
+
+    assert header.model == model
+    assert header.target == target
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Parse / Build helpers
+# ----------------------------------------------------------------------------------------------------------------------
 
 def parse(code: str) -> Tree:
+    """
+    Parse raw FORML code into a Lark parse tree.
+    """
+
     return parse_forml_code(code)
+
+
+def build_program(code: str):
+    """
+    Parse and build a full FORML program.
+    """
+
+    return parse_program(parse(code))
+
+
+def build_property(code: str):
+    """
+    Parse and build the first property of a FORML program.
+    """
+
+    return build_program(code).body[0]
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Scope helpers
+# ----------------------------------------------------------------------------------------------------------------------
+
+def assert_scope_type(scope, expected_type: Type[T]) -> T:
+    """
+    Assert the scope node type and return the properly typed scope.
+    """
+
+    assert isinstance(scope, expected_type), (
+        f"Expected scope type {expected_type.__name__}, "
+        f"got {type(scope).__name__}"
+    )
+
+    return cast(T, scope)
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Property helpers
+# ----------------------------------------------------------------------------------------------------------------------
+
+def assert_property_basics(prop, expected_type: str = "ROBUSTNESS") -> None:
+    """
+    Assert common property invariants.
+    """
+
+    assert prop is not None
+    assert prop.type == expected_type
+
+    assert prop.rule is not None
+    assert prop.rule.assertion is not None
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Neighborhood helpers
+# ----------------------------------------------------------------------------------------------------------------------
+
+def assert_neighborhood(neighborhood, metric: str, **expected_args) -> None:
+    """
+    Assert neighborhood structure and arguments.
+    """
+
+    assert neighborhood is not None
+
+    assert neighborhood.metric == metric
+
+    args = {
+        arg.key: arg.value
+        for arg in neighborhood.args
+    }
+
+    for key, expected_value in expected_args.items():
+        assert key in args
+        assert args[key] == expected_value
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Domain helpers
+# ----------------------------------------------------------------------------------------------------------------------
+
+def assert_domain(domain, name: str, values: list[str]) -> None:
+    """
+    Assert domain structure and values.
+    """
+
+    assert domain is not None
+
+    assert domain.name == name
+    assert domain.values == values
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Backend helpers
+# ----------------------------------------------------------------------------------------------------------------------
+
+def assert_backend(
+    prop,
+    expected_name: str,
+    **expected_args,
+) -> None:
+    """
+    Assert backend structure and arguments.
+    """
+
+    assert prop.backend is not None
+
+    backend = prop.backend
+
+    assert backend.name == expected_name
+
+    args = {
+        arg.key: arg.value
+        for arg in backend.args
+    }
+
+    for key, expected_value in expected_args.items():
+
+        assert key in args, (
+            f"Missing backend arg '{key}'"
+        )
+
+        assert args[key] == expected_value, (
+            f"Expected backend arg '{key}'="
+            f"{expected_value}, got {args[key]}"
+        )
+
+
+def assert_no_backend(prop) -> None:
+    """
+    Assert no backend is attached to the property.
+    """
+
+    assert prop.backend is None
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Pairwise helpers
+# ----------------------------------------------------------------------------------------------------------------------
+
+def assert_pair(
+    pair: str,
+    left_expected: str,
+    right_expected: str,
+) -> None:
+    """
+    Assert pairwise pair structure.
+    """
+
+    parts = pair.split("~")
+
+    if len(parts) != 2:
+        raise ValueError(
+            f"Invalid pair format: {pair}"
+        )
+
+    left, right = [
+        x.strip()
+        for x in parts
+    ]
+
+    assert left == left_expected
+    assert right == right_expected
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Scope shortcuts
+# ----------------------------------------------------------------------------------------------------------------------
+
+def assert_at_scope(prop) -> AtExprNode:
+    return assert_scope_type(prop.rule.scope, AtExprNode)
+
+
+def assert_check_at_scope(prop) -> CheckAtExprNode:
+    return assert_scope_type(prop.rule.scope, CheckAtExprNode)
+
+
+def assert_pairwise_scope(prop) -> PairwiseExprNode:
+    return assert_scope_type(prop.rule.scope, PairwiseExprNode)
+
+
+def assert_quantifier_scope(prop) -> QuantifierExprNode:
+    return assert_scope_type(prop.rule.scope, QuantifierExprNode)
+
+===== test\unit\parsing\test_at.py =====
+
+# test/unit/parsing/test_at.py
+
+import pytest
+
+from test.fixtures.properties_samples import *
+
+from test.unit.parsing.helper import (
+    assert_at_scope,
+    assert_domain,
+    assert_neighborhood,
+    assert_no_backend,
+    assert_property_basics,
+    build_property,
+    parse,
+)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -23,243 +253,305 @@ def parse(code: str) -> Tree:
 # ----------------------------------------------------------------------------------------------------------------------
 
 def test_at_basic():
-    prop = parse_program(parse(VALID_MINIMAL_AT)).body[0]
 
-    scope = prop.rule.scope
-    assert isinstance(scope, AtExprNode)
-    scope = cast(AtExprNode, scope)
-    
-    assert prop.type == "ROBUSTNESS"
+    prop = build_property(VALID_MINIMAL_AT)
+
+    scope = assert_at_scope(prop)
+
+    assert_property_basics(prop)
+
     assert scope.variable == "x0"
+
     assert scope.neighborhood is None
     assert scope.domain is None
-    assert prop.rule.assertion is not None
-    assert prop.backend is None
+
+    assert_no_backend(prop)
 
 
 def test_at_with_neighborhood():
-    prop = parse_program(parse(VALID_AT_WITH_NEIGHBORHOOD)).body[0]
 
-    scope = prop.rule.scope
-    assert isinstance(scope, AtExprNode)
-    scope = cast(AtExprNode, scope)
+    prop = build_property(VALID_AT_WITH_NEIGHBORHOOD)
 
-    neigh = scope.neighborhood
-    
-    assert neigh is not None
-    assert neigh.metric == "L2"
-    assert neigh.args[0].key == "eps"
-    assert neigh.args[0].value == 0.01
+    scope = assert_at_scope(prop)
+
+    assert_property_basics(prop)
+
+    assert_neighborhood(
+        scope.neighborhood,
+        "L2",
+        eps=0.01,
+    )
+
     assert scope.domain is None
+
+    assert_no_backend(prop)
 
 
 def test_at_with_domain():
-    prop = parse_program(parse(VALID_AT_WITH_DOMAIN)).body[0]
 
-    scope = prop.rule.scope
-    assert isinstance(scope, AtExprNode)
-    scope = cast(AtExprNode, scope)
+    prop = build_property(VALID_AT_WITH_DOMAIN)
 
-    domain = scope.domain
+    scope = assert_at_scope(prop)
 
+    assert_property_basics(prop)
 
-    assert domain is not None
-    assert domain.name == "sex"
-    assert domain.values == ["male", "female"]
+    assert_domain(
+        scope.domain,
+        "sex",
+        ["male", "female"],
+    )
+
+    assert scope.neighborhood is None
+
+    assert_no_backend(prop)
 
 
 def test_at_with_neighborhood_and_domain():
-    prop = parse_program(parse(VALID_AT_WITH_NEIGHBORHOOD_AND_DOMAIN)).body[0]
 
-    scope = prop.rule.scope
-    assert isinstance(scope, AtExprNode)
-    scope = cast(AtExprNode, scope)
+    prop = build_property(
+        VALID_AT_WITH_NEIGHBORHOOD_AND_DOMAIN
+    )
 
-    neighborhood = scope.neighborhood
-    domain = scope.domain
+    scope = assert_at_scope(prop)
 
-    assert neighborhood is not None
-    assert neighborhood.metric is not None
-    assert neighborhood.args is not None
-    assert neighborhood.metric == "L2"
+    assert_property_basics(prop)
 
-    assert domain is not None
-    assert domain.name is not None
-    assert domain.name == "sex"
+    assert_neighborhood(
+        scope.neighborhood,
+        "L2",
+        eps=0.01,
+    )
+
+    assert_domain(
+        scope.domain,
+        "sex",
+        ["male", "female"],
+    )
+
+    assert_no_backend(prop)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
 # INVALID
 # ----------------------------------------------------------------------------------------------------------------------
 
-@pytest.mark.parametrize("code", [
+INVALID_CASES = [
     INVALID_AT_MISSING_IDENTIFIER,
     INVALID_AT_INVALID_NEIGHBORHOOD_ARGUMENTS,
     INVALID_AT_INVALID_NEIGHBORHOOD_SYNTAX,
     INVALID_AT_INVALID_DOMAIN_VALUES,
     INVALID_AT_INVALID_DOMAIN_SYNTAX,
-])
+]
+
+
+@pytest.mark.parametrize("code", INVALID_CASES)
 def test_at_invalid(code):
+
     with pytest.raises(Exception):
         parse(code)
 
 ===== test\unit\parsing\test_body.py =====
 
-from typing import cast
+# test/unit/parsing/test_body.py
 
 import pytest
-from lark import Tree
 
-from dsl.ast.nodes.expressions import PairwiseExprNode
-from dsl.builder.expressions import parse_pairwise
-from dsl.builder.program import parse_program
-from dsl.builder.property import parse_property
-from dsl.parser.parser import parse_forml_code
 from test.fixtures.program_samples import (
     INVALID_BODY_EMPTY,
     INVALID_BODY_INVALID_ASSERTION,
     INVALID_BODY_SYNTAX_ERROR,
     VALID_PROGRAM_WITH_BACKEND,
-    VALID_PROGRAM_WITH_BODY_SIMPLE_ASSERTION
+    VALID_PROGRAM_WITH_BODY_SIMPLE_ASSERTION,
 )
 
-def parse(code: str) -> Tree:
-    return parse_forml_code(code)
+from test.unit.parsing.helper import (
+    assert_backend,
+    assert_neighborhood,
+    assert_pairwise_scope,
+    assert_property_basics,
+    build_property,
+    parse,
+)
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# VALID
+# ----------------------------------------------------------------------------------------------------------------------
 
 def test_body_simple_assertion():
 
-    prop = parse_program(parse(VALID_PROGRAM_WITH_BODY_SIMPLE_ASSERTION)).body[0]
+    prop = build_property(
+        VALID_PROGRAM_WITH_BODY_SIMPLE_ASSERTION
+    )
 
-    scope = prop.rule.scope
-    assert isinstance(scope, PairwiseExprNode)
-    scope = cast(PairwiseExprNode, scope)
+    scope = assert_pairwise_scope(prop)
 
-    neigh = scope.neighborhood
-    
-    assert neigh is not None
-    assert neigh.metric == "L2"
-    assert neigh.args[0].key == "eps"
-    assert neigh.args[0].value == 0.01
+    assert_property_basics(prop)
+
+    assert_neighborhood(
+        scope.neighborhood,
+        "L2",
+        eps=0.01,
+    )
+
     assert scope.domain is None
 
-def test_body_with_abstractor():
 
-    prop = parse_program(parse(VALID_PROGRAM_WITH_BACKEND)).body[0]
+def test_body_with_backend():
 
-    scope = prop.rule.scope
-    assert isinstance(scope, PairwiseExprNode)
-    scope = cast(PairwiseExprNode, scope)
+    prop = build_property(VALID_PROGRAM_WITH_BACKEND)
 
-    # backend layer exists 
-    backend = prop.backend
+    scope = assert_pairwise_scope(prop)
 
-    assert backend is not None
-    assert backend.name
-    assert backend.args[0].key == "param1"
-    assert backend.args[0].value == "a"
+    assert_property_basics(prop)
 
+    assert_neighborhood(
+        scope.neighborhood,
+        "L2",
+        eps=0.01,
+    )
 
-def test_body_empty():
-
-    with pytest.raises(Exception):
-        parse(INVALID_BODY_EMPTY)
-
-def test_body_syntax_error():
-
-    with pytest.raises(Exception):
-        parse(INVALID_BODY_SYNTAX_ERROR)
-
-def test_body_invalid_assertion():
-
-    with pytest.raises(Exception):
-        parse(INVALID_BODY_INVALID_ASSERTION)
+    assert_backend(
+        prop,
+        "eran",
+        param1="a",
+    )
 
 
+# ----------------------------------------------------------------------------------------------------------------------
+# INVALID
+# ----------------------------------------------------------------------------------------------------------------------
 
-===== test\unit\parsing\test_check_at.py =====
-
-from typing import cast
-
-import pytest
-from lark import Tree
-
-from dsl.ast.nodes.expressions import CheckAtExprNode
-from dsl.builder.program import parse_program
-from dsl.parser.parser import parse_forml_code
-from test.fixtures.properties_samples import *
+INVALID_CASES = [
+    INVALID_BODY_EMPTY,
+    INVALID_BODY_SYNTAX_ERROR,
+    INVALID_BODY_INVALID_ASSERTION,
+]
 
 
-def parse(code: str) -> Tree:
-    return parse_forml_code(code)
+@pytest.mark.parametrize("code", INVALID_CASES)
+def test_body_invalid(code):
 
-
-def test_check_at_basic():
-    prop = parse_program(parse(VALID_MINIMAL_CHECK_AT)).body[0]
-
-    scope = prop.rule.scope
-    assert isinstance(scope, CheckAtExprNode)
-    scope = cast(CheckAtExprNode, scope)
-    
-    assert scope.variable == "x0"
-    assert prop.rule.assertion is not None
-
-
-@pytest.mark.parametrize("code", [
-    INVALID_CHECK_AT_MISSING_IDENTIFIER,
-    INVALID_CHECK_AT_MISSING_ASSERTION,
-    INVALID_CHECK_AT_INVALID_IDENTIFIER,
-])
-def test_check_at_invalid(code):
     with pytest.raises(Exception):
         parse(code)
 
+===== test\unit\parsing\test_check_at.py =====
+
+# test/unit/parsing/test_check_at.py
+
+import pytest
+
+from test.fixtures.properties_samples import *
+
+from test.unit.parsing.helper import (
+    assert_check_at_scope,
+    assert_no_backend,
+    assert_property_basics,
+    build_property,
+    parse,
+)
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# VALID
+# ----------------------------------------------------------------------------------------------------------------------
+
+def test_check_at_basic():
+
+    prop = build_property(VALID_MINIMAL_CHECK_AT)
+
+    scope = assert_check_at_scope(prop)
+
+    assert_property_basics(prop)
+
+    assert scope.variable == "x0"
+
+    assert_no_backend(prop)
+
 
 def test_check_at_complex_assertion():
-    prop = parse_program(parse(VALID_CHECK_AT_WITH_COMPLEX_ASSERTION)).body[0]
 
-    assert prop.rule.assertion is not None
+    prop = build_property(
+        VALID_CHECK_AT_WITH_COMPLEX_ASSERTION
+    )
+
+    scope = assert_check_at_scope(prop)
+
+    assert_property_basics(prop)
+
+    assert scope.variable == "x0"
+
+    assert_no_backend(prop)
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# INVALID
+# ----------------------------------------------------------------------------------------------------------------------
+
+INVALID_CASES = [
+    INVALID_CHECK_AT_MISSING_IDENTIFIER,
+    INVALID_CHECK_AT_MISSING_ASSERTION,
+    INVALID_CHECK_AT_INVALID_IDENTIFIER,
+]
+
+
+@pytest.mark.parametrize("code", INVALID_CASES)
+def test_check_at_invalid(code):
+
+    with pytest.raises(Exception):
+        parse(code)
 
 ===== test\unit\parsing\test_exists.py =====
 
-from typing import cast
+# test/unit/parsing/test_exists.py
 
-from lark import Tree
-
-from dsl.ast.nodes.expressions import QuantifierExprNode
-from dsl.builder.program import parse_program
-from dsl.parser.parser import parse_forml_code
 from test.fixtures.properties_samples import *
 
+from test.unit.parsing.helper import (
+    assert_domain,
+    assert_no_backend,
+    assert_property_basics,
+    assert_quantifier_scope,
+    build_property,
+)
 
-def parse(code: str) -> Tree:
-    return parse_forml_code(code)
 
+# ----------------------------------------------------------------------------------------------------------------------
+# VALID
+# ----------------------------------------------------------------------------------------------------------------------
 
 def test_exists_basic():
-    prop = parse_program(parse(VALID_MINIMAL_EXISTS)).body[0]
 
-    scope = prop.rule.scope
-    assert isinstance(scope, QuantifierExprNode)
-    scope = cast(QuantifierExprNode, scope)    
+    prop = build_property(VALID_MINIMAL_EXISTS)
+
+    scope = assert_quantifier_scope(prop)
+
+    assert_property_basics(prop)
 
     assert scope.quantifier == "exists"
+
     assert scope.domain is None
-    assert prop.backend is None
+
+    assert_no_backend(prop)
 
 
 def test_exists_with_domain():
-    prop = parse_program(parse(VALID_EXISTS_WITH_DOMAIN)).body[0]
 
-    scope = prop.rule.scope
-    assert isinstance(scope, QuantifierExprNode)
-    scope = cast(QuantifierExprNode, scope)    
+    prop = build_property(VALID_EXISTS_WITH_DOMAIN)
 
-    domain = scope.domain
+    scope = assert_quantifier_scope(prop)
+
+    assert_property_basics(prop)
 
     assert scope.quantifier == "exists"
-    assert domain is not None
-    assert domain.name == "gender"
-    assert domain.values == ["male", "female"]
+
+    assert_domain(
+        scope.domain,
+        "gender",
+        ["male", "female"],
+    )
+
+    assert_no_backend(prop)
 
 ===== test\unit\parsing\test_footer.py =====
 
@@ -313,54 +605,62 @@ def test_footer_with_simple_comment():
 
 ===== test\unit\parsing\test_forall.py =====
 
-from typing import cast
+# test/unit/parsing/test_forall.py
 
-from lark import Tree
-
-from dsl.ast.nodes.expressions import QuantifierExprNode
-from dsl.builder.program import parse_program
-from dsl.parser.parser import parse_forml_code
 from test.fixtures.properties_samples import *
 
+from test.unit.parsing.helper import (
+    assert_domain,
+    assert_no_backend,
+    assert_property_basics,
+    assert_quantifier_scope,
+    build_property,
+)
 
-def parse(code: str) -> Tree:
-    return parse_forml_code(code)
 
+# ----------------------------------------------------------------------------------------------------------------------
+# VALID
+# ----------------------------------------------------------------------------------------------------------------------
 
 def test_forall_basic():
-    prop = parse_program(parse(VALID_MINIMAL_FORALL)).body[0]
 
-    scope = prop.rule.scope
-    assert isinstance(scope, QuantifierExprNode)
-    scope = cast(QuantifierExprNode, scope)    
+    prop = build_property(VALID_MINIMAL_FORALL)
+
+    scope = assert_quantifier_scope(prop)
+
+    assert_property_basics(prop)
 
     assert scope.quantifier == "forall"
+
     assert scope.domain is None
-    assert prop.backend is None
+
+    assert_no_backend(prop)
 
 
 def test_forall_with_domain():
-    prop = parse_program(parse(VALID_FORALL_WITH_DOMAIN)).body[0]
 
-    scope = prop.rule.scope
-    assert isinstance(scope, QuantifierExprNode)
-    scope = cast(QuantifierExprNode, scope)    
+    prop = build_property(VALID_FORALL_WITH_DOMAIN)
 
-    domain = scope.domain
+    scope = assert_quantifier_scope(prop)
+
+    assert_property_basics(prop)
 
     assert scope.quantifier == "forall"
-    assert domain is not None
-    assert domain.name == "gender"
-    assert domain.values == ["male", "female"]
+
+    assert_domain(
+        scope.domain,
+        "gender",
+        ["male", "female"],
+    )
+
+    assert_no_backend(prop)
 
 ===== test\unit\parsing\test_header.py =====
 
-import pytest
-from lark import Tree
+# test/unit/parsing/test_header.py
 
-from dsl.builder.header import get_header, parse_header
-from dsl.builder.program import parse_program
-from dsl.parser.parser import parse_forml_code
+import pytest
+
 from test.fixtures.program_samples import (
     INVALID_HEADER_MISSING_BOTH,
     INVALID_HEADER_MISSING_MODEL,
@@ -369,67 +669,62 @@ from test.fixtures.program_samples import (
     INVALID_HEADER_TARGET_INVALID_TYPE,
     VALID_PROGRAM_WITH_HEADER_COMMENTS,
 )
-from test.fixtures.properties_samples import VALID_MINIMAL_PAIRWISE
 
-def parse(code: str) -> Tree:
-    return parse_forml_code(code)
+from test.fixtures.properties_samples import (
+    VALID_MINIMAL_PAIRWISE,
+)
 
-#----------------------------------------------------------------------------------------------------------------------#
+from test.unit.parsing.helper import (
+    assert_header,
+    build_program,
+    parse,
+)
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# VALID
+# ----------------------------------------------------------------------------------------------------------------------
 
 def test_header_valid():
 
-    tree = parse(VALID_MINIMAL_PAIRWISE)
-    program = parse_program(tree)
-    header = program.header
-    
-    assert header is not None
+    program = build_program(VALID_MINIMAL_PAIRWISE)
 
-    model = header.model
-    target = header.target
+    assert_header(
+        program,
+        model="path/to/model.onnx",
+        target="MyTargetColumn",
+    )
 
-    assert model is not None
-    assert target is not None
-
-
-def test_header_missing_model():
-
-    with pytest.raises(Exception):
-        parse(INVALID_HEADER_MISSING_MODEL)
-
-
-def test_header_missing_target():
-
-    with pytest.raises(Exception):
-        parse(INVALID_HEADER_MISSING_TARGET)
-
-
-def test_header_missing_both():
-
-    with pytest.raises(Exception):
-        parse(INVALID_HEADER_MISSING_BOTH)
-
-def test_header_invalid_model_type():
-
-    with pytest.raises(Exception):
-        parse(INVALID_HEADER_MODEL_INVALID_TYPE)
-
-def test_header_invalid_target_type():
-
-    with pytest.raises(Exception):
-        parse(INVALID_HEADER_TARGET_INVALID_TYPE)
 
 def test_header_with_comments():
 
-    tree = parse(VALID_PROGRAM_WITH_HEADER_COMMENTS)
-    program = parse_program(tree)
-    header = program.header
-    
-    assert header is not None
-    assert header.model is not None
-    assert header.target is not None
-    assert header.model == "model.onnx"
-    assert header.target == "MyTargetColumn"
+    program = build_program(VALID_PROGRAM_WITH_HEADER_COMMENTS)
 
+    assert_header(
+        program,
+        model="model.onnx",
+        target="MyTargetColumn",
+    )
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# INVALID
+# ----------------------------------------------------------------------------------------------------------------------
+
+INVALID_CASES = [
+    INVALID_HEADER_MISSING_MODEL,
+    INVALID_HEADER_MISSING_TARGET,
+    INVALID_HEADER_MISSING_BOTH,
+    INVALID_HEADER_MODEL_INVALID_TYPE,
+    INVALID_HEADER_TARGET_INVALID_TYPE,
+]
+
+
+@pytest.mark.parametrize("code", INVALID_CASES)
+def test_header_invalid(code):
+
+    with pytest.raises(Exception):
+        parse(code)
 
 ===== test\unit\parsing\test_logic.py =====
 
@@ -637,14 +932,10 @@ def test_invalid_parentheses():
 
 ===== test\unit\parsing\test_pairwise.py =====
 
-from typing import cast
+# test/unit/parsing/test_pairwise.py
 
 import pytest
-from lark import Tree
 
-from dsl.ast.nodes.expressions import PairwiseExprNode
-from dsl.builder.program import parse_program
-from dsl.parser.parser import parse_forml_code
 from test.fixtures.properties_samples import (
     INVALID_PAIRWISE_MALFORMED_ABSTRACTOR,
     INVALID_PAIRWISE_MALFORMED_NEIGHBORHOOD,
@@ -653,13 +944,20 @@ from test.fixtures.properties_samples import (
     INVALID_PAIRWISE_MISSING_IDENTIFIER,
     INVALID_PAIRWISE_MISSING_IDENTIFIER_PRIME,
     INVALID_PAIRWISE_MISSING_NEIGHBORHOOD_SYNTAX,
-    VALID_PAIRWISE_WITH_ABSTRACTOR,
     VALID_MINIMAL_PAIRWISE,
+    VALID_PAIRWISE_WITH_ABSTRACTOR,
 )
 
-
-def parse(code: str) -> Tree:
-    return parse_forml_code(code)
+from test.unit.parsing.helper import (
+    assert_backend,
+    assert_neighborhood,
+    assert_no_backend,
+    assert_pair,
+    assert_pairwise_scope,
+    assert_property_basics,
+    build_property,
+    parse,
+)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -668,77 +966,64 @@ def parse(code: str) -> Tree:
 
 def test_pairwise_basic():
 
-    prop = parse_program(parse(VALID_MINIMAL_PAIRWISE)).body[0]
+    prop = build_property(VALID_MINIMAL_PAIRWISE)
 
-    scope = prop.rule.scope
-    assert isinstance(scope, PairwiseExprNode)
-    scope = cast(PairwiseExprNode, scope)
+    scope = assert_pairwise_scope(prop)
 
-    pair = scope.pair
-    
-    parts = pair.split("~")
-    if len(parts) != 2:
-        raise ValueError(f"Invalid pair format: {pair}")
+    assert_property_basics(prop)
 
-    left, right = [x.strip() for x in parts]
+    assert_pair(
+        scope.pair,
+        "x",
+        "x'",
+    )
 
-    neigh = scope.neighborhood
-    domain = scope.domain
-    backend = prop.backend
+    assert_neighborhood(
+        scope.neighborhood,
+        "L2",
+        eps=0.01,
+    )
 
-    assert prop.type == "ROBUSTNESS"
+    assert scope.domain is None
 
-    assert left == "x"
-    assert right == "x'"
-
-    assert neigh.metric == "L2"
-    assert neigh.args[0].key == "eps"
-    assert neigh.args[0].value == 0.01
-
-    assert domain is None
-
-    assert backend is None
+    assert_no_backend(prop)
 
 
 def test_pairwise_with_backend():
 
-    prop = parse_program(parse(VALID_PAIRWISE_WITH_ABSTRACTOR)).body[0]
+    prop = build_property(
+        VALID_PAIRWISE_WITH_ABSTRACTOR
+    )
 
-    scope = prop.rule.scope
-    assert isinstance(scope, PairwiseExprNode)
-    scope = cast(PairwiseExprNode, scope)
+    scope = assert_pairwise_scope(prop)
 
-    pair = scope.pair
-    
-    parts = pair.split("~")
-    if len(parts) != 2:
-        raise ValueError(f"Invalid pair format: {pair}")
+    assert_property_basics(prop)
 
-    left, right = [x.strip() for x in parts]
+    assert_pair(
+        scope.pair,
+        "x",
+        "x'",
+    )
 
-    neigh = scope.neighborhood
-    domain = scope.domain
-    backend = prop.backend
+    assert_neighborhood(
+        scope.neighborhood,
+        "L2",
+        eps=0.01,
+    )
 
-    assert prop.type == "ROBUSTNESS"
+    assert scope.domain is None
 
-    assert left == "x"
-    assert right == "x'"
+    assert_backend(
+        prop,
+        "Z3",
+    )
 
-    assert neigh.metric == "L2"
-    assert neigh.args[0].key == "eps"
-    assert neigh.args[0].value == 0.01
-
-    assert domain is None
-
-    assert backend is not None
-    assert backend.name == "Z3"
 
 # ----------------------------------------------------------------------------------------------------------------------
 # INVALID
 # ----------------------------------------------------------------------------------------------------------------------
 
-@pytest.mark.parametrize("code", [
+INVALID_CASES = [
     INVALID_PAIRWISE_MALFORMED_ABSTRACTOR,
     INVALID_PAIRWISE_MISSING_NEIGHBORHOOD_SYNTAX,
     INVALID_PAIRWISE_MALFORMED_NEIGHBORHOOD,
@@ -746,193 +1031,219 @@ def test_pairwise_with_backend():
     INVALID_PAIRWISE_MISSING_IDENTIFIER,
     INVALID_PAIRWISE_MISSING_IDENTIFIER_PRIME,
     INVALID_PAIRWISE_MISSING_BOTH_IDENTIFIERS,
-])
+]
+
+
+@pytest.mark.parametrize("code", INVALID_CASES)
 def test_pairwise_invalid(code):
+
     with pytest.raises(Exception):
         parse(code)
 
 ===== test\unit\parsing\test_semantic.py =====
 
-from lark import Tree
-import pytest
+from typing import cast
 
-from dsl.builder.expressions import parse_at
+import pytest
+from lark import Tree
+
+from dsl.ast.nodes.expressions import (
+    AtExprNode,
+    CheckAtExprNode,
+    PairwiseExprNode,
+    QuantifierExprNode,
+)
 from dsl.builder.program import parse_program
 from dsl.parser.parser import parse_forml_code
-from previous_forml.ast.queries import get_program_dict
-from test.fixtures.program_samples import INVALID_BODY_MISSING_EXPRESSION, INVALID_BODY_MULTIPLE_EXPRESSION, VALID_PROGRAM_WITH_BODY_MULTIPLE_PROPERTIES
+
+from test.fixtures.program_samples import (
+    INVALID_BODY_MISSING_EXPRESSION,
+    INVALID_BODY_MULTIPLE_EXPRESSION,
+    VALID_PROGRAM_WITH_BODY_MULTIPLE_PROPERTIES,
+)
+
 from test.fixtures.properties_samples import (
     VALID_AT_WITH_NEIGHBORHOOD,
     VALID_AT_WITH_NEIGHBORHOOD_AND_DOMAIN,
     VALID_FORALL_WITH_DOMAIN,
     VALID_MINIMAL_CHECK_AT,
-    VALID_PAIRWISE_WITH_ABSTRACTOR
+    VALID_PAIRWISE_WITH_ABSTRACTOR,
 )
 
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Helpers
+# ----------------------------------------------------------------------------------------------------------------------
 
 def parse(code: str) -> Tree:
     return parse_forml_code(code)
 
 
-#----------------------------------------------------------------------------------------------------------------------#
-#                                             HEADER
-#----------------------------------------------------------------------------------------------------------------------#
+def build_program(code: str):
+    return parse_program(parse(code))
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# HEADER
+# ----------------------------------------------------------------------------------------------------------------------
 
 def test_program_header():
 
-    tree = parse(VALID_AT_WITH_NEIGHBORHOOD)
+    program = build_program(VALID_AT_WITH_NEIGHBORHOOD)
 
-    data = parse_program(tree)
+    header = program.header
 
-    assert data["model"] == "model.onnx"
-    assert data["target"] == "MyTarget"
+    assert header is not None
+    assert header.model == "model.onnx"
+    assert header.target == "MyTarget"
 
 
-#----------------------------------------------------------------------------------------------------------------------#
-#                                             AT
-#----------------------------------------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------------------------------------
+# AT
+# ----------------------------------------------------------------------------------------------------------------------
 
 def test_program_with_at():
 
-    tree = parse(VALID_AT_WITH_NEIGHBORHOOD)
-    program = parse_program(tree)
+    prop = build_program(VALID_AT_WITH_NEIGHBORHOOD).body[0]
 
-    property = program["properties"][0]
-    expr = property["expr"]
-    neighborhood = expr["neighborhood"]
+    scope = prop.rule.scope
 
-    assert program["model"] is not None
-    assert program["target"] is not None
+    assert isinstance(scope, AtExprNode)
+    scope = cast(AtExprNode, scope)
 
-    assert property["type"] == "ROBUSTNESS"
-    assert expr["kind"] == "at"
-    assert property["assertion"] is not None
+    neighborhood = scope.neighborhood
 
-    assert neighborhood["metric"] == "L2"
-    assert neighborhood["args"]["eps"] == 0.01
+    assert prop.type == "ROBUSTNESS"
+    assert prop.rule.assertion is not None
 
-    assert property["abstractor"] is None
+    assert neighborhood is not None
+    assert neighborhood.metric == "L2"
+    assert neighborhood.args[0].key == "eps"
+    assert neighborhood.args[0].value == 0.01
+
+    assert prop.backend is None
 
 
-#----------------------------------------------------------------------------------------------------------------------#
-#                                             CHECK_AT
-#----------------------------------------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------------------------------------
+# CHECK_AT
+# ----------------------------------------------------------------------------------------------------------------------
 
 def test_program_with_check_at():
 
-    tree = parse(VALID_MINIMAL_CHECK_AT)
-    program = parse_program(tree)
+    prop = build_program(VALID_MINIMAL_CHECK_AT).body[0]
 
-    property = program["properties"][0]
-    expr = property["expr"]
+    scope = prop.rule.scope
 
-    assert program["model"] is not None
-    assert program["target"] is not None
+    assert isinstance(scope, CheckAtExprNode)
+    scope = cast(CheckAtExprNode, scope)
 
-    assert property["type"] == "ROBUSTNESS"
-    assert expr["kind"] == "check_at"
-    assert property["assertion"] is not None
+    assert prop.type == "ROBUSTNESS"
+    assert scope.variable == "x0"
+    assert prop.rule.assertion is not None
 
-    assert property["abstractor"] is None
+    assert prop.backend is None
 
-#----------------------------------------------------------------------------------------------------------------------#
-#                                             PAIRWISE
-#----------------------------------------------------------------------------------------------------------------------#
+
+# ----------------------------------------------------------------------------------------------------------------------
+# PAIRWISE
+# ----------------------------------------------------------------------------------------------------------------------
 
 def test_program_with_pairwise():
 
-    tree = parse(VALID_PAIRWISE_WITH_ABSTRACTOR)
-    program = parse_program(tree)
+    prop = build_program(VALID_PAIRWISE_WITH_ABSTRACTOR).body[0]
 
-    property = program["properties"][0]
-    expr = property["expr"]
-    neighborhood = expr["neighborhood"]
+    scope = prop.rule.scope
 
-    assert program["model"] is not None
-    assert program["target"] is not None
+    assert isinstance(scope, PairwiseExprNode)
+    scope = cast(PairwiseExprNode, scope)
 
-    assert property["type"] == "ROBUSTNESS"
-    assert expr["kind"] == "pairwise"
-    assert property["assertion"] is not None
+    neighborhood = scope.neighborhood
 
-    assert neighborhood["metric"] == "L2"
-    assert neighborhood["args"]["eps"] == 0.01
+    assert prop.type == "ROBUSTNESS"
+    assert prop.rule.assertion is not None
 
-    assert property["abstractor"] is not None
+    assert neighborhood is not None
+    assert neighborhood.metric == "L2"
+    assert neighborhood.args[0].key == "eps"
+    assert neighborhood.args[0].value == 0.01
 
-#----------------------------------------------------------------------------------------------------------------------#
-#                                             QUANTIFIER
-#----------------------------------------------------------------------------------------------------------------------#
+    assert prop.backend is not None
+    assert prop.backend.name == "Z3"
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# QUANTIFIER
+# ----------------------------------------------------------------------------------------------------------------------
 
 def test_program_with_quantifier():
 
-    tree = parse(VALID_FORALL_WITH_DOMAIN)
-    program = parse_program(tree)
+    prop = build_program(VALID_FORALL_WITH_DOMAIN).body[0]
 
-    property = program["properties"][0]
-    expr = property["expr"]
-    domain = expr["domain"]
+    scope = prop.rule.scope
 
-    assert program["model"] is not None
-    assert program["target"] is not None
+    assert isinstance(scope, QuantifierExprNode)
+    scope = cast(QuantifierExprNode, scope)
 
-    assert property["type"] == "ROBUSTNESS"
-    assert expr["kind"] == "quantifier"
-    assert property["assertion"] is not None
+    domain = scope.domain
 
-    assert domain["name"] == "gender"
-    assert domain["values"] == ["male", "female"]
+    assert prop.type == "ROBUSTNESS"
+    assert prop.rule.assertion is not None
 
-    assert property["abstractor"] is None
+    assert domain is not None
+    assert domain.name == "gender"
+    assert domain.values == ["male", "female"]
 
-#----------------------------------------------------------------------------------------------------------------------#
-#                                             MULTIPLE PROPERTIES
-#----------------------------------------------------------------------------------------------------------------------#
+    assert prop.backend is None
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# MULTIPLE PROPERTIES
+# ----------------------------------------------------------------------------------------------------------------------
 
 def test_program_multiple_properties():
 
-    tree = parse(VALID_PROGRAM_WITH_BODY_MULTIPLE_PROPERTIES)
-    program = parse_program(tree)
+    program = build_program(VALID_PROGRAM_WITH_BODY_MULTIPLE_PROPERTIES)
 
-    assert len(program["properties"]) == 2
+    assert len(program.body) == 2
 
-    assert program["properties"][0]["expr"]["kind"] == "at"
-    assert program["properties"][1]["expr"]["kind"] == "quantifier"
+    assert isinstance(program.body[0].rule.scope, AtExprNode)
+    assert isinstance(program.body[1].rule.scope, QuantifierExprNode)
 
 
-#----------------------------------------------------------------------------------------------------------------------#
-#                                             DOMAIN + NEIGHBORHOOD
-#----------------------------------------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------------------------------------
+# DOMAIN + NEIGHBORHOOD
+# ----------------------------------------------------------------------------------------------------------------------
 
 def test_program_with_domain_and_neighborhood():
 
-    tree = parse(VALID_AT_WITH_NEIGHBORHOOD_AND_DOMAIN)
-    program = parse_program(tree)
+    prop = build_program(VALID_AT_WITH_NEIGHBORHOOD_AND_DOMAIN).body[0]
 
-    property = program["properties"][0]
-    expr = property["expr"]
-    neighborhood = expr["neighborhood"]
-    domain = expr["domain"]
+    scope = prop.rule.scope
 
-    assert program["model"] is not None
-    assert program["target"] is not None
+    assert isinstance(scope, AtExprNode)
+    scope = cast(AtExprNode, scope)
 
-    assert property["type"] == "ROBUSTNESS"
-    assert expr["kind"] == "at"
-    assert property["assertion"] is not None
+    neighborhood = scope.neighborhood
+    domain = scope.domain
 
-    assert neighborhood["metric"] == "L2"
-    assert neighborhood["args"]["eps"] == 0.01
+    assert prop.type == "ROBUSTNESS"
+    assert prop.rule.assertion is not None
 
-    assert domain["name"] == "sex"
-    assert domain["values"] == ["male", "female"]
+    assert neighborhood is not None
+    assert neighborhood.metric == "L2"
+    assert neighborhood.args[0].key == "eps"
+    assert neighborhood.args[0].value == 0.01
 
-    assert property["abstractor"] is None
+    assert domain is not None
+    assert domain.name == "sex"
+    assert domain.values == ["male", "female"]
+
+    assert prop.backend is None
 
 
-#----------------------------------------------------------------------------------------------------------------------#
-#                                             INVALID CASES
-#----------------------------------------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------------------------------------
+# INVALID
+# ----------------------------------------------------------------------------------------------------------------------
 
 def test_invalid_multiple_expr():
 

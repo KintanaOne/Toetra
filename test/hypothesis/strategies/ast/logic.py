@@ -1,6 +1,6 @@
 from hypothesis import strategies as st
-from .primitives import identifiers
-from .values import values
+from ..primitives.primitives import identifiers
+from ..primitives.values import values
 
 logic_ops = st.sampled_from(["==", "!=", "<", "<=", ">", ">="])
 
