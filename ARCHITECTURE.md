@@ -17,25 +17,55 @@ forml/
 │   │   └── lark_generator.py            # generator de fichier .lark
 │   ├── parser/
 │   │   ├── __init__.py
-│   │   ├── parser.py            # Lark parser (chargement de la grammaire)
-│   │   └── transformer.py       # Transformer → AST → objets Python
+│   │   ├── parser.py                       # Lark parser (chargement de la grammaire)
+│   │   └── transformer.py                  # Transformer → AST → objets Python
 │   ├── ast/
 │   │   ├── __init__.py
-│   │   ├── base.py              # Classe de base pour les nœuds d’AST
-│   │   ├── properties.py        # Représentation Python des propriétés FORML
-│   │   ├── expressions.py       # Éléments logiques, expressions conditionnelles
-│   │   └── utils.py             # Fonctions utilitaires de parsing/validation
+│   │   ├── base.py                         # Classe de base pour les nœuds d’AST
+│   │   ├── properties.py                   # Représentation Python des propriétés FORML
+│   │   ├── expressions.py                  # Éléments logiques, expressions conditionnelles
+│   │   └── utils.py                        # Fonctions utilitaires de parsing/validation
 │   └── examples/
-│       ├── bound_example.forml        # Exemple de fichier FORML
-│       ├── fairness_example.forml        # Exemple de fichier FORML
-│       ├── logic_example.forml        # Exemple de fichier FORML
-│       ├── monotonicity_example.forml        # Exemple de fichier FORML
-│       ├── stability_example.forml        # Exemple de fichier FORML
+│       ├── bound_example.forml             # Exemple de fichier FORML
+│       ├── fairness_example.forml          # Exemple de fichier FORML
+│       ├── logic_example.forml             # Exemple de fichier FORML
+│       ├── monotonicity_example.forml      # Exemple de fichier FORML
+│       ├── stability_example.forml         # Exemple de fichier FORML
 │       └── ROBUSTNESS_example.forml        # Exemple de fichier FORML
 ├── tests/
-│   ├── test_parser.py           # Tests unitaires du parser
-│   ├── test_transformer.py      # Tests des objets générés
-│   └── test_properties.py       # Validation logique des propriétés
+│   ├── unit/
+│   │   ├── parsing/
+│   │   │   ├── helper.py
+│   │   │   ├── test_at.py
+│   │   │   ├── test_body.py
+│   │   │   ├── test_check_at.py
+│   │   │   ├── test_exists.py
+│   │   │   ├── test_footer.py
+│   │   │   ├── test_forall.py
+│   │   │   ├── test_header.py
+│   │   │   ├── test_logic.py
+│   │   │   ├── test_pairwise.py
+│   │   │   └── test_semantic.py
+│   │   │
+│   │   ├── building/
+│   │   ├── other/
+│   │
+│   ├── hypothesis/
+│   │   ├── builder/
+│   │   │   ├── test_valid_builder.py/
+│   │   │   ├── test_invalid_builder.py/
+│   │   ├── ir/
+│   │   │   ├── test_valid_ir.py/
+│   │   │   ├── test_invalid_ir.py/
+│   │   ├── mutations/
+│   │   │   ├── lexical.py/
+│   │   │   ├── semantic.py/
+│   │   │   ├── structural.py/
+│   │   ├── parser/
+│   │   │   ├── test_valid_parser.py/
+│   │   │   ├── test_invalid_parser.py/
+│   │   ├── semantic/
+│   │   ├── strategies/
 ├── README.md                    # Documentation complète
 ├── LICENSE                      # MIT ou autre
 ├── pyproject.toml               # Déclaration du projet Python
