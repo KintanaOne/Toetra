@@ -5,7 +5,7 @@ from typing import Any
 
 from dsl.language.vocabulary.backends import EnumBackend
 from dsl.language.vocabulary.functions import EnumFunction
-from dsl.language.vocabulary.operators import EnumComparisonOperator, EnumLogicalOperator
+from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.problems import EnumProblem
 from dsl.language.vocabulary.properties import EnumProperty
 

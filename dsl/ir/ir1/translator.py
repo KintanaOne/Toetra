@@ -14,7 +14,6 @@ from dsl.ast.nodes.assertion import (
     ProblemNode,
 )
 
-from dsl.ast.nodes.primitives import AttributeNode, ConstantNode
 
 from dsl.ir.ir1.nodes import (
     VerificationTask,
@@ -34,8 +33,6 @@ from dsl.ir.ir1.nodes import (
 from dsl.language.vocabulary.problems import EnumProblem
 from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.backends import EnumBackend
-from dsl.language.vocabulary.operators import EnumLogicalOperator
-from dsl.language.vocabulary.operators import EnumComparisonOperator
 
 
 class IRTranslator:

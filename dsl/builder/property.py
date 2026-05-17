@@ -1,9 +1,9 @@
-from lark import Token, Tree
+from lark import Tree
 from dsl.ast.nodes.assertion import AssertionNode
 from dsl.ast.nodes.property import PropertyNode, PropertyRuleNode
 from dsl.builder.backends import parse_backend
-from dsl.builder.core.strict import require_node, require_value
-from dsl.builder.core.utils import find_child, find_node
+from dsl.builder.core.strict import require_value
+from dsl.builder.core.utils import find_node
 from dsl.builder.core.ast_utils import node_value
 from .expressions import (
     parse_at,
@@ -49,7 +49,7 @@ def detect_mode(prop: Tree) -> str:
 # RHS extraction
 # ---------------------------------------------------------------------------
 
-from lark import Tree, Token
+from lark import Tree
 
 
 def extract_rhs(prop: Tree) -> Tree:

@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Union
 
 from dsl.ast.nodes.base import ASTNode
 from dsl.ast.nodes.primitives import AttributeNode, ConstantNode
 from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.problems import EnumProblem
-from dsl.language.vocabulary.properties import EnumProperty
 
 
 # ----------------------------------------------------------------------------------------------------------------------

@@ -1,16 +1,14 @@
-from typing import List, Union
+from typing import List
 
 from lark import Tree, Token
 
 from dsl.ast.nodes.assertion import (
     AndNode,
-    AssertionNode,
     ComparisonNode,
     ImplicationNode,
     OrNode,
     NotNode,
     ProblemNode,
-    UnknownNode,
     LogicalNode,
 )
 

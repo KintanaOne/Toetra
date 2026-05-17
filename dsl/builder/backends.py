@@ -1,5 +1,5 @@
 from lark import Tree
-from dsl.builder.core.utils import extract_direct_token, find_child, find_all_nodes, find_node, get_node_name_or_value
+from dsl.builder.core.utils import find_child, find_all_nodes, find_node, get_node_name_or_value
 from dsl.builder.core.ast_utils import node_value, clean_string
 
 from dsl.ast.nodes.backends import BackendNode

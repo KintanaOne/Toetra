@@ -5,12 +5,9 @@ Goal:
     Break syntax structure before semantic construction.
 """
 
-from copy import deepcopy
 import random
 
 from dsl.ast.nodes.program import ProgramNode
-from dsl.parser.parser import parse_forml_code
-from test.hypothesis.utils.serialize import serialize
 
 
 # =========================================================

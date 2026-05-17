@@ -6,12 +6,12 @@ from dsl.ast.nodes.expressions import (
     QuantifierExprNode
 )
 from dsl.builder.core.strict import optional, require_value, safe_find_child, safe_find_node
-from dsl.builder.core.utils import extract_direct_token, find_child, find_node, get_node_name_or_value
+from dsl.builder.core.utils import find_child, find_node, get_node_name_or_value
 from dsl.builder.core.ast_utils import node_value
 from dsl.builder.domain import parse_domain
 from dsl.builder.neighborhood import parse_neighborhood
 
-from dsl.builder.core.strict import require_node, require_value
+from dsl.builder.core.strict import require_node
 
 # ============================================================================
 # EXPRESSIONS (AT / CHECK / PAIRWISE / QUANTIFIER)

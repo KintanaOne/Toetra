@@ -3,14 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Union
 
-from dsl.semantic.runtime.annotations import SemanticAnnotations
-from dsl.semantic.symbols.symbol import Symbol
 from dsl.semantic.types.enums import EnumDataType
 
 
 PrimitiveValue = Union[str, int, float, bool, None]
 
-from enum import Enum
 
 @dataclass
 class ArgNode:

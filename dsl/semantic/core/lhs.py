@@ -11,7 +11,6 @@ from dsl.ast.nodes.expressions import (
 )
 
 from dsl.semantic.symbols.table import Symbol
-from dsl.semantic.context.context import SemanticContext
 
 class LHSValidator:
     """

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Union
 
 from dsl.ast.nodes.base import ASTNode
 from dsl.ast.nodes.neighborhood import NeighborhoodNode
