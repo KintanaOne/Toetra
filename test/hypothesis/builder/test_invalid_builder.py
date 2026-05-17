@@ -5,6 +5,7 @@ from dsl.builder.program import parse_program
 from dsl.parser.parser import parse_forml_code
 from test.hypothesis.strategies.valid.program_valid import valid_program
 
+pytestmark = pytest.mark.wip
 
 @given(valid_program())
 def test_builder_rejects_invalid_structure(program):

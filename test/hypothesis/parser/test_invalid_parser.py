@@ -5,6 +5,7 @@ from test.hypothesis.strategies.invalid.program import invalid_program
 
 from dsl.parser.parser import parse_forml_code
 
+pytestmark = pytest.mark.wip
 
 @given(invalid_program())
 def test_parser_rejects_invalid(program):
