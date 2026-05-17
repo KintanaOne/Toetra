@@ -1,0 +1,48 @@
+name: FORML CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout du repo
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Setup Python
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # 3. Install dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest ruff black pyright
+
+      # 4. Check formatting (Black)
+      - name: Check formatting (Black)
+        run: |
+          black --check .
+
+      # 5. Lint (Ruff)
+      - name: Lint (Ruff)
+        run: |
+          ruff check .
+
+      # 6. verify types (Pyright)
+      - name: Type check (Pyright)
+        run: |
+          pyright
+
+      # 6. Run tests
+      - name: Run tests (Pytest)
+        run: |
+          pytest -q

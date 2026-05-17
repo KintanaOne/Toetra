@@ -32,7 +32,7 @@ from test.hypothesis.mutations.lexical import (
 )
 
 from test.hypothesis.mutations.structural import (
-    CST_MUTATIONS,
+    STRUCTURAL_MUTATIONS,
 )
 
 from test.hypothesis.mutations.semantic import (
@@ -89,7 +89,7 @@ def apply_structural_mutations(
     mutated = cst
 
     for _ in range(mutation_count):
-        mutated = mutate(mutated, CST_MUTATIONS)
+        mutated = mutate(mutated, STRUCTURAL_MUTATIONS)
 
     return mutated
 
