@@ -1,8 +1,6 @@
-from typing import cast
 
 import pytest
 from lark import Tree
-from lark.exceptions import UnexpectedToken
 
 from dsl.ast.nodes.assertion import (
     AndNode,
@@ -13,7 +11,6 @@ from dsl.ast.nodes.assertion import (
     ComparisonNode,
     ProblemNode,
 )
-from dsl.ast.nodes.expressions import CheckAtExprNode
 from dsl.builder.program import parse_program
 from dsl.language.vocabulary.problems import EnumProblem
 from dsl.parser.parser import parse_forml_code

@@ -4,11 +4,7 @@ from dsl.semantic.runtime.tracer import ValidationTracer
 
 from dsl.semantic.core.property import PropertyValidator
 from test.fixtures.properties_samples import (
-    VALID_MINIMAL_AT,
-    VALID_MINIMAL_CHECK_AT,
-    VALID_MINIMAL_EXISTS,
-    VALID_MINIMAL_FORALL,
-    VALID_MINIMAL_PAIRWISE
+    VALID_MINIMAL_AT
 )
 
 class FORMLValidator:

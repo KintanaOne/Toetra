@@ -1,9 +1,6 @@
 from dataclasses import dataclass, field
-from enum import Enum
-from importlib import metadata
 from typing import Any
 
-from dsl.language.vocabulary.utils import EnumMixin
 from model.detector.model_framework import EnumModelFramework
 from model.schema.feature_schema import FeatureSchema
 
