@@ -46,9 +46,7 @@ class BindingValidator:
         rhs,
     ):
 
-        self.tracer.log(
-            f"Binding validation context: {context}"
-        )
+        self.tracer.log(f"Binding validation context: {context}")
 
         self._check_node(rhs, context)
 
@@ -65,16 +63,10 @@ class BindingValidator:
         if isinstance(node, ComparisonNode):
 
             if isinstance(node.left, AttributeNode):
-                self._resolve_attribute(
-                    node.left,
-                    context
-                )
+                self._resolve_attribute(node.left, context)
 
             if isinstance(node.right, AttributeNode):
-                self._resolve_attribute(
-                    node.right,
-                    context
-                )
+                self._resolve_attribute(node.right, context)
 
             return
 
@@ -108,9 +100,7 @@ class BindingValidator:
         if isinstance(node, ProblemNode):
             return
 
-        raise TypeError(
-            f"Unsupported node type: {type(node)}"
-        )
+        raise TypeError(f"Unsupported node type: {type(node)}")
 
     # ─────────────────────────────────────────────
     # SEMANTIC INITIALIZATION
@@ -120,7 +110,6 @@ class BindingValidator:
         if not hasattr(node, "semantic") or node.semantic is None:
             node.semantic = SemanticAnnotations()
         return node.semantic
-    
 
     def _resolve_symbol(self, symbol_table, name):
         """
@@ -205,9 +194,7 @@ class BindingValidator:
                     resolved = next(iter(variables.keys()))
                     symbol = resolve(resolved)
 
-                    self.tracer.log(
-                        f"Alias resolution: {attr.entity} → {resolved}"
-                    )
+                    self.tracer.log(f"Alias resolution: {attr.entity} → {resolved}")
 
                     semantic.resolved_entity = resolved
                     semantic.resolved_symbol = symbol

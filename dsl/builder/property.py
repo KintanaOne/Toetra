@@ -7,14 +7,8 @@ from dsl.builder.core.strict import require_value
 from dsl.builder.core.utils import find_node
 from dsl.builder.core.ast_utils import node_value
 from dsl.language.vocabulary.properties import EnumProperty
-from .expressions import (
-    parse_at,
-    parse_pairwise,
-    parse_check_at,
-    parse_quantifier
-)
+from .expressions import parse_at, parse_pairwise, parse_check_at, parse_quantifier
 from .assertion import parse_assertion
-
 
 # ============================================================================
 # PROPERTY CORE PARSING
@@ -29,6 +23,7 @@ from .assertion import parse_assertion
 # ---------------------------------------------------------------------------
 # Mode detection
 # ---------------------------------------------------------------------------
+
 
 def detect_mode(prop: Tree) -> str:
     """
@@ -50,6 +45,7 @@ def detect_mode(prop: Tree) -> str:
 # ---------------------------------------------------------------------------
 # RHS extraction
 # ---------------------------------------------------------------------------
+
 
 def extract_rhs(prop: Tree) -> Tree:
     """
@@ -84,9 +80,11 @@ def extract_rhs(prop: Tree) -> Tree:
 
     raise ValueError("Missing RHS in property")
 
+
 # ---------------------------------------------------------------------------
 # Main parser
 # ---------------------------------------------------------------------------
+
 
 def parse_property(prop: Tree) -> PropertyNode:
     """
@@ -108,13 +106,13 @@ def parse_property(prop: Tree) -> PropertyNode:
     # -----------------------------------------------------------------------
     # Parse LHS expression
     # -----------------------------------------------------------------------
-    
+
     left = expr_map[mode](prop)
 
     # -----------------------------------------------------------------------
     # Parse RHS assertion
     # -----------------------------------------------------------------------
-    
+
     right_node = extract_rhs(prop)
 
     logical_root = parse_assertion(right_node)
@@ -124,7 +122,7 @@ def parse_property(prop: Tree) -> PropertyNode:
     # -----------------------------------------------------------------------
     # Parse backend configuration (strict)
     # -----------------------------------------------------------------------
-    
+
     backend_node = find_node(prop, "backend")
     backend = parse_backend(backend_node)
 
@@ -134,8 +132,7 @@ def parse_property(prop: Tree) -> PropertyNode:
     property_type_node = find_node(prop, "property_type")
 
     property_type = require_value(
-        node_value(property_type_node),
-        "Property type is missing"
+        node_value(property_type_node), "Property type is missing"
     )
 
     property_type = EnumProperty(property_type)
@@ -145,9 +142,6 @@ def parse_property(prop: Tree) -> PropertyNode:
     # -----------------------------------------------------------------------
     return PropertyNode(
         type=property_type,
-        rule=PropertyRuleNode(
-            scope=left,
-            assertion=right
-        ),
-        backend=backend
+        rule=PropertyRuleNode(scope=left, assertion=right),
+        backend=backend,
     )

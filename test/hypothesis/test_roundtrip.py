@@ -7,6 +7,7 @@ from test.hypothesis.utils.serialize import serialize
 
 pytestmark = pytest.mark.wip
 
+
 @pytest.mark.skip(reason="no serialization implemented yet")
 @given(valid_program())
 def test_roundtrip(program):

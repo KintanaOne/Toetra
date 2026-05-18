@@ -4,7 +4,6 @@ from typing import Optional
 from dsl.semantic.types.enums import EnumDataType
 
 
-
 @dataclass
 class Symbol:
     """

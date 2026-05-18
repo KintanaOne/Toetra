@@ -2,16 +2,18 @@
 
 from enum import Enum
 
+
 class SemanticScope(Enum):
     QUANTIFIER = "quantifier"
     LOCAL = "local"
     POINTWISE = "pointwise"
     PAIRWISE = "pairwise"
 
+
 def get_scope_from_property(prop):
     if prop.pairwise_expr:
         return SemanticScope.PAIRWISE
-    
+
     if prop.anchor_expr:
         # check_at vs at
         if prop.anchor_expr.anchor == "check_at":

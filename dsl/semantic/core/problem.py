@@ -19,18 +19,12 @@ class ProblemValidator:
         try:
             function = EnumFunction[function_str]
         except KeyError:
-            raise IncompatibleFunctionError(
-                f"Unknown function '{function_str}'"
-            )
+            raise IncompatibleFunctionError(f"Unknown function '{function_str}'")
 
         allowed = PROBLEM_FUNCTION_COMPATIBILITY.get(problem)
 
         if not allowed:
-            raise IncompatibleFunctionError(
-                f"Unknown problem '{problem}'"
-            )
+            raise IncompatibleFunctionError(f"Unknown problem '{problem}'")
 
         if function not in allowed:
-            raise IncompatibleFunctionError(
-                f"{function_str} not allowed for {problem}"
-            )
+            raise IncompatibleFunctionError(f"{function_str} not allowed for {problem}")

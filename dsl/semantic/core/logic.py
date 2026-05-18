@@ -38,9 +38,7 @@ class LogicValidator:
 
     def validate(self, node, context):
 
-        self.tracer.log(
-            f"Validating logic node: {node}"
-        )
+        self.tracer.log(f"Validating logic node: {node}")
 
         if isinstance(node, ComparisonNode):
             return self._validate_comparison(node, context)
@@ -60,9 +58,7 @@ class LogicValidator:
         if isinstance(node, ProblemNode):
             return self._validate_problem(node, context)
 
-        raise InvalidPropertyError(
-            f"Unknown logical node type: {type(node)}"
-        )
+        raise InvalidPropertyError(f"Unknown logical node type: {type(node)}")
 
     # ─────────────────────────────
     # COMPARISON
@@ -70,15 +66,11 @@ class LogicValidator:
 
     def _validate_comparison(self, node, context):
 
-        self.tracer.log(
-            f"Validating ComparisonNode: {node}"
-        )
+        self.tracer.log(f"Validating ComparisonNode: {node}")
 
         if node.left is None or node.right is None:
 
-            raise InvalidPropertyError(
-                "Invalid comparison: missing operands"
-            )
+            raise InvalidPropertyError("Invalid comparison: missing operands")
 
         self._validate_operand(node.left, context)
         self._validate_operand(node.right, context)
@@ -89,15 +81,11 @@ class LogicValidator:
 
     def _validate_and(self, node, context):
 
-        self.tracer.log(
-            f"Validating AndNode: {node}"
-        )
+        self.tracer.log(f"Validating AndNode: {node}")
 
         if not node.operands:
 
-            raise InvalidPropertyError(
-                "AND node has no operands"
-            )
+            raise InvalidPropertyError("AND node has no operands")
 
         for op in node.operands:
             self.validate(op, context)
@@ -108,15 +96,11 @@ class LogicValidator:
 
     def _validate_or(self, node, context):
 
-        self.tracer.log(
-            f"Validating OrNode: {node}"
-        )
+        self.tracer.log(f"Validating OrNode: {node}")
 
         if not node.operands:
 
-            raise InvalidPropertyError(
-                "OR node has no operands"
-            )
+            raise InvalidPropertyError("OR node has no operands")
 
         for op in node.operands:
             self.validate(op, context)
@@ -127,15 +111,11 @@ class LogicValidator:
 
     def _validate_not(self, node, context):
 
-        self.tracer.log(
-            f"Validating NotNode: {node}"
-        )
+        self.tracer.log(f"Validating NotNode: {node}")
 
         if node.operand is None:
 
-            raise InvalidPropertyError(
-                "NOT expression missing operand"
-            )
+            raise InvalidPropertyError("NOT expression missing operand")
 
         self.validate(node.operand, context)
 
@@ -145,15 +125,11 @@ class LogicValidator:
 
     def _validate_implication(self, node, context):
 
-        self.tracer.log(
-            f"Validating ImplicationNode: {node}"
-        )
+        self.tracer.log(f"Validating ImplicationNode: {node}")
 
         if node.left is None or node.right is None:
 
-            raise InvalidPropertyError(
-                "Implication missing left or right operand"
-            )
+            raise InvalidPropertyError("Implication missing left or right operand")
 
         self.validate(node.left, context)
         self.validate(node.right, context)
@@ -164,13 +140,9 @@ class LogicValidator:
 
     def _validate_problem(self, node, context):
 
-        self.tracer.log(
-            f"Validating ProblemNode: {node}"
-        )
+        self.tracer.log(f"Validating ProblemNode: {node}")
 
-        ProblemValidator(
-            tracer=self.tracer
-        ).validate(node)
+        ProblemValidator(tracer=self.tracer).validate(node)
 
     # ─────────────────────────────
     # OPERANDS (LEAVES)
@@ -189,9 +161,7 @@ class LogicValidator:
         if isinstance(node, ConstantNode):
             return
 
-        raise InvalidPropertyError(
-            f"Invalid operand type: {type(node)}"
-        )
+        raise InvalidPropertyError(f"Invalid operand type: {type(node)}")
 
     # ─────────────────────────────
     # ATTRIBUTE
@@ -199,9 +169,7 @@ class LogicValidator:
 
     def _validate_attribute(self, node, context):
 
-        self.tracer.log(
-            f"Validating AttributeNode: {node}"
-        )
+        self.tracer.log(f"Validating AttributeNode: {node}")
 
         if not node.feature:
             raise InvalidPropertyError("Attribute missing feature name")

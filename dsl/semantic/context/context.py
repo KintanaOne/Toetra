@@ -58,6 +58,4 @@ class SemanticContext:
     # Symbol table for semantic lookup
     # ---------------------------------------------
 
-    symbol_table: SymbolTable = field(
-        default_factory=SymbolTable
-    )
+    symbol_table: SymbolTable = field(default_factory=SymbolTable)

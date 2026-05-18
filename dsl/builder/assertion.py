@@ -18,10 +18,10 @@ from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.problems import EnumProblem
 
+# ============================================================================
+# COMPARISON
+# ============================================================================
 
-# ============================================================================  
-# COMPARISON  
-# ============================================================================  
 
 def build_comparison_expr(node: Tree) -> ComparisonNode:
     attribute_node = find_node(node, "attribute")
@@ -37,17 +37,20 @@ def build_comparison_expr(node: Tree) -> ComparisonNode:
 
     return ComparisonNode(left=left, op=op, right=right)
 
-# ============================================================================  
-# UTILS  
-# ============================================================================  
+
+# ============================================================================
+# UTILS
+# ============================================================================
+
 
 def _extract_trees(node: Tree) -> List[Tree]:
     return [c for c in node.children if isinstance(c, Tree)]
 
 
-# ============================================================================  
-# CORE PARSER  
-# ============================================================================  
+# ============================================================================
+# CORE PARSER
+# ============================================================================
+
 
 def parse_assertion(node: Tree | Token | None) -> LogicalNode:
 
@@ -76,17 +79,13 @@ def parse_assertion(node: Tree | Token | None) -> LogicalNode:
     # OR
     # ----------------------------------------------------------------------
     if t == "logic_or":
-        return OrNode(
-            operands=[parse_assertion(c) for c in children]
-        )
+        return OrNode(operands=[parse_assertion(c) for c in children])
 
     # ----------------------------------------------------------------------
     # AND
     # ----------------------------------------------------------------------
     if t == "logic_and":
-        return AndNode(
-            operands=[parse_assertion(c) for c in children]
-        )
+        return AndNode(operands=[parse_assertion(c) for c in children])
 
     # ----------------------------------------------------------------------
     # NOT
@@ -95,14 +94,12 @@ def parse_assertion(node: Tree | Token | None) -> LogicalNode:
         if not children:
             raise ValueError("NOT requires an operand")
 
-        return NotNode(
-            operand=parse_assertion(children[-1])
-        )
+        return NotNode(operand=parse_assertion(children[-1]))
 
     # ----------------------------------------------------------------------
     # COMPARISON
     # ----------------------------------------------------------------------
-        
+
     if t == "comparison_expr":
         return build_comparison_expr(node)
 
@@ -133,7 +130,7 @@ def parse_assertion(node: Tree | Token | None) -> LogicalNode:
                     function = EnumFunction(node_value(c))
                 except ValueError:
                     raise ValueError(f"Unknown function: {node_value(c)}")
-                
+
         if problem is None:
             raise ValueError("Missing problem")
 

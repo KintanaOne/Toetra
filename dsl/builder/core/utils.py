@@ -134,6 +134,7 @@ def get_node_name_or_value(node: Tree) -> str | None:
 # ASSIGNMENT EXTRACTION
 # ============================================================================
 
+
 def get_assignment_value_node(decl_tree: LarkTree) -> LarkNode | None:
     """
     Extract the RHS (right-hand side) of an assignment.
@@ -161,6 +162,7 @@ def get_assignment_value_node(decl_tree: LarkTree) -> LarkNode | None:
 # ============================================================================
 # DEBUG UTILITIES
 # ============================================================================
+
 
 def debug_tree(tree: LarkTree) -> None:
     """

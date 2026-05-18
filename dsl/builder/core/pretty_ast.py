@@ -29,10 +29,10 @@ from dsl.ast.nodes.property import PropertyNode, PropertyRuleNode
 from dsl.ast.nodes.header import HeaderNode
 from dsl.ast.nodes.program import ProgramNode
 
-
 # =========================================================
 # ENTRY POINT
 # =========================================================
+
 
 def pretty(node: Any, indent: int = 0) -> str:
     if node is None:
@@ -59,12 +59,14 @@ def register(cls):
     def wrapper(func):
         _DISPATCH[cls] = func
         return func
+
     return wrapper
 
 
 # =========================================================
 # HELPERS
 # =========================================================
+
 
 def _pad(indent: int) -> str:
     return "  " * indent
@@ -99,9 +101,11 @@ def _expr(node):
 
     return str(node)
 
+
 # =========================================================
 # LOGIC
 # =========================================================
+
 
 @register(OrNode)
 def _pretty_or(node: OrNode, indent: int):
@@ -135,6 +139,7 @@ def _pretty_cmp(node: ComparisonNode, indent: int):
 # PRIMITIVES
 # =========================================================
 
+
 @register(AttributeNode)
 def _pretty_attr(node: AttributeNode, indent: int):
     return _pad(indent) + ".".join(node.path)
@@ -163,6 +168,7 @@ def _pretty_arg(node: ArgNode, indent: int):
 # DOMAIN / NEIGHBORHOOD
 # =========================================================
 
+
 @register(DomainNode)
 def _pretty_domain(node: DomainNode, indent: int):
     pad = _pad(indent)
@@ -187,6 +193,7 @@ def _pretty_neighborhood(node: NeighborhoodNode, indent: int):
 # =========================================================
 # EXPRESSIONS
 # =========================================================
+
 
 @register(AtExprNode)
 def _pretty_at(node: AtExprNode, indent: int):
@@ -239,6 +246,7 @@ def _pretty_quantifier(node: QuantifierExprNode, indent: int):
 # PROBLEM
 # =========================================================
 
+
 @register(ProblemNode)
 def _pretty_problem(node: ProblemNode, indent: int):
     pad = _pad(indent)
@@ -253,6 +261,7 @@ def _pretty_problem(node: ProblemNode, indent: int):
 # PROPERTY
 # =========================================================
 
+
 @register(PropertyRuleNode)
 def _pretty_rule(node: PropertyRuleNode, indent: int):
     pad = _pad(indent)
@@ -262,10 +271,12 @@ def _pretty_rule(node: PropertyRuleNode, indent: int):
         pretty(node.scope, indent + 1),
     ]
 
-    lines.extend([
-        f"{pad}assertion:",
-        pretty(node.assertion, indent + 1),
-    ])
+    lines.extend(
+        [
+            f"{pad}assertion:",
+            pretty(node.assertion, indent + 1),
+        ]
+    )
 
     return "\n".join(lines)
 
@@ -287,22 +298,22 @@ def _pretty_property(node: PropertyNode, indent: int):
 # HEADER / PROGRAM
 # =========================================================
 
+
 @register(HeaderNode)
 def _pretty_header(node: HeaderNode, indent: int):
     pad = _pad(indent)
 
-    return "\n".join([
-        f"{pad}model := {node.model}",
-        f"{pad}target := {node.target}",
-    ])
+    return "\n".join(
+        [
+            f"{pad}model := {node.model}",
+            f"{pad}target := {node.target}",
+        ]
+    )
 
 
 @register(ProgramNode)
 def _pretty_program(node: ProgramNode, indent: int):
-    lines = [
-        pretty(node.header, indent),
-        ""
-    ]
+    lines = [pretty(node.header, indent), ""]
 
     for prop in node.body:
         lines.append(pretty(prop, indent))

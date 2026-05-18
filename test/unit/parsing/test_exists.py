@@ -1,7 +1,11 @@
 # test/unit/parsing/test_exists.py
 
-from test.fixtures.properties_samples import *
 
+from test.fixtures.properties_samples import (
+    # VALID
+    VALID_EXISTS_WITH_DOMAIN,
+    VALID_MINIMAL_EXISTS,
+)
 from test.unit.parsing.helper import (
     assert_domain,
     assert_no_backend,
@@ -10,10 +14,10 @@ from test.unit.parsing.helper import (
     build_property,
 )
 
-
 # ----------------------------------------------------------------------------------------------------------------------
 # VALID
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def test_exists_basic():
 

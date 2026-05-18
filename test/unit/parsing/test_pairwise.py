@@ -25,10 +25,10 @@ from test.unit.parsing.helper import (
     parse,
 )
 
-
 # ----------------------------------------------------------------------------------------------------------------------
 # VALID
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def test_pairwise_basic():
 
@@ -57,9 +57,7 @@ def test_pairwise_basic():
 
 def test_pairwise_with_backend():
 
-    prop = build_property(
-        VALID_PAIRWISE_WITH_ABSTRACTOR
-    )
+    prop = build_property(VALID_PAIRWISE_WITH_ABSTRACTOR)
 
     scope = assert_pairwise_scope(prop)
 

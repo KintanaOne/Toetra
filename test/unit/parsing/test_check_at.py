@@ -2,8 +2,15 @@
 
 import pytest
 
-from test.fixtures.properties_samples import *
-
+from test.fixtures.properties_samples import (
+    # VALID
+    VALID_CHECK_AT_WITH_COMPLEX_ASSERTION,
+    VALID_MINIMAL_CHECK_AT,
+    # INVALID
+    INVALID_CHECK_AT_MISSING_IDENTIFIER,
+    INVALID_CHECK_AT_MISSING_ASSERTION,
+    INVALID_CHECK_AT_INVALID_IDENTIFIER,
+)
 from test.unit.parsing.helper import (
     assert_check_at_scope,
     assert_no_backend,
@@ -12,10 +19,10 @@ from test.unit.parsing.helper import (
     parse,
 )
 
-
 # ----------------------------------------------------------------------------------------------------------------------
 # VALID
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def test_check_at_basic():
 
@@ -32,9 +39,7 @@ def test_check_at_basic():
 
 def test_check_at_complex_assertion():
 
-    prop = build_property(
-        VALID_CHECK_AT_WITH_COMPLEX_ASSERTION
-    )
+    prop = build_property(VALID_CHECK_AT_WITH_COMPLEX_ASSERTION)
 
     scope = assert_check_at_scope(prop)
 

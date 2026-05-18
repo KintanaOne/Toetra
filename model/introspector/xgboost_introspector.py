@@ -40,9 +40,7 @@ class XGBoostIntrospector(BaseIntrospector):
         # Inject XGBoost-specific metadata
         # --------------------------------------------------
 
-        sklearn_schema.metadata.update({
-            "xgboost": self._extract_xgb_metadata()
-        })
+        sklearn_schema.metadata.update({"xgboost": self._extract_xgb_metadata()})
 
         return sklearn_schema
 
@@ -57,20 +55,12 @@ class XGBoostIntrospector(BaseIntrospector):
 
         metadata = {}
 
-        metadata["n_estimators"] = self._safe_getattr(
-            "n_estimators"
-        )
+        metadata["n_estimators"] = self._safe_getattr("n_estimators")
 
-        metadata["max_depth"] = self._safe_getattr(
-            "max_depth"
-        )
+        metadata["max_depth"] = self._safe_getattr("max_depth")
 
-        metadata["objective"] = self._safe_getattr(
-            "objective"
-        )
+        metadata["objective"] = self._safe_getattr("objective")
 
-        metadata["booster"] = self._safe_getattr(
-            "booster"
-        )
+        metadata["booster"] = self._safe_getattr("booster")
 
         return metadata

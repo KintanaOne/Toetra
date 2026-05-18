@@ -31,10 +31,10 @@ from test.hypothesis.mutations.base import (
     PipelineStage,
 )
 
-
 # =========================================================
 # MUTATION 1 : tautology injection
 # =========================================================
+
 
 @mutation(
     nature=MutationNature.ADVERSARIAL,
@@ -57,9 +57,7 @@ def inject_tautology(ast: ProgramNode) -> ProgramNode:
 
         root = deepcopy(p.rule.assertion.root)
 
-        p.rule.assertion.root = OrNode(
-            operands=[root, NotNode(operand=deepcopy(root))]
-        )
+        p.rule.assertion.root = OrNode(operands=[root, NotNode(operand=deepcopy(root))])
 
     return mutated
 
@@ -67,6 +65,7 @@ def inject_tautology(ast: ProgramNode) -> ProgramNode:
 # =========================================================
 # MUTATION 2 : contradiction injection
 # =========================================================
+
 
 @mutation(
     nature=MutationNature.ADVERSARIAL,
@@ -102,6 +101,7 @@ def inject_contradiction(ast: ProgramNode) -> ProgramNode:
 # =========================================================
 # MUTATION 3 : nested NOT explosion
 # =========================================================
+
 
 @mutation(
     nature=MutationNature.ADVERSARIAL,

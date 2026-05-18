@@ -87,9 +87,7 @@ def invalidate_property_type(ast: ProgramNode) -> ProgramNode:
     for p in mutated.body:
 
         if hasattr(p, "type") and random.random() < 0.3:
-            p.type = random.choice(
-                [v for v in list(EnumProperty) if v != old_type]
-            )
+            p.type = random.choice([v for v in list(EnumProperty) if v != old_type])
 
     return mutated
 

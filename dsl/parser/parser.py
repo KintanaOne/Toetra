@@ -15,13 +15,14 @@ forml_parser = Lark(
     parser="lalr",
     propagate_positions=True,
     maybe_placeholders=True,
-    cache=False
+    cache=False,
 )
 
 
 def parse_forml_code(code: str):
     """Parses the raw DSL code into a Lark tree"""
     return forml_parser.parse(code)
+
 
 if __name__ == "__main__":
     forml = VALID_AT_WITH_NEIGHBORHOOD

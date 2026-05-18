@@ -1,4 +1,3 @@
-
 import pytest
 from lark import Tree
 
@@ -27,10 +26,10 @@ from test.fixtures.logic_samples import (
     VALID_IMPLICATION_PROPERTY,
 )
 
-
 # ----------------------------------------------------------------------------------------------------------------------
 # Helpers
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def parse(code: str) -> Tree:
     return parse_forml_code(code)
@@ -43,6 +42,7 @@ def build(code: str):
 # ----------------------------------------------------------------------------------------------------------------------
 # BASIC
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def test_simple_logic_in_property():
 
@@ -80,6 +80,7 @@ def test_simple_problem_in_property():
 # ----------------------------------------------------------------------------------------------------------------------
 # PRECEDENCE
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def test_logic_operator_precedence():
     """
@@ -151,6 +152,7 @@ def test_logic_not_precedence():
 # IMPLICATION
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 def test_logic_implication():
 
     prop = build(VALID_IMPLICATION_PROPERTY)
@@ -173,10 +175,7 @@ def test_logic_nested_implication():
 
     match assertion:
         case AssertionNode(
-            root=ImplicationNode(
-                left=_,
-                right=ImplicationNode(left=_, right=_)
-            )
+            root=ImplicationNode(left=_, right=ImplicationNode(left=_, right=_))
         ):
             pass
 
@@ -187,6 +186,7 @@ def test_logic_nested_implication():
 # ----------------------------------------------------------------------------------------------------------------------
 # INVALID
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def test_invalid_logic_syntax():
     with pytest.raises(Exception):

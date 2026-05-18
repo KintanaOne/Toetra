@@ -11,7 +11,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
-
 # ==========================================================
 # Paths
 # ==========================================================
@@ -94,10 +93,7 @@ NUMERIC_COLUMNS = [
 
 for column in NUMERIC_COLUMNS:
 
-    data[column] = pd.to_numeric(
-        data[column],
-        errors="coerce"
-    )
+    data[column] = pd.to_numeric(data[column], errors="coerce")
 
 
 # ==========================================================
@@ -142,10 +138,7 @@ y = data[TARGET_COLUMN]
 
 clean_data = pd.concat([X, y], axis=1)
 
-clean_data.to_csv(
-    CLEAN_DATASET_PATH,
-    index=False
-)
+clean_data.to_csv(CLEAN_DATASET_PATH, index=False)
 
 
 # ==========================================================
@@ -181,10 +174,7 @@ for column, dtype in data.dtypes.items():
         schema[column] = "string"
 
 
-pd.Series(schema).to_json(
-    SCHEMA_PATH,
-    indent=4
-)
+pd.Series(schema).to_json(SCHEMA_PATH, indent=4)
 
 
 # ==========================================================
@@ -200,11 +190,7 @@ pd.Series(schema).to_json(
 # ==========================================================
 
 X_train, X_test, y_train, y_test = train_test_split(
-    X,
-    y,
-    test_size=0.2,
-    random_state=42,
-    stratify=y
+    X, y, test_size=0.2, random_state=42, stratify=y
 )
 
 
@@ -218,33 +204,18 @@ X_train, X_test, y_train, y_test = train_test_split(
 #
 # ==========================================================
 
-numeric_features = X.select_dtypes(
-    include=["int64", "float64"]
-).columns.tolist()
+numeric_features = X.select_dtypes(include=["int64", "float64"]).columns.tolist()
 
-numeric_transformer = Pipeline([
-    (
-        "imputer",
-        SimpleImputer(strategy="median")
-    ),
-    (
-        "scaler",
-        StandardScaler()
-    )
-])
+numeric_transformer = Pipeline(
+    [("imputer", SimpleImputer(strategy="median")), ("scaler", StandardScaler())]
+)
 
 
 # ==========================================================
 # Column preprocessing
 # ==========================================================
 
-preprocessor = ColumnTransformer([
-    (
-        "numeric",
-        numeric_transformer,
-        numeric_features
-    )
-])
+preprocessor = ColumnTransformer([("numeric", numeric_transformer, numeric_features)])
 
 
 # ==========================================================
@@ -259,29 +230,19 @@ preprocessor = ColumnTransformer([
 #
 # ==========================================================
 
-pipeline = Pipeline([
-    (
-        "preprocessor",
-        preprocessor
-    ),
-    (
-        "classifier",
-        LogisticRegression(
-            max_iter=1000,
-            random_state=42
-        )
-    )
-])
+pipeline = Pipeline(
+    [
+        ("preprocessor", preprocessor),
+        ("classifier", LogisticRegression(max_iter=1000, random_state=42)),
+    ]
+)
 
 
 # ==========================================================
 # Train model
 # ==========================================================
 
-pipeline.fit(
-    X_train,
-    y_train
-)
+pipeline.fit(X_train, y_train)
 
 
 # ==========================================================
@@ -290,10 +251,7 @@ pipeline.fit(
 
 predictions = pipeline.predict(X_test)
 
-accuracy = accuracy_score(
-    y_test,
-    predictions
-)
+accuracy = accuracy_score(y_test, predictions)
 
 print(f"Accuracy: {accuracy:.4f}")
 
@@ -302,10 +260,7 @@ print(f"Accuracy: {accuracy:.4f}")
 # Save trained model
 # ==========================================================
 
-joblib.dump(
-    pipeline,
-    MODEL_PATH
-)
+joblib.dump(pipeline, MODEL_PATH)
 
 print(f"Model saved to: {MODEL_PATH}")
 

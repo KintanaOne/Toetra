@@ -6,7 +6,6 @@ from dsl.builder.core.utils import find_child
 from dsl.builder.core.ast_utils import node_value, clean_string
 from dsl.builder.core.strict import require_node, require_value
 
-
 # ============================================================================
 # HEADER PARSING
 # ============================================================================
@@ -19,13 +18,11 @@ def get_header(tree: Tree) -> Tree:
     """
     Extract header node from full AST.
     """
-    return require_node(
-        find_child(tree, "header"),
-        "Header node not found"
-    )
+    return require_node(find_child(tree, "header"), "Header node not found")
 
 
 # ---------------------------------------------------------------------------
+
 
 def parse_model(tree: Tree) -> str:
     """
@@ -37,12 +34,12 @@ def parse_model(tree: Tree) -> str:
     model_node = find_child(header, "model_declaration")
 
     return require_value(
-        clean_string(node_value(model_node)),
-        "Model declaration is missing or invalid"
+        clean_string(node_value(model_node)), "Model declaration is missing or invalid"
     )
 
 
 # ---------------------------------------------------------------------------
+
 
 def parse_target(tree: Tree) -> str:
     """
@@ -55,11 +52,12 @@ def parse_target(tree: Tree) -> str:
 
     return require_value(
         clean_string(node_value(target_node)),
-        "Target declaration is missing or invalid"
+        "Target declaration is missing or invalid",
     )
 
 
 # ---------------------------------------------------------------------------
+
 
 def parse_header(tree: Tree) -> HeaderNode:
     """
@@ -71,7 +69,4 @@ def parse_header(tree: Tree) -> HeaderNode:
     model = parse_model(header_tree)
     target = parse_target(header_tree)
 
-    return HeaderNode(
-        model=model,
-        target=target
-    )
+    return HeaderNode(model=model, target=target)

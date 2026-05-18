@@ -11,12 +11,12 @@ from dsl.ast.nodes.expressions import (
 from dsl.builder.program import parse_program
 from dsl.parser.parser import parse_forml_code
 
-
 T = TypeVar("T")
 
 # ======================================================================================================================
 # HEADER
 # ======================================================================================================================
+
 
 def assert_header(
     program,
@@ -39,6 +39,7 @@ def assert_header(
 # ----------------------------------------------------------------------------------------------------------------------
 # Parse / Build helpers
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def parse(code: str) -> Tree:
     """
@@ -68,14 +69,14 @@ def build_property(code: str):
 # Scope helpers
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 def assert_scope_type(scope, expected_type: Type[T]) -> T:
     """
     Assert the scope node type and return the properly typed scope.
     """
 
     assert isinstance(scope, expected_type), (
-        f"Expected scope type {expected_type.__name__}, "
-        f"got {type(scope).__name__}"
+        f"Expected scope type {expected_type.__name__}, " f"got {type(scope).__name__}"
     )
 
     return cast(T, scope)
@@ -84,6 +85,7 @@ def assert_scope_type(scope, expected_type: Type[T]) -> T:
 # ----------------------------------------------------------------------------------------------------------------------
 # Property helpers
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def assert_property_basics(prop, expected_type: str = "ROBUSTNESS") -> None:
     """
@@ -101,6 +103,7 @@ def assert_property_basics(prop, expected_type: str = "ROBUSTNESS") -> None:
 # Neighborhood helpers
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 def assert_neighborhood(neighborhood, metric: str, **expected_args) -> None:
     """
     Assert neighborhood structure and arguments.
@@ -110,18 +113,17 @@ def assert_neighborhood(neighborhood, metric: str, **expected_args) -> None:
 
     assert neighborhood.metric == metric
 
-    args = {
-        arg.key: arg.value
-        for arg in neighborhood.args
-    }
+    args = {arg.key: arg.value for arg in neighborhood.args}
 
     for key, expected_value in expected_args.items():
         assert key in args
         assert args[key] == expected_value
 
+
 # ----------------------------------------------------------------------------------------------------------------------
 # Domain helpers
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def assert_domain(domain, name: str, values: list[str]) -> None:
     """
@@ -138,6 +140,7 @@ def assert_domain(domain, name: str, values: list[str]) -> None:
 # Backend helpers
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 def assert_backend(
     prop,
     expected_name: str,
@@ -153,20 +156,14 @@ def assert_backend(
 
     assert backend.name == expected_name
 
-    args = {
-        arg.key: arg.value
-        for arg in backend.args
-    }
+    args = {arg.key: arg.value for arg in backend.args}
 
     for key, expected_value in expected_args.items():
 
-        assert key in args, (
-            f"Missing backend arg '{key}'"
-        )
+        assert key in args, f"Missing backend arg '{key}'"
 
         assert args[key] == expected_value, (
-            f"Expected backend arg '{key}'="
-            f"{expected_value}, got {args[key]}"
+            f"Expected backend arg '{key}'=" f"{expected_value}, got {args[key]}"
         )
 
 
@@ -182,6 +179,7 @@ def assert_no_backend(prop) -> None:
 # Pairwise helpers
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 def assert_pair(
     pair: str,
     left_expected: str,
@@ -194,14 +192,9 @@ def assert_pair(
     parts = pair.split("~")
 
     if len(parts) != 2:
-        raise ValueError(
-            f"Invalid pair format: {pair}"
-        )
+        raise ValueError(f"Invalid pair format: {pair}")
 
-    left, right = [
-        x.strip()
-        for x in parts
-    ]
+    left, right = [x.strip() for x in parts]
 
     assert left == left_expected
     assert right == right_expected
@@ -210,6 +203,7 @@ def assert_pair(
 # ----------------------------------------------------------------------------------------------------------------------
 # Scope shortcuts
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def assert_at_scope(prop) -> AtExprNode:
     return assert_scope_type(prop.rule.scope, AtExprNode)

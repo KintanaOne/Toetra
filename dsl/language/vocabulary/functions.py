@@ -3,14 +3,14 @@
 from enum import Enum
 from dsl.language.vocabulary.utils import EnumMixin
 
-
 official_functions = {
-    "EQUAL" : '"EQUAL"',
-    "EQUITY" : '"EQUITY"',
-    "BETWEEN" : '"BETWEEN"',
-    "INCREASING" : '"INCREASING"',
-    "DECREASING" : '"DECREASING"'
+    "EQUAL": '"EQUAL"',
+    "EQUITY": '"EQUITY"',
+    "BETWEEN": '"BETWEEN"',
+    "INCREASING": '"INCREASING"',
+    "DECREASING": '"DECREASING"',
 }
+
 
 class EnumFunction(EnumMixin, Enum):
     EQUAL = "EQUAL"

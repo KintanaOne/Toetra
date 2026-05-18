@@ -21,7 +21,7 @@ from copy import deepcopy
 
 from dsl.ast.nodes.assertion import ComparisonNode
 from dsl.builder.program import ProgramNode
-from dsl.ast.nodes.primitives import AttributeNode, ConstantNode
+from dsl.ast.nodes.primitives import ConstantNode
 
 from test.hypothesis.mutations.base import (
     mutation,
@@ -31,10 +31,10 @@ from test.hypothesis.mutations.base import (
     PipelineStage,
 )
 
-
 # =========================================================
 # MUTATION 1 : epsilon explosion
 # =========================================================
+
 
 @mutation(
     nature=MutationNature.NUMERICAL,
@@ -67,6 +67,7 @@ def explode_constants(ast: ProgramNode) -> ProgramNode:
 # =========================================================
 # MUTATION 2 : sign inversion
 # =========================================================
+
 
 @mutation(
     nature=MutationNature.NUMERICAL,

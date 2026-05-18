@@ -7,6 +7,7 @@ from test.hypothesis.strategies.valid.program_valid import valid_program
 
 pytestmark = pytest.mark.wip
 
+
 @given(valid_program())
 def test_semantic_roundtrip(prog):
     ast1 = parse_forml_code(prog)

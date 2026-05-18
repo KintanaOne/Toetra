@@ -30,11 +30,7 @@ class BaseIntrospector(ABC):
         self.model = model
 
         # Optional dataset path
-        self.source_path = (
-            Path(source_path)
-            if source_path is not None
-            else None
-        )
+        self.source_path = Path(source_path) if source_path is not None else None
 
         # Optional external schema
         self.input_schema = schema

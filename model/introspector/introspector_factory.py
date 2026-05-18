@@ -22,10 +22,7 @@ class IntrospectorFactory:
     detected ML framework.
     """
 
-    INTROSPECTORS: dict[
-        EnumModelFramework,
-        type[BaseIntrospector]
-    ] = {
+    INTROSPECTORS: dict[EnumModelFramework, type[BaseIntrospector]] = {
         EnumModelFramework.SKLEARN: SklearnIntrospector,
         EnumModelFramework.XGBOOST: XGBoostIntrospector,
     }
@@ -43,9 +40,7 @@ class IntrospectorFactory:
         Create the appropriate introspector instance.
         """
 
-        introspector_class = cls.INTROSPECTORS.get(
-            framework
-        )
+        introspector_class = cls.INTROSPECTORS.get(framework)
 
         if introspector_class is None:
 

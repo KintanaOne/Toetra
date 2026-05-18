@@ -33,9 +33,7 @@ class SymbolTable:
         """
 
         if symbol.name in self.symbols:
-            raise ValueError(
-                f"Symbol '{symbol.name}' already registered"
-            )
+            raise ValueError(f"Symbol '{symbol.name}' already registered")
 
         self.symbols[symbol.name] = symbol
 
@@ -80,8 +78,4 @@ class SymbolTable:
     # ─────────────────────────────────────────────
 
     def __repr__(self):
-        return (
-            f"SymbolTable("
-            f"symbols={list(self.symbols.keys())}"
-            f")"
-        )
+        return f"SymbolTable(" f"symbols={list(self.symbols.keys())}" f")"
