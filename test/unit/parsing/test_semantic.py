@@ -1,3 +1,4 @@
+from tkinter import E
 from typing import cast
 
 import pytest
@@ -10,6 +11,7 @@ from dsl.ast.nodes.expressions import (
     QuantifierExprNode,
 )
 from dsl.builder.program import parse_program
+from dsl.language.vocabulary.properties import EnumProperty
 from dsl.parser.parser import parse_forml_code
 
 from test.fixtures.program_samples import (
@@ -71,7 +73,7 @@ def test_program_with_at():
 
     neighborhood = scope.neighborhood
 
-    assert prop.type == "ROBUSTNESS"
+    assert prop.type == EnumProperty.ROBUSTNESS
     assert prop.rule.assertion is not None
 
     assert neighborhood is not None
@@ -96,7 +98,7 @@ def test_program_with_check_at():
     assert isinstance(scope, CheckAtExprNode)
     scope = cast(CheckAtExprNode, scope)
 
-    assert prop.type == "ROBUSTNESS"
+    assert prop.type == EnumProperty.ROBUSTNESS
     assert scope.variable == "x0"
     assert prop.rule.assertion is not None
 
@@ -119,7 +121,7 @@ def test_program_with_pairwise():
 
     neighborhood = scope.neighborhood
 
-    assert prop.type == "ROBUSTNESS"
+    assert prop.type == EnumProperty.ROBUSTNESS
     assert prop.rule.assertion is not None
 
     assert neighborhood is not None
@@ -147,7 +149,7 @@ def test_program_with_quantifier():
 
     domain = scope.domain
 
-    assert prop.type == "ROBUSTNESS"
+    assert prop.type == EnumProperty.ROBUSTNESS
     assert prop.rule.assertion is not None
 
     assert domain is not None
@@ -189,7 +191,7 @@ def test_program_with_domain_and_neighborhood():
     neighborhood = scope.neighborhood
     domain = scope.domain
 
-    assert prop.type == "ROBUSTNESS"
+    assert prop.type == EnumProperty.ROBUSTNESS
     assert prop.rule.assertion is not None
 
     assert neighborhood is not None
