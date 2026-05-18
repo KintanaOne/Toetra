@@ -1,0 +1,558 @@
+
+===== test\hypothesis\mutations\__init__.py =====
+
+from .lexical import *
+from .structural import *
+from .semantic import *
+
+===== test\hypothesis\mutations\base.py =====
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from enum import Enum, auto
+from typing import Callable
+
+
+class MutationNature(Enum):
+    STRUCTURAL = auto()
+    SEMANTIC = auto()
+    LOGICAL = auto()
+    NUMERICAL = auto()
+    ADVERSARIAL = auto()
+    STOCHASTIC = auto()
+
+
+class MutationImpact(Enum):
+    NONE = auto()
+    PARSING = auto()
+    AST_INVALID = auto()
+    SEMANTIC_INVALID = auto()
+    TYPE_INVALID = auto()
+    EXECUTION_FAILURE = auto()
+
+
+class MutationSeverity(Enum):
+    INFO = auto()
+    LOW = auto()
+    MEDIUM = auto()
+    HIGH = auto()
+    CRITICAL = auto()
+    CATASTROPHIC = auto()
+
+
+class PipelineStage(Enum):
+    PARSING = auto()
+    AST_BUILDING = auto()
+    SEMANTIC_ANALYSIS = auto()
+    TYPE_CHECKING = auto()
+    TRANSFORMATION = auto()
+    EXECUTION = auto()
+
+
+@dataclass(frozen=True)
+class MutationMetadata:
+    """
+    Metadata describing a mutation strategy.
+
+    This metadata is used to:
+    - classify mutations
+    - orchestrate mutation campaigns
+    - measure robustness per pipeline stage
+    - define expected failure locations
+    - support future reporting / analytics
+    """
+
+    name: str
+
+    nature: MutationNature
+    severity: MutationSeverity
+    severity_score: float
+
+    impact: set[MutationImpact]
+
+    expected_failures: set[PipelineStage]
+
+    preserves_valid_ast: bool
+    preserves_typing: bool
+    deterministic: bool = True
+
+def mutation(
+    *,
+    nature: MutationNature,
+    severity: MutationSeverity,
+    severity_score: float,
+    impact: set[MutationImpact],
+    expected_failures: set[PipelineStage],
+    preserves_valid_ast: bool,
+    preserves_typing: bool,
+    deterministic: bool = True,
+):
+    """
+    Attach metadata directly to mutation functions.
+    """
+
+    def decorator(func: Callable):
+
+        func.metadata = MutationMetadata(
+            name=func.__name__,
+            nature=nature,
+            severity=severity,
+            severity_score=severity_score,
+            impact=impact,
+            expected_failures=expected_failures,
+            preserves_valid_ast=preserves_valid_ast,
+            preserves_typing=preserves_typing,
+            deterministic=deterministic,
+        )
+
+        return func
+
+    return decorator
+
+===== test\hypothesis\mutations\lexical.py =====
+
+"""
+Lexical mutations (STRING level).
+
+These mutations operate directly on raw DSL text.
+Their goal is to stress the lexer/parser layer.
+"""
+
+import random
+
+from test.hypothesis.mutations.base import (
+    MutationImpact,
+    MutationNature,
+    MutationSeverity,
+    PipelineStage,
+    mutation,
+)
+
+
+@mutation(
+    nature=MutationNature.STRUCTURAL,
+    severity=MutationSeverity.MEDIUM,
+    severity_score=0.4,
+    impact={MutationImpact.PARSING},
+    expected_failures={PipelineStage.PARSING},
+    preserves_valid_ast=False,
+    preserves_typing=False,
+)
+def remove_random_character(program: str) -> str:
+    """
+    Remove one random character.
+    """
+
+    if len(program) <= 1:
+        return program
+
+    idx = random.randint(0, len(program) - 1)
+
+    return program[:idx] + program[idx + 1:]
+
+
+@mutation(
+    nature=MutationNature.STRUCTURAL,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.7,
+    impact={MutationImpact.PARSING},
+    expected_failures={PipelineStage.PARSING},
+    preserves_valid_ast=False,
+    preserves_typing=False,
+)
+def inject_noise(program: str) -> str:
+    """
+    Inject random noise into the DSL text.
+    """
+
+    noises = [
+        "@@@",
+        "???",
+        "#!#",
+        "::",
+        ">>",
+        "<<",
+    ]
+
+    idx = random.randint(0, len(program))
+
+    noise = random.choice(noises)
+
+    return program[:idx] + noise + program[idx:]
+
+
+@mutation(
+    nature=MutationNature.SEMANTIC,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.75,
+    impact={MutationImpact.SEMANTIC_INVALID},
+    expected_failures={
+        PipelineStage.PARSING,
+        PipelineStage.SEMANTIC_ANALYSIS,
+    },
+    preserves_valid_ast=False,
+    preserves_typing=False,
+)
+def corrupt_keyword(program: str) -> str:
+    """
+    Corrupt important DSL keywords.
+    """
+
+    replacements = {
+        "model": "mod3l",
+        "target": "targ3t",
+        "using": "us1ng",
+        "forall": "for_all",
+        "neighborhood": "neighbor",
+    }
+
+    mutated = program
+
+    for original, corrupted in replacements.items():
+
+        if original in mutated:
+            return mutated.replace(original, corrupted, 1)
+
+    return mutated
+
+
+@mutation(
+    nature=MutationNature.STRUCTURAL,
+    severity=MutationSeverity.MEDIUM,
+    severity_score=0.5,
+    impact={MutationImpact.PARSING},
+    expected_failures={PipelineStage.PARSING},
+    preserves_valid_ast=False,
+    preserves_typing=False,
+)
+def shuffle_lines(program: str) -> str:
+    """
+    Shuffle lines order.
+    """
+
+    lines = program.split("\n")
+
+    if len(lines) <= 1:
+        return program
+
+    random.shuffle(lines)
+
+    return "\n".join(lines)
+
+
+LEXICAL_MUTATIONS = [
+    remove_random_character,
+    inject_noise,
+    corrupt_keyword,
+    shuffle_lines,
+]
+
+
+def apply_lexical_mutations(program: str, n: int) -> str:
+
+    mutated = program
+
+    for _ in range(n):
+        mutation_fn = random.choice(LEXICAL_MUTATIONS)
+        mutated = mutation_fn(mutated)
+
+    return mutated
+
+===== test\hypothesis\mutations\semantic.py =====
+
+"""
+Structural mutations (AST LEVEL)
+
+GOAL:
+    Modify the structure of the AST.
+
+ROLE IN FORML:
+    - test AST builder robustness
+    - break structural invariants
+    - simulate upstream corruption
+
+CHARACTERISTICS:
+    ✔ AST exists
+    ❌ semantic validity not guaranteed
+    ❌ structural invariants often violated
+"""
+
+import random
+
+from dsl.ast.nodes.program import ProgramNode
+
+from test.hypothesis.mutations.base import (
+    MutationImpact,
+    mutation,
+    MutationNature,
+    MutationSeverity,
+    PipelineStage,
+)
+
+
+@mutation(
+    nature=MutationNature.STRUCTURAL,
+    severity=MutationSeverity.CRITICAL,
+    severity_score=0.9,
+    impact={MutationImpact.AST_INVALID},
+    expected_failures={PipelineStage.SEMANTIC_ANALYSIS, },
+    preserves_valid_ast=False,
+    preserves_typing=False,
+)
+def remove_model(ast: ProgramNode) -> ProgramNode:
+    """
+    Remove the model declaration from the AST.
+    """
+
+    if hasattr(ast, "header"):
+        object.__setattr__(ast.header, "model", None)
+
+    return ast
+
+
+@mutation(
+    nature=MutationNature.STRUCTURAL,
+    severity=MutationSeverity.CRITICAL,
+    severity_score=0.9,
+    impact={MutationImpact.AST_INVALID},
+    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
+    preserves_valid_ast=False,
+    preserves_typing=False,
+)
+def remove_target(ast: ProgramNode) -> ProgramNode:
+    """
+    Remove the target declaration from the AST.
+    """
+
+    if hasattr(ast, "header"):
+        object.__setattr__(ast.header, "target", None)
+
+    return ast
+
+
+@mutation(
+    nature=MutationNature.STRUCTURAL,
+    severity=MutationSeverity.CATASTROPHIC,
+    severity_score=1.0,
+    impact={MutationImpact.AST_INVALID},
+    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
+    preserves_valid_ast=False,
+    preserves_typing=False,
+)
+def remove_body(ast: ProgramNode) -> ProgramNode:
+    """
+    Remove the entire program body.
+
+    RESULT:
+        - empty AST
+        - total loss of semantics
+    """
+
+    if hasattr(ast, "body"):
+        ast.body = []
+
+    return ast
+
+
+@mutation(
+    nature=MutationNature.STRUCTURAL,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.7,
+    impact={MutationImpact.AST_INVALID},
+    expected_failures={
+        PipelineStage.AST_BUILDING,
+        PipelineStage.SEMANTIC_ANALYSIS,
+    },
+    preserves_valid_ast=False,
+    preserves_typing=False,
+)
+def reorder_sections(ast: ProgramNode) -> ProgramNode:
+    """
+    Shuffle top-level AST sections.
+
+    EFFECT:
+        - breaks structural consistency
+    """
+
+    if not hasattr(ast, "__dict__"):
+        return ast
+
+    items = list(vars(ast).items())
+    random.shuffle(items)
+
+    for k, v in items:
+        setattr(ast, k, v)
+
+    return ast
+
+
+STRUCTURAL_MUTATIONS = [
+    remove_model,
+    remove_target,
+    remove_body,
+    reorder_sections,
+]
+
+
+def apply_structural_mutations(ast: ProgramNode, n: int = 1) -> ProgramNode:
+    """
+    Apply N structural mutations.
+    """
+
+    mutated = ast
+
+    for _ in range(n):
+        mutation_fn = random.choice(STRUCTURAL_MUTATIONS)
+        mutated = mutation_fn(mutated)
+
+    return mutated
+
+===== test\hypothesis\mutations\structural.py =====
+
+"""
+Structural mutations (AST LEVEL)
+
+GOAL:
+    Modify the structure of the AST.
+
+ROLE IN FORML:
+    - test AST builder robustness
+    - break structural invariants
+    - simulate upstream corruption
+
+CHARACTERISTICS:
+    ✔ AST exists
+    ❌ semantic validity not guaranteed
+    ❌ structural invariants often violated
+"""
+
+import random
+
+from dsl.ast.nodes.program import ProgramNode
+
+from test.hypothesis.mutations.base import (
+    MutationImpact,
+    mutation,
+    MutationNature,
+    MutationSeverity,
+    PipelineStage,
+)
+
+
+@mutation(
+    nature=MutationNature.STRUCTURAL,
+    severity=MutationSeverity.CRITICAL,
+    severity_score=0.9,
+    impact= {MutationImpact.AST_INVALID},
+    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
+    preserves_valid_ast=False,
+    preserves_typing=False,
+)
+def remove_model(ast: ProgramNode) -> ProgramNode:
+    """
+    Remove the model declaration from the AST.
+    """
+
+    if hasattr(ast, "header"):
+        object.__setattr__(ast.header, "model", None)
+
+    return ast
+
+
+@mutation(
+    nature=MutationNature.STRUCTURAL,
+    severity=MutationSeverity.CRITICAL,
+    severity_score=0.9,
+    impact={MutationImpact.AST_INVALID},
+    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
+    preserves_valid_ast=False,
+    preserves_typing=False,
+)
+def remove_target(ast: ProgramNode) -> ProgramNode:
+    """
+    Remove the target declaration from the AST.
+    """
+
+    if hasattr(ast, "header"):
+        object.__setattr__(ast.header, "target", None)
+
+    return ast
+
+
+@mutation(
+    nature=MutationNature.STRUCTURAL,
+    severity=MutationSeverity.CATASTROPHIC,
+    severity_score=1.0,
+    impact={MutationImpact.AST_INVALID},
+    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
+    preserves_valid_ast=False,
+    preserves_typing=False,
+)
+def remove_body(ast: ProgramNode) -> ProgramNode:
+    """
+    Remove the entire program body.
+
+    RESULT:
+        - empty AST
+        - total loss of semantics
+    """
+
+    if hasattr(ast, "body"):
+        ast.body = []
+
+    return ast
+
+
+@mutation(
+    nature=MutationNature.STRUCTURAL,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.7,
+    impact={MutationImpact.AST_INVALID},
+    expected_failures={
+        PipelineStage.AST_BUILDING,
+        PipelineStage.SEMANTIC_ANALYSIS,
+    },
+    preserves_valid_ast=False,
+    preserves_typing=False,
+)
+def reorder_sections(ast: ProgramNode) -> ProgramNode:
+    """
+    Shuffle top-level AST sections.
+
+    EFFECT:
+        - breaks structural consistency
+    """
+
+    if not hasattr(ast, "__dict__"):
+        return ast
+
+    items = list(vars(ast).items())
+    random.shuffle(items)
+
+    for k, v in items:
+        setattr(ast, k, v)
+
+    return ast
+
+
+STRUCTURAL_MUTATIONS = [
+    remove_model,
+    remove_target,
+    remove_body,
+    reorder_sections,
+]
+
+
+def apply_structural_mutations(ast: ProgramNode, n: int = 1) -> ProgramNode:
+    """
+    Apply N structural mutations.
+    """
+
+    mutated = ast
+
+    for _ in range(n):
+        mutation_fn = random.choice(STRUCTURAL_MUTATIONS)
+        mutated = mutation_fn(mutated)
+
+    return mutated

@@ -1,44 +1,89 @@
 """
-Structural mutations on AST (parser output).
+Structural mutations (AST LEVEL)
 
-Goal:
-    Break syntax structure before semantic construction.
+GOAL:
+    Modify the structure of the AST.
+
+ROLE IN FORML:
+    - test AST builder robustness
+    - break structural invariants
+    - simulate upstream corruption
+
+CHARACTERISTICS:
+    ✔ AST exists
+    ❌ semantic validity not guaranteed
+    ❌ structural invariants often violated
 """
 
 import random
 
 from dsl.ast.nodes.program import ProgramNode
 
+from test.hypothesis.mutations.base import (
+    MutationImpact,
+    mutation,
+    MutationNature,
+    MutationSeverity,
+    PipelineStage,
+)
 
-# =========================================================
-# AST MUTATIONS
-# =========================================================
 
-def remove_model(ast):
+@mutation(
+    nature=MutationNature.STRUCTURAL,
+    severity=MutationSeverity.CRITICAL,
+    severity_score=0.9,
+    impact={MutationImpact.AST_INVALID},
+    expected_failures={PipelineStage.SEMANTIC_ANALYSIS, },
+    preserves_valid_ast=False,
+    preserves_typing=False,
+)
+def remove_model(ast: ProgramNode) -> ProgramNode:
     """
-    Remove model declaration node from AST.
+    Remove the model declaration from the AST.
     """
 
     if hasattr(ast, "header"):
-        ast.header.model = None
+        object.__setattr__(ast.header, "model", None)
 
     return ast
 
 
-def remove_target(ast):
+@mutation(
+    nature=MutationNature.STRUCTURAL,
+    severity=MutationSeverity.CRITICAL,
+    severity_score=0.9,
+    impact={MutationImpact.AST_INVALID},
+    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
+    preserves_valid_ast=False,
+    preserves_typing=False,
+)
+def remove_target(ast: ProgramNode) -> ProgramNode:
     """
-    Remove target declaration node from AST.
+    Remove the target declaration from the AST.
     """
 
     if hasattr(ast, "header"):
-        ast.header.target = None
+        object.__setattr__(ast.header, "target", None)
 
     return ast
 
 
-def remove_body(ast):
+@mutation(
+    nature=MutationNature.STRUCTURAL,
+    severity=MutationSeverity.CATASTROPHIC,
+    severity_score=1.0,
+    impact={MutationImpact.AST_INVALID},
+    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
+    preserves_valid_ast=False,
+    preserves_typing=False,
+)
+def remove_body(ast: ProgramNode) -> ProgramNode:
     """
-    Remove entire body section.
+    Remove the entire program body.
+
+    RESULT:
+        - empty AST
+        - total loss of semantics
     """
 
     if hasattr(ast, "body"):
@@ -47,15 +92,29 @@ def remove_body(ast):
     return ast
 
 
-def reorder_sections(ast):
+@mutation(
+    nature=MutationNature.STRUCTURAL,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.7,
+    impact={MutationImpact.AST_INVALID},
+    expected_failures={
+        PipelineStage.AST_BUILDING,
+        PipelineStage.SEMANTIC_ANALYSIS,
+    },
+    preserves_valid_ast=False,
+    preserves_typing=False,
+)
+def reorder_sections(ast: ProgramNode) -> ProgramNode:
     """
-    Shuffle high-level AST sections if possible.
+    Shuffle top-level AST sections.
+
+    EFFECT:
+        - breaks structural consistency
     """
 
     if not hasattr(ast, "__dict__"):
         return ast
 
-    # naive structural perturbation
     items = list(vars(ast).items())
     random.shuffle(items)
 
@@ -73,11 +132,15 @@ STRUCTURAL_MUTATIONS = [
 ]
 
 
-# =========================================================
-# ENGINE
-# =========================================================
+def apply_structural_mutations(ast: ProgramNode, n: int = 1) -> ProgramNode:
+    """
+    Apply N structural mutations.
+    """
 
-def apply_structural_mutations(ast: ProgramNode, n: int) -> ProgramNode:
+    mutated = ast
+
     for _ in range(n):
-        ast = random.choice(STRUCTURAL_MUTATIONS)(ast)
-    return ast
+        mutation_fn = random.choice(STRUCTURAL_MUTATIONS)
+        mutated = mutation_fn(mutated)
+
+    return mutated

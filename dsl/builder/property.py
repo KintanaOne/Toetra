@@ -1,10 +1,12 @@
 from lark import Tree
+
 from dsl.ast.nodes.assertion import AssertionNode
 from dsl.ast.nodes.property import PropertyNode, PropertyRuleNode
 from dsl.builder.backends import parse_backend
 from dsl.builder.core.strict import require_value
 from dsl.builder.core.utils import find_node
 from dsl.builder.core.ast_utils import node_value
+from dsl.language.vocabulary.properties import EnumProperty
 from .expressions import (
     parse_at,
     parse_pairwise,
@@ -48,9 +50,6 @@ def detect_mode(prop: Tree) -> str:
 # ---------------------------------------------------------------------------
 # RHS extraction
 # ---------------------------------------------------------------------------
-
-from lark import Tree
-
 
 def extract_rhs(prop: Tree) -> Tree:
     """
@@ -138,6 +137,8 @@ def parse_property(prop: Tree) -> PropertyNode:
         node_value(property_type_node),
         "Property type is missing"
     )
+
+    property_type = EnumProperty(property_type)
 
     # -----------------------------------------------------------------------
     # Build AST

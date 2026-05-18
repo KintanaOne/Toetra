@@ -66,6 +66,7 @@ class NeighborhoodIR:
     Example: L2 ball with epsilon.
     """
     metric: str
+    eps: float
     args: dict[str, Any]
 
 

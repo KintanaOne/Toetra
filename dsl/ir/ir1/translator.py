@@ -101,9 +101,13 @@ class IRTranslator:
                 }
 
                 eps = args_dict.get("eps")
+                assert eps is not None, "Neighborhood must specify 'eps' parameter"
+                eps = float(eps)
+
 
                 neighborhood_ir = NeighborhoodIR(
                     metric=scope.neighborhood.metric,
+                    eps=eps,
                     args=args_dict
                 )
 
@@ -311,9 +315,12 @@ class IRTranslator:
         # -----------------------------
         if isinstance(node, ProblemNode):
 
+            problem = EnumProblem(node.problem)
+            function = EnumFunction(node.function) if node.function else None
+
             return ProblemIR(
-                problem=EnumProblem[node.problem],
-                function=EnumFunction[node.function] if node.function else None,
+                problem=problem,
+                function=function,
                 args={}
             )
 

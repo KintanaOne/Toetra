@@ -1,72 +1,687 @@
 
-===== test\hypothesis\builder\test_builder.py =====
+===== test\hypothesis\builder\test_invalid_builder.py =====
 
 from hypothesis import given
+import pytest
+
+from dsl.builder.program import parse_program
+from dsl.parser.parser import parse_forml_code
+from test.hypothesis.strategies.invalid.program import apply_lexical_mutations
+from test.hypothesis.strategies.valid.program_valid import valid_program
+
+pytestmark = pytest.mark.wip
+
+@given(valid_program())
+def test_builder_rejects_invalid_structure(program):
+
+    
+
+    mutated = apply_lexical_mutations(program)
+
+
+    with pytest.raises(Exception):
+        cst = parse_forml_code(mutated)
+        parse_program(cst)
+
+===== test\hypothesis\builder\test_valid_builder.py =====
+
+from hypothesis import given
+import pytest
 
 from dsl.builder.program import parse_program
 from dsl.parser.parser import parse_forml_code
 
 from test.hypothesis.settings import DEFAULT_SETTINGS
-from test.hypothesis.strategies.valid.program import valid_programs
+from test.hypothesis.strategies.valid.program_valid import valid_program
 
+pytestmark = pytest.mark.wip
 
 @DEFAULT_SETTINGS
-@given(valid_programs())
+@given(valid_program())
 def test_builder_accepts_valid_programs(program):
 
     cst = parse_forml_code(program)
-
     ast = parse_program(cst)
 
     assert ast is not None
+
+===== test\hypothesis\mutations\__init__.py =====
+
+from .lexical import *
+from .structural import *
+from .semantic import *
+
+===== test\hypothesis\mutations\base.py =====
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from enum import Enum, auto
+from typing import Callable
+
+
+class MutationNature(Enum):
+    STRUCTURAL = auto()
+    SEMANTIC = auto()
+    LOGICAL = auto()
+    NUMERICAL = auto()
+    ADVERSARIAL = auto()
+    STOCHASTIC = auto()
+
+
+class MutationImpact(Enum):
+    NONE = auto()
+    PARSING = auto()
+    AST_INVALID = auto()
+    SEMANTIC_INVALID = auto()
+    TYPE_INVALID = auto()
+    EXECUTION_FAILURE = auto()
+
+
+class MutationSeverity(Enum):
+    INFO = auto()
+    LOW = auto()
+    MEDIUM = auto()
+    HIGH = auto()
+    CRITICAL = auto()
+    CATASTROPHIC = auto()
+
+
+class PipelineStage(Enum):
+    PARSING = auto()
+    AST_BUILDING = auto()
+    SEMANTIC_ANALYSIS = auto()
+    TYPE_CHECKING = auto()
+    TRANSFORMATION = auto()
+    EXECUTION = auto()
+
+
+@dataclass(frozen=True)
+class MutationMetadata:
+    """
+    Metadata describing a mutation strategy.
+
+    This metadata is used to:
+    - classify mutations
+    - orchestrate mutation campaigns
+    - measure robustness per pipeline stage
+    - define expected failure locations
+    - support future reporting / analytics
+    """
+
+    name: str
+
+    nature: MutationNature
+    severity: MutationSeverity
+    severity_score: float
+
+    impact: set[MutationImpact]
+
+    expected_failures: set[PipelineStage]
+
+    preserves_valid_ast: bool
+    preserves_typing: bool
+    deterministic: bool = True
+
+def mutation(
+    *,
+    nature: MutationNature,
+    severity: MutationSeverity,
+    severity_score: float,
+    impact: set[MutationImpact],
+    expected_failures: set[PipelineStage],
+    preserves_valid_ast: bool,
+    preserves_typing: bool,
+    deterministic: bool = True,
+):
+    """
+    Attach metadata directly to mutation functions.
+    """
+
+    def decorator(func: Callable):
+
+        func.metadata = MutationMetadata(
+            name=func.__name__,
+            nature=nature,
+            severity=severity,
+            severity_score=severity_score,
+            impact=impact,
+            expected_failures=expected_failures,
+            preserves_valid_ast=preserves_valid_ast,
+            preserves_typing=preserves_typing,
+            deterministic=deterministic,
+        )
+
+        return func
+
+    return decorator
+
+===== test\hypothesis\mutations\lexical.py =====
+
+"""
+Lexical mutations (STRING level).
+
+These mutations operate directly on raw DSL text.
+Their goal is to stress the lexer/parser layer.
+"""
+
+import random
+
+from test.hypothesis.mutations.base import (
+    MutationImpact,
+    MutationNature,
+    MutationSeverity,
+    PipelineStage,
+    mutation,
+)
+
+
+@mutation(
+    nature=MutationNature.STRUCTURAL,
+    severity=MutationSeverity.MEDIUM,
+    severity_score=0.4,
+    impact={MutationImpact.PARSING},
+    expected_failures={PipelineStage.PARSING},
+    preserves_valid_ast=False,
+    preserves_typing=False,
+)
+def remove_random_character(program: str) -> str:
+    """
+    Remove one random character.
+    """
+
+    if len(program) <= 1:
+        return program
+
+    idx = random.randint(0, len(program) - 1)
+
+    return program[:idx] + program[idx + 1:]
+
+
+@mutation(
+    nature=MutationNature.STRUCTURAL,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.7,
+    impact={MutationImpact.PARSING},
+    expected_failures={PipelineStage.PARSING},
+    preserves_valid_ast=False,
+    preserves_typing=False,
+)
+def inject_noise(program: str) -> str:
+    """
+    Inject random noise into the DSL text.
+    """
+
+    noises = [
+        "@@@",
+        "???",
+        "#!#",
+        "::",
+        ">>",
+        "<<",
+    ]
+
+    idx = random.randint(0, len(program))
+
+    noise = random.choice(noises)
+
+    return program[:idx] + noise + program[idx:]
+
+
+@mutation(
+    nature=MutationNature.SEMANTIC,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.75,
+    impact={MutationImpact.SEMANTIC_INVALID},
+    expected_failures={
+        PipelineStage.PARSING,
+        PipelineStage.SEMANTIC_ANALYSIS,
+    },
+    preserves_valid_ast=False,
+    preserves_typing=False,
+)
+def corrupt_keyword(program: str) -> str:
+    """
+    Corrupt important DSL keywords.
+    """
+
+    replacements = {
+        "model": "mod3l",
+        "target": "targ3t",
+        "using": "us1ng",
+        "forall": "for_all",
+        "neighborhood": "neighbor",
+    }
+
+    mutated = program
+
+    for original, corrupted in replacements.items():
+
+        if original in mutated:
+            return mutated.replace(original, corrupted, 1)
+
+    return mutated
+
+
+@mutation(
+    nature=MutationNature.STRUCTURAL,
+    severity=MutationSeverity.MEDIUM,
+    severity_score=0.5,
+    impact={MutationImpact.PARSING},
+    expected_failures={PipelineStage.PARSING},
+    preserves_valid_ast=False,
+    preserves_typing=False,
+)
+def shuffle_lines(program: str) -> str:
+    """
+    Shuffle lines order.
+    """
+
+    lines = program.split("\n")
+
+    if len(lines) <= 1:
+        return program
+
+    random.shuffle(lines)
+
+    return "\n".join(lines)
+
+
+LEXICAL_MUTATIONS = [
+    remove_random_character,
+    inject_noise,
+    corrupt_keyword,
+    shuffle_lines,
+]
+
+
+def apply_lexical_mutations(program: str, n: int) -> str:
+
+    mutated = program
+
+    for _ in range(n):
+        mutation_fn = random.choice(LEXICAL_MUTATIONS)
+        mutated = mutation_fn(mutated)
+
+    return mutated
+
+===== test\hypothesis\mutations\semantic.py =====
+
+"""
+Structural mutations (AST LEVEL)
+
+GOAL:
+    Modify the structure of the AST.
+
+ROLE IN FORML:
+    - test AST builder robustness
+    - break structural invariants
+    - simulate upstream corruption
+
+CHARACTERISTICS:
+    ✔ AST exists
+    ❌ semantic validity not guaranteed
+    ❌ structural invariants often violated
+"""
+
+import random
+
+from dsl.ast.nodes.program import ProgramNode
+
+from test.hypothesis.mutations.base import (
+    MutationImpact,
+    mutation,
+    MutationNature,
+    MutationSeverity,
+    PipelineStage,
+)
+
+
+@mutation(
+    nature=MutationNature.STRUCTURAL,
+    severity=MutationSeverity.CRITICAL,
+    severity_score=0.9,
+    impact={MutationImpact.AST_INVALID},
+    expected_failures={PipelineStage.SEMANTIC_ANALYSIS, },
+    preserves_valid_ast=False,
+    preserves_typing=False,
+)
+def remove_model(ast: ProgramNode) -> ProgramNode:
+    """
+    Remove the model declaration from the AST.
+    """
+
+    if hasattr(ast, "header"):
+        object.__setattr__(ast.header, "model", None)
+
+    return ast
+
+
+@mutation(
+    nature=MutationNature.STRUCTURAL,
+    severity=MutationSeverity.CRITICAL,
+    severity_score=0.9,
+    impact={MutationImpact.AST_INVALID},
+    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
+    preserves_valid_ast=False,
+    preserves_typing=False,
+)
+def remove_target(ast: ProgramNode) -> ProgramNode:
+    """
+    Remove the target declaration from the AST.
+    """
+
+    if hasattr(ast, "header"):
+        object.__setattr__(ast.header, "target", None)
+
+    return ast
+
+
+@mutation(
+    nature=MutationNature.STRUCTURAL,
+    severity=MutationSeverity.CATASTROPHIC,
+    severity_score=1.0,
+    impact={MutationImpact.AST_INVALID},
+    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
+    preserves_valid_ast=False,
+    preserves_typing=False,
+)
+def remove_body(ast: ProgramNode) -> ProgramNode:
+    """
+    Remove the entire program body.
+
+    RESULT:
+        - empty AST
+        - total loss of semantics
+    """
+
+    if hasattr(ast, "body"):
+        ast.body = []
+
+    return ast
+
+
+@mutation(
+    nature=MutationNature.STRUCTURAL,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.7,
+    impact={MutationImpact.AST_INVALID},
+    expected_failures={
+        PipelineStage.AST_BUILDING,
+        PipelineStage.SEMANTIC_ANALYSIS,
+    },
+    preserves_valid_ast=False,
+    preserves_typing=False,
+)
+def reorder_sections(ast: ProgramNode) -> ProgramNode:
+    """
+    Shuffle top-level AST sections.
+
+    EFFECT:
+        - breaks structural consistency
+    """
+
+    if not hasattr(ast, "__dict__"):
+        return ast
+
+    items = list(vars(ast).items())
+    random.shuffle(items)
+
+    for k, v in items:
+        setattr(ast, k, v)
+
+    return ast
+
+
+STRUCTURAL_MUTATIONS = [
+    remove_model,
+    remove_target,
+    remove_body,
+    reorder_sections,
+]
+
+
+def apply_structural_mutations(ast: ProgramNode, n: int = 1) -> ProgramNode:
+    """
+    Apply N structural mutations.
+    """
+
+    mutated = ast
+
+    for _ in range(n):
+        mutation_fn = random.choice(STRUCTURAL_MUTATIONS)
+        mutated = mutation_fn(mutated)
+
+    return mutated
+
+===== test\hypothesis\mutations\structural.py =====
+
+"""
+Structural mutations (AST LEVEL)
+
+GOAL:
+    Modify the structure of the AST.
+
+ROLE IN FORML:
+    - test AST builder robustness
+    - break structural invariants
+    - simulate upstream corruption
+
+CHARACTERISTICS:
+    ✔ AST exists
+    ❌ semantic validity not guaranteed
+    ❌ structural invariants often violated
+"""
+
+import random
+
+from dsl.ast.nodes.program import ProgramNode
+
+from test.hypothesis.mutations.base import (
+    MutationImpact,
+    mutation,
+    MutationNature,
+    MutationSeverity,
+    PipelineStage,
+)
+
+
+@mutation(
+    nature=MutationNature.STRUCTURAL,
+    severity=MutationSeverity.CRITICAL,
+    severity_score=0.9,
+    impact= {MutationImpact.AST_INVALID},
+    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
+    preserves_valid_ast=False,
+    preserves_typing=False,
+)
+def remove_model(ast: ProgramNode) -> ProgramNode:
+    """
+    Remove the model declaration from the AST.
+    """
+
+    if hasattr(ast, "header"):
+        object.__setattr__(ast.header, "model", None)
+
+    return ast
+
+
+@mutation(
+    nature=MutationNature.STRUCTURAL,
+    severity=MutationSeverity.CRITICAL,
+    severity_score=0.9,
+    impact={MutationImpact.AST_INVALID},
+    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
+    preserves_valid_ast=False,
+    preserves_typing=False,
+)
+def remove_target(ast: ProgramNode) -> ProgramNode:
+    """
+    Remove the target declaration from the AST.
+    """
+
+    if hasattr(ast, "header"):
+        object.__setattr__(ast.header, "target", None)
+
+    return ast
+
+
+@mutation(
+    nature=MutationNature.STRUCTURAL,
+    severity=MutationSeverity.CATASTROPHIC,
+    severity_score=1.0,
+    impact={MutationImpact.AST_INVALID},
+    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
+    preserves_valid_ast=False,
+    preserves_typing=False,
+)
+def remove_body(ast: ProgramNode) -> ProgramNode:
+    """
+    Remove the entire program body.
+
+    RESULT:
+        - empty AST
+        - total loss of semantics
+    """
+
+    if hasattr(ast, "body"):
+        ast.body = []
+
+    return ast
+
+
+@mutation(
+    nature=MutationNature.STRUCTURAL,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.7,
+    impact={MutationImpact.AST_INVALID},
+    expected_failures={
+        PipelineStage.AST_BUILDING,
+        PipelineStage.SEMANTIC_ANALYSIS,
+    },
+    preserves_valid_ast=False,
+    preserves_typing=False,
+)
+def reorder_sections(ast: ProgramNode) -> ProgramNode:
+    """
+    Shuffle top-level AST sections.
+
+    EFFECT:
+        - breaks structural consistency
+    """
+
+    if not hasattr(ast, "__dict__"):
+        return ast
+
+    items = list(vars(ast).items())
+    random.shuffle(items)
+
+    for k, v in items:
+        setattr(ast, k, v)
+
+    return ast
+
+
+STRUCTURAL_MUTATIONS = [
+    remove_model,
+    remove_target,
+    remove_body,
+    reorder_sections,
+]
+
+
+def apply_structural_mutations(ast: ProgramNode, n: int = 1) -> ProgramNode:
+    """
+    Apply N structural mutations.
+    """
+
+    mutated = ast
+
+    for _ in range(n):
+        mutation_fn = random.choice(STRUCTURAL_MUTATIONS)
+        mutated = mutation_fn(mutated)
+
+    return mutated
 
 ===== test\hypothesis\parser\test_invalid_parser.py =====
 
 import pytest
 from hypothesis import given
-from test.hypothesis.settings import DEFAULT_SETTINGS
 from test.hypothesis.strategies.invalid.program import invalid_program
 
 from dsl.parser.parser import parse_forml_code
 
+pytestmark = pytest.mark.wip
 
-@DEFAULT_SETTINGS
 @given(invalid_program())
-def test_parser_rejects_invalid(prog):
+def test_parser_rejects_invalid(program):
     with pytest.raises(Exception):
-        parse_forml_code(prog)
+        parse_forml_code(program)
 
-===== test\hypothesis\parser\test_parser.py =====
+===== test\hypothesis\parser\test_valid_parser.py =====
 
 from hypothesis import given
-from test.hypothesis.settings import DEFAULT_SETTINGS
+import pytest
 from test.hypothesis.strategies.valid.program_valid import valid_program
 
 from dsl.parser.parser import parse_forml_code
 
+pytestmark = pytest.mark.wip
 
-@DEFAULT_SETTINGS
 @given(valid_program())
-def test_parser_never_crashes(prog):
-    parse_forml_code(prog)
+def test_parser_accepts_valid(program):
+    cst = parse_forml_code(program)
+    assert cst is not None
 
-===== test\hypothesis\semantic\test_semantic_structure.py =====
+===== test\hypothesis\semantic\test_invalid_semantic.py =====
+
+from hypothesis import given
+import pytest
 
 from dsl.builder.program import parse_program
 from dsl.parser.parser import parse_forml_code
+from dsl.semantic.core.validator import FORMLValidator
+from dsl.semantic.runtime.tracer import ValidationTracer
+from test.hypothesis.mutations.semantic import apply_semantic_mutations
+from test.hypothesis.strategies.valid.program_valid import valid_program
 
 
-@given(valid_programs())
-def test_program_has_valid_structure(program):
+@given(valid_program())
+def test_semantic_mutations(program):
 
     cst = parse_forml_code(program)
     ast = parse_program(cst)
 
-    assert ast.header is not None
-    assert ast.header.model is not None
-    assert ast.header.target is not None
+    mutated = apply_semantic_mutations(ast)
+    tracer = ValidationTracer(enabled=True)
+    validator = FORMLValidator()
+    validator.validate(mutated, tracer=tracer)
 
-    assert len(ast.body) > 0
+    with pytest.raises(Exception):
+        validator.validate(mutated, tracer=tracer)
+
+===== test\hypothesis\semantic\test_valid_semantic.py =====
+
+from hypothesis import given
+import pytest
+
+from dsl.builder.program import parse_program
+from dsl.parser.parser import parse_forml_code
+from dsl.semantic.core.validator import FORMLValidator
+from dsl.semantic.runtime.tracer import ValidationTracer
+from test.hypothesis.strategies.valid.program_valid import valid_program
+
+pytestmark = pytest.mark.wip
+
+@given(valid_program())
+def test_semantic_validation(program):
+
+    cst = parse_forml_code(program)
+    ast = parse_program(cst)
+
+    tracer = ValidationTracer(enabled=True)
+    validator = FORMLValidator()
+    validator.validate(ast, tracer=tracer)
 
 ===== test\hypothesis\settings.py =====
 
@@ -273,24 +888,249 @@ def property_section(draw):
 
     return prop
 
+===== test\hypothesis\strategies\invalid\lexical.py =====
+
+
+
 ===== test\hypothesis\strategies\invalid\program.py =====
 
-from hypothesis import strategies as st
+"""
+Multi-layer invalid FORML program generation.
+
+Pipeline:
+    valid_program (string)
+        ↓
+    lexical mutations
+        ↓
+    CST
+        ↓
+    structural mutations
+        ↓
+    AST
+        ↓
+    semantic mutations
+
+This module generates invalid artifacts across
+multiple layers of the FORML pipeline.
+"""
+
+import random
+
+from hypothesis.strategies import composite
+
+from dsl.parser.parser import parse_forml_code
+from dsl.builder.program import parse_program
+
+from test.hypothesis.strategies.valid.program_valid import valid_program
+
+from test.hypothesis.mutations.lexical import (
+    LEXICAL_MUTATIONS,
+)
+
+from test.hypothesis.mutations.structural import (
+    STRUCTURAL_MUTATIONS,
+)
+
+from test.hypothesis.mutations.semantic import (
+    SEMANTIC_MUTATIONS,
+)
 
 
-invalid_strings = st.sampled_from([
-    "model := ",
-    "target := ",
-    "[ROBUSTNESS] x ~ =>",
-    "model := 123???",
-    "random gibberish",
-    "[] =>",
-])
+# =========================================================
+# GENERIC MUTATION ENGINE
+# =========================================================
+
+def mutate(obj, mutation_pool):
+    """
+    Apply one random mutation from a mutation pool.
+    """
+
+    mutation = random.choice(mutation_pool)
+
+    return mutation(obj)
 
 
-@st.composite
-def invalid_program(draw):
-    return draw(invalid_strings)
+# =========================================================
+# LEXICAL LAYER
+# =========================================================
+
+def apply_lexical_mutations(
+    program: str,
+    mutation_count: int = 1,
+):
+    """
+    Apply lexical mutations on DSL text.
+    """
+
+    mutated = program
+
+    for _ in range(mutation_count):
+        mutated = mutate(mutated, LEXICAL_MUTATIONS)
+
+    return mutated
+
+
+# =========================================================
+# STRUCTURAL LAYER (CST)
+# =========================================================
+
+def apply_structural_mutations(
+    cst,
+    mutation_count: int,
+):
+    """
+    Apply structural mutations on CST.
+    """
+
+    mutated = cst
+
+    for _ in range(mutation_count):
+        mutated = mutate(mutated, STRUCTURAL_MUTATIONS)
+
+    return mutated
+
+
+# =========================================================
+# SEMANTIC LAYER (AST)
+# =========================================================
+
+def apply_semantic_mutations(
+    ast,
+    mutation_count: int,
+):
+    """
+    Apply semantic mutations on AST.
+    """
+
+    mutated = ast
+
+    for _ in range(mutation_count):
+        mutated = mutate(mutated, SEMANTIC_MUTATIONS)
+
+    return mutated
+
+
+# =========================================================
+# MAIN STRATEGY
+# =========================================================
+
+@composite
+def invalid_program(
+    draw,
+    lexical_ratio: float = 0.4,
+    structural_ratio: float = 0.3,
+    semantic_ratio: float = 0.3,
+    max_mutations: int = 3,
+):
+    """
+    Generate invalid FORML artifacts.
+
+    Ratios determine the probability of applying
+    mutations at each pipeline layer.
+
+    Parameters
+    ----------
+    lexical_ratio:
+        Probability of lexical (string) mutations.
+
+    structural_ratio:
+        Probability of structural (CST) mutations.
+
+    semantic_ratio:
+        Probability of semantic (AST) mutations.
+
+    max_mutations:
+        Maximum mutations applied per layer.
+
+    Returns
+    -------
+    Depending on mutation stage:
+        - str
+        - CST
+        - AST
+    """
+
+    # -----------------------------------------------------
+    # STEP 1: valid DSL program
+    # -----------------------------------------------------
+
+    program = draw(valid_program())
+
+    # -----------------------------------------------------
+    # STEP 2: lexical mutations
+    # -----------------------------------------------------
+
+    if random.random() < lexical_ratio:
+
+        lexical_mutation_count = random.randint(
+            1,
+            max_mutations,
+        )
+
+        program = apply_lexical_mutations(
+            program,
+            lexical_mutation_count,
+        )
+
+    # -----------------------------------------------------
+    # STEP 3: parser
+    # -----------------------------------------------------
+
+    try:
+        cst = parse_forml_code(program)
+
+    except Exception:
+        # lexical corruption successfully broke parser
+        return program
+
+    # -----------------------------------------------------
+    # STEP 4: structural mutations
+    # -----------------------------------------------------
+
+    if random.random() < structural_ratio:
+
+        structural_mutation_count = random.randint(
+            1,
+            max_mutations,
+        )
+
+        cst = apply_structural_mutations(
+            cst,
+            structural_mutation_count,
+        )
+
+    # -----------------------------------------------------
+    # STEP 5: builder
+    # -----------------------------------------------------
+
+    try:
+        ast = parse_program(cst)
+
+    except Exception:
+        # structural corruption successfully broke builder
+        return cst
+
+    # -----------------------------------------------------
+    # STEP 6: semantic mutations
+    # -----------------------------------------------------
+
+    if random.random() < semantic_ratio:
+
+        semantic_mutation_count = random.randint(
+            1,
+            max_mutations,
+        )
+
+        ast = apply_semantic_mutations(
+            ast,
+            semantic_mutation_count,
+        )
+
+    # -----------------------------------------------------
+    # FINAL OUTPUT
+    # -----------------------------------------------------
+
+    return ast
 
 ===== test\hypothesis\strategies\primitives\__init__.py =====
 
@@ -372,12 +1212,13 @@ def valid_program(draw):
 
 from hypothesis import given
 import pytest
-from test.hypothesis.settings import DEFAULT_SETTINGS
-from test.hypothesis.strategies.valid.program import program
+from test.hypothesis.strategies.valid.program_valid import valid_program
 
 from dsl.parser.parser import parse_forml_code
 
-@given(program())
+pytestmark = pytest.mark.wip
+
+@given(valid_program())
 def test_parse_deterministic(prog):
     ast1 = parse_forml_code(prog)
     ast2 = parse_forml_code(prog)
@@ -387,11 +1228,13 @@ def test_parse_deterministic(prog):
 ===== test\hypothesis\test_invariant_semantic.py =====
 
 from hypothesis import given
+import pytest
 
 from dsl.builder.program import parse_program
 from dsl.parser.parser import parse_forml_code
 from test.hypothesis.strategies.valid.program_valid import valid_program
 
+pytestmark = pytest.mark.wip
 
 @given(valid_program())
 def test_semantic_roundtrip(prog):
@@ -418,14 +1261,15 @@ def test_program_has_valid_structure(prog):
 
 from hypothesis import given
 import pytest
-from test.hypothesis.settings import DEFAULT_SETTINGS
-from test.hypothesis.strategies.valid.program import program
+from test.hypothesis.strategies.valid.program_valid import valid_program
 
 from dsl.parser.parser import parse_forml_code
 from test.hypothesis.utils.serialize import serialize
 
+pytestmark = pytest.mark.wip
+
 @pytest.mark.skip(reason="no serialization implemented yet")
-@given(program())
+@given(valid_program())
 def test_roundtrip(program):
     ast1 = parse_forml_code(program)
     serialized = serialize(ast1)
@@ -436,30 +1280,34 @@ def test_roundtrip(program):
 ===== test\hypothesis\test_semantic_extraction.py =====
 
 from hypothesis import given
+import pytest
 
 from dsl.builder.program import parse_program
 from dsl.parser.parser import parse_forml_code
-from test.hypothesis.strategies.valid.program import program
+from test.hypothesis.strategies.valid.program_valid import valid_program
 
+pytestmark = pytest.mark.wip
 
-@given(program())
+@given(valid_program())
 def test_semantic_extraction(prog):
     ast = parse_forml_code(prog)
     d = parse_program(ast)
 
-    assert d["model"] is not None
-    assert d["target"] is not None
+    assert d.header.model is not None
+    assert d.header.target is not None
 
 ===== test\hypothesis\test_semantic_roundtrip.py =====
 
 from hypothesis import given
+import pytest
 
 from dsl.builder.program import parse_program
 from dsl.parser.parser import parse_forml_code
-from test.hypothesis.strategies.valid.program import program
+from test.hypothesis.strategies.valid.program_valid import valid_program
 
+pytestmark = pytest.mark.wip
 
-@given(program())
+@given(valid_program())
 def test_semantic_roundtrip(prog):
     ast1 = parse_forml_code(prog)
     obj1 = parse_program(ast1)
@@ -477,15 +1325,78 @@ def ast_equal(a, b):
 
 ===== test\hypothesis\utils\serialize.py =====
 
-from hypothesis import strategies as st
+# test/hypothesis/utils/serialize.py
 
-def serialize(ast):
-    if isinstance(ast, str):
-        return f'"{ast}"'
-    elif isinstance(ast, list):
-        return "[" + ", ".join(serialize(x) for x in ast) + "]"
-    elif isinstance(ast, dict):
-        items = ", ".join(f"{serialize(k)}: {serialize(v)}" for k, v in ast.items())
-        return "{" + items + "}"
-    else:
-        return str(ast)
+"""
+Simple DSL serializer.
+
+IMPORTANT:
+This is an MVP serializer.
+
+It should later become:
+    AST -> canonical FORML DSL serializer
+
+The goal for now is:
+    - support AST mutation testing
+    - allow parser roundtrip
+    - generate coherent DSL strings
+"""
+
+
+def serialize(obj):
+    """
+    Serialize a parsed AST/CST object back into DSL text.
+    """
+
+    # -----------------------------------------------------
+    # Raw strings
+    # -----------------------------------------------------
+
+    if isinstance(obj, str):
+        return obj
+
+    # -----------------------------------------------------
+    # Lists
+    # -----------------------------------------------------
+
+    if isinstance(obj, list):
+        return "\n".join(serialize(x) for x in obj)
+
+    # -----------------------------------------------------
+    # Dictionaries
+    # -----------------------------------------------------
+
+    if isinstance(obj, dict):
+
+        parts = []
+
+        for key, value in obj.items():
+            parts.append(f"{key}: {serialize(value)}")
+
+        return "\n".join(parts)
+
+    # -----------------------------------------------------
+    # Generic objects with __dict__
+    # -----------------------------------------------------
+
+    if hasattr(obj, "__dict__"):
+
+        parts = []
+
+        for key, value in vars(obj).items():
+
+            # Skip empty values
+            if value is None:
+                continue
+
+            serialized = serialize(value)
+
+            parts.append(f"{key}={serialized}")
+
+        return "\n".join(parts)
+
+    # -----------------------------------------------------
+    # Fallback
+    # -----------------------------------------------------
+
+    return str(obj)

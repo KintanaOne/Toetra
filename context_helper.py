@@ -56,5 +56,6 @@ if __name__ == "__main__":
 
     concat_files_in_folder("test/unit", recursive=True, output_file="context/test/unit.txt")
     concat_files_in_folder("test/hypothesis", recursive=True, output_file="context/test/hypothesis.txt")
+    concat_files_in_folder("test/hypothesis/mutations", recursive=True, output_file="context/test/hypothesis/mutations.txt")
 
 

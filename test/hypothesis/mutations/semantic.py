@@ -1,36 +1,60 @@
 """
-Semantic mutations (AST level).
+Semantic mutations (MEANING LEVEL)
 
-These mutations operate on FORML AST nodes and
-modify logical structure without breaking syntax.
+GOAL:
+    Modify the meaning of the program while preserving syntax.
+
+ROLE IN FORML:
+    - test semantic inference
+    - validate domain logic
+    - detect silent inconsistencies
+
+CHARACTERISTICS:
+    ✔ AST usually valid
+    ✔ syntax preserved
+    ❌ semantic correctness not guaranteed
 """
 
 import random
 from copy import deepcopy
 
-from dsl.builder.program import ProgramNode
+from dsl.ast.nodes.expressions import AtExprNode, PairwiseExprNode
 from dsl.builder.assertion import ImplicationNode
+from dsl.builder.program import ProgramNode
+from dsl.language.vocabulary.properties import EnumProperty
+
+from test.hypothesis.mutations.base import (
+    MutationImpact,
+    mutation,
+    MutationNature,
+    MutationSeverity,
+    PipelineStage,
+)
 
 
-# =========================================================
-# MUTATIONS
-# =========================================================
-
+@mutation(
+    nature=MutationNature.LOGICAL,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.7,
+    impact={MutationImpact.SEMANTIC_INVALID},
+    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
+    preserves_valid_ast=True,
+    preserves_typing=True,
+)
 def break_implication(ast: ProgramNode) -> ProgramNode:
     """
-    Swap left and right sides of implications.
+    Swap implication direction.
 
     A -> B becomes B -> A
     """
 
     mutated = deepcopy(ast)
 
-    for p in ast.body:
+    for p in mutated.body:
 
         assertion = p.rule.assertion.root
 
         if isinstance(assertion, ImplicationNode):
-
             assertion.left, assertion.right = (
                 assertion.right,
                 assertion.left,
@@ -39,24 +63,52 @@ def break_implication(ast: ProgramNode) -> ProgramNode:
     return mutated
 
 
+@mutation(
+    nature=MutationNature.SEMANTIC,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.8,
+    impact={MutationImpact.SEMANTIC_INVALID},
+    expected_failures={
+        PipelineStage.SEMANTIC_ANALYSIS,
+        PipelineStage.TYPE_CHECKING,
+    },
+    preserves_valid_ast=True,
+    preserves_typing=False,
+)
 def invalidate_property_type(ast: ProgramNode) -> ProgramNode:
     """
-    Inject invalid property type into AST.
+    Inject invalid property types into the AST.
     """
 
     mutated = deepcopy(ast)
 
+    old_type = mutated.body[0].type if mutated.body else None
+
     for p in mutated.body:
 
         if hasattr(p, "type") and random.random() < 0.3:
-            p.type = "INVALID_TYPE"
+            p.type = random.choice(
+                [v for v in list(EnumProperty) if v != old_type]
+            )
 
     return mutated
 
 
+@mutation(
+    nature=MutationNature.STRUCTURAL,
+    severity=MutationSeverity.CRITICAL,
+    impact={MutationImpact.SEMANTIC_INVALID},
+    severity_score=0.95,
+    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
+    preserves_valid_ast=False,
+    preserves_typing=False,
+)
 def remove_neighborhood(ast: ProgramNode) -> ProgramNode:
     """
-    Corrupt semantic constraint nodes.
+    Break neighborhood constraints.
+
+    NOTE:
+        This mutation may violate structural invariants.
     """
 
     mutated = deepcopy(ast)
@@ -65,15 +117,14 @@ def remove_neighborhood(ast: ProgramNode) -> ProgramNode:
 
         expr = p.rule.scope
 
-        if hasattr(expr, "neighborhood"):
+        if isinstance(expr, AtExprNode):
             expr.neighborhood = None
+
+        elif isinstance(expr, PairwiseExprNode):
+            object.__setattr__(expr, "neighborhood", None)
 
     return mutated
 
-
-# =========================================================
-# REGISTRY
-# =========================================================
 
 SEMANTIC_MUTATIONS = [
     break_implication,
@@ -82,19 +133,15 @@ SEMANTIC_MUTATIONS = [
 ]
 
 
-# =========================================================
-# ENGINE
-# =========================================================
-
-def apply_semantic_mutations(ast: ProgramNode, n: int) -> ProgramNode:
+def apply_semantic_mutations(ast: ProgramNode, n: int = 1) -> ProgramNode:
     """
-    Apply N semantic mutations on AST.
+    Apply N semantic mutations.
     """
 
     mutated = ast
 
     for _ in range(n):
-        mutation = random.choice(SEMANTIC_MUTATIONS)
-        mutated = mutation(mutated)
+        mutation_fn = random.choice(SEMANTIC_MUTATIONS)
+        mutated = mutation_fn(mutated)
 
     return mutated

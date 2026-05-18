@@ -7,7 +7,24 @@ Their goal is to stress the lexer/parser layer.
 
 import random
 
+from test.hypothesis.mutations.base import (
+    MutationImpact,
+    MutationNature,
+    MutationSeverity,
+    PipelineStage,
+    mutation,
+)
 
+
+@mutation(
+    nature=MutationNature.STRUCTURAL,
+    severity=MutationSeverity.MEDIUM,
+    severity_score=0.4,
+    impact={MutationImpact.PARSING},
+    expected_failures={PipelineStage.PARSING},
+    preserves_valid_ast=False,
+    preserves_typing=False,
+)
 def remove_random_character(program: str) -> str:
     """
     Remove one random character.
@@ -21,6 +38,15 @@ def remove_random_character(program: str) -> str:
     return program[:idx] + program[idx + 1:]
 
 
+@mutation(
+    nature=MutationNature.STRUCTURAL,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.7,
+    impact={MutationImpact.PARSING},
+    expected_failures={PipelineStage.PARSING},
+    preserves_valid_ast=False,
+    preserves_typing=False,
+)
 def inject_noise(program: str) -> str:
     """
     Inject random noise into the DSL text.
@@ -42,6 +68,18 @@ def inject_noise(program: str) -> str:
     return program[:idx] + noise + program[idx:]
 
 
+@mutation(
+    nature=MutationNature.SEMANTIC,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.75,
+    impact={MutationImpact.SEMANTIC_INVALID},
+    expected_failures={
+        PipelineStage.PARSING,
+        PipelineStage.SEMANTIC_ANALYSIS,
+    },
+    preserves_valid_ast=False,
+    preserves_typing=False,
+)
 def corrupt_keyword(program: str) -> str:
     """
     Corrupt important DSL keywords.
@@ -65,6 +103,15 @@ def corrupt_keyword(program: str) -> str:
     return mutated
 
 
+@mutation(
+    nature=MutationNature.STRUCTURAL,
+    severity=MutationSeverity.MEDIUM,
+    severity_score=0.5,
+    impact={MutationImpact.PARSING},
+    expected_failures={PipelineStage.PARSING},
+    preserves_valid_ast=False,
+    preserves_typing=False,
+)
 def shuffle_lines(program: str) -> str:
     """
     Shuffle lines order.
@@ -87,7 +134,13 @@ LEXICAL_MUTATIONS = [
     shuffle_lines,
 ]
 
+
 def apply_lexical_mutations(program: str, n: int) -> str:
+
+    mutated = program
+
     for _ in range(n):
-        program = random.choice(LEXICAL_MUTATIONS)(program)
-    return program
+        mutation_fn = random.choice(LEXICAL_MUTATIONS)
+        mutated = mutation_fn(mutated)
+
+    return mutated

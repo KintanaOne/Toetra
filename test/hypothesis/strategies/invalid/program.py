@@ -31,12 +31,12 @@ from test.hypothesis.mutations.lexical import (
     LEXICAL_MUTATIONS,
 )
 
-from test.hypothesis.mutations.structural import (
-    STRUCTURAL_MUTATIONS,
-)
-
 from test.hypothesis.mutations.semantic import (
     SEMANTIC_MUTATIONS,
+)
+
+from test.hypothesis.mutations.structural import (
+    STRUCTURAL_MUTATIONS,
 )
 
 
@@ -60,7 +60,7 @@ def mutate(obj, mutation_pool):
 
 def apply_lexical_mutations(
     program: str,
-    mutation_count: int,
+    mutation_count: int = 1,
 ):
     """
     Apply lexical mutations on DSL text.

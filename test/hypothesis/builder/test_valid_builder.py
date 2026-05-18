@@ -14,7 +14,6 @@ pytestmark = pytest.mark.wip
 def test_builder_accepts_valid_programs(program):
 
     cst = parse_forml_code(program)
-
     ast = parse_program(cst)
 
     assert ast is not None

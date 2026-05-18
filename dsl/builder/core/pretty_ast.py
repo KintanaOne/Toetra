@@ -1,6 +1,33 @@
 # dsl/utils/pretty_ast.py
 
 from typing import Any
+from dsl.ast.nodes.assertion import (
+    OrNode,
+    AndNode,
+    NotNode,
+    ComparisonNode,
+    ProblemNode,
+)
+
+from dsl.ast.nodes.primitives import (
+    ConstantNode,
+    AttributeNode,
+    ArgNode,
+)
+
+from dsl.ast.nodes.expressions import (
+    AtExprNode,
+    CheckAtExprNode,
+    PairwiseExprNode,
+    QuantifierExprNode,
+)
+
+from dsl.ast.nodes.neighborhood import NeighborhoodNode
+from dsl.ast.nodes.domain import DomainNode
+
+from dsl.ast.nodes.property import PropertyNode, PropertyRuleNode
+from dsl.ast.nodes.header import HeaderNode
+from dsl.ast.nodes.program import ProgramNode
 
 
 # =========================================================
@@ -71,40 +98,6 @@ def _expr(node):
         return str(node.value)
 
     return str(node)
-
-
-# =========================================================
-# IMPORTS (TES VRAIS NODES)
-# =========================================================
-
-from dsl.ast.nodes.assertion import (
-    OrNode,
-    AndNode,
-    NotNode,
-    ComparisonNode,
-    ProblemNode,
-)
-
-from dsl.ast.nodes.primitives import (
-    ConstantNode,
-    AttributeNode,
-    ArgNode,
-)
-
-from dsl.ast.nodes.expressions import (
-    AtExprNode,
-    CheckAtExprNode,
-    PairwiseExprNode,
-    QuantifierExprNode,
-)
-
-from dsl.ast.nodes.neighborhood import NeighborhoodNode
-from dsl.ast.nodes.domain import DomainNode
-
-from dsl.ast.nodes.property import PropertyNode, PropertyRuleNode
-from dsl.ast.nodes.header import HeaderNode
-from dsl.ast.nodes.program import ProgramNode
-
 
 # =========================================================
 # LOGIC
