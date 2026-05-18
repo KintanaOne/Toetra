@@ -130,9 +130,14 @@ def parse_value(node: Tree) -> ConstantNode:
     if cleaned is None:
         raise ValueError("Invalid value: None after cleaning")
     
-    if cleaned.lower() == "true": return ConstantNode(True, EnumDataType.BOOL)
-    if cleaned.lower() == "false": return ConstantNode(False, EnumDataType.BOOL)
-    if cleaned.lower() == "null": return ConstantNode(None, EnumDataType.NoneType)
+    if cleaned.lower() == "true":
+        return ConstantNode(True, EnumDataType.BOOL)
+    
+    if cleaned.lower() == "false": 
+        return ConstantNode(False, EnumDataType.BOOL)
+    
+    if cleaned.lower() == "null": 
+        return ConstantNode(None, EnumDataType.NoneType)
 
     # Integer parsing
     try:

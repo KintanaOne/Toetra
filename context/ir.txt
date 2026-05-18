@@ -12,7 +12,7 @@ from typing import Any
 
 from dsl.language.vocabulary.backends import EnumBackend
 from dsl.language.vocabulary.functions import EnumFunction
-from dsl.language.vocabulary.operators import EnumComparisonOperator, EnumLogicalOperator
+from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.problems import EnumProblem
 from dsl.language.vocabulary.properties import EnumProperty
 
@@ -73,6 +73,7 @@ class NeighborhoodIR:
     Example: L2 ball with epsilon.
     """
     metric: str
+    eps: float
     args: dict[str, Any]
 
 
@@ -366,7 +367,6 @@ def _pretty_logical(node: LogicalIR, indent=0) -> list[str]:
 
 # /dsl/ir/run_ir.py
 
-from dsl.builder.core import pretty
 from dsl.ir.ir1.pretty import pretty_print_tasks
 from dsl.parser.parser import parse_forml_code
 from dsl.builder.program import parse_program
@@ -374,8 +374,7 @@ from dsl.semantic.runtime.tracer import ValidationTracer
 from dsl.semantic.core.validator import FORMLValidator
 
 from dsl.ir.ir1.translator import IRTranslator
-from test.fixtures.logic_samples import NESTED_IMPLICATION_PROPERTY, PARENTHESES_PRECEDENCE_PROPERTY, VALID_TRIPLE_AND_PROPERTY
-from test.fixtures.properties_samples import VALID_AT_WITH_NEIGHBORHOOD, VALID_CHECK_AT_WITH_COMPLEX_ASSERTION
+from test.fixtures.logic_samples import PARENTHESES_PRECEDENCE_PROPERTY
 
 
 def run_ir(source: str):
@@ -445,7 +444,6 @@ from dsl.ast.nodes.assertion import (
     ProblemNode,
 )
 
-from dsl.ast.nodes.primitives import AttributeNode, ConstantNode
 
 from dsl.ir.ir1.nodes import (
     VerificationTask,
@@ -465,8 +463,6 @@ from dsl.ir.ir1.nodes import (
 from dsl.language.vocabulary.problems import EnumProblem
 from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.backends import EnumBackend
-from dsl.language.vocabulary.operators import EnumLogicalOperator
-from dsl.language.vocabulary.operators import EnumComparisonOperator
 
 
 class IRTranslator:
@@ -535,9 +531,13 @@ class IRTranslator:
                 }
 
                 eps = args_dict.get("eps")
+                assert eps is not None, "Neighborhood must specify 'eps' parameter"
+                eps = float(eps)
+
 
                 neighborhood_ir = NeighborhoodIR(
                     metric=scope.neighborhood.metric,
+                    eps=eps,
                     args=args_dict
                 )
 
@@ -745,9 +745,12 @@ class IRTranslator:
         # -----------------------------
         if isinstance(node, ProblemNode):
 
+            problem = EnumProblem(node.problem)
+            function = EnumFunction(node.function) if node.function else None
+
             return ProblemIR(
-                problem=EnumProblem[node.problem],
-                function=EnumFunction[node.function] if node.function else None,
+                problem=problem,
+                function=function,
                 args={}
             )
 

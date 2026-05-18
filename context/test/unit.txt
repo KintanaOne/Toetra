@@ -555,7 +555,6 @@ def test_exists_with_domain():
 
 ===== test\unit\parsing\test_footer.py =====
 
-import pytest
 from dsl.parser.parser import parse_forml_code
 from dsl.builder.core.utils import *
 
@@ -728,11 +727,9 @@ def test_header_invalid(code):
 
 ===== test\unit\parsing\test_logic.py =====
 
-from typing import cast
 
 import pytest
 from lark import Tree
-from lark.exceptions import UnexpectedToken
 
 from dsl.ast.nodes.assertion import (
     AndNode,
@@ -743,7 +740,6 @@ from dsl.ast.nodes.assertion import (
     ComparisonNode,
     ProblemNode,
 )
-from dsl.ast.nodes.expressions import CheckAtExprNode
 from dsl.builder.program import parse_program
 from dsl.language.vocabulary.problems import EnumProblem
 from dsl.parser.parser import parse_forml_code

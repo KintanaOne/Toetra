@@ -470,7 +470,6 @@ from dsl.ast.nodes.expressions import (
 )
 
 from dsl.semantic.symbols.table import Symbol
-from dsl.semantic.context.context import SemanticContext
 
 class LHSValidator:
     """
@@ -959,7 +958,7 @@ class LogicValidator:
 
 from dsl.language.vocabulary.functions import EnumFunction
 from dsl.semantic.rules.compatibility import PROBLEM_FUNCTION_COMPATIBILITY
-from dsl.semantic.errors.errors import IncompatibleFunctionError, InvalidPropertyError
+from dsl.semantic.errors.errors import IncompatibleFunctionError
 from dsl.semantic.runtime.tracer import ValidationTracer
 
 
@@ -1227,11 +1226,7 @@ from dsl.semantic.runtime.tracer import ValidationTracer
 
 from dsl.semantic.core.property import PropertyValidator
 from test.fixtures.properties_samples import (
-    VALID_MINIMAL_AT,
-    VALID_MINIMAL_CHECK_AT,
-    VALID_MINIMAL_EXISTS,
-    VALID_MINIMAL_FORALL,
-    VALID_MINIMAL_PAIRWISE
+    VALID_MINIMAL_AT
 )
 
 class FORMLValidator:

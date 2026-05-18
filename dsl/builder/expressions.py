@@ -123,11 +123,6 @@ def parse_quantifier(prop: Tree) -> QuantifierExprNode:
         "quantifier node not found"
     )
 
-    quantifier_child = require_node(
-        quantifier_node.children[0] if quantifier_node.children else None,
-        "quantifier value missing"
-        )
-
     quantifier = get_node_name_or_value(quantifier_node)
     
     quantifier = require_value(

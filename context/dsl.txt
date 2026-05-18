@@ -8,14 +8,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Union
 
 from dsl.ast.nodes.base import ASTNode
 from dsl.ast.nodes.primitives import AttributeNode, ConstantNode
 from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.problems import EnumProblem
-from dsl.language.vocabulary.properties import EnumProperty
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -144,7 +142,6 @@ class DomainNode(ASTNode):
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Union
 
 from dsl.ast.nodes.base import ASTNode
 from dsl.ast.nodes.neighborhood import NeighborhoodNode
@@ -184,7 +181,6 @@ class QuantifierExprNode(ExpressionNode):
 ===== dsl\ast\nodes\header.py =====
 
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass
@@ -214,14 +210,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Union
 
-from dsl.semantic.runtime.annotations import SemanticAnnotations
-from dsl.semantic.symbols.symbol import Symbol
 from dsl.semantic.types.enums import EnumDataType
 
 
 PrimitiveValue = Union[str, int, float, bool, None]
 
-from enum import Enum
 
 @dataclass
 class ArgNode:
@@ -306,19 +299,17 @@ class PropertyRuleNode:
 
 ===== dsl\builder\assertion.py =====
 
-from typing import List, Union
+from typing import List
 
 from lark import Tree, Token
 
 from dsl.ast.nodes.assertion import (
     AndNode,
-    AssertionNode,
     ComparisonNode,
     ImplicationNode,
     OrNode,
     NotNode,
     ProblemNode,
-    UnknownNode,
     LogicalNode,
 )
 
@@ -458,7 +449,7 @@ def parse_assertion(node: Tree | Token | None) -> LogicalNode:
 ===== dsl\builder\backends.py =====
 
 from lark import Tree
-from dsl.builder.core.utils import extract_direct_token, find_child, find_all_nodes, find_node, get_node_name_or_value
+from dsl.builder.core.utils import find_child, find_all_nodes, find_node, get_node_name_or_value
 from dsl.builder.core.ast_utils import node_value, clean_string
 
 from dsl.ast.nodes.backends import BackendNode
@@ -508,8 +499,6 @@ from dsl.builder.core.pretty_ast import pretty
 from dsl.builder.program import parse_program
 from dsl.parser.parser import parse_forml_code
 from test.fixtures.program_samples import VALID_PROGRAM_WITH_BACKEND
-from test.fixtures.properties_samples import VALID_AT_WITH_NEIGHBORHOOD, VALID_CHECK_AT_WITH_COMPLEX_ASSERTION, VALID_FORALL_WITH_DOMAIN, VALID_MINIMAL_AT, VALID_MINIMAL_CHECK_AT, VALID_PAIRWISE_WITH_ABSTRACTOR
-from test.fixtures.logic_samples import OPERATOR_PRECEDENCE_PROPERTY
 
 if __name__ == "__main__":
     """ This script is for quick testing of the builder. It parses a sample property and prints the resulting AST """
@@ -659,9 +648,14 @@ def parse_value(node: Tree) -> ConstantNode:
     if cleaned is None:
         raise ValueError("Invalid value: None after cleaning")
     
-    if cleaned.lower() == "true": return ConstantNode(True, EnumDataType.BOOL)
-    if cleaned.lower() == "false": return ConstantNode(False, EnumDataType.BOOL)
-    if cleaned.lower() == "null": return ConstantNode(None, EnumDataType.NoneType)
+    if cleaned.lower() == "true":
+        return ConstantNode(True, EnumDataType.BOOL)
+    
+    if cleaned.lower() == "false": 
+        return ConstantNode(False, EnumDataType.BOOL)
+    
+    if cleaned.lower() == "null": 
+        return ConstantNode(None, EnumDataType.NoneType)
 
     # Integer parsing
     try:
@@ -758,6 +752,33 @@ def pretty(node: Any, indent: int = 0) -> str:
 # dsl/utils/pretty_ast.py
 
 from typing import Any
+from dsl.ast.nodes.assertion import (
+    OrNode,
+    AndNode,
+    NotNode,
+    ComparisonNode,
+    ProblemNode,
+)
+
+from dsl.ast.nodes.primitives import (
+    ConstantNode,
+    AttributeNode,
+    ArgNode,
+)
+
+from dsl.ast.nodes.expressions import (
+    AtExprNode,
+    CheckAtExprNode,
+    PairwiseExprNode,
+    QuantifierExprNode,
+)
+
+from dsl.ast.nodes.neighborhood import NeighborhoodNode
+from dsl.ast.nodes.domain import DomainNode
+
+from dsl.ast.nodes.property import PropertyNode, PropertyRuleNode
+from dsl.ast.nodes.header import HeaderNode
+from dsl.ast.nodes.program import ProgramNode
 
 
 # =========================================================
@@ -828,40 +849,6 @@ def _expr(node):
         return str(node.value)
 
     return str(node)
-
-
-# =========================================================
-# IMPORTS (TES VRAIS NODES)
-# =========================================================
-
-from dsl.ast.nodes.assertion import (
-    OrNode,
-    AndNode,
-    NotNode,
-    ComparisonNode,
-    ProblemNode,
-)
-
-from dsl.ast.nodes.primitives import (
-    ConstantNode,
-    AttributeNode,
-    ArgNode,
-)
-
-from dsl.ast.nodes.expressions import (
-    AtExprNode,
-    CheckAtExprNode,
-    PairwiseExprNode,
-    QuantifierExprNode,
-)
-
-from dsl.ast.nodes.neighborhood import NeighborhoodNode
-from dsl.ast.nodes.domain import DomainNode
-
-from dsl.ast.nodes.property import PropertyNode, PropertyRuleNode
-from dsl.ast.nodes.header import HeaderNode
-from dsl.ast.nodes.program import ProgramNode
-
 
 # =========================================================
 # LOGIC
@@ -1491,12 +1478,12 @@ from dsl.ast.nodes.expressions import (
     QuantifierExprNode
 )
 from dsl.builder.core.strict import optional, require_value, safe_find_child, safe_find_node
-from dsl.builder.core.utils import extract_direct_token, find_child, find_node, get_node_name_or_value
+from dsl.builder.core.utils import find_child, find_node, get_node_name_or_value
 from dsl.builder.core.ast_utils import node_value
 from dsl.builder.domain import parse_domain
 from dsl.builder.neighborhood import parse_neighborhood
 
-from dsl.builder.core.strict import require_node, require_value
+from dsl.builder.core.strict import require_node
 
 # ============================================================================
 # EXPRESSIONS (AT / CHECK / PAIRWISE / QUANTIFIER)
@@ -1607,11 +1594,6 @@ def parse_quantifier(prop: Tree) -> QuantifierExprNode:
         find_child(node, "quantifier"),
         "quantifier node not found"
     )
-
-    quantifier_child = require_node(
-        quantifier_node.children[0] if quantifier_node.children else None,
-        "quantifier value missing"
-        )
 
     quantifier = get_node_name_or_value(quantifier_node)
     
@@ -1889,13 +1871,15 @@ def parse_program(tree: Tree) -> ProgramNode:
 
 ===== dsl\builder\property.py =====
 
-from lark import Token, Tree
+from lark import Tree
+
 from dsl.ast.nodes.assertion import AssertionNode
 from dsl.ast.nodes.property import PropertyNode, PropertyRuleNode
 from dsl.builder.backends import parse_backend
-from dsl.builder.core.strict import require_node, require_value
-from dsl.builder.core.utils import find_child, find_node
+from dsl.builder.core.strict import require_value
+from dsl.builder.core.utils import find_node
 from dsl.builder.core.ast_utils import node_value
+from dsl.language.vocabulary.properties import EnumProperty
 from .expressions import (
     parse_at,
     parse_pairwise,
@@ -1939,9 +1923,6 @@ def detect_mode(prop: Tree) -> str:
 # ---------------------------------------------------------------------------
 # RHS extraction
 # ---------------------------------------------------------------------------
-
-from lark import Tree, Token
-
 
 def extract_rhs(prop: Tree) -> Tree:
     """
@@ -2030,6 +2011,8 @@ def parse_property(prop: Tree) -> PropertyNode:
         "Property type is missing"
     )
 
+    property_type = EnumProperty(property_type)
+
     # -----------------------------------------------------------------------
     # Build AST
     # -----------------------------------------------------------------------
@@ -2055,7 +2038,7 @@ from typing import Any
 
 from dsl.language.vocabulary.backends import EnumBackend
 from dsl.language.vocabulary.functions import EnumFunction
-from dsl.language.vocabulary.operators import EnumComparisonOperator, EnumLogicalOperator
+from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.problems import EnumProblem
 from dsl.language.vocabulary.properties import EnumProperty
 
@@ -2116,6 +2099,7 @@ class NeighborhoodIR:
     Example: L2 ball with epsilon.
     """
     metric: str
+    eps: float
     args: dict[str, Any]
 
 
@@ -2409,7 +2393,6 @@ def _pretty_logical(node: LogicalIR, indent=0) -> list[str]:
 
 # /dsl/ir/run_ir.py
 
-from dsl.builder.core import pretty
 from dsl.ir.ir1.pretty import pretty_print_tasks
 from dsl.parser.parser import parse_forml_code
 from dsl.builder.program import parse_program
@@ -2417,8 +2400,7 @@ from dsl.semantic.runtime.tracer import ValidationTracer
 from dsl.semantic.core.validator import FORMLValidator
 
 from dsl.ir.ir1.translator import IRTranslator
-from test.fixtures.logic_samples import NESTED_IMPLICATION_PROPERTY, PARENTHESES_PRECEDENCE_PROPERTY, VALID_TRIPLE_AND_PROPERTY
-from test.fixtures.properties_samples import VALID_AT_WITH_NEIGHBORHOOD, VALID_CHECK_AT_WITH_COMPLEX_ASSERTION
+from test.fixtures.logic_samples import PARENTHESES_PRECEDENCE_PROPERTY
 
 
 def run_ir(source: str):
@@ -2488,7 +2470,6 @@ from dsl.ast.nodes.assertion import (
     ProblemNode,
 )
 
-from dsl.ast.nodes.primitives import AttributeNode, ConstantNode
 
 from dsl.ir.ir1.nodes import (
     VerificationTask,
@@ -2508,8 +2489,6 @@ from dsl.ir.ir1.nodes import (
 from dsl.language.vocabulary.problems import EnumProblem
 from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.backends import EnumBackend
-from dsl.language.vocabulary.operators import EnumLogicalOperator
-from dsl.language.vocabulary.operators import EnumComparisonOperator
 
 
 class IRTranslator:
@@ -2578,9 +2557,13 @@ class IRTranslator:
                 }
 
                 eps = args_dict.get("eps")
+                assert eps is not None, "Neighborhood must specify 'eps' parameter"
+                eps = float(eps)
+
 
                 neighborhood_ir = NeighborhoodIR(
                     metric=scope.neighborhood.metric,
+                    eps=eps,
                     args=args_dict
                 )
 
@@ -2788,9 +2771,12 @@ class IRTranslator:
         # -----------------------------
         if isinstance(node, ProblemNode):
 
+            problem = EnumProblem(node.problem)
+            function = EnumFunction(node.function) if node.function else None
+
             return ProblemIR(
-                problem=EnumProblem[node.problem],
-                function=EnumFunction[node.function] if node.function else None,
+                problem=problem,
+                function=function,
                 args={}
             )
 
@@ -2814,7 +2800,6 @@ from dsl.language.vocabulary.quantifiers import official_quantifiers
 from dsl.language.vocabulary.functions import official_functions
 from dsl.language.vocabulary.backends import official_backends
 from dsl.language.vocabulary.metrics import official_metrics
-from dsl.language.vocabulary.protected_words import protected_words
 from dsl.language.vocabulary.operators import official_logic_operators, official_comparaison_operations
 
 
@@ -3759,12 +3744,9 @@ class ParserImplicationError(ParserLogicError):
 
 ===== dsl\parser\parser.py =====
 
-from pathlib import Path
 from lark import Lark
 
-from test.fixtures.logic_samples import OPERATOR_PRECEDENCE_PROPERTY, SIMPLE_LOGIC_PROPERTY, VALID_IMPLICATION_PROPERTY, VALID_TRIPLE_OR_PROPERTY
-from test.fixtures.program_samples import VALID_PROGRAM_WITH_BACKEND
-from test.fixtures.properties_samples import VALID_AT_WITH_NEIGHBORHOOD, VALID_MINIMAL_EXISTS, VALID_MINIMAL_AT, VALID_MINIMAL_CHECK_AT, VALID_MINIMAL_PAIRWISE
+from test.fixtures.properties_samples import VALID_AT_WITH_NEIGHBORHOOD
 
 # Load grammar file
 GRAMMAR_PATH = "dsl/language/grammar/forml_grammar.lark"
@@ -4289,7 +4271,6 @@ from dsl.ast.nodes.expressions import (
 )
 
 from dsl.semantic.symbols.table import Symbol
-from dsl.semantic.context.context import SemanticContext
 
 class LHSValidator:
     """
@@ -4778,7 +4759,7 @@ class LogicValidator:
 
 from dsl.language.vocabulary.functions import EnumFunction
 from dsl.semantic.rules.compatibility import PROBLEM_FUNCTION_COMPATIBILITY
-from dsl.semantic.errors.errors import IncompatibleFunctionError, InvalidPropertyError
+from dsl.semantic.errors.errors import IncompatibleFunctionError
 from dsl.semantic.runtime.tracer import ValidationTracer
 
 
@@ -5046,11 +5027,7 @@ from dsl.semantic.runtime.tracer import ValidationTracer
 
 from dsl.semantic.core.property import PropertyValidator
 from test.fixtures.properties_samples import (
-    VALID_MINIMAL_AT,
-    VALID_MINIMAL_CHECK_AT,
-    VALID_MINIMAL_EXISTS,
-    VALID_MINIMAL_FORALL,
-    VALID_MINIMAL_PAIRWISE
+    VALID_MINIMAL_AT
 )
 
 class FORMLValidator:
