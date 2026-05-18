@@ -9,6 +9,7 @@ from dsl.ast.nodes.expressions import (
     QuantifierExprNode,
 )
 from dsl.builder.program import parse_program
+from dsl.language.vocabulary.properties import EnumProperty
 from dsl.parser.parser import parse_forml_code
 
 T = TypeVar("T")
@@ -87,7 +88,7 @@ def assert_scope_type(scope, expected_type: Type[T]) -> T:
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def assert_property_basics(prop, expected_type: str = "ROBUSTNESS") -> None:
+def assert_property_basics(prop, expected_type: EnumProperty = EnumProperty.ROBUSTNESS) -> None:
     """
     Assert common property invariants.
     """
