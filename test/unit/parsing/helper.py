@@ -88,7 +88,9 @@ def assert_scope_type(scope, expected_type: Type[T]) -> T:
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def assert_property_basics(prop, expected_type: EnumProperty = EnumProperty.ROBUSTNESS) -> None:
+def assert_property_basics(
+    prop, expected_type: EnumProperty = EnumProperty.ROBUSTNESS
+) -> None:
     """
     Assert common property invariants.
     """
