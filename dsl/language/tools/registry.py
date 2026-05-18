@@ -3,7 +3,6 @@
 from dsl.language.vocabulary.protected_words import protected_words
 from dsl.language.tools.constants import OFFICIAL_MAPS
 
-
 SPECIAL_SEQ = {
     "official_properties": " | ".join(OFFICIAL_MAPS["properties"].keys()),
     "official_problems": " | ".join(OFFICIAL_MAPS["problems"].keys()),

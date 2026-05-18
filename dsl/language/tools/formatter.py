@@ -11,7 +11,7 @@ def format_lark_output(lines: list[str]) -> str:
 
     def is_rule(line: str) -> bool:
         return ":" in line and not line.strip().startswith("#")
-    
+
     def split_outside_regex(s: str, sep: str = "|") -> list[str]:
         parts = []
         current = []
@@ -21,7 +21,7 @@ def format_lark_output(lines: list[str]) -> str:
         while i < len(s):
             c = s[i]
 
-            if c == "/" and (i == 0 or s[i-1] != "\\"):
+            if c == "/" and (i == 0 or s[i - 1] != "\\"):
                 in_regex = not in_regex
                 current.append(c)
 
@@ -37,7 +37,7 @@ def format_lark_output(lines: list[str]) -> str:
             parts.append("".join(current).strip())
 
         return parts
-    
+
     def normalize_or_spacing(s: str) -> str:
         parts = re.split(r"(/[^/]+/)", s)
         result = []
@@ -89,7 +89,7 @@ def format_lark_output(lines: list[str]) -> str:
             if len(parts) <= 1:
                 formatted.append(f"{lhs} : {parts[0]}")
             else:
-                for j,part in enumerate(parts):
+                for j, part in enumerate(parts):
                     # 🔥 CRITICAL: always same prefix, no variation
                     if j == 0:
                         formatted.append(f"{lhs} : {part}")

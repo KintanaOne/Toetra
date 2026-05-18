@@ -8,7 +8,7 @@ official_logic_operators = {
     "OR": '"or"',
     "NOT": '"not"',
     "XOR": '"xor"',
-    "IMPLY": '"->"'
+    "IMPLY": '"->"',
 }
 
 official_comparaison_operations = {
@@ -20,6 +20,7 @@ official_comparaison_operations = {
     "GTE": '">="',
 }
 
+
 class EnumComparisonOperator(EnumMixin, Enum):
     EQ = "=="
     NEQ = "!="
@@ -28,9 +29,9 @@ class EnumComparisonOperator(EnumMixin, Enum):
     GT = ">"
     GTE = ">="
 
+
 class EnumLogicalOperator(EnumMixin, Enum):
     AND = "and"
     OR = "or"
     NOT = "not"
     IMPLY = "->"
-    

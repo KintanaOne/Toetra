@@ -35,7 +35,7 @@ def remove_random_character(program: str) -> str:
 
     idx = random.randint(0, len(program) - 1)
 
-    return program[:idx] + program[idx + 1:]
+    return program[:idx] + program[idx + 1 :]
 
 
 @mutation(

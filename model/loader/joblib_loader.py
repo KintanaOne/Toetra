@@ -12,10 +12,10 @@ class JoblibModelLoader(BaseModelLoader):
         try:
 
             return joblib.load(self.path)
-        
+
         except FileNotFoundError as e:
             raise ModelFileNotFoundError(str(self.path)) from e
-        
+
         except Exception as e:
             raise ModelDeserializationError(
                 f"Failed to deserialize joblib model: {self.path}"

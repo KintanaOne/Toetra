@@ -12,6 +12,7 @@ from dsl.ast.nodes.expressions import (
 
 from dsl.semantic.symbols.table import Symbol
 
+
 class LHSValidator:
     """
     LHSValidator is responsible for validating the LEFT-HAND SIDE (LHS)
@@ -68,10 +69,8 @@ class LHSValidator:
 
         context = SemanticContext(
             type=SemanticScope.POINTWISE,
-            variables={
-                lhs.variable: "anchor"
-            },
-            default_entity=lhs.variable
+            variables={lhs.variable: "anchor"},
+            default_entity=lhs.variable,
         )
 
         # ---------------------------------------------
@@ -114,13 +113,10 @@ class LHSValidator:
 
         context = SemanticContext(
             type=SemanticScope.LOCAL,
-            variables={
-                x: "anchor",
-                x_prime: "perturbation"
-            },
+            variables={x: "anchor", x_prime: "perturbation"},
             default_entity=x_prime,
             domain=lhs.domain,
-            neighborhood=lhs.neighborhood
+            neighborhood=lhs.neighborhood,
         )
 
         # ---------------------------------------------
@@ -187,13 +183,10 @@ class LHSValidator:
 
         context = SemanticContext(
             type=SemanticScope.PAIRWISE,
-            variables={
-                left: "anchor",
-                right: "perturbation"
-            },
+            variables={left: "anchor", right: "perturbation"},
             default_entity=right,
             domain=lhs.domain,
-            neighborhood=lhs.neighborhood
+            neighborhood=lhs.neighborhood,
         )
 
         # ---------------------------------------------
@@ -244,20 +237,16 @@ class LHSValidator:
         quantifier = lhs.quantifier.strip()
 
         if quantifier not in {"forall", "exists"}:
-            raise InvalidPropertyError(
-                f"Unknown quantifier '{quantifier}'"
-            )
+            raise InvalidPropertyError(f"Unknown quantifier '{quantifier}'")
 
         var = "_x"
 
         context = SemanticContext(
             type=SemanticScope.QUANTIFIER,
             quantifier=quantifier,
-            variables={
-                var: "symbolic"
-            },
+            variables={var: "symbolic"},
             default_entity=var,
-            domain=lhs.domain
+            domain=lhs.domain,
         )
 
         # ---------------------------------------------

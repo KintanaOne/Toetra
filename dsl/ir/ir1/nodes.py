@@ -9,10 +9,10 @@ from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.problems import EnumProblem
 from dsl.language.vocabulary.properties import EnumProperty
 
-
 # =============================================================================
 # ROOT EXECUTION UNIT
 # =============================================================================
+
 
 @dataclass
 class VerificationTask:
@@ -25,6 +25,7 @@ class VerificationTask:
         - a logical query (RHS expression)
         - a target backend (Z3, ONNX checker, etc.)
     """
+
     property_type: EnumProperty
     scope: ScopeIR
     query: QueryIR
@@ -34,6 +35,7 @@ class VerificationTask:
 # =============================================================================
 # SCOPE (LHS SEMANTIC CONTEXT)
 # =============================================================================
+
 
 @dataclass
 class ScopeIR:
@@ -65,6 +67,7 @@ class NeighborhoodIR:
     Defines perturbation space around a point.
     Example: L2 ball with epsilon.
     """
+
     metric: str
     eps: float
     args: dict[str, Any]
@@ -75,6 +78,7 @@ class DomainIR:
     """
     Optional domain restriction (categorical, numeric bounds, etc.)
     """
+
     name: str
     args: dict[str, Any]
 
@@ -82,6 +86,7 @@ class DomainIR:
 # =============================================================================
 # QUERY (RHS SEMANTIC EXPRESSION)
 # =============================================================================
+
 
 @dataclass
 class QueryIR:
@@ -92,12 +97,14 @@ class QueryIR:
         - a logical expression (AND/OR/NOT/IMPLY)
         - a problem-level predicate (CLASSIFICATION.EQUAL, etc.)
     """
+
     expression: LogicalIR | ProblemIR
 
 
 # =============================================================================
 # LOGICAL IR (PURE BOOLEAN STRUCTURE)
 # =============================================================================
+
 
 @dataclass
 class LogicalIR:
@@ -109,12 +116,14 @@ class LogicalIR:
         - CNF/DNF transformations
         - Z3 encoding
     """
+
     pass
 
 
 # =============================================================================
 # LEAF COMPARISON NODE
 # =============================================================================
+
 
 @dataclass
 class ComparisonIR(LogicalIR):
@@ -124,6 +133,7 @@ class ComparisonIR(LogicalIR):
 
     Represents a leaf condition in the logical tree.
     """
+
     entity: str
     feature: str
     op: EnumComparisonOperator
@@ -134,11 +144,13 @@ class ComparisonIR(LogicalIR):
 # LOGICAL OPERATORS
 # =============================================================================
 
+
 @dataclass
 class AndIR(LogicalIR):
     """
     Logical AND over multiple operands.
     """
+
     operands: list[LogicalIR]
 
 
@@ -147,6 +159,7 @@ class OrIR(LogicalIR):
     """
     Logical OR over multiple operands.
     """
+
     operands: list[LogicalIR]
 
 
@@ -155,6 +168,7 @@ class NotIR(LogicalIR):
     """
     Logical negation of a single operand.
     """
+
     operand: LogicalIR
 
 
@@ -164,6 +178,7 @@ class ImplyIR(LogicalIR):
     Logical implication:
         A → B
     """
+
     left: LogicalIR
     right: LogicalIR
 
@@ -171,6 +186,7 @@ class ImplyIR(LogicalIR):
 # =============================================================================
 # PROBLEM-LEVEL SEMANTIC OPERATOR
 # =============================================================================
+
 
 @dataclass
 class ProblemIR(LogicalIR):
@@ -181,6 +197,7 @@ class ProblemIR(LogicalIR):
         CLASSIFICATION.EQUAL()
         REGRESSION.BETWEEN()
     """
+
     problem: EnumProblem
     function: EnumFunction | None
     args: dict[str, Any] | None = None

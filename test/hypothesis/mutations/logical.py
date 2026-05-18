@@ -24,7 +24,6 @@ from copy import deepcopy
 from dsl.builder.assertion import (
     AndNode,
     ImplicationNode,
-    LogicalNode,
     NotNode,
     OrNode,
 )
@@ -39,10 +38,10 @@ from test.hypothesis.mutations.base import (
     PipelineStage,
 )
 
-
 # =========================================================
 # MUTATION 1 : reverse implication
 # =========================================================
+
 
 @mutation(
     nature=MutationNature.LOGICAL,
@@ -77,6 +76,7 @@ def reverse_implication(ast: ProgramNode) -> ProgramNode:
 # MUTATION 2 : negate assertion
 # =========================================================
 
+
 @mutation(
     nature=MutationNature.LOGICAL,
     severity=MutationSeverity.HIGH,
@@ -108,6 +108,7 @@ def negate_assertion(ast: ProgramNode) -> ProgramNode:
 # MUTATION 3 : swap boolean operators
 # =========================================================
 
+
 @mutation(
     nature=MutationNature.LOGICAL,
     severity=MutationSeverity.MEDIUM,
@@ -133,15 +134,11 @@ def swap_boolean_operators(ast: ProgramNode) -> ProgramNode:
 
         if isinstance(root, AndNode):
 
-            p.rule.assertion.root = OrNode(
-                operands=root.operands
-            )
+            p.rule.assertion.root = OrNode(operands=root.operands)
 
         elif isinstance(root, OrNode):
 
-            p.rule.assertion.root = AndNode(
-                operands=root.operands
-            )
+            p.rule.assertion.root = AndNode(operands=root.operands)
 
     return mutated
 
@@ -149,6 +146,7 @@ def swap_boolean_operators(ast: ProgramNode) -> ProgramNode:
 # =========================================================
 # MUTATION 4 : remove negation
 # =========================================================
+
 
 @mutation(
     nature=MutationNature.LOGICAL,
@@ -182,6 +180,7 @@ def remove_negation(ast: ProgramNode) -> ProgramNode:
 # =========================================================
 # MUTATION 5 : duplicate operand
 # =========================================================
+
 
 @mutation(
     nature=MutationNature.LOGICAL,
@@ -229,6 +228,7 @@ def duplicate_operand(ast: ProgramNode) -> ProgramNode:
 # MUTATION 6 : remove operand
 # =========================================================
 
+
 @mutation(
     nature=MutationNature.LOGICAL,
     severity=MutationSeverity.HIGH,
@@ -266,6 +266,7 @@ def remove_operand(ast: ProgramNode) -> ProgramNode:
 # MUTATION 7 : permute operands
 # =========================================================
 
+
 @mutation(
     nature=MutationNature.LOGICAL,
     severity=MutationSeverity.INFO,
@@ -302,6 +303,7 @@ def permute_operands(ast: ProgramNode) -> ProgramNode:
 # =========================================================
 # MUTATION 8 : inject tautology
 # =========================================================
+
 
 @mutation(
     nature=MutationNature.LOGICAL,
@@ -341,6 +343,7 @@ def inject_tautology(ast: ProgramNode) -> ProgramNode:
 # =========================================================
 # MUTATION 9 : inject contradiction
 # =========================================================
+
 
 @mutation(
     nature=MutationNature.LOGICAL,
@@ -384,6 +387,7 @@ def inject_contradiction(ast: ProgramNode) -> ProgramNode:
 # MUTATION 10 : double negation
 # =========================================================
 
+
 @mutation(
     nature=MutationNature.LOGICAL,
     severity=MutationSeverity.INFO,
@@ -411,11 +415,7 @@ def inject_double_negation(ast: ProgramNode) -> ProgramNode:
 
         root = deepcopy(p.rule.assertion.root)
 
-        p.rule.assertion.root = NotNode(
-            operand=NotNode(
-                operand=root
-            )
-        )
+        p.rule.assertion.root = NotNode(operand=NotNode(operand=root))
 
     return mutated
 
@@ -423,6 +423,7 @@ def inject_double_negation(ast: ProgramNode) -> ProgramNode:
 # =========================================================
 # MUTATION 11 : flatten boolean tree
 # =========================================================
+
 
 @mutation(
     nature=MutationNature.LOGICAL,
@@ -503,6 +504,7 @@ LOGICAL_MUTATIONS = [
 # =========================================================
 # ENGINE
 # =========================================================
+
 
 def apply_logical_mutations(
     ast: ProgramNode,

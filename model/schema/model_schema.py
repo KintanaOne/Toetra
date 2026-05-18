@@ -4,12 +4,13 @@ from typing import Any
 from model.detector.model_framework import EnumModelFramework
 from model.schema.feature_schema import FeatureSchema
 
+
 @dataclass
 class ModelSchema:
-    """ Normalized FORML model representation.
-    This schema acts as the semantic bridge between: 
-        - ML frameworks 
-        - DSL semantic validation 
+    """Normalized FORML model representation.
+    This schema acts as the semantic bridge between:
+        - ML frameworks
+        - DSL semantic validation
         - backend lowering
     """
 
@@ -31,7 +32,7 @@ class ModelSchema:
     # ML task metadata
     # ======================================================
 
-    task : str
+    task: str
 
     # ======================================================
     # Optional framework-specific metadata

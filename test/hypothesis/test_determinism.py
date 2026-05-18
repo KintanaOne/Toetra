@@ -6,6 +6,7 @@ from dsl.parser.parser import parse_forml_code
 
 pytestmark = pytest.mark.wip
 
+
 @given(valid_program())
 def test_parse_deterministic(prog):
     ast1 = parse_forml_code(prog)

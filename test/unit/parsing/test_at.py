@@ -2,8 +2,20 @@
 
 import pytest
 
-from test.fixtures.properties_samples import *
 
+from test.fixtures.properties_samples import (
+    # VALID
+    VALID_AT_WITH_DOMAIN,
+    VALID_AT_WITH_NEIGHBORHOOD,
+    VALID_AT_WITH_NEIGHBORHOOD_AND_DOMAIN,
+    VALID_MINIMAL_AT,
+    # INVALID
+    INVALID_AT_MISSING_IDENTIFIER,
+    INVALID_AT_INVALID_NEIGHBORHOOD_ARGUMENTS,
+    INVALID_AT_INVALID_NEIGHBORHOOD_SYNTAX,
+    INVALID_AT_INVALID_DOMAIN_VALUES,
+    INVALID_AT_INVALID_DOMAIN_SYNTAX,
+)
 from test.unit.parsing.helper import (
     assert_at_scope,
     assert_domain,
@@ -14,10 +26,10 @@ from test.unit.parsing.helper import (
     parse,
 )
 
-
 # ----------------------------------------------------------------------------------------------------------------------
 # VALID
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def test_at_basic():
 
@@ -75,9 +87,7 @@ def test_at_with_domain():
 
 def test_at_with_neighborhood_and_domain():
 
-    prop = build_property(
-        VALID_AT_WITH_NEIGHBORHOOD_AND_DOMAIN
-    )
+    prop = build_property(VALID_AT_WITH_NEIGHBORHOOD_AND_DOMAIN)
 
     scope = assert_at_scope(prop)
 

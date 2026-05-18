@@ -71,6 +71,7 @@ class MutationMetadata:
 
     preserves_semantic_equivalence: bool = False
 
+
 def mutation(
     *,
     nature: MutationNature,

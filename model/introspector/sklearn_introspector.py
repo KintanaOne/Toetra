@@ -1,4 +1,3 @@
-
 import pandas as pd
 
 from sklearn.base import (
@@ -51,9 +50,7 @@ class SklearnIntrospector(BaseIntrospector):
         """
 
         if self.source_path is None:
-            raise ValueError(
-                "Feature detection requires a dataset source path."
-            )
+            raise ValueError("Feature detection requires a dataset source path.")
 
         data = pd.read_csv(self.source_path)
 
@@ -119,10 +116,7 @@ class SklearnIntrospector(BaseIntrospector):
         Detect prediction target.
         """
 
-        if (
-            self.input_schema is not None
-            and self.input_schema.target is not None
-        ):
+        if self.input_schema is not None and self.input_schema.target is not None:
             return self.input_schema.target
 
         return "target"
@@ -138,10 +132,12 @@ class SklearnIntrospector(BaseIntrospector):
 
         metadata = self._build_base_metadata()
 
-        metadata.update({
-            "n_features_in": self._safe_getattr("n_features_in_"),
-            "classes": self._safe_getattr("classes_"),
-            "feature_names_in": self._safe_getattr("feature_names_in_"),
-        })
+        metadata.update(
+            {
+                "n_features_in": self._safe_getattr("n_features_in_"),
+                "classes": self._safe_getattr("classes_"),
+                "feature_names_in": self._safe_getattr("feature_names_in_"),
+            }
+        )
 
         return metadata

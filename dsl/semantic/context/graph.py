@@ -57,11 +57,7 @@ class SemanticGraph:
         """
         Register a semantic node.
         """
-        self.nodes[node_id] = SemanticNode(
-            id=node_id,
-            type=node_type,
-            data=data
-        )
+        self.nodes[node_id] = SemanticNode(id=node_id, type=node_type, data=data)
 
     # ─────────────────────────────────────────────
     # Edge API
@@ -81,16 +77,11 @@ class SemanticGraph:
         """
         Return all outgoing edges from a node.
         """
-        return [
-            e for e in self.edges if e.src == node_id
-        ]
+        return [e for e in self.edges if e.src == node_id]
 
     # ─────────────────────────────────────────────
     # Debug
     # ─────────────────────────────────────────────
 
     def __repr__(self) -> str:
-        return (
-            f"SemanticGraph(nodes={len(self.nodes)}, "
-            f"edges={len(self.edges)})"
-        )
+        return f"SemanticGraph(nodes={len(self.nodes)}, " f"edges={len(self.edges)})"

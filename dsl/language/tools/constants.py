@@ -11,8 +11,10 @@ from dsl.language.vocabulary.quantifiers import official_quantifiers
 from dsl.language.vocabulary.functions import official_functions
 from dsl.language.vocabulary.backends import official_backends
 from dsl.language.vocabulary.metrics import official_metrics
-from dsl.language.vocabulary.operators import official_logic_operators, official_comparaison_operations
-
+from dsl.language.vocabulary.operators import (
+    official_logic_operators,
+    official_comparaison_operations,
+)
 
 # =========================
 # RAW DICTIONARIES
@@ -36,11 +38,12 @@ OFFICIAL_MAPS = {
 # HEADER BLOCK GENERATION
 # =========================
 
+
 def format_rule_block(title: str, items: dict) -> list[str]:
     """Convert dictionary into Lark rule list."""
-    return [f"# === {title.upper()} ==="] + [
-        f"{k} : {v}" for k, v in items.items()
-    ] + [""]
+    return (
+        [f"# === {title.upper()} ==="] + [f"{k} : {v}" for k, v in items.items()] + [""]
+    )
 
 
 def build_header() -> list[str]:
@@ -70,7 +73,7 @@ def build_header() -> list[str]:
     header += [
         "# === TOKENS ===",
         "PAIRWISE.2 : /[A-Za-z][A-Za-z0-9_]*\\s*~\\s*[A-Za-z][A-Za-z0-9_']*/",
-        "PROPERTY_IMPLY : \"=>\"",
+        'PROPERTY_IMPLY : "=>"',
         "",
     ]
 

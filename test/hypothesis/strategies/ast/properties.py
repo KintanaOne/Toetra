@@ -3,10 +3,9 @@ from .logic import assertion
 from ..primitives.args import args
 from ..primitives.primitives import identifiers
 
-property_types = st.sampled_from([
-    "ROBUSTNESS", "STABILITY", "FAIRNESS",
-    "MONOTONICITY", "BOUND", "LOGIC"
-])
+property_types = st.sampled_from(
+    ["ROBUSTNESS", "STABILITY", "FAIRNESS", "MONOTONICITY", "BOUND", "LOGIC"]
+)
 
 metrics = st.sampled_from(["L1", "L2", "Linf"])
 
@@ -43,15 +42,12 @@ def pairwise_expr(draw):
     x = draw(identifiers)
     x2 = f"{x}'"
     neigh = draw(neighborhood())
-    return f"{x} ~ {x2} {neigh}"   # FIX IMPORTANT
+    return f"{x} ~ {x2} {neigh}"  # FIX IMPORTANT
 
 
 @st.composite
 def property_expr(draw):
-    return draw(st.one_of(
-        st.just("forall"),
-        pairwise_expr()
-    ))
+    return draw(st.one_of(st.just("forall"), pairwise_expr()))
 
 
 @st.composite

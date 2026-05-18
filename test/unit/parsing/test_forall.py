@@ -1,7 +1,10 @@
 # test/unit/parsing/test_forall.py
 
-from test.fixtures.properties_samples import *
-
+from test.fixtures.properties_samples import (
+    # VALID
+    VALID_FORALL_WITH_DOMAIN,
+    VALID_MINIMAL_FORALL,
+)
 from test.unit.parsing.helper import (
     assert_domain,
     assert_no_backend,
@@ -10,10 +13,10 @@ from test.unit.parsing.helper import (
     build_property,
 )
 
-
 # ----------------------------------------------------------------------------------------------------------------------
 # VALID
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def test_forall_basic():
 

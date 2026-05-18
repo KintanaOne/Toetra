@@ -57,9 +57,7 @@ class PropertyValidator:
 
     def validate(self, prop):
 
-        self.tracer.log(
-            f"Validating Property: {prop.type}"
-        )
+        self.tracer.log(f"Validating Property: {prop.type}")
 
         # --------------------------------------------------
         # Structural sanity checks
@@ -68,9 +66,7 @@ class PropertyValidator:
         if not hasattr(prop, "rule") or prop.rule is None:
 
             raise InvalidPropertyError(
-                message="Missing rule",
-                node=prop,
-                context="PropertyValidator"
+                message="Missing rule", node=prop, context="PropertyValidator"
             )
 
         rule = prop.rule
@@ -104,9 +100,7 @@ class PropertyValidator:
             #
             # ==================================================
 
-            context = LHSValidator(
-                tracer=self.tracer
-            ).validate(scope)
+            context = LHSValidator(tracer=self.tracer).validate(scope)
 
             prop.semantic.context = context
 
@@ -134,12 +128,7 @@ class PropertyValidator:
             #
             # ==================================================
 
-            BindingValidator(
-                tracer=self.tracer
-            ).validate(
-                context,
-                root
-            )
+            BindingValidator(tracer=self.tracer).validate(context, root)
 
             # ==================================================
             # 3. LOGIC VALIDATION
@@ -154,12 +143,7 @@ class PropertyValidator:
             #
             # ==================================================
 
-            LogicValidator(
-                tracer=self.tracer
-            ).validate(
-                root,
-                context
-            )
+            LogicValidator(tracer=self.tracer).validate(root, context)
 
             # ==================================================
             # PROPERTY ↔ SCOPE COMPATIBILITY
@@ -168,20 +152,13 @@ class PropertyValidator:
             try:
                 property_type = EnumProperty[prop.type.upper()]
             except KeyError:
-                raise InvalidPropertyError(
-                    f"Unknown property type '{prop.type}'"
-                )
+                raise InvalidPropertyError(f"Unknown property type '{prop.type}'")
 
-            allowed_scopes = PROPERTY_SCOPE_COMPATIBILITY.get(
-                property_type,
-                set()
-            )
+            allowed_scopes = PROPERTY_SCOPE_COMPATIBILITY.get(property_type, set())
 
             if context.type not in allowed_scopes:
 
-                allowed = ", ".join(
-                    s.value for s in allowed_scopes
-                )
+                allowed = ", ".join(s.value for s in allowed_scopes)
 
                 raise InvalidPropertyError(
                     f"Property '{prop.type}' does not support "
@@ -212,11 +189,9 @@ class PropertyValidator:
             raise InvalidPropertyError(
                 message=f"Property '{prop.type}' invalid: {e}",
                 node=prop,
-                context="PropertyValidator"
+                context="PropertyValidator",
             ) from e
 
-        self.tracer.log(
-            f"✔ Property '{prop.type}' validated"
-        )
+        self.tracer.log(f"✔ Property '{prop.type}' validated")
 
         return True

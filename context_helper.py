@@ -1,5 +1,6 @@
 from pathlib import Path
 
+
 def concat_files_in_folder(
     folder_path: str,
     recursive: bool = False,
@@ -19,13 +20,9 @@ def concat_files_in_folder(
     base_path = Path(folder_path)
 
     if recursive:
-        files = sorted(
-            [f for f in base_path.rglob("*.py") if f.is_file()]
-        )
+        files = sorted([f for f in base_path.rglob("*.py") if f.is_file()])
     else:
-        files = sorted(
-            [f for f in base_path.glob("*.py") if f.is_file()]
-        )
+        files = sorted([f for f in base_path.glob("*.py") if f.is_file()])
 
     parts = []
 
@@ -46,16 +43,30 @@ def concat_files_in_folder(
 if __name__ == "__main__":
     concat_files_in_folder("dsl/", recursive=True, output_file="context/dsl.txt")
     concat_files_in_folder("dsl/ast", recursive=True, output_file="context/ast.txt")
-    concat_files_in_folder("dsl/semantic", recursive=True, output_file="context/semantic.txt")
-    concat_files_in_folder("dsl/builder", recursive=True, output_file="context/builder.txt")
-    concat_files_in_folder("dsl/language", recursive=True, output_file="context/language.txt")
-    concat_files_in_folder("dsl/parser", recursive=True, output_file="context/parser.txt")
+    concat_files_in_folder(
+        "dsl/semantic", recursive=True, output_file="context/semantic.txt"
+    )
+    concat_files_in_folder(
+        "dsl/builder", recursive=True, output_file="context/builder.txt"
+    )
+    concat_files_in_folder(
+        "dsl/language", recursive=True, output_file="context/language.txt"
+    )
+    concat_files_in_folder(
+        "dsl/parser", recursive=True, output_file="context/parser.txt"
+    )
     concat_files_in_folder("dsl/ir", recursive=True, output_file="context/ir.txt")
 
     concat_files_in_folder("model", recursive=True, output_file="context/model.txt")
 
-    concat_files_in_folder("test/unit", recursive=True, output_file="context/test/unit.txt")
-    concat_files_in_folder("test/hypothesis", recursive=True, output_file="context/test/hypothesis.txt")
-    concat_files_in_folder("test/hypothesis/mutations", recursive=True, output_file="context/test/hypothesis/mutations.txt")
-
-
+    concat_files_in_folder(
+        "test/unit", recursive=True, output_file="context/test/unit.txt"
+    )
+    concat_files_in_folder(
+        "test/hypothesis", recursive=True, output_file="context/test/hypothesis.txt"
+    )
+    concat_files_in_folder(
+        "test/hypothesis/mutations",
+        recursive=True,
+        output_file="context/test/hypothesis/mutations.txt",
+    )

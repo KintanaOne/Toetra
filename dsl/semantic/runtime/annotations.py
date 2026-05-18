@@ -121,7 +121,4 @@ class SemanticAnnotations:
         Returns True if semantic resolution occurred.
         """
 
-        return (
-            self.resolved_entity is not None
-            or self.resolved_symbol is not None
-        )
+        return self.resolved_entity is not None or self.resolved_symbol is not None

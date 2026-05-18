@@ -41,26 +41,18 @@ class ModelDetector:
         # XGBoost
         # -----------------------------------------
 
-        if (
-            XGBModel is not None
-            and isinstance(model, XGBModel)
-        ):
+        if XGBModel is not None and isinstance(model, XGBModel):
             return EnumModelFramework.XGBOOST
 
         # -----------------------------------------
         # Scikit-learn
         # -----------------------------------------
 
-        if (
-            BaseEstimator is not None
-            and isinstance(model, BaseEstimator)
-        ):
+        if BaseEstimator is not None and isinstance(model, BaseEstimator):
             return EnumModelFramework.SKLEARN
 
         # -----------------------------------------
         # Unsupported
         # -----------------------------------------
 
-        raise UnsupportedModelError(
-            f"Unsupported model type: {type(model)}"
-        )
+        raise UnsupportedModelError(f"Unsupported model type: {type(model)}")

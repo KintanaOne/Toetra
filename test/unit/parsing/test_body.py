@@ -19,16 +19,14 @@ from test.unit.parsing.helper import (
     parse,
 )
 
-
 # ----------------------------------------------------------------------------------------------------------------------
 # VALID
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 def test_body_simple_assertion():
 
-    prop = build_property(
-        VALID_PROGRAM_WITH_BODY_SIMPLE_ASSERTION
-    )
+    prop = build_property(VALID_PROGRAM_WITH_BODY_SIMPLE_ASSERTION)
 
     scope = assert_pairwise_scope(prop)
 

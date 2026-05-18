@@ -6,10 +6,10 @@ EBNF → Lark transformation utilities.
 
 import re
 
-
 # =========================
 # RULE CONTEXT DETECTION
 # =========================
+
 
 def is_rule_root(line: str) -> bool:
     """
@@ -22,6 +22,7 @@ def is_rule_root(line: str) -> bool:
 # ASSIGNMENT FIRST (IMPORTANT)
 # =========================
 
+
 def convert_assignment(line: str) -> str:
     """
     Convert EBNF assignment to Lark BEFORE any transformation.
@@ -32,6 +33,7 @@ def convert_assignment(line: str) -> str:
 # =========================
 # BRACKET PROTECTION
 # =========================
+
 
 def protect_brackets(line: str) -> str:
     def repl(match):
@@ -69,13 +71,14 @@ def unprotect_brackets(line: str) -> str:
 # EBNF STRUCTURES
 # =========================
 
+
 def transform_ebnf_brackets(line: str) -> str:
     def repl_curly(match):
         return f"({match.group(1)})*"
 
     def repl_brackets(match):
         return f"({match.group(1)})?"
-    
+
     def protect_or_groups(line: str) -> str:
         """
         Ensure OR chains are preserved as atomic blocks.
@@ -86,11 +89,7 @@ def transform_ebnf_brackets(line: str) -> str:
             return f"( {group} )"
 
         # match A | B | C pattern
-        return re.sub(
-            r"(?:[A-Z_]+\s*\|\s*)+[A-Z_]+",
-            repl,
-            line
-        )
+        return re.sub(r"(?:[A-Z_]+\s*\|\s*)+[A-Z_]+", repl, line)
 
     prev = None
     while prev != line:
@@ -105,6 +104,7 @@ def transform_ebnf_brackets(line: str) -> str:
 # =========================
 # MAIN RESOLVER (FIXED)
 # =========================
+
 
 def replace_all_sequences(line: str, registry: dict) -> str:
     """
@@ -154,9 +154,11 @@ def replace_all_sequences(line: str, registry: dict) -> str:
 
     return re.sub(r"\?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\?", repl, line)
 
+
 # =========================
 # CLEANERS
 # =========================
+
 
 def normalize_whitespace(line: str) -> str:
     parts = re.split(r"(/[^/]+/)", line)  # split regex vs non-regex
@@ -201,6 +203,7 @@ def remove_ebnf_commas(line: str) -> str:
 # PIPELINE SAFETY FOR OR BLOCKS
 # =========================
 
+
 def group_or_blocks(line: str) -> str:
     """
     Force parentheses around OR blocks when they are followed by tokens.
@@ -209,16 +212,13 @@ def group_or_blocks(line: str) -> str:
     """
 
     # pattern: A | B | C "." D  => (A | B | C) "." D
-    return re.sub(
-        r"((?:[A-Z_]+\s*\|\s*)+[A-Z_]+)\s*(\.)",
-        r"(\1) \2",
-        line
-    )
+    return re.sub(r"((?:[A-Z_]+\s*\|\s*)+[A-Z_]+)\s*(\.)", r"(\1) \2", line)
 
 
 # =========================
 # NEIGHBORHOOD PRECEDENCE
 # =========================
+
 
 def fix_neighborhood_precedence(line: str) -> str:
     """
@@ -231,6 +231,5 @@ def fix_neighborhood_precedence(line: str) -> str:
     return re.sub(
         r"\(\s*metric\s*=\s*\)\?\s*([A-Z0-9_]+)\s*\|\s*([A-Z0-9_]+)\s*\|\s*([A-Z0-9_]+)",
         r'("metric" "=")? (\1 | \2 | \3)',
-        line
+        line,
     )
-

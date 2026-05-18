@@ -33,7 +33,9 @@ from test.hypothesis.mutations.base import (
     severity=MutationSeverity.CRITICAL,
     severity_score=0.9,
     impact={MutationImpact.AST_INVALID},
-    expected_failures={PipelineStage.SEMANTIC_ANALYSIS, },
+    expected_failures={
+        PipelineStage.SEMANTIC_ANALYSIS,
+    },
     preserves_valid_ast=False,
     preserves_typing=False,
 )

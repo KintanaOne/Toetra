@@ -1,5 +1,4 @@
 from dsl.parser.parser import parse_forml_code
-from dsl.builder.core.utils import *
 
 
 def test_footer_empty():
@@ -18,10 +17,9 @@ def test_footer_empty():
     """
 
     result = parse_forml_code(code)
-    pass
 
-    #footer = find_node(result, "footer")
-    # assert footer is None
+    assert not hasattr(result, "footer")
+
 
 def test_footer_with_simple_comment():
     code = """
@@ -41,6 +39,5 @@ def test_footer_with_simple_comment():
     """
 
     result = parse_forml_code(code)
-    pass
-    #  = find_node(result, "footer")
-    #assert footer is None
+
+    assert not hasattr(result, "footer")

@@ -43,6 +43,7 @@ def node_value(node: LarkNode | None) -> str | None:
 # STRING NORMALIZATION
 # ============================================================================
 
+
 def clean_string(value: str | None) -> str | None:
     """
     Normalize string literals by removing surrounding quotes.
@@ -129,14 +130,14 @@ def parse_value(node: Tree) -> ConstantNode:
 
     if cleaned is None:
         raise ValueError("Invalid value: None after cleaning")
-    
+
     if cleaned.lower() == "true":
         return ConstantNode(True, EnumDataType.BOOL)
-    
-    if cleaned.lower() == "false": 
+
+    if cleaned.lower() == "false":
         return ConstantNode(False, EnumDataType.BOOL)
-    
-    if cleaned.lower() == "null": 
+
+    if cleaned.lower() == "null":
         return ConstantNode(None, EnumDataType.NoneType)
 
     # Integer parsing

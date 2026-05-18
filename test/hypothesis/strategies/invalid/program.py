@@ -39,10 +39,10 @@ from test.hypothesis.mutations.structural import (
     STRUCTURAL_MUTATIONS,
 )
 
-
 # =========================================================
 # GENERIC MUTATION ENGINE
 # =========================================================
+
 
 def mutate(obj, mutation_pool):
     """
@@ -57,6 +57,7 @@ def mutate(obj, mutation_pool):
 # =========================================================
 # LEXICAL LAYER
 # =========================================================
+
 
 def apply_lexical_mutations(
     program: str,
@@ -78,6 +79,7 @@ def apply_lexical_mutations(
 # STRUCTURAL LAYER (CST)
 # =========================================================
 
+
 def apply_structural_mutations(
     cst,
     mutation_count: int,
@@ -98,6 +100,7 @@ def apply_structural_mutations(
 # SEMANTIC LAYER (AST)
 # =========================================================
 
+
 def apply_semantic_mutations(
     ast,
     mutation_count: int,
@@ -117,6 +120,7 @@ def apply_semantic_mutations(
 # =========================================================
 # MAIN STRATEGY
 # =========================================================
+
 
 @composite
 def invalid_program(

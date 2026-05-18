@@ -13,10 +13,10 @@ from dsl.ir.ir1.nodes import (
     ProblemIR,
 )
 
-
 # =============================================================================
 # ENTRY POINT
 # =============================================================================
+
 
 def pretty_print_tasks(tasks: list[VerificationTask]):
     for i, task in enumerate(tasks):
@@ -27,6 +27,7 @@ def pretty_print_tasks(tasks: list[VerificationTask]):
 # =============================================================================
 # TASK
 # =============================================================================
+
 
 def pretty_task(task: VerificationTask) -> str:
     lines = []
@@ -54,6 +55,7 @@ def pretty_task(task: VerificationTask) -> str:
 # =============================================================================
 # SCOPE
 # =============================================================================
+
 
 def _pretty_scope(scope: ScopeIR) -> list[str]:
     lines = []
@@ -94,6 +96,7 @@ def _pretty_scope(scope: ScopeIR) -> list[str]:
 # QUERY
 # =============================================================================
 
+
 def _pretty_query(query: QueryIR) -> list[str]:
     return _pretty_logical(query.expression, indent=2)
 
@@ -101,6 +104,7 @@ def _pretty_query(query: QueryIR) -> list[str]:
 # =============================================================================
 # LOGICAL TREE
 # =============================================================================
+
 
 def _pretty_logical(node: LogicalIR, indent=0) -> list[str]:
     space = " " * indent
@@ -110,9 +114,7 @@ def _pretty_logical(node: LogicalIR, indent=0) -> list[str]:
     # Comparison
     # -----------------------------
     if isinstance(node, ComparisonIR):
-        lines.append(
-            f"{space}- {node.entity}.{node.feature} == {node.value}"
-        )
+        lines.append(f"{space}- {node.entity}.{node.feature} == {node.value}")
         return lines
 
     # -----------------------------

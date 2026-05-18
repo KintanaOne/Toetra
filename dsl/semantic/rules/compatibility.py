@@ -5,7 +5,6 @@ from dsl.language.vocabulary.problems import EnumProblem
 from dsl.language.vocabulary.properties import EnumProperty
 from dsl.semantic.context.scope import SemanticScope
 
-
 # -------------------------------
 # Problem ↔ Function
 # -------------------------------
@@ -21,7 +20,7 @@ PROBLEM_FUNCTION_COMPATIBILITY = {
         EnumFunction.DECREASING,
         EnumFunction.BETWEEN,
     },
-    EnumProblem.CLUSTERING: set()
+    EnumProblem.CLUSTERING: set(),
 }
 
 
@@ -58,5 +57,9 @@ PROPERTY_SCOPE_COMPATIBILITY = {
 PROPERTY_MODEL_COMPATIBILITY = {
     "ONNX": {EnumProperty.ROBUSTNESS, EnumProperty.STABILITY, EnumProperty.FAIRNESS},
     "SKLEARN": {EnumProperty.FAIRNESS, EnumProperty.BOUND},
-    "PYTORCH": {EnumProperty.ROBUSTNESS, EnumProperty.MONOTONICITY, EnumProperty.STABILITY},
+    "PYTORCH": {
+        EnumProperty.ROBUSTNESS,
+        EnumProperty.MONOTONICITY,
+        EnumProperty.STABILITY,
+    },
 }

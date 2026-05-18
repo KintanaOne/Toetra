@@ -9,6 +9,7 @@ from test.hypothesis.strategies.valid.program_valid import valid_program
 
 pytestmark = pytest.mark.wip
 
+
 @DEFAULT_SETTINGS
 @given(valid_program())
 def test_builder_accepts_valid_programs(program):

@@ -7,7 +7,6 @@ from dsl.builder.core.strict import require_node, require_value
 
 from typing import List, Any
 
-
 # ============================================================================
 # NEIGHBORHOOD PARSER
 # ============================================================================
@@ -51,10 +50,7 @@ def _parse_arg(arg_node: Tree) -> ArgNode | None:
     key_node = find_child(eq, "quoted_identifier")
     val_node = find_child(eq, "value")
 
-    key = require_value(
-        node_value(key_node),
-        "Missing argument key"
-    )
+    key = require_value(node_value(key_node), "Missing argument key")
 
     raw_val = node_value(val_node)
     if raw_val is None:
@@ -117,17 +113,11 @@ def parse_neighborhood(node: Tree) -> NeighborhoodNode:
         neighborhood = metric + args
     """
 
-    n = require_node(
-        find_node(node, "neighborhood"),
-        "Neighborhood node not found"
-    )
+    n = require_node(find_node(node, "neighborhood"), "Neighborhood node not found")
 
     metric = _extract_metric(n)
 
     args_node = find_child(n, "args")
     args = _parse_args(args_node)
 
-    return NeighborhoodNode(
-        metric=metric,
-        args=args
-    )
+    return NeighborhoodNode(metric=metric, args=args)

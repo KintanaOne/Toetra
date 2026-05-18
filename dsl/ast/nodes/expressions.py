@@ -10,6 +10,7 @@ from dsl.ast.nodes.domain import DomainNode
 @dataclass
 class ExpressionNode(ASTNode):
     """WHERE a property is evaluated."""
+
     pass
 
 

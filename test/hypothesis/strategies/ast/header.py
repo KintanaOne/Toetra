@@ -1,10 +1,10 @@
 from hypothesis import strategies as st
 from ..primitives.primitives import identifiers, escaped_strings
 
-
 # ======================================================================
 # REQUIRED PARTS
 # ======================================================================
+
 
 @st.composite
 def model_declaration(draw):
@@ -22,6 +22,7 @@ def target_declaration(draw):
 # OPTIONAL PARTS
 # ======================================================================
 
+
 @st.composite
 def dataset_declaration(draw):
     path = draw(escaped_strings)
@@ -30,15 +31,14 @@ def dataset_declaration(draw):
 
 @st.composite
 def variables_declaration(draw):
-    vars_list = draw(
-        st.lists(identifiers, min_size=1, max_size=5)
-    )
+    vars_list = draw(st.lists(identifiers, min_size=1, max_size=5))
     return "variables := " + ", ".join(vars_list)
 
 
 # ======================================================================
 # HEADER COMPOSITION
 # ======================================================================
+
 
 @st.composite
 def header(draw):

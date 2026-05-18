@@ -1,6 +1,11 @@
 from __future__ import annotations
 
-from dsl.ast.nodes.expressions import AtExprNode, CheckAtExprNode, PairwiseExprNode, QuantifierExprNode
+from dsl.ast.nodes.expressions import (
+    AtExprNode,
+    CheckAtExprNode,
+    PairwiseExprNode,
+    QuantifierExprNode,
+)
 from dsl.ast.nodes.program import ProgramNode
 from dsl.ast.nodes.property import PropertyNode
 
@@ -27,7 +32,7 @@ from dsl.ir.ir1.nodes import (
     ImplyIR,
     ProblemIR,
     NeighborhoodIR,
-    DomainIR
+    DomainIR,
 )
 
 from dsl.language.vocabulary.problems import EnumProblem
@@ -62,7 +67,7 @@ class IRTranslator:
             property_type=prop.type,
             scope=scope_ir,
             query=query_ir,
-            backend=EnumBackend[backend] if backend else None
+            backend=EnumBackend[backend] if backend else None,
         )
 
     # --------------------------------------------------------------------------
@@ -84,10 +89,7 @@ class IRTranslator:
 
             kind = "local"
 
-            variables = {
-                scope.variable: "anchor",
-                f"{scope.variable}'": "perturbation"
-            }
+            variables = {scope.variable: "anchor", f"{scope.variable}'": "perturbation"}
 
             # --------------------------
             # neighborhood
@@ -95,20 +97,14 @@ class IRTranslator:
 
             if scope.neighborhood is not None:
 
-                args_dict = {
-                    arg.key: arg.value
-                    for arg in scope.neighborhood.args
-                }
+                args_dict = {arg.key: arg.value for arg in scope.neighborhood.args}
 
                 eps = args_dict.get("eps")
                 assert eps is not None, "Neighborhood must specify 'eps' parameter"
                 eps = float(eps)
 
-
                 neighborhood_ir = NeighborhoodIR(
-                    metric=scope.neighborhood.metric,
-                    eps=eps,
-                    args=args_dict
+                    metric=scope.neighborhood.metric, eps=eps, args=args_dict
                 )
 
             # --------------------------
@@ -118,10 +114,7 @@ class IRTranslator:
             if scope.domain is not None:
 
                 domain_ir = DomainIR(
-                    name=scope.domain.name,
-                    args={
-                        "values": scope.domain.values
-                    }
+                    name=scope.domain.name, args={"values": scope.domain.values}
                 )
 
         # ------------------------------------------------------------------
@@ -132,15 +125,9 @@ class IRTranslator:
 
             kind = "pairwise"
 
-            left, right = [
-                x.strip()
-                for x in scope.pair.split(",")
-            ]
+            left, right = [x.strip() for x in scope.pair.split(",")]
 
-            variables = {
-                left: "left",
-                right: "right"
-            }
+            variables = {left: "left", right: "right"}
 
         # ------------------------------------------------------------------
         # CHECK AT
@@ -150,9 +137,7 @@ class IRTranslator:
 
             kind = "pointwise"
 
-            variables = {
-                scope.variable: "point"
-            }
+            variables = {scope.variable: "point"}
 
         # ------------------------------------------------------------------
         # QUANTIFIER
@@ -164,10 +149,7 @@ class IRTranslator:
 
             if scope.domain is not None:
 
-                domain_ir = DomainIR(
-                    name=scope.domain.name,
-                    args={}
-                )
+                domain_ir = DomainIR(name=scope.domain.name, args={})
 
         # ------------------------------------------------------------------
         # FINAL
@@ -194,7 +176,7 @@ class IRTranslator:
                 result.append(n)
 
         return result
-    
+
     def _flatten_or(self, node: OrNode) -> list[LogicalNode]:
         result = []
 
@@ -205,40 +187,21 @@ class IRTranslator:
                 result.append(n)
 
         return result
-    
-
 
     def _translate_assertion(self, node: LogicalNode) -> QueryIR:
 
         if isinstance(node, AndNode):
 
-            operands = [
-                self._translate_logical(n)
-                for n in self._flatten_and(node)
-            ]
+            operands = [self._translate_logical(n) for n in self._flatten_and(node)]
 
-            return QueryIR(
-                expression=AndIR(
-                    operands=operands
-                )
-            )
-        
+            return QueryIR(expression=AndIR(operands=operands))
+
         if isinstance(node, OrNode):
 
-            operands = [
-                self._translate_logical(n)
-                for n in self._flatten_or(node)
-            ]
+            operands = [self._translate_logical(n) for n in self._flatten_or(node)]
 
-            return QueryIR(
-                expression=OrIR(
-                    operands=operands
-                )
-            )
-        return QueryIR(
-            expression=self._translate_logical(node)
-        )
-    
+            return QueryIR(expression=OrIR(operands=operands))
+        return QueryIR(expression=self._translate_logical(node))
 
     def _translate_logical(self, node: LogicalNode) -> LogicalIR:
         """
@@ -264,7 +227,7 @@ class IRTranslator:
                 entity=node.left.entity,
                 feature=node.left.feature,
                 op=node.op,  # 🔥 important
-                value=node.right.value
+                value=node.right.value,
             )
 
         # -----------------------------
@@ -272,33 +235,21 @@ class IRTranslator:
         # -----------------------------
         if isinstance(node, AndNode):
 
-            return AndIR(
-                operands=[
-                    self._translate_logical(n)
-                    for n in node.operands
-                ]
-            )
+            return AndIR(operands=[self._translate_logical(n) for n in node.operands])
 
         # -----------------------------
         # OR
         # -----------------------------
         if isinstance(node, OrNode):
 
-            return OrIR(
-                operands=[
-                    self._translate_logical(n)
-                    for n in node.operands
-                ]
-            )
+            return OrIR(operands=[self._translate_logical(n) for n in node.operands])
 
         # -----------------------------
         # NOT
         # -----------------------------
         if isinstance(node, NotNode):
 
-            return NotIR(
-                operand=self._translate_logical(node.operand)
-            )
+            return NotIR(operand=self._translate_logical(node.operand))
 
         # -----------------------------
         # IMPLICATION
@@ -307,7 +258,7 @@ class IRTranslator:
 
             return ImplyIR(
                 left=self._translate_logical(node.left),
-                right=self._translate_logical(node.right)
+                right=self._translate_logical(node.right),
             )
 
         # -----------------------------
@@ -318,11 +269,7 @@ class IRTranslator:
             problem = EnumProblem(node.problem)
             function = EnumFunction(node.function) if node.function else None
 
-            return ProblemIR(
-                problem=problem,
-                function=function,
-                args={}
-            )
+            return ProblemIR(problem=problem, function=function, args={})
 
         # -----------------------------
         # FAIL SAFE

@@ -7,8 +7,9 @@ official_quantifiers = {
     "FORALL": '"∀"',
     "EXIST": '"∃"',
     "FORALL_WORD ": '"forall"',
-    "EXISTS_WORD ": '"exists"'
+    "EXISTS_WORD ": '"exists"',
 }
+
 
 class EnumQuantifier(EnumMixin, Enum):
     FORALL = "FORALL"

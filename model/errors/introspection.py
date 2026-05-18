@@ -8,5 +8,6 @@ class ModelIntrospectionError(ModelError):
 class MissingFeatureMetadataError(ModelIntrospectionError):
     pass
 
+
 class UnsupportedIntrospectorError(ModelIntrospectionError):
     pass

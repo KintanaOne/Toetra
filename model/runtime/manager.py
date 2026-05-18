@@ -37,11 +37,7 @@ class ModelManager:
 
         self.model_path = Path(model_path)
 
-        self.dataset_path = (
-            Path(dataset_path)
-            if dataset_path is not None
-            else None
-        )
+        self.dataset_path = Path(dataset_path) if dataset_path is not None else None
 
         self.schema = schema
 
@@ -66,9 +62,7 @@ class ModelManager:
         # 1. Select loader
         # --------------------------------------------------
 
-        loader = LoaderFactory.get_loader(
-            self.model_path
-        )
+        loader = LoaderFactory.get_loader(self.model_path)
 
         # --------------------------------------------------
         # 2. Load serialized model
@@ -80,9 +74,7 @@ class ModelManager:
         # 3. Detect ML framework
         # --------------------------------------------------
 
-        self.framework = ModelDetector().detect(
-            self.model
-        )
+        self.framework = ModelDetector().detect(self.model)
 
         # --------------------------------------------------
         # 4. Select introspector

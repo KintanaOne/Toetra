@@ -27,8 +27,6 @@ class LoaderFactory:
         loader_class = cls.LOADERS.get(extension)
 
         if loader_class is None:
-            raise UnsupportedModelFormatError(
-                f"Unsupported model format: {extension}"
-            )
+            raise UnsupportedModelFormatError(f"Unsupported model format: {extension}")
 
         return loader_class(model_path)

@@ -8,22 +8,27 @@ from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.problems import EnumProblem
 
-
 # ----------------------------------------------------------------------------------------------------------------------
 # ASSERTION (WRAPPER)
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 @dataclass
 class AssertionNode(ASTNode):
     """Top-level assertion (WHAT must be true)."""
+
     root: LogicalNode
     context: ProblemNode | None = None
+
+
 # ----------------------------------------------------------------------------------------------------------------------
 # LOGICAL NODES
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 class LogicalNode(ASTNode):
     """Base class for all logical expressions."""
+
     pass
 
 
@@ -59,6 +64,7 @@ class ImplicationNode(LogicalNode):
 # CONTEXT
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 @dataclass
 class ProblemNode(LogicalNode):
     problem: EnumProblem
@@ -68,6 +74,7 @@ class ProblemNode(LogicalNode):
 # ----------------------------------------------------------------------------------------------------------------------
 # FALLBACK
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 @dataclass
 class UnknownNode(LogicalNode):

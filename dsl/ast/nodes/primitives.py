@@ -5,7 +5,6 @@ from typing import Union
 
 from dsl.semantic.types.enums import EnumDataType
 
-
 PrimitiveValue = Union[str, int, float, bool, None]
 
 
@@ -44,4 +43,3 @@ class AttributeNode:
 
     # Full parsed path
     path: list[str]
-

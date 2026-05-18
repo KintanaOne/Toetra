@@ -33,10 +33,10 @@ from test.hypothesis.mutations.base import (
     PipelineStage,
 )
 
-
 # =========================================================
 # MUTATION 1 : flip comparison operator
 # =========================================================
+
 
 @mutation(
     nature=MutationNature.CATEGORICAL,
@@ -72,6 +72,7 @@ def flip_comparison_operator(ast: ProgramNode) -> ProgramNode:
 # MUTATION 2 : corrupt problem context
 # =========================================================
 
+
 @mutation(
     nature=MutationNature.CATEGORICAL,
     severity=MutationSeverity.MEDIUM,
@@ -101,6 +102,7 @@ def corrupt_problem_context(ast: ProgramNode) -> ProgramNode:
 # =========================================================
 # MUTATION 3 : corrupt function mapping
 # =========================================================
+
 
 @mutation(
     nature=MutationNature.CATEGORICAL,
