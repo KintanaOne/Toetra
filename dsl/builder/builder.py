@@ -12,4 +12,4 @@ if __name__ == "__main__":
 
     # BUILDER
     AST = parse_program(CST)
-    print(pretty(AST))
+    print((AST))

@@ -24,6 +24,7 @@ from dsl.builder.program import ProgramNode
 from dsl.ast.nodes.primitives import ConstantNode
 
 from test.hypothesis.mutations.base import (
+    MutationLayer,
     mutation,
     MutationNature,
     MutationSeverity,
@@ -37,13 +38,16 @@ from test.hypothesis.mutations.base import (
 
 
 @mutation(
-    nature=MutationNature.NUMERICAL,
+    layer=MutationLayer.NUMERICAL,
+    nature=MutationNature.PERTURBATION,
     severity=MutationSeverity.HIGH,
     severity_score=0.8,
     impact={MutationImpact.SEMANTIC_INVALID},
     expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
     preserves_valid_ast=True,
     preserves_typing=True,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=True
 )
 def explode_constants(ast: ProgramNode) -> ProgramNode:
     """
@@ -70,13 +74,16 @@ def explode_constants(ast: ProgramNode) -> ProgramNode:
 
 
 @mutation(
-    nature=MutationNature.NUMERICAL,
+    layer=MutationLayer.NUMERICAL,
+    nature=MutationNature.SUBSTITUTION,
     severity=MutationSeverity.MEDIUM,
     severity_score=0.6,
     impact={MutationImpact.SEMANTIC_INVALID},
     expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
     preserves_valid_ast=True,
     preserves_typing=True,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=True
 )
 def invert_numeric_sign(ast: ProgramNode) -> ProgramNode:
     """
@@ -90,7 +97,9 @@ def invert_numeric_sign(ast: ProgramNode) -> ProgramNode:
         root = p.rule.assertion.root
 
         assert isinstance(root, ComparisonNode)
-        val = root.right.dtype in {"int", "float"}
+
+        val = root.right.value
+        assert isinstance(val, (int, float))
 
         if isinstance(root.right, ConstantNode):
             root.right.value = -val
@@ -102,17 +111,3 @@ NUMERICAL_MUTATIONS = [
     explode_constants,
     invert_numeric_sign,
 ]
-
-
-def apply_numerical_mutations(ast: ProgramNode, n: int = 1) -> ProgramNode:
-    """
-    Apply N numerical mutations.
-    """
-
-    mutated = ast
-
-    for _ in range(n):
-        mutation_fn = random.choice(NUMERICAL_MUTATIONS)
-        mutated = mutation_fn(mutated)
-
-    return mutated

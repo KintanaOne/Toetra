@@ -15,22 +15,27 @@ from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.problems import EnumProblem
 
-
 # ----------------------------------------------------------------------------------------------------------------------
 # ASSERTION (WRAPPER)
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 @dataclass
 class AssertionNode(ASTNode):
     """Top-level assertion (WHAT must be true)."""
+
     root: LogicalNode
     context: ProblemNode | None = None
+
+
 # ----------------------------------------------------------------------------------------------------------------------
 # LOGICAL NODES
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 class LogicalNode(ASTNode):
     """Base class for all logical expressions."""
+
     pass
 
 
@@ -66,6 +71,7 @@ class ImplicationNode(LogicalNode):
 # CONTEXT
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 @dataclass
 class ProblemNode(LogicalNode):
     problem: EnumProblem
@@ -76,9 +82,11 @@ class ProblemNode(LogicalNode):
 # FALLBACK
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 @dataclass
 class UnknownNode(LogicalNode):
     raw: str
+
 
 ===== dsl\ast\nodes\backends.py =====
 
@@ -98,6 +106,7 @@ class BackendNode(ASTNode):
 
     name: str
     args: list[ArgNode]
+
 
 ===== dsl\ast\nodes\base.py =====
 
@@ -123,6 +132,7 @@ class ASTNode:
         repr=False,
     )
 
+
 ===== dsl\ast\nodes\domain.py =====
 
 from __future__ import annotations
@@ -136,6 +146,7 @@ from dsl.ast.nodes.base import ASTNode
 class DomainNode(ASTNode):
     name: str
     values: list[str]
+
 
 ===== dsl\ast\nodes\expressions.py =====
 
@@ -151,6 +162,7 @@ from dsl.ast.nodes.domain import DomainNode
 @dataclass
 class ExpressionNode(ASTNode):
     """WHERE a property is evaluated."""
+
     pass
 
 
@@ -178,6 +190,7 @@ class QuantifierExprNode(ExpressionNode):
     quantifier: str
     domain: DomainNode | None
 
+
 ===== dsl\ast\nodes\header.py =====
 
 from dataclasses import dataclass
@@ -187,6 +200,7 @@ from dataclasses import dataclass
 class HeaderNode:
     model: str
     target: str
+
 
 ===== dsl\ast\nodes\neighborhood.py =====
 
@@ -203,6 +217,7 @@ class NeighborhoodNode(ASTNode):
     metric: str
     args: list[ArgNode]
 
+
 ===== dsl\ast\nodes\primitives.py =====
 
 from __future__ import annotations
@@ -211,7 +226,6 @@ from dataclasses import dataclass
 from typing import Union
 
 from dsl.semantic.types.enums import EnumDataType
-
 
 PrimitiveValue = Union[str, int, float, bool, None]
 
@@ -253,7 +267,6 @@ class AttributeNode:
     path: list[str]
 
 
-
 ===== dsl\ast\nodes\program.py =====
 
 from __future__ import annotations
@@ -268,6 +281,7 @@ from dsl.ast.nodes.property import PropertyNode
 class ProgramNode:
     header: HeaderNode
     body: list[PropertyNode]
+
 
 ===== dsl\ast\nodes\property.py =====
 

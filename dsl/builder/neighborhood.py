@@ -7,6 +7,8 @@ from dsl.builder.core.strict import require_node, require_value
 
 from typing import List, Any
 
+from dsl.parser.errors import ParserDeclarationError, ParserPropertyError
+
 # ============================================================================
 # NEIGHBORHOOD PARSER
 # ============================================================================
@@ -38,23 +40,26 @@ def _parse_numeric(value: Any) -> Any:
 # ---------------------------------------------------------------------------
 # Argument parsing
 # ---------------------------------------------------------------------------
-def _parse_arg(arg_node: Tree) -> ArgNode | None:
+def _parse_arg(arg_node: Tree) -> ArgNode:
     """
     Parse a single argument node into an ArgNode.
     """
 
     eq = find_child(arg_node, "arg_identifier_eq")
     if eq is None:
-        return None
+        raise ParserPropertyError("Missing '=' in argument")
 
     key_node = find_child(eq, "quoted_identifier")
     val_node = find_child(eq, "value")
+
+    if val_node is None:
+        raise ParserPropertyError("Missing argument value in neighborhood argument")
 
     key = require_value(node_value(key_node), "Missing argument key")
 
     raw_val = node_value(val_node)
     if raw_val is None:
-        raise ValueError("Missing argument value")
+        raise ParserPropertyError(f"Missing argument value for key={key}")
 
     # Try numeric conversion first, fallback to cleaned string
     try:
@@ -79,9 +84,7 @@ def _parse_args(args_node: Tree | None) -> List[ArgNode]:
     args: List[ArgNode] = []
 
     for arg in find_all_nodes(args_node, "arg"):
-        parsed = _parse_arg(arg)
-        if parsed is not None:
-            args.append(parsed)
+        args.append(_parse_arg(arg))
 
     return args
 

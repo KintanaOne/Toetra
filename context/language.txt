@@ -14,8 +14,10 @@ from dsl.language.vocabulary.quantifiers import official_quantifiers
 from dsl.language.vocabulary.functions import official_functions
 from dsl.language.vocabulary.backends import official_backends
 from dsl.language.vocabulary.metrics import official_metrics
-from dsl.language.vocabulary.operators import official_logic_operators, official_comparaison_operations
-
+from dsl.language.vocabulary.operators import (
+    official_logic_operators,
+    official_comparaison_operations,
+)
 
 # =========================
 # RAW DICTIONARIES
@@ -39,11 +41,12 @@ OFFICIAL_MAPS = {
 # HEADER BLOCK GENERATION
 # =========================
 
+
 def format_rule_block(title: str, items: dict) -> list[str]:
     """Convert dictionary into Lark rule list."""
-    return [f"# === {title.upper()} ==="] + [
-        f"{k} : {v}" for k, v in items.items()
-    ] + [""]
+    return (
+        [f"# === {title.upper()} ==="] + [f"{k} : {v}" for k, v in items.items()] + [""]
+    )
 
 
 def build_header() -> list[str]:
@@ -73,11 +76,12 @@ def build_header() -> list[str]:
     header += [
         "# === TOKENS ===",
         "PAIRWISE.2 : /[A-Za-z][A-Za-z0-9_]*\\s*~\\s*[A-Za-z][A-Za-z0-9_']*/",
-        "PROPERTY_IMPLY : \"=>\"",
+        'PROPERTY_IMPLY : "=>"',
         "",
     ]
 
     return header
+
 
 ===== dsl\language\tools\formatter.py =====
 
@@ -94,7 +98,7 @@ def format_lark_output(lines: list[str]) -> str:
 
     def is_rule(line: str) -> bool:
         return ":" in line and not line.strip().startswith("#")
-    
+
     def split_outside_regex(s: str, sep: str = "|") -> list[str]:
         parts = []
         current = []
@@ -104,7 +108,7 @@ def format_lark_output(lines: list[str]) -> str:
         while i < len(s):
             c = s[i]
 
-            if c == "/" and (i == 0 or s[i-1] != "\\"):
+            if c == "/" and (i == 0 or s[i - 1] != "\\"):
                 in_regex = not in_regex
                 current.append(c)
 
@@ -120,7 +124,7 @@ def format_lark_output(lines: list[str]) -> str:
             parts.append("".join(current).strip())
 
         return parts
-    
+
     def normalize_or_spacing(s: str) -> str:
         parts = re.split(r"(/[^/]+/)", s)
         result = []
@@ -172,7 +176,7 @@ def format_lark_output(lines: list[str]) -> str:
             if len(parts) <= 1:
                 formatted.append(f"{lhs} : {parts[0]}")
             else:
-                for j,part in enumerate(parts):
+                for j, part in enumerate(parts):
                     # 🔥 CRITICAL: always same prefix, no variation
                     if j == 0:
                         formatted.append(f"{lhs} : {part}")
@@ -197,6 +201,7 @@ def format_lark_output(lines: list[str]) -> str:
     result = re.sub(r"\n\s*\|", "\n    |", result)
 
     return result
+
 
 ===== dsl\language\tools\generator.py =====
 
@@ -293,13 +298,13 @@ def main():
 if __name__ == "__main__":
     main()
 
+
 ===== dsl\language\tools\registry.py =====
 
 # dsl/language/tools/registry.py
 
 from dsl.language.vocabulary.protected_words import protected_words
 from dsl.language.tools.constants import OFFICIAL_MAPS
-
 
 SPECIAL_SEQ = {
     "official_properties": " | ".join(OFFICIAL_MAPS["properties"].keys()),
@@ -338,6 +343,7 @@ GRAMMAR_REGISTRY = {
     "PROTECTED_WORDS": protected_words,
 }
 
+
 ===== dsl\language\tools\transforms.py =====
 
 # dsl/language/tools/transforms.py
@@ -348,10 +354,10 @@ EBNF → Lark transformation utilities.
 
 import re
 
-
 # =========================
 # RULE CONTEXT DETECTION
 # =========================
+
 
 def is_rule_root(line: str) -> bool:
     """
@@ -364,6 +370,7 @@ def is_rule_root(line: str) -> bool:
 # ASSIGNMENT FIRST (IMPORTANT)
 # =========================
 
+
 def convert_assignment(line: str) -> str:
     """
     Convert EBNF assignment to Lark BEFORE any transformation.
@@ -374,6 +381,7 @@ def convert_assignment(line: str) -> str:
 # =========================
 # BRACKET PROTECTION
 # =========================
+
 
 def protect_brackets(line: str) -> str:
     def repl(match):
@@ -411,13 +419,14 @@ def unprotect_brackets(line: str) -> str:
 # EBNF STRUCTURES
 # =========================
 
+
 def transform_ebnf_brackets(line: str) -> str:
     def repl_curly(match):
         return f"({match.group(1)})*"
 
     def repl_brackets(match):
         return f"({match.group(1)})?"
-    
+
     def protect_or_groups(line: str) -> str:
         """
         Ensure OR chains are preserved as atomic blocks.
@@ -428,11 +437,7 @@ def transform_ebnf_brackets(line: str) -> str:
             return f"( {group} )"
 
         # match A | B | C pattern
-        return re.sub(
-            r"(?:[A-Z_]+\s*\|\s*)+[A-Z_]+",
-            repl,
-            line
-        )
+        return re.sub(r"(?:[A-Z_]+\s*\|\s*)+[A-Z_]+", repl, line)
 
     prev = None
     while prev != line:
@@ -447,6 +452,7 @@ def transform_ebnf_brackets(line: str) -> str:
 # =========================
 # MAIN RESOLVER (FIXED)
 # =========================
+
 
 def replace_all_sequences(line: str, registry: dict) -> str:
     """
@@ -496,9 +502,11 @@ def replace_all_sequences(line: str, registry: dict) -> str:
 
     return re.sub(r"\?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\?", repl, line)
 
+
 # =========================
 # CLEANERS
 # =========================
+
 
 def normalize_whitespace(line: str) -> str:
     parts = re.split(r"(/[^/]+/)", line)  # split regex vs non-regex
@@ -543,6 +551,7 @@ def remove_ebnf_commas(line: str) -> str:
 # PIPELINE SAFETY FOR OR BLOCKS
 # =========================
 
+
 def group_or_blocks(line: str) -> str:
     """
     Force parentheses around OR blocks when they are followed by tokens.
@@ -551,16 +560,13 @@ def group_or_blocks(line: str) -> str:
     """
 
     # pattern: A | B | C "." D  => (A | B | C) "." D
-    return re.sub(
-        r"((?:[A-Z_]+\s*\|\s*)+[A-Z_]+)\s*(\.)",
-        r"(\1) \2",
-        line
-    )
+    return re.sub(r"((?:[A-Z_]+\s*\|\s*)+[A-Z_]+)\s*(\.)", r"(\1) \2", line)
 
 
 # =========================
 # NEIGHBORHOOD PRECEDENCE
 # =========================
+
 
 def fix_neighborhood_precedence(line: str) -> str:
     """
@@ -573,9 +579,8 @@ def fix_neighborhood_precedence(line: str) -> str:
     return re.sub(
         r"\(\s*metric\s*=\s*\)\?\s*([A-Z0-9_]+)\s*\|\s*([A-Z0-9_]+)\s*\|\s*([A-Z0-9_]+)",
         r'("metric" "=")? (\1 | \2 | \3)',
-        line
+        line,
     )
-
 
 
 ===== dsl\language\vocabulary\__init__.py =====
@@ -589,17 +594,17 @@ def fix_neighborhood_precedence(line: str) -> str:
 from enum import Enum
 from dsl.language.vocabulary.utils import EnumMixin
 
-
 official_backends = {
-    "eran" : '"eran"',
-    "ERAN" : '"ERAN"',
-    "zonotope" : '"zonotope"',
-    "ZONOTOPE" : '"ZONOTOPE"',
-    "box" : '"box"',
-    "BOX" : '"BOX"',
-    "z3" : '"z3"',
-    "Z3" : '"Z3"'
+    "eran": '"eran"',
+    "ERAN": '"ERAN"',
+    "zonotope": '"zonotope"',
+    "ZONOTOPE": '"ZONOTOPE"',
+    "box": '"box"',
+    "BOX": '"BOX"',
+    "z3": '"z3"',
+    "Z3": '"Z3"',
 }
+
 
 class EnumBackend(EnumMixin, Enum):
     ERAN = "ERAN"
@@ -610,6 +615,7 @@ class EnumBackend(EnumMixin, Enum):
     z3 = "z3"
     Z3 = "Z3"
 
+
 ===== dsl\language\vocabulary\distances.py =====
 
 # /forml/grammar/official_contents/distance.py
@@ -617,17 +623,18 @@ class EnumBackend(EnumMixin, Enum):
 from enum import Enum
 from dsl.language.vocabulary.utils import EnumMixin
 
-
 official_distances = {
-    "hyperball" : '"hyperball"',
-    "levenshtein" : '"levenshtein"',
-    "euclidian" : '"euclidian"',
+    "hyperball": '"hyperball"',
+    "levenshtein": '"levenshtein"',
+    "euclidian": '"euclidian"',
 }
+
 
 class EnumDistance(EnumMixin, Enum):
     hyperball = "hyperball"
     levenshtein = "levenshtein"
     euclidian = "euclidian"
+
 
 ===== dsl\language\vocabulary\functions.py =====
 
@@ -636,14 +643,14 @@ class EnumDistance(EnumMixin, Enum):
 from enum import Enum
 from dsl.language.vocabulary.utils import EnumMixin
 
-
 official_functions = {
-    "EQUAL" : '"EQUAL"',
-    "EQUITY" : '"EQUITY"',
-    "BETWEEN" : '"BETWEEN"',
-    "INCREASING" : '"INCREASING"',
-    "DECREASING" : '"DECREASING"'
+    "EQUAL": '"EQUAL"',
+    "EQUITY": '"EQUITY"',
+    "BETWEEN": '"BETWEEN"',
+    "INCREASING": '"INCREASING"',
+    "DECREASING": '"DECREASING"',
 }
+
 
 class EnumFunction(EnumMixin, Enum):
     EQUAL = "EQUAL"
@@ -652,6 +659,7 @@ class EnumFunction(EnumMixin, Enum):
     INCREASING = "INCREASING"
     DECREASING = "DECREASING"
 
+
 ===== dsl\language\vocabulary\metrics.py =====
 
 # /formel/grammar/official_contents/sets.py
@@ -659,11 +667,8 @@ class EnumFunction(EnumMixin, Enum):
 from enum import Enum
 from dsl.language.vocabulary.utils import EnumMixin
 
-official_metrics = {
-    "L1": '"L1"',
-    "L2": '"L2"',
-    "LINF": '"Linf"'
-}
+official_metrics = {"L1": '"L1"', "L2": '"L2"', "LINF": '"Linf"'}
+
 
 class EnumMetric(EnumMixin, Enum):
     L1 = '"L1"'
@@ -683,7 +688,7 @@ official_logic_operators = {
     "OR": '"or"',
     "NOT": '"not"',
     "XOR": '"xor"',
-    "IMPLY": '"->"'
+    "IMPLY": '"->"',
 }
 
 official_comparaison_operations = {
@@ -695,6 +700,7 @@ official_comparaison_operations = {
     "GTE": '">="',
 }
 
+
 class EnumComparisonOperator(EnumMixin, Enum):
     EQ = "=="
     NEQ = "!="
@@ -703,12 +709,13 @@ class EnumComparisonOperator(EnumMixin, Enum):
     GT = ">"
     GTE = ">="
 
+
 class EnumLogicalOperator(EnumMixin, Enum):
     AND = "and"
     OR = "or"
     NOT = "not"
     IMPLY = "->"
-    
+
 
 ===== dsl\language\vocabulary\problems.py =====
 
@@ -717,15 +724,15 @@ class EnumLogicalOperator(EnumMixin, Enum):
 from enum import Enum
 from dsl.language.vocabulary.utils import EnumMixin
 
-
 official_problems = {
-    "CLASSIFICATION" : '"CLASSIFICATION"',
-    "PREDICTION" : '"PREDICTION"',
-    "REGRESSION" : '"REGRESSION"',
-    "CLUSTERING" : '"CLUSTERING"',
-    "ANOMALY_DETECTION" : '"ANOMALY_DETECTION"',
-    "REINFORCEMENT_LEARNING" : '"REINFORCEMENT_LEARNING"',
+    "CLASSIFICATION": '"CLASSIFICATION"',
+    "PREDICTION": '"PREDICTION"',
+    "REGRESSION": '"REGRESSION"',
+    "CLUSTERING": '"CLUSTERING"',
+    "ANOMALY_DETECTION": '"ANOMALY_DETECTION"',
+    "REINFORCEMENT_LEARNING": '"REINFORCEMENT_LEARNING"',
 }
+
 
 class EnumProblem(EnumMixin, Enum):
     CLASSIFICATION = "CLASSIFICATION"
@@ -735,6 +742,7 @@ class EnumProblem(EnumMixin, Enum):
     ANOMALY_DETECTION = "ANOMALY_DETECTION"
     REINFORCEMENT_LEARNING = "REINFORCEMENT_LEARNING"
 
+
 ===== dsl\language\vocabulary\properties.py =====
 
 # /forml/grammar/official_contents/properties.py
@@ -742,16 +750,15 @@ class EnumProblem(EnumMixin, Enum):
 from enum import Enum
 from dsl.language.vocabulary.utils import EnumMixin
 
-
 official_properties = {
-    "ROBUSTNESS" : '"ROBUSTNESS"',
-    "STABILITY" : '"STABILITY"',
-    "FAIRNESS" : '"FAIRNESS"',
-    "MONOTONICITY" : '"MONOTONICITY"',
-    "BOUND" : '"BOUND"',
-    "LOGIC" : '"LOGIC"',
-
+    "ROBUSTNESS": '"ROBUSTNESS"',
+    "STABILITY": '"STABILITY"',
+    "FAIRNESS": '"FAIRNESS"',
+    "MONOTONICITY": '"MONOTONICITY"',
+    "BOUND": '"BOUND"',
+    "LOGIC": '"LOGIC"',
 }
+
 
 class EnumProperty(EnumMixin, Enum):
     ROBUSTNESS = "ROBUSTNESS"
@@ -761,6 +768,7 @@ class EnumProperty(EnumMixin, Enum):
     BOUND = "BOUND"
     LOGIC = "LOGIC"
 
+
 ===== dsl\language\vocabulary\protected_words.py =====
 
 # /forml/grammar/official_contents/protected_words.py
@@ -768,17 +776,17 @@ class EnumProperty(EnumMixin, Enum):
 from enum import Enum
 from dsl.language.vocabulary.utils import EnumMixin
 
-
 protected_words = {
-    "IN":           '"in"',
-    "WITH":         '''"with"''',
-    "AT":           '"at"',
-    "CHECK_AT":     '"check_at"',
-    "USING":        '"using"',
-    "MODEL":        '"model"',
-    "TARGET":       '"target"',
+    "IN": '"in"',
+    "WITH": '''"with"''',
+    "AT": '"at"',
+    "CHECK_AT": '"check_at"',
+    "USING": '"using"',
+    "MODEL": '"model"',
+    "TARGET": '"target"',
     "NEIGHBORHOOD": '"neighborhood"',
 }
+
 
 class EnumProtectedWord(EnumMixin, Enum):
     IN = '"in"'
@@ -789,6 +797,7 @@ class EnumProtectedWord(EnumMixin, Enum):
     MODEL = '"model"'
     TARGET = '"target"'
     NEIGHBORHOOD = '"neighborhood"'
+
 
 ===== dsl\language\vocabulary\quantifiers.py =====
 
@@ -801,8 +810,9 @@ official_quantifiers = {
     "FORALL": '"∀"',
     "EXIST": '"∃"',
     "FORALL_WORD ": '"forall"',
-    "EXISTS_WORD ": '"exists"'
+    "EXISTS_WORD ": '"exists"',
 }
+
 
 class EnumQuantifier(EnumMixin, Enum):
     FORALL = "FORALL"
@@ -810,16 +820,16 @@ class EnumQuantifier(EnumMixin, Enum):
     forall = "forall"
     exists = "exists"
 
+
 ===== dsl\language\vocabulary\utils.py =====
 
 # /forml/grammar/official_contents/utils.py
 
+
 class EnumMixin:
     @classmethod
     def from_str(cls, name: str):
-        """
-        
-        """
+        """ """
         normalized = name.strip('"').upper()
         for member in cls:
             if member.value.upper() == normalized:

@@ -70,3 +70,28 @@ if __name__ == "__main__":
         recursive=True,
         output_file="context/test/hypothesis/mutations.txt",
     )
+    concat_files_in_folder(
+        "test/hypothesis/mutations/cst",
+        recursive=True,
+        output_file="context/test/hypothesis/mutations/cst.txt",
+    )
+    concat_files_in_folder(
+        "test/hypothesis/mutations/ast",
+        recursive=True,
+        output_file="context/test/hypothesis/mutations/ast.txt",
+    )
+    concat_files_in_folder(
+        "test/hypothesis/mutations/string",
+        recursive=True,
+        output_file="context/test/hypothesis/mutations/string.txt",
+    )
+    concat_files_in_folder(
+        "test/hypothesis/strategies/valid",
+        recursive=True,
+        output_file="context/test/hypothesis/strategies/valid.txt",
+    )
+    concat_files_in_folder(
+        "test/hypothesis/strategies/invalid",
+        recursive=True,
+        output_file="context/test/hypothesis/strategies/invalid.txt",
+    )

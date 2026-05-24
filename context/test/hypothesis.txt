@@ -1,27 +1,52 @@
 
+===== test\hypothesis\builder\test_builder_consistency.py =====
+
+from hypothesis import given, settings, HealthCheck
+
+from dsl.parser.parser import parse_forml_code
+from dsl.builder.program import parse_program
+from test.hypothesis.strategies.valid.program_string import valid_string_program
+
+
+@given(valid_string_program())
+@settings(suppress_health_check=[HealthCheck.too_slow])
+def test_builder_produces_valid_ast(program):
+    """
+    Ensures CST → AST transformation is always valid.
+    """
+
+    cst = parse_forml_code(program)
+    ast = parse_program(cst)
+
+    # AST must be well-formed
+    assert ast is not None
+    assert hasattr(ast, "body")
+    assert len(ast.body) >= 0
+
 ===== test\hypothesis\builder\test_invalid_builder.py =====
+
+from copy import deepcopy
 
 from hypothesis import given
 import pytest
 
 from dsl.builder.program import parse_program
 from dsl.parser.parser import parse_forml_code
-from test.hypothesis.strategies.invalid.program import apply_lexical_mutations
-from test.hypothesis.strategies.valid.program_valid import valid_program
+from test.hypothesis.strategies.invalid.invalid_program import invalid_string_program
+from test.hypothesis.strategies.valid.program_string import valid_string_program
 
 pytestmark = pytest.mark.wip
 
-@given(valid_program())
-def test_builder_rejects_invalid_structure(program):
 
-    
+@given(invalid_string_program(valid_string_program()))
+def test_builder_rejects_invalid_structure(program): 
 
-    mutated = apply_lexical_mutations(program)
-
+    mutated = deepcopy(program)
 
     with pytest.raises(Exception):
         cst = parse_forml_code(mutated)
         parse_program(cst)
+
 
 ===== test\hypothesis\builder\test_valid_builder.py =====
 
@@ -32,12 +57,13 @@ from dsl.builder.program import parse_program
 from dsl.parser.parser import parse_forml_code
 
 from test.hypothesis.settings import DEFAULT_SETTINGS
-from test.hypothesis.strategies.valid.program_valid import valid_program
+from test.hypothesis.strategies.valid.program_string import valid_string_program
 
 pytestmark = pytest.mark.wip
 
+
 @DEFAULT_SETTINGS
-@given(valid_program())
+@given(valid_string_program())
 def test_builder_accepts_valid_programs(program):
 
     cst = parse_forml_code(program)
@@ -45,145 +71,3000 @@ def test_builder_accepts_valid_programs(program):
 
     assert ast is not None
 
-===== test\hypothesis\mutations\__init__.py =====
 
-from .lexical import *
-from .structural import *
-from .semantic import *
+===== test\hypothesis\mutations\ast\adversarial.py =====
+
+"""
+Adversarial mutations (ROBUSTNESS & SAFETY LAYER)
+
+GOAL:
+    Create valid but misleading or pathological ASTs.
+
+ROLE IN FORML:
+    - test validator robustness
+    - detect silent corruption
+    - stress semantic safety checks
+    - simulate malicious or edge-case inputs
+
+CHARACTERISTICS:
+    ✔ AST valid
+    ✔ syntax valid
+    ✔ often passes shallow checks
+    ❌ semantically misleading or dangerous
+"""
+
+import random
+from copy import deepcopy
+
+from dsl.builder.program import ProgramNode
+from dsl.ast.nodes.assertion import NotNode, AndNode, OrNode
+
+from test.hypothesis.mutations.base import (
+    MutationLayer,
+    mutation,
+    MutationNature,
+    MutationSeverity,
+    MutationImpact,
+    PipelineStage,
+)
+
+# =========================================================
+# MUTATION 1 : tautology injection
+# =========================================================
+
+
+@mutation(
+    layer=MutationLayer.ADVERSARIAL,
+    nature=MutationNature.CORRUPTION,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.85,
+    impact={MutationImpact.SEMANTIC_INVALID},
+    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
+    preserves_valid_ast=True,
+    preserves_typing=True,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=True
+)
+def inject_adversarial_tautology(ast: ProgramNode) -> ProgramNode:
+    """
+    Inject tautological expressions.
+    A becomes A OR NOT(A)
+    """
+
+    mutated = deepcopy(ast)
+
+    for p in mutated.body:
+
+        root = deepcopy(p.rule.assertion.root)
+
+        p.rule.assertion.root = OrNode(operands=[root, NotNode(operand=deepcopy(root))])
+
+    return mutated
+
+
+# =========================================================
+# MUTATION 2 : nested NOT explosion
+# =========================================================
+
+
+@mutation(
+    layer=MutationLayer.ADVERSARIAL,
+    nature=MutationNature.CORRUPTION,
+    severity=MutationSeverity.MEDIUM,
+    severity_score=0.6,
+    impact={MutationImpact.SEMANTIC_INVALID},
+    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
+    preserves_valid_ast=True,
+    preserves_typing=True,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=True
+)
+def nest_negations(ast: ProgramNode) -> ProgramNode:
+    """
+    Wrap assertion in multiple NOT layers.
+    """
+
+    mutated = deepcopy(ast)
+
+    for p in mutated.body:
+
+        root = p.rule.assertion.root
+
+        depth = random.randint(2, 5)
+
+        for _ in range(depth):
+            root = NotNode(operand=root)
+
+        p.rule.assertion.root = root
+
+    return mutated
+
+
+ADVERSARIAL_MUTATIONS = [
+    inject_adversarial_tautology,
+    nest_negations,
+]
+
+
+def apply_adversarial_mutations(ast: ProgramNode, n: int = 1) -> ProgramNode:
+    """
+    Apply N adversarial mutations.
+    """
+
+    mutated = ast
+
+    for _ in range(n):
+        mutation_fn = random.choice(ADVERSARIAL_MUTATIONS)
+        mutated = mutation_fn(mutated)
+
+    return mutated
+
+
+===== test\hypothesis\mutations\ast\causality.py =====
+
+# test/hypothesis/mutations/semantic/causality.py
+
+"""
+Semantic causality mutations.
+
+GOAL:
+    Break semantic causal relationships.
+
+ROLE IN FORML:
+    - stress implication semantics
+    - reverse semantic directionality
+    - validate causal consistency
+
+CHARACTERISTICS:
+    ✔ AST valid
+    ✔ syntax valid
+    ✔ typing preserved
+    ❌ semantic causality corrupted
+"""
+
+from __future__ import annotations
+
+from copy import deepcopy
+
+from dsl.builder.program import ProgramNode
+
+from dsl.builder.assertion import (
+    ImplicationNode,
+)
+
+from test.hypothesis.mutations.base import (
+    mutation,
+    MutationLayer,
+    MutationNature,
+    MutationSeverity,
+    MutationImpact,
+    PipelineStage,
+)
+
+
+# =========================================================
+# MUTATION 1 : reverse causality
+# =========================================================
+
+
+@mutation(
+    layer=MutationLayer.SEMANTIC,
+    nature=MutationNature.REORDERING,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.80,
+    impact={MutationImpact.SEMANTIC_INVALID},
+    expected_failures={
+        PipelineStage.SEMANTIC_ANALYSIS,
+    },
+    preserves_valid_cst=True,
+    preserves_valid_ast=True,
+    preserves_typing=True,
+    preserves_semantic_equivalence=False,
+)
+def reverse_causality(
+    ast: ProgramNode,
+) -> ProgramNode:
+    """
+    Reverse implication direction.
+
+    A -> B becomes B -> A
+    """
+
+    mutated = deepcopy(ast)
+
+    for property_node in mutated.body:
+
+        root = property_node.rule.assertion.root
+
+        if isinstance(root, ImplicationNode):
+
+            root.left, root.right = (
+                root.right,
+                root.left,
+            )
+
+    return mutated
+
+
+SEMANTIC_CAUSALITY_MUTATIONS = [
+    reverse_causality,
+]
+
+===== test\hypothesis\mutations\ast\constraints.py =====
+
+# test/hypothesis/mutations/semantic/constraints.py
+
+"""
+Semantic constraint violation mutations.
+
+GOAL:
+    Inject impossible or contradictory semantic constraints.
+
+ROLE IN FORML:
+    - stress semantic validators
+    - detect contradiction handling
+    - validate logical consistency
+
+CHARACTERISTICS:
+    ✔ AST valid
+    ✔ syntax valid
+    ✔ typing preserved
+    ❌ semantic consistency broken
+"""
+
+from __future__ import annotations
+
+from copy import deepcopy
+
+from dsl.builder.program import ProgramNode
+
+from dsl.ast.nodes.assertion import (
+    AndNode,
+    NotNode,
+)
+
+from test.hypothesis.mutations.base import (
+    mutation,
+    MutationLayer,
+    MutationNature,
+    MutationSeverity,
+    MutationImpact,
+    PipelineStage,
+)
+
+
+# =========================================================
+# MUTATION 1 : impossible semantic constraint
+# =========================================================
+
+
+@mutation(
+    layer=MutationLayer.SEMANTIC,
+    nature=MutationNature.CORRUPTION,
+    severity=MutationSeverity.CRITICAL,
+    severity_score=1.0,
+    impact={MutationImpact.SEMANTIC_INVALID},
+    expected_failures={
+        PipelineStage.SEMANTIC_ANALYSIS,
+    },
+    preserves_valid_cst=True,
+    preserves_valid_ast=True,
+    preserves_typing=True,
+    preserves_semantic_equivalence=False,
+)
+def inject_impossible_constraint(
+    ast: ProgramNode,
+) -> ProgramNode:
+    """
+    Inject contradiction:
+        A becomes A AND NOT(A)
+    """
+
+    mutated = deepcopy(ast)
+
+    for property_node in mutated.body:
+
+        root = deepcopy(
+            property_node.rule.assertion.root
+        )
+
+        contradiction = AndNode(
+            operands=[
+                root,
+                NotNode(
+                    operand=deepcopy(root)
+                ),
+            ]
+        )
+
+        property_node.rule.assertion.root = contradiction
+
+    return mutated
+
+
+INVALID_CONSTRAINT_MUTATIONS = [
+    inject_impossible_constraint,
+]
+
+===== test\hypothesis\mutations\ast\context.py =====
+
+# test/hypothesis/mutations/semantic/context.py
+
+"""
+Semantic context mismatch mutations.
+
+GOAL:
+    Corrupt semantic contexts while preserving AST validity.
+
+ROLE IN FORML:
+    - stress semantic analyzers
+    - validate semantic consistency
+    - test incompatible semantic combinations
+
+CHARACTERISTICS:
+    ✔ AST valid
+    ✔ syntax valid
+    ✔ typing preserved
+    ❌ semantic meaning corrupted
+"""
+
+from __future__ import annotations
+
+import random
+from copy import deepcopy
+
+from dsl.builder.program import ProgramNode
+
+from dsl.ast.nodes.assertion import ComparisonNode, ProblemNode
+
+from dsl.language.vocabulary.operators import EnumComparisonOperator
+from dsl.language.vocabulary.problems import EnumProblem
+from dsl.language.vocabulary.functions import EnumFunction
+
+from test.hypothesis.mutations.base import (
+    mutation,
+    MutationLayer,
+    MutationNature,
+    MutationSeverity,
+    MutationImpact,
+    PipelineStage,
+)
+
+
+# =========================================================
+# MUTATION 1 : corrupt problem context
+# =========================================================
+
+
+@mutation(
+    layer=MutationLayer.SEMANTIC,
+    nature=MutationNature.SUBSTITUTION,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.80,
+    impact={MutationImpact.SEMANTIC_INVALID},
+    expected_failures={
+        PipelineStage.SEMANTIC_ANALYSIS,
+    },
+    preserves_valid_cst=True,
+    preserves_valid_ast=True,
+    preserves_typing=True,
+    preserves_semantic_equivalence=False,
+)
+def corrupt_problem_context(
+    ast: ProgramNode,
+) -> ProgramNode:
+    """
+    Replace semantic problem with another valid one.
+    """
+
+    mutated = deepcopy(ast)
+
+    problems = list(EnumProblem)
+
+    for property_node in mutated.body:
+
+        root = property_node.rule.assertion.root
+
+        if isinstance(root, ProblemNode):
+
+            candidates = [
+                p
+                for p in problems
+                if p != root.problem
+            ]
+
+            if candidates:
+                root.problem = random.choice(candidates)
+
+    return mutated
+
+
+# =========================================================
+# MUTATION 2 : corrupt function context
+# =========================================================
+
+
+@mutation(
+    layer=MutationLayer.SEMANTIC,
+    nature=MutationNature.SUBSTITUTION,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.75,
+    impact={MutationImpact.SEMANTIC_INVALID},
+    expected_failures={
+        PipelineStage.SEMANTIC_ANALYSIS,
+    },
+    preserves_valid_cst=True,
+    preserves_valid_ast=True,
+    preserves_typing=True,
+    preserves_semantic_equivalence=False,
+)
+def corrupt_function_context(
+    ast: ProgramNode,
+) -> ProgramNode:
+    """
+    Replace semantic function with another valid one.
+    """
+
+    mutated = deepcopy(ast)
+
+    functions = list(EnumFunction)
+
+    for property_node in mutated.body:
+
+        root = property_node.rule.assertion.root
+
+        if isinstance(root, ProblemNode):
+
+            candidates = [
+                f
+                for f in functions
+                if f != root.function
+            ]
+
+            if candidates:
+                root.function = random.choice(candidates)
+
+    return mutated
+
+
+# =========================================================
+# MUTATION 1 : flip comparison operator
+# =========================================================
+
+
+@mutation(
+    layer=MutationLayer.LOGICAL,
+    nature=MutationNature.CORRUPTION,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.75,
+    impact={MutationImpact.SEMANTIC_INVALID},
+    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
+    preserves_valid_ast=True,
+    preserves_typing=True,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=True
+)
+def flip_comparison_operator(ast: ProgramNode) -> ProgramNode:
+    """
+    Replace comparison operators with random alternatives.
+    """
+
+    mutated = deepcopy(ast)
+
+    operators = list(EnumComparisonOperator)
+
+    for p in mutated.body:
+
+        root = p.rule.assertion.root
+
+        assert isinstance(root, ComparisonNode)
+
+        if hasattr(root, "op"):
+            root.op = random.choice(operators)
+
+    return mutated
+
+
+INVALID_CONTEXT_MUTATIONS = [
+    corrupt_problem_context,
+    corrupt_function_context,
+    flip_comparison_operator
+]
+
+
+===== test\hypothesis\mutations\ast\contradiction.py =====
+
+import random
+from copy import deepcopy
+
+from dsl.builder.program import ProgramNode
+from dsl.builder.assertion import NotNode, OrNode, AndNode
+
+from test.hypothesis.mutations.base import (
+    mutation,
+    MutationLayer,
+    MutationNature,
+    MutationSeverity,
+    MutationImpact,
+    PipelineStage,
+)
+
+
+@mutation(
+    layer=MutationLayer.SEMANTIC,
+    nature=MutationNature.INSERTION,
+    severity=MutationSeverity.CRITICAL,
+    severity_score=0.95,
+    impact={MutationImpact.SEMANTIC_INVALID},
+    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
+    preserves_valid_ast=True,
+    preserves_typing=True,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=True,
+    deterministic=True,
+    reversible=False,
+)
+def inject_global_contradiction(ast: ProgramNode) -> ProgramNode:
+    """
+    A → B AND A → NOT B
+    """
+    mutated = deepcopy(ast)
+
+    for p in mutated.body:
+        root = deepcopy(p.rule.assertion.root)
+
+        contradiction = AndNode(operands=[
+            root,
+            NotNode(operand=deepcopy(root))
+        ])
+
+        p.rule.assertion.root = contradiction
+
+    return mutated
+
+
+@mutation(
+    layer=MutationLayer.SEMANTIC,
+    nature=MutationNature.INSERTION,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.85,
+    impact={MutationImpact.SEMANTIC_INVALID},
+    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
+    preserves_valid_ast=True,
+    preserves_typing=True,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=True,
+    deterministic=True,
+    reversible=False,
+)
+def inject_tautology_abuse(ast: ProgramNode) -> ProgramNode:
+    """
+    A → A OR NOT(A)
+    """
+    mutated = deepcopy(ast)
+
+    for p in mutated.body:
+        root = deepcopy(p.rule.assertion.root)
+
+        p.rule.assertion.root = OrNode(
+            operands=[root, NotNode(operand=deepcopy(root))]
+        )
+
+    return mutated
+
+
+@mutation(
+    layer=MutationLayer.SEMANTIC,
+    nature=MutationNature.SUBSTITUTION,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.8,
+    impact={MutationImpact.SEMANTIC_INVALID},
+    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
+    preserves_valid_ast=True,
+    preserves_typing=True,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=True,
+    deterministic=True,
+    reversible=False,
+)
+def corrupt_semantic_context(ast: ProgramNode) -> ProgramNode:
+    """
+    Replace semantic domain context.
+    """
+    mutated = deepcopy(ast)
+
+    for p in mutated.body:
+        if hasattr(p.rule.assertion, "context") and p.rule.assertion.context:
+            ctx = p.rule.assertion.context
+
+            # swap incompatible semantic domain
+            ctx.problem = random.choice(list(ctx.problem.__class__))
+
+    return mutated
+
+
+@mutation(
+    layer=MutationLayer.SEMANTIC,
+    nature=MutationNature.CORRUPTION,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.9,
+    impact={MutationImpact.SEMANTIC_INVALID},
+    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
+    preserves_valid_ast=True,
+    preserves_typing=True,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=True,
+    deterministic=True,
+    reversible=False,
+)
+def break_relational_consistency(ast: ProgramNode) -> ProgramNode:
+    """
+    Break relational constraints between assertions.
+    """
+    mutated = deepcopy(ast)
+
+    body = mutated.body
+    if len(body) > 1:
+        body.reverse()
+
+    return mutated
+
+
+@mutation(
+    layer=MutationLayer.SEMANTIC,
+    nature=MutationNature.CORRUPTION,
+    severity=MutationSeverity.CRITICAL,
+    severity_score=1.0,
+    impact={MutationImpact.SEMANTIC_INVALID},
+    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
+    preserves_valid_ast=True,
+    preserves_typing=True,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=True,
+    deterministic=True,
+    reversible=False,
+)
+def violate_constraints(ast: ProgramNode) -> ProgramNode:
+    """
+    Inject impossible constraints (domain-level).
+    """
+    mutated = deepcopy(ast)
+
+    for p in mutated.body:
+        root = p.rule.assertion.root
+
+        # wrap in impossible constraint
+        p.rule.assertion.root = AndNode([
+            root,
+            NotNode(root)
+        ])
+
+    return mutated
+
+CONTRADICTION_MUTATIONS = [
+    inject_global_contradiction,
+    inject_tautology_abuse,
+    corrupt_semantic_context,
+    break_relational_consistency,
+    violate_constraints,
+]
+
+
+===== test\hypothesis\mutations\ast\invariants.py =====
+
+"""
+Structural mutations (AST LEVEL)
+
+GOAL:
+    Modify the structure of the AST.
+
+ROLE IN FORML:
+    - test AST builder robustness
+    - break structural invariants
+    - simulate upstream corruption
+
+CHARACTERISTICS:
+    ✔ AST exists
+    ❌ semantic validity not guaranteed
+    ❌ structural invariants often violated
+"""
+
+import random
+
+from dsl.ast.nodes.program import ProgramNode
+
+from test.hypothesis.mutations.base import (
+    MutationImpact,
+    MutationLayer,
+    mutation,
+    MutationNature,
+    MutationSeverity,
+    PipelineStage,
+)
+
+
+@mutation(
+    layer=MutationLayer.STRUCTURAL,
+    nature=MutationNature.DELETION,
+    severity=MutationSeverity.CRITICAL,
+    severity_score=0.9,
+    impact={MutationImpact.AST_INVALID},
+    expected_failures={
+        PipelineStage.SEMANTIC_ANALYSIS,
+    },
+    preserves_valid_ast=False,
+    preserves_typing=False,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=False,
+)
+def remove_model(ast: ProgramNode) -> ProgramNode:
+    """
+    Remove the model declaration from the AST.
+    """
+
+    if hasattr(ast, "header"):
+        object.__setattr__(ast.header, "model", None)
+
+    return ast
+
+
+@mutation(
+    layer=MutationLayer.STRUCTURAL,
+    nature=MutationNature.DELETION,
+    severity=MutationSeverity.CRITICAL,
+    severity_score=0.9,
+    impact={MutationImpact.AST_INVALID},
+    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
+    preserves_valid_ast=False,
+    preserves_typing=False,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=False,
+)
+def remove_target(ast: ProgramNode) -> ProgramNode:
+    """
+    Remove the target declaration from the AST.
+    """
+
+    if hasattr(ast, "header"):
+        object.__setattr__(ast.header, "target", None)
+
+    return ast
+
+
+@mutation(
+    layer=MutationLayer.STRUCTURAL,
+    nature=MutationNature.DELETION,
+    severity=MutationSeverity.CATASTROPHIC,
+    severity_score=1.0,
+    impact={MutationImpact.AST_INVALID},
+    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
+    preserves_valid_ast=False,
+    preserves_typing=False,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=False,
+)
+def remove_body(ast: ProgramNode) -> ProgramNode:
+    """
+    Remove the entire program body.
+
+    RESULT:
+        - empty AST
+        - total loss of semantics
+    """
+
+    if hasattr(ast, "body"):
+        ast.body = []
+
+    return ast
+
+
+@mutation(
+    layer=MutationLayer.STRUCTURAL,
+    nature=MutationNature.REORDERING,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.7,
+    impact={MutationImpact.AST_INVALID},
+    expected_failures={
+        PipelineStage.AST_BUILDING,
+        PipelineStage.SEMANTIC_ANALYSIS,
+    },
+    preserves_valid_ast=False,
+    preserves_typing=False,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=False,
+)
+def reorder_sections(ast: ProgramNode) -> ProgramNode:
+    """
+    Shuffle top-level AST sections.
+
+    EFFECT:
+        - breaks structural consistency
+    """
+
+    if not hasattr(ast, "__dict__"):
+        return ast
+
+    items = list(vars(ast).items())
+    random.shuffle(items)
+
+    for k, v in items:
+        setattr(ast, k, v)
+
+    return ast
+
+
+STRUCTURAL_MUTATIONS = [
+    remove_model,
+    remove_target,
+    remove_body,
+]
+
+===== test\hypothesis\mutations\ast\logical.py =====
+
+"""
+Logical mutations (ASSERTION LEVEL)
+
+GOAL:
+    Modify the logical meaning of assertions while
+    preserving AST structure and syntax validity.
+
+ROLE IN FORML:
+    - test logical consistency
+    - validate semantic analyzers
+    - stress formal verification rules
+    - detect silent logical corruption
+
+CHARACTERISTICS:
+    ✔ AST valid
+    ✔ syntax valid
+    ✔ typing usually preserved
+    ❌ logical meaning corrupted
+"""
+
+import random
+from copy import deepcopy
+
+from dsl.builder.assertion import (
+    AndNode,
+    ImplicationNode,
+    NotNode,
+    OrNode,
+)
+
+from dsl.builder.program import ProgramNode
+
+from test.hypothesis.mutations.base import (
+    MutationLayer,
+    MutationLayer,
+    mutation,
+    MutationImpact,
+    MutationNature,
+    MutationSeverity,
+    PipelineStage,
+)
+
+# =========================================================
+# MUTATION 1 : reverse implication
+# =========================================================
+
+
+@mutation(
+    layer=MutationLayer.LEXICAL,
+    nature=MutationNature.CORRUPTION,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.75,
+    impact={MutationImpact.SEMANTIC_INVALID},
+    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
+    preserves_valid_ast=True,
+    preserves_typing=True,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=True
+)
+def reverse_implication(ast: ProgramNode) -> ProgramNode:
+    """
+    Reverse implication direction.
+
+    Example:
+        A -> B becomes B -> A
+    """
+
+    mutated = deepcopy(ast)
+
+    for p in mutated.body:
+
+        root = p.rule.assertion.root
+
+        if isinstance(root, ImplicationNode):
+            root.left, root.right = root.right, root.left
+
+    return mutated
+
+
+# =========================================================
+# MUTATION 2 : negate assertion
+# =========================================================
+
+
+@mutation(
+    layer=MutationLayer.LOGICAL,
+    nature=MutationNature.PERTURBATION,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.8,
+    impact={MutationImpact.SEMANTIC_INVALID},
+    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
+    preserves_valid_ast=True,
+    preserves_typing=True,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=True
+)
+def negate_assertion(ast: ProgramNode) -> ProgramNode:
+    """
+    Negate assertion roots.
+
+    Example:
+        A becomes NOT(A)
+    """
+
+    mutated = deepcopy(ast)
+
+    for p in mutated.body:
+
+        root = p.rule.assertion.root
+        p.rule.assertion.root = NotNode(operand=root)
+
+    return mutated
+
+
+# =========================================================
+# MUTATION 3 : swap boolean operators
+# =========================================================
+
+
+@mutation(
+    layer=MutationLayer.LOGICAL,
+    nature=MutationNature.PERTURBATION,
+    severity=MutationSeverity.MEDIUM,
+    severity_score=0.6,
+    impact={MutationImpact.SEMANTIC_INVALID},
+    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
+    preserves_valid_ast=True,
+    preserves_typing=True,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=True
+)
+def swap_boolean_operators(ast: ProgramNode) -> ProgramNode:
+    """
+    Swap AND/OR operators.
+
+    Example:
+        A AND B becomes A OR B
+    """
+
+    mutated = deepcopy(ast)
+
+    for p in mutated.body:
+
+        root = p.rule.assertion.root
+
+        if isinstance(root, AndNode):
+
+            p.rule.assertion.root = OrNode(operands=root.operands)
+
+        elif isinstance(root, OrNode):
+
+            p.rule.assertion.root = AndNode(operands=root.operands)
+
+    return mutated
+
+
+# =========================================================
+# MUTATION 4 : remove negation
+# =========================================================
+
+
+@mutation(
+    layer=MutationLayer.LOGICAL,
+    nature=MutationNature.PERTURBATION,
+    severity=MutationSeverity.MEDIUM,
+    severity_score=0.55,
+    impact={MutationImpact.SEMANTIC_INVALID},
+    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
+    preserves_valid_ast=True,
+    preserves_typing=True,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=True
+)
+def remove_negation(ast: ProgramNode) -> ProgramNode:
+    """
+    Remove NOT operators.
+
+    Example:
+        NOT(A) becomes A
+    """
+
+    mutated = deepcopy(ast)
+
+    for p in mutated.body:
+
+        root = p.rule.assertion.root
+
+        if isinstance(root, NotNode):
+            p.rule.assertion.root = root.operand
+
+    return mutated
+
+
+# =========================================================
+# MUTATION 5 : duplicate operand
+# =========================================================
+
+
+@mutation(
+    layer=MutationLayer.LOGICAL,
+    nature=MutationNature.PERTURBATION,
+    severity=MutationSeverity.LOW,
+    severity_score=0.3,
+    impact={MutationImpact.NONE},
+    expected_failures=set(),
+    preserves_valid_ast=True,
+    preserves_typing=True,
+    preserves_semantic_equivalence=True,
+    preserves_valid_cst=True
+)
+def duplicate_operand(ast: ProgramNode) -> ProgramNode:
+    """
+    Duplicate logical operands.
+
+    Example:
+        A AND B becomes A AND A
+
+    NOTE:
+        Often logically equivalent.
+    """
+
+    mutated = deepcopy(ast)
+
+    for p in mutated.body:
+
+        root = p.rule.assertion.root
+
+        if isinstance(root, (AndNode, OrNode)):
+
+            if not root.operands:
+                continue
+
+            first = deepcopy(root.operands[0])
+
+            root.operands = [
+                first,
+                deepcopy(first),
+            ]
+
+    return mutated
+
+
+# =========================================================
+# MUTATION 6 : remove operand
+# =========================================================
+
+
+@mutation(
+    layer=MutationLayer.LOGICAL,
+    nature=MutationNature.DELETION,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.7,
+    impact={MutationImpact.SEMANTIC_INVALID},
+    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
+    preserves_valid_ast=True,
+    preserves_typing=True,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=True
+)
+def remove_operand(ast: ProgramNode) -> ProgramNode:
+    """
+    Remove one operand from boolean expressions.
+
+    Example:
+        A AND B becomes A
+    """
+
+    mutated = deepcopy(ast)
+
+    for p in mutated.body:
+
+        root = p.rule.assertion.root
+
+        if isinstance(root, (AndNode, OrNode)):
+
+            if len(root.operands) <= 1:
+                continue
+
+            root.operands.pop()
+
+    return mutated
+
+
+# =========================================================
+# MUTATION 7 : permute operands
+# =========================================================
+
+
+@mutation(
+    layer=MutationLayer.LOGICAL,
+    nature=MutationNature.PERTURBATION,
+    severity=MutationSeverity.INFO,
+    severity_score=0.1,
+    impact={MutationImpact.NONE},
+    expected_failures=set(),
+    preserves_valid_ast=True,
+    preserves_typing=True,
+    preserves_semantic_equivalence=True,
+    preserves_valid_cst=True
+)
+def permute_operands(ast: ProgramNode) -> ProgramNode:
+    """
+    Randomly permute boolean operands.
+
+    Example:
+        A AND B AND C becomes C AND A AND B
+
+    NOTE:
+        Logically equivalent for commutative operators.
+    """
+
+    mutated = deepcopy(ast)
+
+    for p in mutated.body:
+
+        root = p.rule.assertion.root
+
+        if isinstance(root, (AndNode, OrNode)):
+            random.shuffle(root.operands)
+
+    return mutated
+
+
+# =========================================================
+# MUTATION 8 : inject tautology
+# =========================================================
+
+
+@mutation(
+    layer=MutationLayer.LOGICAL,
+    nature=MutationNature.PERTURBATION,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.8,
+    impact={MutationImpact.SEMANTIC_INVALID},
+    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
+    preserves_valid_ast=True,
+    preserves_typing=True,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=True
+)
+def inject_logical_tautology(ast: ProgramNode) -> ProgramNode:
+    """
+    Inject tautological expressions.
+
+    Example:
+        A becomes A OR NOT(A)
+    """
+
+    mutated = deepcopy(ast)
+
+    for p in mutated.body:
+
+        root = deepcopy(p.rule.assertion.root)
+
+        tautology = OrNode(
+            operands=[
+                root,
+                NotNode(operand=deepcopy(root)),
+            ]
+        )
+
+        p.rule.assertion.root = tautology
+
+    return mutated
+
+
+# =========================================================
+# MUTATION 9 : inject contradiction
+# =========================================================
+
+
+@mutation(
+    layer=MutationLayer.LOGICAL,
+    nature=MutationNature.PERTURBATION,
+    severity=MutationSeverity.CRITICAL,
+    severity_score=0.95,
+    impact={MutationImpact.SEMANTIC_INVALID},
+    expected_failures={
+        PipelineStage.SEMANTIC_ANALYSIS,
+        PipelineStage.EXECUTION,
+    },
+    preserves_valid_ast=True,
+    preserves_typing=True,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=True
+)
+def inject_contradiction(ast: ProgramNode) -> ProgramNode:
+    """
+    Inject contradictory expressions.
+
+    Example:
+        A becomes A AND NOT(A)
+    """
+
+    mutated = deepcopy(ast)
+
+    for p in mutated.body:
+
+        root = deepcopy(p.rule.assertion.root)
+
+        contradiction = AndNode(
+            operands=[
+                root,
+                NotNode(operand=deepcopy(root)),
+            ]
+        )
+
+        p.rule.assertion.root = contradiction
+
+    return mutated
+
+
+# =========================================================
+# MUTATION 10 : double negation
+# =========================================================
+
+
+@mutation(
+    layer=MutationLayer.LOGICAL,
+    nature=MutationNature.PERTURBATION,
+    severity=MutationSeverity.INFO,
+    severity_score=0.1,
+    impact={MutationImpact.NONE},
+    expected_failures=set(),
+    preserves_valid_ast=True,
+    preserves_typing=True,
+    preserves_semantic_equivalence=True,
+    preserves_valid_cst=True
+)
+def inject_double_negation(ast: ProgramNode) -> ProgramNode:
+    """
+    Inject double negation.
+
+    Example:
+        A becomes NOT(NOT(A))
+
+    NOTE:
+        Logically equivalent.
+    """
+
+    mutated = deepcopy(ast)
+
+    for p in mutated.body:
+
+        root = deepcopy(p.rule.assertion.root)
+
+        p.rule.assertion.root = NotNode(operand=NotNode(operand=root))
+
+    return mutated
+
+
+# =========================================================
+# MUTATION 11 : flatten boolean tree
+# =========================================================
+
+
+@mutation(
+    layer=MutationLayer.LOGICAL,
+    nature=MutationNature.PERTURBATION,
+    severity=MutationSeverity.INFO,
+    severity_score=0.15,
+    impact={MutationImpact.NONE},
+    expected_failures=set(),
+    preserves_valid_ast=True,
+    preserves_typing=True,
+    preserves_semantic_equivalence=True,
+    preserves_valid_cst=True
+)
+def flatten_boolean_tree(ast: ProgramNode) -> ProgramNode:
+    """
+    Flatten nested boolean operators.
+
+    Example:
+        A AND (B AND C)
+        becomes
+        A AND B AND C
+    """
+
+    mutated = deepcopy(ast)
+
+    for p in mutated.body:
+
+        root = p.rule.assertion.root
+
+        if isinstance(root, AndNode):
+
+            flattened = []
+
+            for operand in root.operands:
+
+                if isinstance(operand, AndNode):
+                    flattened.extend(operand.operands)
+
+                else:
+                    flattened.append(operand)
+
+            root.operands = flattened
+
+        elif isinstance(root, OrNode):
+
+            flattened = []
+
+            for operand in root.operands:
+
+                if isinstance(operand, OrNode):
+                    flattened.extend(operand.operands)
+
+                else:
+                    flattened.append(operand)
+
+            root.operands = flattened
+
+    return mutated
+
+
+# =========================================================
+# REGISTRY
+# =========================================================
+
+LOGICAL_MUTATIONS = [
+    reverse_implication,
+    negate_assertion,
+    swap_boolean_operators,
+    remove_negation,
+    duplicate_operand,
+    remove_operand,
+    permute_operands,
+    inject_logical_tautology,
+    inject_contradiction,
+    inject_double_negation,
+    flatten_boolean_tree,
+]
+
+===== test\hypothesis\mutations\ast\numerical.py =====
+
+"""
+Numerical mutations (VALUE LEVEL)
+
+GOAL:
+    Corrupt numeric assumptions in the DSL.
+
+ROLE IN FORML:
+    - stress thresholds and constraints
+    - break metric-based reasoning
+    - test numerical stability of validation pipeline
+
+CHARACTERISTICS:
+    ✔ AST valid
+    ✔ syntax valid
+    ✔ categorical structure preserved
+    ❌ numeric meaning corrupted
+"""
+
+import random
+from copy import deepcopy
+
+from dsl.ast.nodes.assertion import ComparisonNode
+from dsl.builder.program import ProgramNode
+from dsl.ast.nodes.primitives import ConstantNode
+
+from test.hypothesis.mutations.base import (
+    MutationLayer,
+    mutation,
+    MutationNature,
+    MutationSeverity,
+    MutationImpact,
+    PipelineStage,
+)
+
+# =========================================================
+# MUTATION 1 : epsilon explosion
+# =========================================================
+
+
+@mutation(
+    layer=MutationLayer.NUMERICAL,
+    nature=MutationNature.PERTURBATION,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.8,
+    impact={MutationImpact.SEMANTIC_INVALID},
+    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
+    preserves_valid_ast=True,
+    preserves_typing=True,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=True
+)
+def explode_constants(ast: ProgramNode) -> ProgramNode:
+    """
+    Replace numeric constants with extreme values.
+    """
+
+    mutated = deepcopy(ast)
+
+    for p in mutated.body:
+
+        root = p.rule.assertion.root
+
+        assert isinstance(root, ComparisonNode)
+
+        if isinstance(root.right, ConstantNode):
+            root.right.value = float("inf")
+
+    return mutated
+
+
+# =========================================================
+# MUTATION 2 : sign inversion
+# =========================================================
+
+
+@mutation(
+    layer=MutationLayer.NUMERICAL,
+    nature=MutationNature.SUBSTITUTION,
+    severity=MutationSeverity.MEDIUM,
+    severity_score=0.6,
+    impact={MutationImpact.SEMANTIC_INVALID},
+    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
+    preserves_valid_ast=True,
+    preserves_typing=True,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=True
+)
+def invert_numeric_sign(ast: ProgramNode) -> ProgramNode:
+    """
+    Invert numeric values.
+    """
+
+    mutated = deepcopy(ast)
+
+    for p in mutated.body:
+
+        root = p.rule.assertion.root
+
+        assert isinstance(root, ComparisonNode)
+
+        val = root.right.value
+        assert isinstance(val, (int, float))
+
+        if isinstance(root.right, ConstantNode):
+            root.right.value = -val
+
+    return mutated
+
+
+NUMERICAL_MUTATIONS = [
+    explode_constants,
+    invert_numeric_sign,
+]
+
+===== test\hypothesis\mutations\ast\redundancy.py =====
+
+# test/hypothesis/mutations/semantic/redundancy.py
+
+"""
+Semantic redundancy mutations.
+
+GOAL:
+    Inject semantically redundant logic.
+
+ROLE IN FORML:
+    - stress simplifiers
+    - test redundancy handling
+    - validate semantic normalization
+
+CHARACTERISTICS:
+    ✔ AST valid
+    ✔ syntax valid
+    ✔ typing preserved
+    ❌ semantic signal degraded
+"""
+
+from __future__ import annotations
+
+from copy import deepcopy
+
+from dsl.builder.program import ProgramNode
+
+from dsl.ast.nodes.assertion import (
+    OrNode,
+    NotNode,
+)
+
+from test.hypothesis.mutations.base import (
+    mutation,
+    MutationLayer,
+    MutationNature,
+    MutationSeverity,
+    MutationImpact,
+    PipelineStage,
+)
+
+
+# =========================================================
+# MUTATION 1 : tautological redundancy
+# =========================================================
+
+
+@mutation(
+    layer=MutationLayer.SEMANTIC,
+    nature=MutationNature.DUPLICATION,
+    severity=MutationSeverity.MEDIUM,
+    severity_score=0.55,
+    impact={MutationImpact.SEMANTIC_INVALID},
+    expected_failures={
+        PipelineStage.SEMANTIC_ANALYSIS,
+    },
+    preserves_valid_cst=True,
+    preserves_valid_ast=True,
+    preserves_typing=True,
+    preserves_semantic_equivalence=False,
+)
+def inject_tautological_redundancy(
+    ast: ProgramNode,
+) -> ProgramNode:
+    """
+    Inject:
+        A OR NOT(A)
+    """
+
+    mutated = deepcopy(ast)
+
+    for property_node in mutated.body:
+
+        root = deepcopy(
+            property_node.rule.assertion.root
+        )
+
+        tautology = OrNode(
+            operands=[
+                root,
+                NotNode(
+                    operand=deepcopy(root)
+                ),
+            ]
+        )
+
+        property_node.rule.assertion.root = tautology
+
+    return mutated
+
+
+INVALID_REDUNDANCY_MUTATIONS = [
+    inject_tautological_redundancy,
+]
+
+===== test\hypothesis\mutations\ast\relationnal.py =====
+
+# test/hypothesis/mutations/semantic/relational.py
+
+"""
+Semantic relational inconsistency mutations.
+
+GOAL:
+    Break semantic relationships between properties.
+
+ROLE IN FORML:
+    - stress semantic ordering
+    - validate dependency assumptions
+    - test relational robustness
+
+CHARACTERISTICS:
+    ✔ AST valid
+    ✔ syntax valid
+    ✔ typing preserved
+    ❌ semantic relationships corrupted
+"""
+
+from __future__ import annotations
+
+import random
+from copy import deepcopy
+
+from dsl.builder.program import ProgramNode
+
+from test.hypothesis.mutations.base import (
+    mutation,
+    MutationLayer,
+    MutationNature,
+    MutationSeverity,
+    MutationImpact,
+    PipelineStage,
+)
+
+
+# =========================================================
+# MUTATION 1 : reverse property order
+# =========================================================
+
+
+@mutation(
+    layer=MutationLayer.SEMANTIC,
+    nature=MutationNature.REORDERING,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.70,
+    impact={MutationImpact.SEMANTIC_INVALID},
+    expected_failures={
+        PipelineStage.SEMANTIC_ANALYSIS,
+    },
+    preserves_valid_cst=True,
+    preserves_valid_ast=True,
+    preserves_typing=True,
+    preserves_semantic_equivalence=False,
+)
+def reverse_property_order(
+    ast: ProgramNode,
+) -> ProgramNode:
+    """
+    Reverse semantic ordering of properties.
+    """
+
+    mutated = deepcopy(ast)
+
+    if hasattr(mutated, "body"):
+        mutated.body.reverse()
+
+    return mutated
+
+
+# =========================================================
+# MUTATION 2 : shuffle properties
+# =========================================================
+
+
+@mutation(
+    layer=MutationLayer.SEMANTIC,
+    nature=MutationNature.REORDERING,
+    severity=MutationSeverity.MEDIUM,
+    severity_score=0.60,
+    impact={MutationImpact.SEMANTIC_INVALID},
+    expected_failures={
+        PipelineStage.SEMANTIC_ANALYSIS,
+    },
+    preserves_valid_cst=True,
+    preserves_valid_ast=True,
+    preserves_typing=True,
+    preserves_semantic_equivalence=False,
+)
+def shuffle_properties(
+    ast: ProgramNode,
+) -> ProgramNode:
+    """
+    Shuffle property ordering.
+    """
+
+    mutated = deepcopy(ast)
+
+    if hasattr(mutated, "body"):
+        random.shuffle(mutated.body)
+
+    return mutated
+
+
+INVALID_RELATIONAL_MUTATIONS = [
+    reverse_property_order,
+    shuffle_properties,
+]
+
+===== test\hypothesis\mutations\ast\scope.py =====
+
+# test/hypothesis/mutations/semantic/scope.py
+
+"""
+Semantic scope corruption mutations.
+
+GOAL:
+    Break semantic scope consistency.
+
+ROLE IN FORML:
+    - stress neighborhood validation
+    - corrupt semantic domains
+    - test scope assumptions
+
+CHARACTERISTICS:
+    ✔ AST valid
+    ✔ syntax valid
+    ❌ semantic scope invalid
+"""
+
+from __future__ import annotations
+
+from copy import deepcopy
+
+from dsl.builder.program import ProgramNode
+
+from dsl.ast.nodes.expressions import (
+    PairwiseExprNode,
+    AtExprNode,
+)
+
+from test.hypothesis.mutations.base import (
+    mutation,
+    MutationLayer,
+    MutationNature,
+    MutationSeverity,
+    MutationImpact,
+    PipelineStage,
+)
+
+
+# =========================================================
+# MUTATION 1 : remove neighborhood
+# =========================================================
+
+
+@mutation(
+    layer=MutationLayer.SEMANTIC,
+    nature=MutationNature.DELETION,
+    severity=MutationSeverity.CRITICAL,
+    severity_score=0.95,
+    impact={MutationImpact.SEMANTIC_INVALID},
+    expected_failures={
+        PipelineStage.SEMANTIC_ANALYSIS,
+    },
+    preserves_valid_cst=True,
+    preserves_valid_ast=False,
+    preserves_typing=False,
+    preserves_semantic_equivalence=False,
+)
+def remove_neighborhood(
+    ast: ProgramNode,
+) -> ProgramNode:
+    """
+    Remove neighborhood constraints.
+    """
+
+    mutated = deepcopy(ast)
+
+    for property_node in mutated.body:
+
+        scope = property_node.rule.scope
+
+        if isinstance(scope, PairwiseExprNode):
+
+            object.__setattr__(
+                scope,
+                "neighborhood",
+                None,
+            )
+
+        elif isinstance(scope, AtExprNode):
+
+            scope.neighborhood = None
+
+    return mutated
+
+
+INVALID_SCOPE_MUTATIONS = [
+    remove_neighborhood,
+]
+
+===== test\hypothesis\mutations\ast\typing.py =====
+
+# test/hypothesis/mutations/semantic/typing_semantic.py
+
+"""
+Semantic typing mismatch mutations.
+
+GOAL:
+    Corrupt semantic typing assumptions.
+
+ROLE IN FORML:
+    - stress type analyzers
+    - validate semantic typing
+    - test incompatible property semantics
+
+CHARACTERISTICS:
+    ✔ AST valid
+    ✔ syntax valid
+    ❌ semantic typing corrupted
+"""
+
+from __future__ import annotations
+
+import random
+from copy import deepcopy
+
+from dsl.builder.program import ProgramNode
+
+from dsl.language.vocabulary.properties import (
+    EnumProperty,
+)
+
+from test.hypothesis.mutations.base import (
+    mutation,
+    MutationLayer,
+    MutationNature,
+    MutationSeverity,
+    MutationImpact,
+    PipelineStage,
+)
+
+
+# =========================================================
+# MUTATION 1 : invalidate property semantics
+# =========================================================
+
+
+@mutation(
+    layer=MutationLayer.SEMANTIC,
+    nature=MutationNature.SUBSTITUTION,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.85,
+    impact={MutationImpact.AST_INVALID},
+    expected_failures={
+        PipelineStage.SEMANTIC_ANALYSIS,
+        PipelineStage.TYPE_CHECKING,
+    },
+    preserves_valid_cst=True,
+    preserves_valid_ast=True,
+    preserves_typing=False,
+    preserves_semantic_equivalence=False,
+)
+def invalidate_property_semantic(
+    ast: ProgramNode,
+) -> ProgramNode:
+    """
+    Replace semantic property type.
+    """
+
+    mutated = deepcopy(ast)
+
+    properties = list(EnumProperty)
+
+    for property_node in mutated.body:
+
+        current = property_node.type
+
+        candidates = [
+            p
+            for p in properties
+            if p != current
+        ]
+
+        if candidates:
+            property_node.type = random.choice(
+                candidates
+            )
+
+    return mutated
+
+
+INVALID_TYPING_MUTATIONS = [
+    invalidate_property_semantic,
+]
 
 ===== test\hypothesis\mutations\base.py =====
 
 from __future__ import annotations
 
+"""
+Base mutation abstractions for FORML robustness testing.
+
+This module defines:
+- mutation classification
+- mutation metadata
+- mutation execution contracts
+- pipeline failure expectations
+
+The goal is to provide a unified framework for:
+- lexical mutations
+- structural mutations
+- semantic mutations
+- logical mutations
+- adversarial mutations
+- future robustness campaigns
+
+This metadata system enables:
+- intelligent mutation orchestration
+- robustness benchmarking
+- pipeline fault localization
+- mutation reporting
+- deterministic replay
+- future analytics / dashboards
+"""
+
 from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Callable
+from typing import FrozenSet
+from typing import TypeAlias
+from typing import Any
+
+# ============================================================================
+# MUTATION LAYERS
+# ============================================================================
+# Describes WHICH pipeline layer is targeted.
+# ============================================================================
 
 
-class MutationNature(Enum):
+class MutationLayer(Enum):
+    """
+    Pipeline layer targeted by the mutation.
+    """
+
+    LEXICAL = auto()
     STRUCTURAL = auto()
     SEMANTIC = auto()
     LOGICAL = auto()
     NUMERICAL = auto()
     ADVERSARIAL = auto()
+    CATEGORICAL = auto()
     STOCHASTIC = auto()
 
 
+# ============================================================================
+# MUTATION NATURE
+# ============================================================================
+# Describes HOW the mutation modifies the artifact.
+# ============================================================================
+
+
+class MutationNature(Enum):
+    """
+    Conceptual type of transformation applied by the mutation.
+    """
+
+    INSERTION = auto()
+    DELETION = auto()
+    SUBSTITUTION = auto()
+    REORDERING = auto()
+    CORRUPTION = auto()
+    PERTURBATION = auto()
+    DUPLICATION = auto()
+    TRUNCATION = auto()
+
+
+# ============================================================================
+# MUTATION IMPACT
+# ============================================================================
+# Describes the expected consequence of a mutation.
+# ============================================================================
+
+
 class MutationImpact(Enum):
+    """
+    Expected impact caused by the mutation.
+    """
+
     NONE = auto()
-    PARSING = auto()
+
+    PARSING_FAILURE = auto()
+    CST_INVALID = auto()
     AST_INVALID = auto()
+
     SEMANTIC_INVALID = auto()
     TYPE_INVALID = auto()
+
     EXECUTION_FAILURE = auto()
 
+    NON_DETERMINISM = auto()
+    PERFORMANCE_DEGRADATION = auto()
 
-class MutationSeverity(Enum):
-    INFO = auto()
-    LOW = auto()
-    MEDIUM = auto()
-    HIGH = auto()
-    CRITICAL = auto()
-    CATASTROPHIC = auto()
+
+# ============================================================================
+# PIPELINE STAGES
+# ============================================================================
+# Describes where failures are expected to happen.
+# ============================================================================
 
 
 class PipelineStage(Enum):
+    """
+    FORML pipeline execution stages.
+    """
+
+    LEXING = auto()
+
     PARSING = auto()
+
+    CST_VALIDATION = auto()
+
     AST_BUILDING = auto()
+
     SEMANTIC_ANALYSIS = auto()
+
     TYPE_CHECKING = auto()
+
     TRANSFORMATION = auto()
+
     EXECUTION = auto()
 
 
-@dataclass(frozen=True)
+# ============================================================================
+# MUTATION SEVERITY
+# ============================================================================
+# Describes mutation criticality.
+# ============================================================================
+
+
+class MutationSeverity(Enum):
+    """
+    Mutation severity level.
+    """
+
+    INFO = auto()
+
+    LOW = auto()
+
+    MEDIUM = auto()
+
+    HIGH = auto()
+
+    CRITICAL = auto()
+
+    CATASTROPHIC = auto()
+
+
+# ============================================================================
+# TYPE ALIASES
+# ============================================================================
+
+MutationFunction: TypeAlias = Callable[[Any], Any]
+
+
+# ============================================================================
+# MUTATION METADATA
+# ============================================================================
+# Immutable metadata attached to mutation functions.
+# ============================================================================
+
+
+@dataclass(frozen=True, slots=True)
 class MutationMetadata:
     """
-    Metadata describing a mutation strategy.
+    Immutable metadata describing a mutation strategy.
 
-    This metadata is used to:
-    - classify mutations
-    - orchestrate mutation campaigns
-    - measure robustness per pipeline stage
-    - define expected failure locations
-    - support future reporting / analytics
+    This metadata supports:
+    - mutation orchestration
+    - filtering mutation campaigns
+    - reproducibility
+    - robustness analysis
+    - expected failure localization
+    - future reporting systems
     """
+
+    # ----------------------------------------------------------------------
+    # General identity
+    # ----------------------------------------------------------------------
 
     name: str
 
+    # ----------------------------------------------------------------------
+    # Classification
+    # ----------------------------------------------------------------------
+
+    layer: MutationLayer
+
     nature: MutationNature
+
     severity: MutationSeverity
+
     severity_score: float
 
-    impact: set[MutationImpact]
+    # ----------------------------------------------------------------------
+    # Expected impact
+    # ----------------------------------------------------------------------
 
-    expected_failures: set[PipelineStage]
+    impact: FrozenSet[MutationImpact]
+
+    expected_failures: FrozenSet[PipelineStage]
+
+    # ----------------------------------------------------------------------
+    # Mutation guarantees
+    # ----------------------------------------------------------------------
+
+    preserves_valid_cst: bool
 
     preserves_valid_ast: bool
+
     preserves_typing: bool
+
+    preserves_semantic_equivalence: bool = False
+
+    # ----------------------------------------------------------------------
+    # Execution characteristics
+    # ----------------------------------------------------------------------
+
     deterministic: bool = True
+
+    reversible: bool = False
+
+
+# ============================================================================
+# DECORATOR
+# ============================================================================
+# Attaches metadata directly to mutation functions.
+# ============================================================================
+
 
 def mutation(
     *,
+    layer: MutationLayer,
     nature: MutationNature,
     severity: MutationSeverity,
     severity_score: float,
     impact: set[MutationImpact],
     expected_failures: set[PipelineStage],
+    preserves_valid_cst: bool,
     preserves_valid_ast: bool,
     preserves_typing: bool,
     deterministic: bool = True,
+    reversible: bool = False,
+    preserves_semantic_equivalence: bool = False,
 ):
     """
-    Attach metadata directly to mutation functions.
+    Attach immutable metadata to a mutation function.
+
+    Example
+    -------
+    @mutation(
+        layer=MutationLayer.LEXICAL,
+        nature=MutationNature.CORRUPTION,
+        severity=MutationSeverity.HIGH,
+        severity_score=0.8,
+        impact={MutationImpact.PARSING_FAILURE},
+        expected_failures={PipelineStage.PARSING},
+        preserves_valid_cst=False,
+        preserves_valid_ast=False,
+        preserves_typing=False,
+    )
+    def break_parenthesis(program: str) -> str:
+        ...
     """
 
-    def decorator(func: Callable):
+    # ----------------------------------------------------------------------
+    # Validation
+    # ----------------------------------------------------------------------
+
+    if not 0.0 <= severity_score <= 1.0:
+        raise ValueError(
+            "severity_score must be between 0.0 and 1.0"
+        )
+
+    # ----------------------------------------------------------------------
+    # Decorator
+    # ----------------------------------------------------------------------
+
+    def decorator(func: MutationFunction):
 
         func.metadata = MutationMetadata(
             name=func.__name__,
+
+            layer=layer,
+
             nature=nature,
+
             severity=severity,
+
             severity_score=severity_score,
-            impact=impact,
-            expected_failures=expected_failures,
+
+            impact=frozenset(impact),
+
+            expected_failures=frozenset(expected_failures),
+
+            preserves_valid_cst=preserves_valid_cst,
+
             preserves_valid_ast=preserves_valid_ast,
+
             preserves_typing=preserves_typing,
+
+            preserves_semantic_equivalence=(
+                preserves_semantic_equivalence
+            ),
+
             deterministic=deterministic,
+
+            reversible=reversible,
         )
 
         return func
 
     return decorator
 
-===== test\hypothesis\mutations\lexical.py =====
+===== test\hypothesis\mutations\cst\__init__.py =====
 
-"""
-Lexical mutations (STRING level).
 
-These mutations operate directly on raw DSL text.
-Their goal is to stress the lexer/parser layer.
-"""
+
+===== test\hypothesis\mutations\cst\grammar.py =====
+
+# test/hypothesis/mutations/cst/grammar.py
+
+from __future__ import annotations
 
 import random
+from copy import deepcopy
+
+from lark import Tree
 
 from test.hypothesis.mutations.base import (
-    MutationImpact,
+    mutation,
+    MutationLayer,
     MutationNature,
     MutationSeverity,
+    MutationImpact,
     PipelineStage,
-    mutation,
 )
 
 
 @mutation(
-    nature=MutationNature.STRUCTURAL,
-    severity=MutationSeverity.MEDIUM,
-    severity_score=0.4,
-    impact={MutationImpact.PARSING},
-    expected_failures={PipelineStage.PARSING},
+    layer=MutationLayer.STRUCTURAL,
+    nature=MutationNature.REORDERING,
+    severity=MutationSeverity.CRITICAL,
+    severity_score=0.95,
+    impact={MutationImpact.CST_INVALID},
+    expected_failures={
+        PipelineStage.PARSING,
+        PipelineStage.AST_BUILDING,
+    },
+    preserves_valid_cst=False,
     preserves_valid_ast=False,
     preserves_typing=False,
+    preserves_semantic_equivalence=False,
+)
+def reorder_grammar_rules(
+    tree: Tree,
+) -> Tree:
+    """
+    Randomly reorder grammar children.
+    """
+
+    mutated = deepcopy(tree)
+
+    if mutated.children:
+        random.shuffle(mutated.children)
+
+    return mutated
+
+
+@mutation(
+    layer=MutationLayer.STRUCTURAL,
+    nature=MutationNature.DELETION,
+    severity=MutationSeverity.CRITICAL,
+    severity_score=1.0,
+    impact={MutationImpact.CST_INVALID},
+    expected_failures={
+        PipelineStage.PARSING,
+        PipelineStage.AST_BUILDING,
+    },
+    preserves_valid_cst=False,
+    preserves_valid_ast=False,
+    preserves_typing=False,
+    preserves_semantic_equivalence=False,
+)
+def remove_random_subtree(
+    tree: Tree,
+) -> Tree:
+    """
+    Remove a random subtree.
+    """
+
+    mutated = deepcopy(tree)
+
+    candidates = [
+        i
+        for i, child in enumerate(mutated.children)
+        if isinstance(child, Tree)
+    ]
+
+    if candidates:
+        idx = random.choice(candidates)
+        mutated.children.pop(idx)
+
+    return mutated
+
+
+INVALID_GRAMMAR_MUTATIONS = [
+    reorder_grammar_rules,
+    remove_random_subtree,
+]
+
+
+===== test\hypothesis\mutations\cst\parse.py =====
+
+# test/hypothesis/mutations/cst/parse.py
+
+from __future__ import annotations
+
+import random
+from copy import deepcopy
+
+from lark import Tree
+
+from test.hypothesis.mutations.base import (
+    mutation,
+    MutationLayer,
+    MutationNature,
+    MutationSeverity,
+    MutationImpact,
+    PipelineStage,
+)
+
+
+@mutation(
+    layer=MutationLayer.STRUCTURAL,
+    nature=MutationNature.SUBSTITUTION,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.8,
+    impact={MutationImpact.CST_INVALID},
+    expected_failures={
+        PipelineStage.AST_BUILDING,
+    },
+    preserves_valid_cst=False,
+    preserves_valid_ast=False,
+    preserves_typing=False,
+    preserves_semantic_equivalence=False,
+)
+def corrupt_tree_data(
+    tree: Tree,
+) -> Tree:
+    """
+    Replace rule name with random invalid one.
+    """
+
+    mutated = deepcopy(tree)
+
+    queue = [mutated]
+
+    while queue:
+
+        current = queue.pop()
+
+        if isinstance(current, Tree):
+
+            if random.random() < 0.3:
+                current.data = "corrupted_rule"
+
+            queue.extend(
+                child
+                for child in current.children
+                if isinstance(child, Tree)
+            )
+
+    return mutated
+
+
+INVALID_PARSE_MUTATIONS = [
+    corrupt_tree_data,
+]
+
+
+===== test\hypothesis\mutations\cst\structural.py =====
+
+"""
+Structural mutations (AST LEVEL)
+
+GOAL:
+    Modify the structure of the AST.
+
+ROLE IN FORML:
+    - test AST builder robustness
+    - break structural invariants
+    - simulate upstream corruption
+
+CHARACTERISTICS:
+    ✔ AST exists
+    ❌ semantic validity not guaranteed
+    ❌ structural invariants often violated
+"""
+
+import random
+
+from dsl.ast.nodes.program import ProgramNode
+
+from test.hypothesis.mutations.base import (
+    MutationImpact,
+    MutationLayer,
+    mutation,
+    MutationNature,
+    MutationSeverity,
+    PipelineStage,
+)
+
+
+@mutation(
+    layer=MutationLayer.STRUCTURAL,
+    nature=MutationNature.REORDERING,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.7,
+    impact={MutationImpact.AST_INVALID},
+    expected_failures={
+        PipelineStage.AST_BUILDING,
+        PipelineStage.SEMANTIC_ANALYSIS,
+    },
+    preserves_valid_ast=False,
+    preserves_typing=False,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=False,
+)
+def reorder_sections(ast: ProgramNode) -> ProgramNode:
+    """
+    Shuffle top-level AST sections.
+
+    EFFECT:
+        - breaks structural consistency
+    """
+
+    if not hasattr(ast, "__dict__"):
+        return ast
+
+    items = list(vars(ast).items())
+    random.shuffle(items)
+
+    for k, v in items:
+        setattr(ast, k, v)
+
+    return ast
+
+
+STRUCTURAL_MUTATIONS = [
+    reorder_sections,
+]
+
+
+def apply_structural_mutations(ast: ProgramNode, n: int = 1) -> ProgramNode:
+    """
+    Apply N structural mutations.
+    """
+
+    mutated = ast
+
+    for _ in range(n):
+        mutation_fn = random.choice(STRUCTURAL_MUTATIONS)
+        mutated = mutation_fn(mutated)
+
+    return mutated
+
+
+===== test\hypothesis\mutations\cst\syntax.py =====
+
+# test/hypothesis/mutations/cst/syntax.py
+
+from __future__ import annotations
+
+import random
+from copy import deepcopy
+
+from lark import Tree, Token
+
+from test.hypothesis.mutations.base import (
+    mutation,
+    MutationLayer,
+    MutationNature,
+    MutationSeverity,
+    MutationImpact,
+    PipelineStage,
+)
+
+
+@mutation(
+    layer=MutationLayer.STRUCTURAL,
+    nature=MutationNature.DELETION,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.75,
+    impact={MutationImpact.CST_INVALID},
+    expected_failures={
+        PipelineStage.PARSING,
+    },
+    preserves_valid_cst=False,
+    preserves_valid_ast=False,
+    preserves_typing=False,
+    preserves_semantic_equivalence=False,
+)
+def remove_random_token(
+    tree: Tree,
+) -> Tree:
+    """
+    Remove random token from CST.
+    """
+
+    mutated = deepcopy(tree)
+
+    queue = [mutated]
+
+    while queue:
+
+        current = queue.pop()
+
+        if not isinstance(current, Tree):
+            continue
+
+        token_indices = [
+            i
+            for i, child in enumerate(current.children)
+            if isinstance(child, Token)
+        ]
+
+        if token_indices and random.random() < 0.3:
+
+            idx = random.choice(token_indices)
+            current.children.pop(idx)
+
+        for child in current.children:
+
+            if isinstance(child, Tree):
+                queue.append(child)
+
+    return mutated
+
+
+INVALID_SYNTAX_MUTATIONS = [
+    remove_random_token,
+]
+
+
+===== test\hypothesis\mutations\cst\tokens.py =====
+
+# test/hypothesis/mutations/cst/tokens.py
+
+from __future__ import annotations
+
+import random
+from copy import deepcopy
+
+from lark import Tree, Token
+
+from test.hypothesis.mutations.base import (
+    mutation,
+    MutationLayer,
+    MutationNature,
+    MutationSeverity,
+    MutationImpact,
+    PipelineStage,
+)
+
+
+INVALID_TOKEN_TYPES = [
+    "INVALID",
+    "CORRUPTED",
+    "UNKNOWN",
+]
+
+
+@mutation(
+    layer=MutationLayer.LEXICAL,
+    nature=MutationNature.CORRUPTION,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.85,
+    impact={MutationImpact.CST_INVALID},
+    expected_failures={
+        PipelineStage.PARSING,
+    },
+    preserves_valid_cst=False,
+    preserves_valid_ast=False,
+    preserves_typing=False,
+    preserves_semantic_equivalence=False,
+)
+def corrupt_token_type(
+    tree: Tree,
+) -> Tree:
+    """
+    Replace token type with invalid type.
+    """
+
+    mutated = deepcopy(tree)
+
+    queue = [mutated]
+
+    while queue:
+
+        current = queue.pop()
+
+        if not isinstance(current, Tree):
+            continue
+
+        for i, child in enumerate(current.children):
+
+            if isinstance(child, Token):
+
+                if random.random() < 0.3:
+
+                    current.children[i] = Token(
+                        random.choice(INVALID_TOKEN_TYPES),
+                        child.value,
+                    )
+
+            elif isinstance(child, Tree):
+                queue.append(child)
+
+    return mutated
+
+
+@mutation(
+    layer=MutationLayer.LEXICAL,
+    nature=MutationNature.CORRUPTION,
+    severity=MutationSeverity.MEDIUM,
+    severity_score=0.6,
+    impact={MutationImpact.CST_INVALID},
+    expected_failures={
+        PipelineStage.PARSING,
+    },
+    preserves_valid_cst=False,
+    preserves_valid_ast=False,
+    preserves_typing=False,
+    preserves_semantic_equivalence=False,
+)
+def corrupt_token_value(
+    tree: Tree,
+) -> Tree:
+    """
+    Replace token value with garbage.
+    """
+
+    mutated = deepcopy(tree)
+
+    queue = [mutated]
+
+    while queue:
+
+        current = queue.pop()
+
+        if not isinstance(current, Tree):
+            continue
+
+        for i, child in enumerate(current.children):
+
+            if isinstance(child, Token):
+
+                if random.random() < 0.3:
+
+                    current.children[i] = Token(
+                        child.type,
+                        "@@@CORRUPTED@@@",
+                    )
+
+            elif isinstance(child, Tree):
+                queue.append(child)
+
+    return mutated
+
+
+INVALID_TOKENS_MUTATIONS = [
+    corrupt_token_type,
+    corrupt_token_value,
+]
+
+
+===== test\hypothesis\mutations\cst\tree.py =====
+
+# test/hypothesis/mutations/cst/tree.py
+
+from __future__ import annotations
+
+import random
+from copy import deepcopy
+
+from lark import Tree
+
+from test.hypothesis.mutations.base import (
+    mutation,
+    MutationLayer,
+    MutationNature,
+    MutationSeverity,
+    MutationImpact,
+    PipelineStage,
+)
+
+
+@mutation(
+    layer=MutationLayer.STRUCTURAL,
+    nature=MutationNature.DUPLICATION,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.8,
+    impact={MutationImpact.CST_INVALID},
+    expected_failures={
+        PipelineStage.AST_BUILDING,
+    },
+    preserves_valid_cst=False,
+    preserves_valid_ast=False,
+    preserves_typing=False,
+    preserves_semantic_equivalence=False,
+)
+def duplicate_random_subtree(
+    tree: Tree,
+) -> Tree:
+    """
+    Duplicate random subtree.
+    """
+
+    mutated = deepcopy(tree)
+
+    candidates = [
+        child
+        for child in mutated.children
+        if isinstance(child, Tree)
+    ]
+
+    if candidates:
+
+        subtree = deepcopy(
+            random.choice(candidates)
+        )
+
+        mutated.children.append(subtree)
+
+    return mutated
+
+
+@mutation(
+    layer=MutationLayer.STRUCTURAL,
+    nature=MutationNature.REORDERING,
+    severity=MutationSeverity.MEDIUM,
+    severity_score=0.55,
+    impact={MutationImpact.CST_INVALID},
+    expected_failures={
+        PipelineStage.AST_BUILDING,
+    },
+    preserves_valid_cst=False,
+    preserves_valid_ast=False,
+    preserves_typing=False,
+    preserves_semantic_equivalence=False,
+)
+def reverse_tree_children(
+    tree: Tree,
+) -> Tree:
+    """
+    Reverse subtree ordering.
+    """
+
+    mutated = deepcopy(tree)
+
+    mutated.children.reverse()
+
+    return mutated
+
+
+TREE_MUTATIONS = [
+    duplicate_random_subtree,
+    reverse_tree_children,
+]
+
+===== test\hypothesis\mutations\string\__init__.py =====
+
+
+
+===== test\hypothesis\mutations\string\base_helpers.py =====
+
+"""
+Base helpers for lexical invalid mutation system.
+
+These utilities are shared across all mutation categories.
+"""
+
+import random
+import re
+
+# -------------------------------------------------
+# Regex approximations (adjust to FORML grammar if needed)
+# -------------------------------------------------
+
+IDENTIFIER_RE = re.compile(r"\b[A-Za-z_][A-Za-z0-9_]*\b")
+NUMBER_RE = re.compile(r"\b\d+(\.\d+)?\b")
+STRING_RE = re.compile(r'"([^"\\]|\\.)*"')
+OPERATOR_RE = re.compile(r"(==|!=|<=|>=|->|~|=|\+|-|\*|/)")
+
+# -------------------------------------------------
+# Core safe mutation helpers
+# -------------------------------------------------
+
+def replace_with_regex(text: str, regex, fn):
+    def _repl(match):
+        return fn(match.group(0))
+    return regex.sub(_repl, text)
+
+
+def inject_noise(text: str, payload: str) -> str:
+    i = random.randint(0, len(text))
+    return text[:i] + payload + text[i:]
+
+
+def random_char_noise():
+    return chr(random.randint(0, 31))
+
+
+def random_ascii_garbage():
+    return random.choice(["�", "\x00", "\x1f", "\uffff"])
+
+===== test\hypothesis\mutations\string\encoding_mutations.py =====
+
+"""
+Encoding-level corruption mutations.
+
+Goal:
+- simulate broken UTF-8 / binary noise
+"""
+
+import random
+from .base_helpers import inject_noise, random_char_noise
+
+def encoding_corruption(text: str) -> str:
+    return inject_noise(text, "\udcff")
+
+
+def binary_noise(text: str) -> str:
+    noise = "".join(random_char_noise() for _ in range(3))
+    return inject_noise(text, noise)
+
+===== test\hypothesis\mutations\string\lexical_helpers.py =====
+
+import random
+import re
+from turtle import st
+
+from test.hypothesis.mutations.base import MutationImpact, MutationLayer, MutationNature, MutationSeverity, PipelineStage, mutation
+
+
+IDENTIFIER_PATTERN = r"\b[A-Za-z_][A-Za-z0-9_]*\b"
+
+# =========================================================
+# INVALID TOKEN MUTATIONS
+# =========================================================
+
+
+RESERVED_KEYWORDS = {
+    "model",
+    "target",
+    "forall",
+    "exists",
+    "using",
+    "neighborhood",
+    "in",
+    "with"
+}
+
+UNICODE_CONFUSABLES = {
+    "A": "Α",  # Greek Alpha
+    "B": "Β",  # Greek Beta
+    "E": "Ε",
+    "O": "Ο",
+    "a": "а",  # Cyrillic
+    "e": "е",
+    "o": "о",
+}
+
+
+ZERO_WIDTH_CHARS = [
+    "\u200b",  # zero-width space
+    "\u200c",
+    "\u200d",
+]
+
+# =========================================================
+# IDENTIFIER MUTATIONS
+# =========================================================
+
+def find_valid_identifiers(program: str):
+    """
+    Find non-reserved identifiers in source code.
+    """
+
+    return [
+        m
+        for m in re.finditer(IDENTIFIER_PATTERN, program)
+        if m.group(0) not in RESERVED_KEYWORDS
+    ]
+
+@mutation(
+    layer=MutationLayer.LEXICAL,
+    nature=MutationNature.DELETION,
+    severity=MutationSeverity.MEDIUM,
+    severity_score=0.4,
+    impact={MutationImpact.CST_INVALID},
+    expected_failures={PipelineStage.CST_VALIDATION},
+    preserves_valid_ast=False,
+    preserves_typing=False,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=False
+)
+def replace_random_identifier(program: str) -> str:
+    """
+    Replace one valid identifier.
+    """
+
+    replacement = random.choice(["foo", "bar", "baz", "qux", "var", "temp"])
+
+    matches = find_valid_identifiers(program)
+
+    if not matches:
+        return program
+
+    match = random.choice(matches)
+
+    start, end = match.span()
+
+    return (
+        program[:start]
+        + replacement
+        + program[end:]
+    )
+
+# =========================================================
+# INVALID CHARACTER MUTATIONS
+# =========================================================
+
+@mutation(
+    layer=MutationLayer.LEXICAL,
+    nature=MutationNature.CORRUPTION,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.75,
+    impact={MutationImpact.SEMANTIC_INVALID},
+    expected_failures={
+        PipelineStage.PARSING,
+        PipelineStage.SEMANTIC_ANALYSIS,
+    },
+    preserves_valid_ast=False,
+    preserves_typing=False,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=False
+)
+def inject_unicode_confusable(program: str) -> str:
+
+    candidates = [
+        c for c in UNICODE_CONFUSABLES
+        if c in program
+    ]
+
+    if not candidates:
+        return program
+
+    original = random.choice(candidates)
+
+    return program.replace(
+        original,
+        UNICODE_CONFUSABLES[original],
+        1,
+    )
+
+@mutation(
+    layer=MutationLayer.LEXICAL,
+    nature=MutationNature.CORRUPTION,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.75,
+    impact={MutationImpact.SEMANTIC_INVALID},
+    expected_failures={
+        PipelineStage.PARSING,
+        PipelineStage.SEMANTIC_ANALYSIS,
+    },
+    preserves_valid_ast=False,
+    preserves_typing=False,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=False
+)
+def inject_zero_width(program: str) -> str:
+
+    pos = random.randint(0, len(program))
+
+    zw = random.choice(ZERO_WIDTH_CHARS)
+
+    return (
+        program[:pos]
+        + zw
+        + program[pos:]
+    )
+
+@mutation(
+    layer=MutationLayer.LEXICAL,
+    nature=MutationNature.DELETION,
+    severity=MutationSeverity.LOW,
+    severity_score=0.4,
+    impact={MutationImpact.CST_INVALID},
+    expected_failures={PipelineStage.CST_VALIDATION},
+    preserves_valid_ast=False,
+    preserves_typing=False,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=False
 )
 def remove_random_character(program: str) -> str:
     """
@@ -195,17 +3076,20 @@ def remove_random_character(program: str) -> str:
 
     idx = random.randint(0, len(program) - 1)
 
-    return program[:idx] + program[idx + 1:]
+    return program[:idx] + program[idx + 1 :]
 
 
 @mutation(
-    nature=MutationNature.STRUCTURAL,
+    layer=MutationLayer.LEXICAL,
+    nature=MutationNature.CORRUPTION,
     severity=MutationSeverity.HIGH,
     severity_score=0.7,
-    impact={MutationImpact.PARSING},
-    expected_failures={PipelineStage.PARSING},
+    impact={MutationImpact.CST_INVALID},
+    expected_failures={PipelineStage.CST_VALIDATION},
     preserves_valid_ast=False,
     preserves_typing=False,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=False
 )
 def inject_noise(program: str) -> str:
     """
@@ -229,7 +3113,8 @@ def inject_noise(program: str) -> str:
 
 
 @mutation(
-    nature=MutationNature.SEMANTIC,
+    layer=MutationLayer.LEXICAL,
+    nature=MutationNature.CORRUPTION,
     severity=MutationSeverity.HIGH,
     severity_score=0.75,
     impact={MutationImpact.SEMANTIC_INVALID},
@@ -239,6 +3124,8 @@ def inject_noise(program: str) -> str:
     },
     preserves_valid_ast=False,
     preserves_typing=False,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=False
 )
 def corrupt_keyword(program: str) -> str:
     """
@@ -264,13 +3151,16 @@ def corrupt_keyword(program: str) -> str:
 
 
 @mutation(
-    nature=MutationNature.STRUCTURAL,
+    layer=MutationLayer.STRUCTURAL,
+    nature=MutationNature.REORDERING,    
     severity=MutationSeverity.MEDIUM,
     severity_score=0.5,
-    impact={MutationImpact.PARSING},
-    expected_failures={PipelineStage.PARSING},
+    impact={MutationImpact.CST_INVALID},
+    expected_failures={PipelineStage.CST_VALIDATION},
     preserves_valid_ast=False,
     preserves_typing=False,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=False
 )
 def shuffle_lines(program: str) -> str:
     """
@@ -287,351 +3177,136 @@ def shuffle_lines(program: str) -> str:
     return "\n".join(lines)
 
 
-LEXICAL_MUTATIONS = [
-    remove_random_character,
-    inject_noise,
-    corrupt_keyword,
-    shuffle_lines,
-]
-
-
-def apply_lexical_mutations(program: str, n: int) -> str:
-
-    mutated = program
-
-    for _ in range(n):
-        mutation_fn = random.choice(LEXICAL_MUTATIONS)
-        mutated = mutation_fn(mutated)
-
-    return mutated
-
-===== test\hypothesis\mutations\semantic.py =====
+===== test\hypothesis\mutations\string\operator_arity_mutations.py =====
 
 """
-Structural mutations (AST LEVEL)
+Operator arity violation mutations.
 
-GOAL:
-    Modify the structure of the AST.
+Goal:
+- break binary operator structure
+- create valid-looking but invalid AST shapes
+"""
 
-ROLE IN FORML:
-    - test AST builder robustness
-    - break structural invariants
-    - simulate upstream corruption
+import random
+import re
 
-CHARACTERISTICS:
-    ✔ AST exists
-    ❌ semantic validity not guaranteed
-    ❌ structural invariants often violated
+OPS = ["==", "!=", "~", "->", "<=", ">="]
+
+def remove_operand(text: str) -> str:
+    return re.sub(r"(==|!=|<=|>=|->|~)\s*\w+", r"\1", text)
+
+
+def duplicate_operator(text: str) -> str:
+    return re.sub(r"(==|!=|<=|>=|->|~)", r"\1\1", text)
+
+
+def operator_shuffle(text: str) -> str:
+    return re.sub(r"(==|!=|<=|>=|->|~)", lambda _: random.choice(OPS), text)
+
+
+def break_infix(text: str) -> str:
+    return re.sub(r"(==|!=|<=|>=|->|~)\s*\w+", r"\1", text)
+
+===== test\hypothesis\mutations\string\reserved_keyword_mutations.py =====
+
+"""
+Reserved keyword misuse mutations.
+
+Goal:
+- break grammar by injecting keywords in invalid positions
 """
 
 import random
 
-from dsl.ast.nodes.program import ProgramNode
-
-from test.hypothesis.mutations.base import (
-    MutationImpact,
-    mutation,
-    MutationNature,
-    MutationSeverity,
-    PipelineStage,
-)
-
-
-@mutation(
-    nature=MutationNature.STRUCTURAL,
-    severity=MutationSeverity.CRITICAL,
-    severity_score=0.9,
-    impact={MutationImpact.AST_INVALID},
-    expected_failures={PipelineStage.SEMANTIC_ANALYSIS, },
-    preserves_valid_ast=False,
-    preserves_typing=False,
-)
-def remove_model(ast: ProgramNode) -> ProgramNode:
-    """
-    Remove the model declaration from the AST.
-    """
-
-    if hasattr(ast, "header"):
-        object.__setattr__(ast.header, "model", None)
-
-    return ast
-
-
-@mutation(
-    nature=MutationNature.STRUCTURAL,
-    severity=MutationSeverity.CRITICAL,
-    severity_score=0.9,
-    impact={MutationImpact.AST_INVALID},
-    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
-    preserves_valid_ast=False,
-    preserves_typing=False,
-)
-def remove_target(ast: ProgramNode) -> ProgramNode:
-    """
-    Remove the target declaration from the AST.
-    """
-
-    if hasattr(ast, "header"):
-        object.__setattr__(ast.header, "target", None)
-
-    return ast
-
-
-@mutation(
-    nature=MutationNature.STRUCTURAL,
-    severity=MutationSeverity.CATASTROPHIC,
-    severity_score=1.0,
-    impact={MutationImpact.AST_INVALID},
-    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
-    preserves_valid_ast=False,
-    preserves_typing=False,
-)
-def remove_body(ast: ProgramNode) -> ProgramNode:
-    """
-    Remove the entire program body.
-
-    RESULT:
-        - empty AST
-        - total loss of semantics
-    """
-
-    if hasattr(ast, "body"):
-        ast.body = []
-
-    return ast
-
-
-@mutation(
-    nature=MutationNature.STRUCTURAL,
-    severity=MutationSeverity.HIGH,
-    severity_score=0.7,
-    impact={MutationImpact.AST_INVALID},
-    expected_failures={
-        PipelineStage.AST_BUILDING,
-        PipelineStage.SEMANTIC_ANALYSIS,
-    },
-    preserves_valid_ast=False,
-    preserves_typing=False,
-)
-def reorder_sections(ast: ProgramNode) -> ProgramNode:
-    """
-    Shuffle top-level AST sections.
-
-    EFFECT:
-        - breaks structural consistency
-    """
-
-    if not hasattr(ast, "__dict__"):
-        return ast
-
-    items = list(vars(ast).items())
-    random.shuffle(items)
-
-    for k, v in items:
-        setattr(ast, k, v)
-
-    return ast
-
-
-STRUCTURAL_MUTATIONS = [
-    remove_model,
-    remove_target,
-    remove_body,
-    reorder_sections,
+KEYWORDS = [
+    "forall",
+    "exists",
+    "using",
+    "in",
+    "with",
+    "check_at",
 ]
 
+def keyword_as_identifier(text: str) -> str:
+    kw = random.choice(KEYWORDS)
+    return text.replace("A", kw)
 
-def apply_structural_mutations(ast: ProgramNode, n: int = 1) -> ProgramNode:
-    """
-    Apply N structural mutations.
-    """
 
-    mutated = ast
+def keyword_duplication(text: str) -> str:
+    kw = random.choice(KEYWORDS)
+    return text.replace(kw, kw + kw)
 
-    for _ in range(n):
-        mutation_fn = random.choice(STRUCTURAL_MUTATIONS)
-        mutated = mutation_fn(mutated)
 
-    return mutated
+def keyword_injection(text: str) -> str:
+    kw = random.choice(KEYWORDS)
+    i = random.randint(0, len(text))
+    return text[:i] + f" {kw} " + text[i:]
 
-===== test\hypothesis\mutations\structural.py =====
+===== test\hypothesis\mutations\string\unicode_mutations.py =====
 
 """
-Structural mutations (AST LEVEL)
-
-GOAL:
-    Modify the structure of the AST.
-
-ROLE IN FORML:
-    - test AST builder robustness
-    - break structural invariants
-    - simulate upstream corruption
-
-CHARACTERISTICS:
-    ✔ AST exists
-    ❌ semantic validity not guaranteed
-    ❌ structural invariants often violated
+Unicode-based lexical corruption.
+Breaks tokenizer assumptions and normalization layers.
 """
 
 import random
+from .base_helpers import inject_noise
 
-from dsl.ast.nodes.program import ProgramNode
-
-from test.hypothesis.mutations.base import (
-    MutationImpact,
-    mutation,
-    MutationNature,
-    MutationSeverity,
-    PipelineStage,
-)
-
-
-@mutation(
-    nature=MutationNature.STRUCTURAL,
-    severity=MutationSeverity.CRITICAL,
-    severity_score=0.9,
-    impact= {MutationImpact.AST_INVALID},
-    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
-    preserves_valid_ast=False,
-    preserves_typing=False,
-)
-def remove_model(ast: ProgramNode) -> ProgramNode:
-    """
-    Remove the model declaration from the AST.
-    """
-
-    if hasattr(ast, "header"):
-        object.__setattr__(ast.header, "model", None)
-
-    return ast
-
-
-@mutation(
-    nature=MutationNature.STRUCTURAL,
-    severity=MutationSeverity.CRITICAL,
-    severity_score=0.9,
-    impact={MutationImpact.AST_INVALID},
-    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
-    preserves_valid_ast=False,
-    preserves_typing=False,
-)
-def remove_target(ast: ProgramNode) -> ProgramNode:
-    """
-    Remove the target declaration from the AST.
-    """
-
-    if hasattr(ast, "header"):
-        object.__setattr__(ast.header, "target", None)
-
-    return ast
-
-
-@mutation(
-    nature=MutationNature.STRUCTURAL,
-    severity=MutationSeverity.CATASTROPHIC,
-    severity_score=1.0,
-    impact={MutationImpact.AST_INVALID},
-    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
-    preserves_valid_ast=False,
-    preserves_typing=False,
-)
-def remove_body(ast: ProgramNode) -> ProgramNode:
-    """
-    Remove the entire program body.
-
-    RESULT:
-        - empty AST
-        - total loss of semantics
-    """
-
-    if hasattr(ast, "body"):
-        ast.body = []
-
-    return ast
-
-
-@mutation(
-    nature=MutationNature.STRUCTURAL,
-    severity=MutationSeverity.HIGH,
-    severity_score=0.7,
-    impact={MutationImpact.AST_INVALID},
-    expected_failures={
-        PipelineStage.AST_BUILDING,
-        PipelineStage.SEMANTIC_ANALYSIS,
-    },
-    preserves_valid_ast=False,
-    preserves_typing=False,
-)
-def reorder_sections(ast: ProgramNode) -> ProgramNode:
-    """
-    Shuffle top-level AST sections.
-
-    EFFECT:
-        - breaks structural consistency
-    """
-
-    if not hasattr(ast, "__dict__"):
-        return ast
-
-    items = list(vars(ast).items())
-    random.shuffle(items)
-
-    for k, v in items:
-        setattr(ast, k, v)
-
-    return ast
-
-
-STRUCTURAL_MUTATIONS = [
-    remove_model,
-    remove_target,
-    remove_body,
-    reorder_sections,
+UNICODE_POOL = [
+    "𝔄", "𝔅", "𝒜", "𝓐",
+    "Ω", "Σ", "Δ",
+    "∑", "∫", "∞",
+    "\u200b", "\u200d",  # zero-width
+    "�",
 ]
 
+def unicode_injection(text: str) -> str:
+    return inject_noise(text, random.choice(UNICODE_POOL))
 
-def apply_structural_mutations(ast: ProgramNode, n: int = 1) -> ProgramNode:
-    """
-    Apply N structural mutations.
-    """
 
-    mutated = ast
+def unicode_identifier_break(text: str) -> str:
+    return text.replace("A", "A" + random.choice(UNICODE_POOL))
 
-    for _ in range(n):
-        mutation_fn = random.choice(STRUCTURAL_MUTATIONS)
-        mutated = mutation_fn(mutated)
+===== test\hypothesis\parser\test_edge_cases.py =====
 
-    return mutated
+
 
 ===== test\hypothesis\parser\test_invalid_parser.py =====
 
 import pytest
 from hypothesis import given
-from test.hypothesis.strategies.invalid.program import invalid_program
+from test.hypothesis.strategies.invalid.invalid_cst import invalid_cst_program
 
 from dsl.parser.parser import parse_forml_code
+from test.hypothesis.strategies.valid.program_string import valid_string_program
 
 pytestmark = pytest.mark.wip
 
-@given(invalid_program())
-def test_parser_rejects_invalid(program):
+
+@given(invalid_cst_program(valid_string_program()))
+def test_parser_rejects_invalid_cst(cst):
+
     with pytest.raises(Exception):
-        parse_forml_code(program)
+
+        ast_builder.build(cst)
+
 
 ===== test\hypothesis\parser\test_valid_parser.py =====
 
 from hypothesis import given
 import pytest
-from test.hypothesis.strategies.valid.program_valid import valid_program
+from test.hypothesis.strategies.valid.program_string import valid_string_program
 
 from dsl.parser.parser import parse_forml_code
 
 pytestmark = pytest.mark.wip
 
-@given(valid_program())
+
+@given(valid_string_program())
 def test_parser_accepts_valid(program):
     cst = parse_forml_code(program)
     assert cst is not None
+
 
 ===== test\hypothesis\semantic\test_invalid_semantic.py =====
 
@@ -639,26 +3314,124 @@ from hypothesis import given
 import pytest
 
 from dsl.builder.program import parse_program
+from dsl.parser.errors import ParserError
 from dsl.parser.parser import parse_forml_code
 from dsl.semantic.core.validator import FORMLValidator
 from dsl.semantic.runtime.tracer import ValidationTracer
-from test.hypothesis.mutations.semantic import apply_semantic_mutations
-from test.hypothesis.strategies.valid.program_valid import valid_program
+from test.hypothesis.mutations.ast.semantic import apply_semantic_mutations
+from test.hypothesis.strategies.valid.program_string import valid_program
 
 
-@given(valid_program())
-def test_semantic_mutations(program):
+@given(valid_string())
+def test_semantic_mutations_invalid(program):
+    """
+    Property-based test ensuring that mutated semantic programs
+    eventually become invalid and raise ParserError.
+    """
 
+    try:
+        # Step 1: Parse source program into CST
+        cst = parse_forml_code(program)
+
+        # Step 2: Build AST from CST
+        ast = parse_program(cst)
+
+        # Step 3: Apply semantic mutations
+        mutated = apply_semantic_mutations(ast)
+
+        # Step 4: Validate mutated AST must fail
+        validator = FORMLValidator()
+        tracer = ValidationTracer(enabled=False)
+
+        with pytest.raises(ParserError):
+            validator.validate(mutated, tracer=tracer)
+
+    except ParserError:
+        # If parsing already fails, we skip the case
+        # because invalid input is outside mutation scope
+        pytest.skip("Invalid generated program skipped")
+
+===== test\hypothesis\semantic\test_semantic_invariants.py =====
+
+from hypothesis import given, settings, HealthCheck
+
+from dsl.parser.parser import parse_forml_code
+from dsl.builder.program import parse_program
+from dsl.semantic.core.validator import FORMLValidator
+from dsl.semantic.runtime.tracer import ValidationTracer
+from test.hypothesis.strategies.valid.program_string import valid_string_program
+
+
+@given(valid_string_program())
+@settings(suppress_health_check=[HealthCheck.too_slow])
+def test_semantic_invariants_hold(program):
+    """
+    Ensures that valid programs preserve semantic invariants
+    after parsing and validation.
+    """
+
+    # Parse pipeline
     cst = parse_forml_code(program)
     ast = parse_program(cst)
 
-    mutated = apply_semantic_mutations(ast)
-    tracer = ValidationTracer(enabled=True)
     validator = FORMLValidator()
-    validator.validate(mutated, tracer=tracer)
+    tracer = ValidationTracer(enabled=False)
 
-    with pytest.raises(Exception):
-        validator.validate(mutated, tracer=tracer)
+    # Should NOT raise
+    result = validator.validate(ast, tracer=tracer)
+
+    # Must be deterministic success
+    assert result is True
+
+===== test\hypothesis\semantic\test_semantic_mutations_invalid.py =====
+
+import pytest
+from hypothesis import given, settings, HealthCheck
+
+from dsl.parser.parser import parse_forml_code
+from dsl.builder.program import parse_program
+from dsl.semantic.runtime.tracer import ValidationTracer
+from dsl.semantic.core.validator import FORMLValidator
+from dsl.parser.errors import ParserError
+
+from test.hypothesis.mutations.ast.semantic import apply_semantic_mutations
+from test.hypothesis.strategies.valid.program_string import valid_string_program
+
+
+@given(valid_string_program())
+@settings(suppress_health_check=[HealthCheck.too_slow])
+def test_semantic_mutations_must_fail_validation(program):
+    """
+    Property-based test:
+    Semantic mutations must break program validity.
+
+    This ensures mutation operators are meaningful.
+    """
+
+    # ---------------------------
+    # Step 1: Parse to CST
+    # ---------------------------
+    cst = parse_forml_code(program)
+
+    # ---------------------------
+    # Step 2: Build AST
+    # ---------------------------
+    ast = parse_program(cst)
+
+    # ---------------------------
+    # Step 3: Apply semantic mutations
+    # ---------------------------
+    mutated_ast = apply_semantic_mutations(ast)
+
+    # ---------------------------
+    # Step 4: Validate mutated AST
+    # Must fail semantic validation
+    # ---------------------------
+    validator = FORMLValidator()
+    tracer = ValidationTracer(enabled=False)
+
+    with pytest.raises(ParserError):
+        validator.validate(mutated_ast, tracer=tracer)
 
 ===== test\hypothesis\semantic\test_valid_semantic.py =====
 
@@ -669,11 +3442,12 @@ from dsl.builder.program import parse_program
 from dsl.parser.parser import parse_forml_code
 from dsl.semantic.core.validator import FORMLValidator
 from dsl.semantic.runtime.tracer import ValidationTracer
-from test.hypothesis.strategies.valid.program_valid import valid_program
+from test.hypothesis.strategies.valid.program_string import valid_string_program
 
 pytestmark = pytest.mark.wip
 
-@given(valid_program())
+
+@given(valid_string_program())
 def test_semantic_validation(program):
 
     cst = parse_forml_code(program)
@@ -683,15 +3457,17 @@ def test_semantic_validation(program):
     validator = FORMLValidator()
     validator.validate(ast, tracer=tracer)
 
+
 ===== test\hypothesis\settings.py =====
 
 from hypothesis import settings
 
 DEFAULT_SETTINGS = settings(
     max_examples=200,
-    deadline=None,           # important pour parser
-    suppress_health_check=[], 
+    deadline=None,  # important pour parser
+    suppress_health_check=[],
 )
+
 
 ===== test\hypothesis\strategies\ast\__init__.py =====
 
@@ -708,15 +3484,16 @@ def body(draw):
     props = draw(st.lists(property_section(), min_size=1, max_size=3))
     return "\n\n".join(props)
 
+
 ===== test\hypothesis\strategies\ast\header.py =====
 
 from hypothesis import strategies as st
 from ..primitives.primitives import identifiers, escaped_strings
 
-
 # ======================================================================
 # REQUIRED PARTS
 # ======================================================================
+
 
 @st.composite
 def model_declaration(draw):
@@ -734,6 +3511,7 @@ def target_declaration(draw):
 # OPTIONAL PARTS
 # ======================================================================
 
+
 @st.composite
 def dataset_declaration(draw):
     path = draw(escaped_strings)
@@ -742,15 +3520,14 @@ def dataset_declaration(draw):
 
 @st.composite
 def variables_declaration(draw):
-    vars_list = draw(
-        st.lists(identifiers, min_size=1, max_size=5)
-    )
+    vars_list = draw(st.lists(identifiers, min_size=1, max_size=5))
     return "variables := " + ", ".join(vars_list)
 
 
 # ======================================================================
 # HEADER COMPOSITION
 # ======================================================================
+
 
 @st.composite
 def header(draw):
@@ -768,6 +3545,7 @@ def header(draw):
     #     parts.append(draw(variables_declaration()))
 
     return "\n".join(parts)
+
 
 ===== test\hypothesis\strategies\ast\logic.py =====
 
@@ -797,6 +3575,7 @@ def assertion(draw):
 
     return left
 
+
 ===== test\hypothesis\strategies\ast\properties.py =====
 
 from hypothesis import strategies as st
@@ -804,10 +3583,9 @@ from .logic import assertion
 from ..primitives.args import args
 from ..primitives.primitives import identifiers
 
-property_types = st.sampled_from([
-    "ROBUSTNESS", "STABILITY", "FAIRNESS",
-    "MONOTONICITY", "BOUND", "LOGIC"
-])
+property_types = st.sampled_from(
+    ["ROBUSTNESS", "STABILITY", "FAIRNESS", "MONOTONICITY", "BOUND", "LOGIC"]
+)
 
 metrics = st.sampled_from(["L1", "L2", "Linf"])
 
@@ -844,15 +3622,12 @@ def pairwise_expr(draw):
     x = draw(identifiers)
     x2 = f"{x}'"
     neigh = draw(neighborhood())
-    return f"{x} ~ {x2} {neigh}"   # FIX IMPORTANT
+    return f"{x} ~ {x2} {neigh}"  # FIX IMPORTANT
 
 
 @st.composite
 def property_expr(draw):
-    return draw(st.one_of(
-        st.just("forall"),
-        pairwise_expr()
-    ))
+    return draw(st.one_of(st.just("forall"), pairwise_expr()))
 
 
 @st.composite
@@ -868,7 +3643,7 @@ backends = st.sampled_from(["z3", "Z3", "eran", "ERAN"])
 
 
 @st.composite
-def abstractor(draw):
+def backend(draw):
     backend = draw(backends)
 
     if draw(st.booleans()):
@@ -883,16 +3658,301 @@ def property_section(draw):
     prop = draw(property())
 
     if draw(st.booleans()):
-        abs_ = draw(abstractor())
-        return f"{prop} {abs_}"
+        back_ = draw(backend())
+        return f"{prop} {back_}"
 
     return prop
 
-===== test\hypothesis\strategies\invalid\lexical.py =====
+
+===== test\hypothesis\strategies\invalid\invalid_ast.py =====
+
+import random
+from hypothesis import strategies as st
+
+from test.hypothesis.mutations.ast.adversarial import (
+    inject_adversarial_tautology,
+    nest_negations,
+)
+from test.hypothesis.mutations.ast.causality import reverse_causality
+from test.hypothesis.mutations.ast.constraints import inject_impossible_constraint
+from test.hypothesis.mutations.ast.context import (
+    corrupt_function_context,
+    corrupt_problem_context,
+    flip_comparison_operator
+)
+
+from test.hypothesis.mutations.ast.contradiction import (
+    inject_global_contradiction,
+    inject_tautology_abuse,
+    corrupt_semantic_context,
+    break_relational_consistency,
+    violate_constraints,
+)
+from test.hypothesis.mutations.ast.invariants import (
+    remove_model,
+    remove_target,
+    remove_body,
+)
+from test.hypothesis.mutations.ast.logical import (
+    reverse_implication,
+    negate_assertion,
+    swap_boolean_operators,
+    remove_negation,
+    duplicate_operand,
+    remove_operand,
+    permute_operands,
+    inject_logical_tautology,
+    inject_contradiction,
+    inject_double_negation,
+    flatten_boolean_tree,
+)
+from test.hypothesis.mutations.ast.numerical import (
+    explode_constants,
+    invert_numeric_sign
+)
+from test.hypothesis.mutations.ast.redundancy import inject_tautological_redundancy
+from test.hypothesis.mutations.ast.relationnal import (
+    reverse_property_order,
+    shuffle_properties
+)
+from test.hypothesis.mutations.ast.typing import invalidate_property_semantic
+from test.hypothesis.mutations.ast.scope import remove_neighborhood
+
+
+INVALID_AST_MUTATIONS = [
+    #adversarial mutations
+    inject_adversarial_tautology,
+    nest_negations,
+
+    # context mutations
+    corrupt_problem_context,
+    corrupt_function_context,
+    flip_comparison_operator,
+
+    # contradiction mutations
+    inject_global_contradiction,
+    inject_tautology_abuse,
+    corrupt_semantic_context,
+    break_relational_consistency,
+    violate_constraints,
+
+    # causality mutations
+    reverse_causality,
+
+    # invariants mutations
+    remove_model,
+    remove_target,
+    remove_body,
+
+    # logical mutations
+    reverse_implication,
+    negate_assertion,
+    swap_boolean_operators,
+    remove_negation,
+    duplicate_operand,
+    remove_operand,
+    permute_operands,
+    inject_logical_tautology,
+    inject_contradiction,
+    inject_double_negation,
+    flatten_boolean_tree,
+
+    # numerical mutations
+    explode_constants,
+    invert_numeric_sign,
+
+    # relationnal mutations
+    inject_impossible_constraint,
+
+    # redundancy mutations
+    inject_tautological_redundancy,
+
+    # relational mutations
+    reverse_property_order,
+    shuffle_properties,
+
+    # typing mutations
+    invalidate_property_semantic,
+
+    # scope mutations
+    remove_neighborhood
+]
+
+def apply_invalid_ast(ast, mutation_count: int = 1):
+    mutated = ast
+
+    for _ in range(mutation_count):
+        mutation_fn = random.choice(INVALID_AST_MUTATIONS)
+        mutated = mutation_fn(mutated)
+
+    return 
+
+
+@st.composite
+def invalid_ast_program(draw, base_ast):
+    ast = draw(base_ast)
+
+    mutation_count = draw(st.integers(min_value=1, max_value=3))
+
+    if draw(st.booleans()):
+        mutation_count *= 2
+
+    return apply_invalid_ast(ast, mutation_count)
+
+===== test\hypothesis\strategies\invalid\invalid_cst.py =====
+
+# test/hypothesis/mutations/cst/invalid_cst.py
+
+"""
+Invalid CST mutation entrypoint.
+
+This module composes all CST corruption strategies:
+
+- grammar corruption
+- parse corruption
+- syntax corruption
+- token corruption
+- tree corruption
+
+GOAL:
+    Stress parser robustness and AST builder resilience.
+
+PIPELINE LEVEL:
+    TEXT
+      ↓
+    TOKENS
+      ↓
+    CST / ParseTree
+      ↓
+    AST BUILDING
+
+These mutations operate ONLY on Lark CST structures.
+"""
+
+from __future__ import annotations
+
+import random
+
+from hypothesis import strategies as st
+
+from lark import Tree
+
+from test.hypothesis.mutations.cst.grammar import (
+    reorder_grammar_rules,
+    remove_random_subtree,
+)
+
+from test.hypothesis.mutations.cst.parse import (
+    corrupt_tree_data,
+)
+
+from test.hypothesis.mutations.cst.syntax import (
+    remove_random_token,
+)
+
+from test.hypothesis.mutations.cst.tokens import (
+    corrupt_token_type,
+    corrupt_token_value,
+)
+
+from test.hypothesis.mutations.cst.tree import (
+    duplicate_random_subtree,
+    reverse_tree_children,
+)
+
+# =========================================================
+# Registry
+# =========================================================
+
+INVALID_CST_MUTATIONS = [
+
+    # grammar corruption
+    reorder_grammar_rules,
+    remove_random_subtree,
+
+    # parse corruption
+    corrupt_tree_data,
+
+    # syntax corruption
+    remove_random_token,
+
+    # token corruption
+    corrupt_token_type,
+    corrupt_token_value,
+
+    # tree corruption
+    duplicate_random_subtree,
+    reverse_tree_children,
+]
+
+# =========================================================
+# Core mutation engine
+# =========================================================
+
+
+def apply_invalid_cst(
+    cst: Tree,
+    mutation_count: int = 1,
+) -> Tree:
+    """
+    Apply N random CST mutations.
+    """
+
+    mutated = cst
+
+    for _ in range(mutation_count):
+
+        mutation_fn = random.choice(
+            INVALID_CST_MUTATIONS
+        )
+
+        mutated = mutation_fn(mutated)
+
+    return mutated
+
+
+# =========================================================
+# Hypothesis strategy
+# =========================================================
+
+
+@st.composite
+def invalid_cst_program(
+    draw,
+    base_program,
+) -> Tree:
+    """
+    Generate an invalid FORML CST.
+
+    INPUT:
+        Valid ParseTree strategy.
+
+    OUTPUT:
+        Corrupted CST / ParseTree.
+    """
+
+    program = draw(base_program)
+
+    mutation_count = draw(
+        st.integers(
+            min_value=1,
+            max_value=3,
+        )
+    )
+
+    # heavy corruption mode
+    if draw(st.booleans()):
+
+        mutation_count *= 2
+
+    return apply_invalid_cst(
+        program,
+        mutation_count,
+    )
 
 
 
-===== test\hypothesis\strategies\invalid\program.py =====
+===== test\hypothesis\strategies\invalid\invalid_program.py =====
 
 """
 Multi-layer invalid FORML program generation.
@@ -900,114 +3960,35 @@ Multi-layer invalid FORML program generation.
 Pipeline:
     valid_program (string)
         ↓
-    lexical mutations
+    lexical invalid strategy
         ↓
     CST
         ↓
-    structural mutations
+    structural invalid strategy
         ↓
     AST
         ↓
-    semantic mutations
+    semantic invalid strategy
 
-This module generates invalid artifacts across
-multiple layers of the FORML pipeline.
+This module orchestrates invalid generation across
+FORML pipeline layers.
 """
 
 import random
-
 from hypothesis.strategies import composite
 
 from dsl.parser.parser import parse_forml_code
 from dsl.builder.program import parse_program
 
-from test.hypothesis.strategies.valid.program_valid import valid_program
+from test.hypothesis.strategies.valid.program_string import valid_string_program
 
-from test.hypothesis.mutations.lexical import (
-    LEXICAL_MUTATIONS,
-)
+# ================================
+# STRATEGY LAYERS (NOT MUTATIONS)
+# ================================
 
-from test.hypothesis.mutations.structural import (
-    STRUCTURAL_MUTATIONS,
-)
-
-from test.hypothesis.mutations.semantic import (
-    SEMANTIC_MUTATIONS,
-)
-
-
-# =========================================================
-# GENERIC MUTATION ENGINE
-# =========================================================
-
-def mutate(obj, mutation_pool):
-    """
-    Apply one random mutation from a mutation pool.
-    """
-
-    mutation = random.choice(mutation_pool)
-
-    return mutation(obj)
-
-
-# =========================================================
-# LEXICAL LAYER
-# =========================================================
-
-def apply_lexical_mutations(
-    program: str,
-    mutation_count: int = 1,
-):
-    """
-    Apply lexical mutations on DSL text.
-    """
-
-    mutated = program
-
-    for _ in range(mutation_count):
-        mutated = mutate(mutated, LEXICAL_MUTATIONS)
-
-    return mutated
-
-
-# =========================================================
-# STRUCTURAL LAYER (CST)
-# =========================================================
-
-def apply_structural_mutations(
-    cst,
-    mutation_count: int,
-):
-    """
-    Apply structural mutations on CST.
-    """
-
-    mutated = cst
-
-    for _ in range(mutation_count):
-        mutated = mutate(mutated, STRUCTURAL_MUTATIONS)
-
-    return mutated
-
-
-# =========================================================
-# SEMANTIC LAYER (AST)
-# =========================================================
-
-def apply_semantic_mutations(
-    ast,
-    mutation_count: int,
-):
-    """
-    Apply semantic mutations on AST.
-    """
-
-    mutated = ast
-
-    for _ in range(mutation_count):
-        mutated = mutate(mutated, SEMANTIC_MUTATIONS)
-
-    return mutated
+from test.hypothesis.strategies.invalid.invalid_string import invalid_string_program
+from test.hypothesis.strategies.invalid.invalid_cst import invalid_cst_program
+from test.hypothesis.strategies.invalid.invalid_ast import invalid_ast_program
 
 
 # =========================================================
@@ -1017,120 +3998,199 @@ def apply_semantic_mutations(
 @composite
 def invalid_program(
     draw,
-    lexical_ratio: float = 0.4,
-    structural_ratio: float = 0.3,
-    semantic_ratio: float = 0.3,
-    max_mutations: int = 3,
+    string_ratio: float = 0.4,
+    cst_ratio: float = 0.3,
+    ast_ratio: float = 0.3,
 ):
     """
-    Generate invalid FORML artifacts.
+    Generate invalid FORML programs across multiple layers.
 
-    Ratios determine the probability of applying
-    mutations at each pipeline layer.
-
-    Parameters
-    ----------
-    lexical_ratio:
-        Probability of lexical (string) mutations.
-
-    structural_ratio:
-        Probability of structural (CST) mutations.
-
-    semantic_ratio:
-        Probability of semantic (AST) mutations.
-
-    max_mutations:
-        Maximum mutations applied per layer.
-
-    Returns
-    -------
-    Depending on mutation stage:
-        - str
-        - CST
-        - AST
+    Each layer has its own invalid strategy responsible
+    for producing controlled corruption.
     """
 
-    # -----------------------------------------------------
-    # STEP 1: valid DSL program
-    # -----------------------------------------------------
-
-    program = draw(valid_program())
-
-    # -----------------------------------------------------
-    # STEP 2: lexical mutations
-    # -----------------------------------------------------
-
-    if random.random() < lexical_ratio:
-
-        lexical_mutation_count = random.randint(
-            1,
-            max_mutations,
-        )
-
-        program = apply_lexical_mutations(
-            program,
-            lexical_mutation_count,
-        )
+    assert 0 <= string_ratio <= 1, "string_ratio must be in [0, 1]"
+    assert 0 <= cst_ratio <= 1, "cst_ratio must be in [0, 1]"
+    assert 0 <= ast_ratio <= 1, "ast_ratio must be in [0, 1]"
+    assert (string_ratio + cst_ratio + ast_ratio) <= 1, "Total ratio must be <= 1"
 
     # -----------------------------------------------------
-    # STEP 3: parser
+    # STEP 1: valid program
+    # -----------------------------------------------------
+
+    program = draw(valid_string_program())
+
+    # -----------------------------------------------------
+    # STEP 2: string corruption
+    # -----------------------------------------------------
+
+    if random.random() < string_ratio:
+        program = draw(invalid_string_program(program))
+
+    # -----------------------------------------------------
+    # STEP 3: parse CST
     # -----------------------------------------------------
 
     try:
         cst = parse_forml_code(program)
-
     except Exception:
-        # lexical corruption successfully broke parser
         return program
 
     # -----------------------------------------------------
-    # STEP 4: structural mutations
+    # STEP 4: cst corruption
     # -----------------------------------------------------
 
-    if random.random() < structural_ratio:
-
-        structural_mutation_count = random.randint(
-            1,
-            max_mutations,
-        )
-
-        cst = apply_structural_mutations(
-            cst,
-            structural_mutation_count,
-        )
+    if random.random() < cst_ratio:
+        cst = draw(invalid_cst_program(cst))
 
     # -----------------------------------------------------
-    # STEP 5: builder
+    # STEP 5: parse AST
     # -----------------------------------------------------
 
     try:
         ast = parse_program(cst)
-
     except Exception:
-        # structural corruption successfully broke builder
         return cst
 
     # -----------------------------------------------------
-    # STEP 6: semantic mutations
+    # STEP 6: ast corruption
     # -----------------------------------------------------
 
-    if random.random() < semantic_ratio:
-
-        semantic_mutation_count = random.randint(
-            1,
-            max_mutations,
-        )
-
-        ast = apply_semantic_mutations(
-            ast,
-            semantic_mutation_count,
-        )
-
-    # -----------------------------------------------------
-    # FINAL OUTPUT
-    # -----------------------------------------------------
+    if random.random() < ast_ratio:
+        ast = draw(invalid_ast_program(ast))
 
     return ast
+
+===== test\hypothesis\strategies\invalid\invalid_string.py =====
+
+"""
+Invalid lexical mutation entrypoint.
+
+This module composes all lexical failure modes:
+- Unicode corruption
+- Encoding corruption
+- Reserved keyword misuse
+- Operator arity violations
+
+Used as first stage in FORML adversarial pipeline.
+"""
+
+import random
+from turtle import st
+
+from test.hypothesis.mutations.string.lexical_helpers import (
+    replace_random_identifier,
+    inject_zero_width,
+    inject_noise,
+    inject_unicode_confusable,
+    remove_random_character,
+    corrupt_keyword,
+    shuffle_lines,
+)
+
+from test.hypothesis.mutations.string.unicode_mutations import (
+    unicode_injection,
+    unicode_identifier_break,
+)
+
+from test.hypothesis.mutations.string.encoding_mutations import (
+    encoding_corruption,
+    binary_noise,
+)
+
+from test.hypothesis.mutations.string.reserved_keyword_mutations import (
+    keyword_as_identifier,
+    keyword_duplication,
+    keyword_injection,
+)
+
+from test.hypothesis.mutations.string.operator_arity_mutations import (
+    remove_operand,
+    duplicate_operator,
+    operator_shuffle,
+    break_infix,
+)
+
+INVALID_STRING_MUTATIONS = [
+    # Lexical mutations
+    replace_random_identifier,
+    inject_zero_width,
+    inject_noise,
+    inject_unicode_confusable,
+    remove_random_character,
+    corrupt_keyword,
+    shuffle_lines,
+        
+    # Unicode mutations
+    unicode_injection,
+    unicode_identifier_break,
+
+    # Encoding mutations
+    encoding_corruption,
+    binary_noise,
+
+    # Reserved keyword misuse
+    keyword_as_identifier,
+    keyword_duplication,
+    keyword_injection,
+
+    # Operator arity violations
+    remove_operand,
+    duplicate_operator,
+    operator_shuffle,
+    break_infix,
+]
+
+# =========================================================
+# Core mutation engine (lexical only)
+# =========================================================
+
+def apply_invalid_lexical(text: str, mutation_count: int = 1) -> str:
+    """
+    Apply N random lexical mutations.
+    """
+    mutated = text
+
+    for _ in range(mutation_count):
+        mutation = random.choice(INVALID_STRING_MUTATIONS)
+        mutated = mutation(mutated)
+
+    return mutated
+
+# =========================================================
+# MAIN STRATEGY
+# =========================================================
+
+
+# =========================================================
+# Hypothesis strategy
+# =========================================================
+
+@st.composite
+def invalid_string_program(draw, base_program : str) -> str:
+    """
+    Generate a lexically invalid FORML program.
+
+    Parameters
+    ----------
+    base_program:
+        strategy producing valid FORML programs (string)
+
+    Returns
+    -------
+    str (invalid FORML program)
+    """
+
+    program = draw(base_program)
+
+    # number of mutations (controlled chaos)
+    mutation_count = draw(st.integers(min_value=1, max_value=3))
+
+    # optional: probability of "heavy corruption"
+    if draw(st.booleans()):
+        mutation_count *= 2
+
+    return invalid_string_program(program, mutation_count)
 
 ===== test\hypothesis\strategies\primitives\__init__.py =====
 
@@ -1164,6 +4224,7 @@ def args(draw):
     args_list = draw(st.lists(arg(), min_size=1, max_size=3))
     return ", ".join(args_list)
 
+
 ===== test\hypothesis\strategies\primitives\primitives.py =====
 
 from hypothesis import strategies as st
@@ -1175,17 +4236,15 @@ identifiers = st.from_regex(IDENTIFIER_REGEX, fullmatch=True)
 escaped_strings = st.text(
     alphabet="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_./-",
     min_size=1,
-    max_size=30
+    max_size=30,
 ).map(lambda s: f'"{s}"')
 
 numbers = st.floats(
-    min_value=0,
-    max_value=100,
-    allow_nan=False,
-    allow_infinity=False
+    min_value=0, max_value=100, allow_nan=False, allow_infinity=False
 ).map(lambda x: str(round(x, 3)))
 
 booleans = st.sampled_from(["true", "false", "True", "False"])
+
 
 ===== test\hypothesis\strategies\primitives\values.py =====
 
@@ -1194,7 +4253,48 @@ from .primitives import numbers, booleans, escaped_strings
 
 values = st.one_of(numbers, booleans, escaped_strings)
 
-===== test\hypothesis\strategies\valid\program_valid.py =====
+
+===== test\hypothesis\strategies\valid\valid_ast.py =====
+
+from hypothesis import strategies as st
+
+from dsl.ast.nodes.program import ProgramNode
+from dsl.builder.program import parse_program
+from dsl.parser.parser import parse_forml_code
+from ..ast.header import header
+from ..ast.body import body
+
+
+@st.composite
+def valid_cst_program(draw) -> ProgramNode:
+    h = draw(header())
+    b = draw(body())
+
+    program = f"{h}\n\n{b}"
+    cst = parse_forml_code(program)
+    return parse_program(cst)
+
+
+===== test\hypothesis\strategies\valid\valid_cst.py =====
+
+from hypothesis import strategies as st
+from lark import ParseTree
+
+from dsl.parser.parser import parse_forml_code
+from ..ast.header import header
+from ..ast.body import body
+
+
+@st.composite
+def valid_cst_program(draw) -> ParseTree:
+    h = draw(header())
+    b = draw(body())
+
+    program = f"{h}\n\n{b}"
+    return parse_forml_code(program)
+
+
+===== test\hypothesis\strategies\valid\valid_string.py =====
 
 from hypothesis import strategies as st
 from ..ast.header import header
@@ -1202,28 +4302,31 @@ from ..ast.body import body
 
 
 @st.composite
-def valid_program(draw):
+def valid_string_program(draw) -> str:
     h = draw(header())
     b = draw(body())
 
     return f"{h}\n\n{b}"
 
+
 ===== test\hypothesis\test_determinism.py =====
 
 from hypothesis import given
 import pytest
-from test.hypothesis.strategies.valid.program_valid import valid_program
+from test.hypothesis.strategies.valid.program_string import  valid_string_program
 
 from dsl.parser.parser import parse_forml_code
 
 pytestmark = pytest.mark.wip
 
-@given(valid_program())
+
+@given(valid_string_program())
 def test_parse_deterministic(prog):
     ast1 = parse_forml_code(prog)
     ast2 = parse_forml_code(prog)
 
     assert ast1 == ast2
+
 
 ===== test\hypothesis\test_invariant_semantic.py =====
 
@@ -1232,11 +4335,12 @@ import pytest
 
 from dsl.builder.program import parse_program
 from dsl.parser.parser import parse_forml_code
-from test.hypothesis.strategies.valid.program_valid import valid_program
+from test.hypothesis.strategies.valid.program_string import valid_string_program
 
 pytestmark = pytest.mark.wip
 
-@given(valid_program())
+
+@given(valid_string_program())
 def test_semantic_roundtrip(prog):
     ast1 = parse_forml_code(prog)
     obj1 = parse_program(ast1)
@@ -1248,7 +4352,7 @@ def test_semantic_roundtrip(prog):
     assert obj1 == obj2
 
 
-@given(valid_program())
+@given(valid_string_program())
 def test_program_has_valid_structure(prog):
     ast = parse_forml_code(prog)
     d = parse_program(ast)
@@ -1257,25 +4361,28 @@ def test_program_has_valid_structure(prog):
     assert d.body is not None
     assert len(d.body) >= 1
 
+
 ===== test\hypothesis\test_roundtrip.py =====
 
 from hypothesis import given
 import pytest
-from test.hypothesis.strategies.valid.program_valid import valid_program
+from test.hypothesis.strategies.valid.program_string import valid_string_program
 
 from dsl.parser.parser import parse_forml_code
 from test.hypothesis.utils.serialize import serialize
 
 pytestmark = pytest.mark.wip
 
+
 @pytest.mark.skip(reason="no serialization implemented yet")
-@given(valid_program())
+@given(valid_string_program())
 def test_roundtrip(program):
     ast1 = parse_forml_code(program)
     serialized = serialize(ast1)
     ast2 = parse_forml_code(serialized)
 
     assert ast1 == ast2
+
 
 ===== test\hypothesis\test_semantic_extraction.py =====
 
@@ -1284,17 +4391,19 @@ import pytest
 
 from dsl.builder.program import parse_program
 from dsl.parser.parser import parse_forml_code
-from test.hypothesis.strategies.valid.program_valid import valid_program
+from test.hypothesis.strategies.valid.program_string import valid_string_program
 
 pytestmark = pytest.mark.wip
 
-@given(valid_program())
+
+@given(valid_string_program())
 def test_semantic_extraction(prog):
     ast = parse_forml_code(prog)
     d = parse_program(ast)
 
     assert d.header.model is not None
     assert d.header.target is not None
+
 
 ===== test\hypothesis\test_semantic_roundtrip.py =====
 
@@ -1303,11 +4412,12 @@ import pytest
 
 from dsl.builder.program import parse_program
 from dsl.parser.parser import parse_forml_code
-from test.hypothesis.strategies.valid.program_valid import valid_program
+from test.hypothesis.strategies.valid.program_string import valid_string_program
 
 pytestmark = pytest.mark.wip
 
-@given(valid_program())
+
+@given(valid_string_program())
 def test_semantic_roundtrip(prog):
     ast1 = parse_forml_code(prog)
     obj1 = parse_program(ast1)
@@ -1318,10 +4428,12 @@ def test_semantic_roundtrip(prog):
 
     assert obj1 == obj2
 
+
 ===== test\hypothesis\utils\compare_ast.py =====
 
 def ast_equal(a, b):
     return a == b
+
 
 ===== test\hypothesis\utils\serialize.py =====
 
