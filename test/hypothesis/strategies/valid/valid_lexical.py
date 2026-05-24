@@ -4,7 +4,7 @@ from ..ast.body import body
 
 
 @st.composite
-def valid_program(draw):
+def valid_lexical_program(draw) -> str:
     h = draw(header())
     b = draw(body())
 

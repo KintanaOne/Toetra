@@ -25,10 +25,10 @@ from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.problems import EnumProblem
 
+# ============================================================================
+# COMPARISON
+# ============================================================================
 
-# ============================================================================  
-# COMPARISON  
-# ============================================================================  
 
 def build_comparison_expr(node: Tree) -> ComparisonNode:
     attribute_node = find_node(node, "attribute")
@@ -44,17 +44,20 @@ def build_comparison_expr(node: Tree) -> ComparisonNode:
 
     return ComparisonNode(left=left, op=op, right=right)
 
-# ============================================================================  
-# UTILS  
-# ============================================================================  
+
+# ============================================================================
+# UTILS
+# ============================================================================
+
 
 def _extract_trees(node: Tree) -> List[Tree]:
     return [c for c in node.children if isinstance(c, Tree)]
 
 
-# ============================================================================  
-# CORE PARSER  
-# ============================================================================  
+# ============================================================================
+# CORE PARSER
+# ============================================================================
+
 
 def parse_assertion(node: Tree | Token | None) -> LogicalNode:
 
@@ -83,17 +86,13 @@ def parse_assertion(node: Tree | Token | None) -> LogicalNode:
     # OR
     # ----------------------------------------------------------------------
     if t == "logic_or":
-        return OrNode(
-            operands=[parse_assertion(c) for c in children]
-        )
+        return OrNode(operands=[parse_assertion(c) for c in children])
 
     # ----------------------------------------------------------------------
     # AND
     # ----------------------------------------------------------------------
     if t == "logic_and":
-        return AndNode(
-            operands=[parse_assertion(c) for c in children]
-        )
+        return AndNode(operands=[parse_assertion(c) for c in children])
 
     # ----------------------------------------------------------------------
     # NOT
@@ -102,14 +101,12 @@ def parse_assertion(node: Tree | Token | None) -> LogicalNode:
         if not children:
             raise ValueError("NOT requires an operand")
 
-        return NotNode(
-            operand=parse_assertion(children[-1])
-        )
+        return NotNode(operand=parse_assertion(children[-1]))
 
     # ----------------------------------------------------------------------
     # COMPARISON
     # ----------------------------------------------------------------------
-        
+
     if t == "comparison_expr":
         return build_comparison_expr(node)
 
@@ -140,7 +137,7 @@ def parse_assertion(node: Tree | Token | None) -> LogicalNode:
                     function = EnumFunction(node_value(c))
                 except ValueError:
                     raise ValueError(f"Unknown function: {node_value(c)}")
-                
+
         if problem is None:
             raise ValueError("Missing problem")
 
@@ -155,7 +152,12 @@ def parse_assertion(node: Tree | Token | None) -> LogicalNode:
 ===== dsl\builder\backends.py =====
 
 from lark import Tree
-from dsl.builder.core.utils import find_child, find_all_nodes, find_node, get_node_name_or_value
+from dsl.builder.core.utils import (
+    find_child,
+    find_all_nodes,
+    find_node,
+    get_node_name_or_value,
+)
 from dsl.builder.core.ast_utils import node_value, clean_string
 
 from dsl.ast.nodes.backends import BackendNode
@@ -164,6 +166,7 @@ from dsl.ast.nodes.primitives import ArgNode
 # ============================================================================
 # backend
 # ============================================================================
+
 
 def parse_backend(node: Tree | None):
     if node is None:
@@ -175,7 +178,7 @@ def parse_backend(node: Tree | None):
 
     name_node = n.children[0]
     name = get_node_name_or_value(name_node)
-    
+
     if name is None:
         raise ValueError("Backend name missing")
 
@@ -198,6 +201,7 @@ def parse_backend(node: Tree | None):
 
     return BackendNode(name=name, args=args)
 
+
 ===== dsl\builder\builder.py =====
 
 from dsl.builder.core.pretty_ast import pretty
@@ -207,14 +211,15 @@ from dsl.parser.parser import parse_forml_code
 from test.fixtures.program_samples import VALID_PROGRAM_WITH_BACKEND
 
 if __name__ == "__main__":
-    """ This script is for quick testing of the builder. It parses a sample property and prints the resulting AST """
+    """This script is for quick testing of the builder. It parses a sample property and prints the resulting AST"""
     # LARK
     CST = parse_forml_code(VALID_PROGRAM_WITH_BACKEND)
     print(CST.pretty())
 
     # BUILDER
     AST = parse_program(CST)
-    print(pretty(AST))
+    print((AST))
+
 
 ===== dsl\builder\core\__init__.py =====
 
@@ -266,6 +271,7 @@ def node_value(node: LarkNode | None) -> str | None:
 # ============================================================================
 # STRING NORMALIZATION
 # ============================================================================
+
 
 def clean_string(value: str | None) -> str | None:
     """
@@ -353,14 +359,14 @@ def parse_value(node: Tree) -> ConstantNode:
 
     if cleaned is None:
         raise ValueError("Invalid value: None after cleaning")
-    
+
     if cleaned.lower() == "true":
         return ConstantNode(True, EnumDataType.BOOL)
-    
-    if cleaned.lower() == "false": 
+
+    if cleaned.lower() == "false":
         return ConstantNode(False, EnumDataType.BOOL)
-    
-    if cleaned.lower() == "null": 
+
+    if cleaned.lower() == "null":
         return ConstantNode(None, EnumDataType.NoneType)
 
     # Integer parsing
@@ -403,6 +409,7 @@ def unwrap_single_child(node: Tree) -> Tree:
         node = node.children[0]
 
     return node
+
 
 ===== dsl\builder\core\pretty.py =====
 
@@ -453,6 +460,7 @@ def pretty(node: Any, indent: int = 0) -> str:
     # Fallback
     return f"{pad}{repr(node)}"
 
+
 ===== dsl\builder\core\pretty_ast.py =====
 
 # dsl/utils/pretty_ast.py
@@ -486,10 +494,10 @@ from dsl.ast.nodes.property import PropertyNode, PropertyRuleNode
 from dsl.ast.nodes.header import HeaderNode
 from dsl.ast.nodes.program import ProgramNode
 
-
 # =========================================================
 # ENTRY POINT
 # =========================================================
+
 
 def pretty(node: Any, indent: int = 0) -> str:
     if node is None:
@@ -516,12 +524,14 @@ def register(cls):
     def wrapper(func):
         _DISPATCH[cls] = func
         return func
+
     return wrapper
 
 
 # =========================================================
 # HELPERS
 # =========================================================
+
 
 def _pad(indent: int) -> str:
     return "  " * indent
@@ -556,9 +566,11 @@ def _expr(node):
 
     return str(node)
 
+
 # =========================================================
 # LOGIC
 # =========================================================
+
 
 @register(OrNode)
 def _pretty_or(node: OrNode, indent: int):
@@ -592,6 +604,7 @@ def _pretty_cmp(node: ComparisonNode, indent: int):
 # PRIMITIVES
 # =========================================================
 
+
 @register(AttributeNode)
 def _pretty_attr(node: AttributeNode, indent: int):
     return _pad(indent) + ".".join(node.path)
@@ -620,6 +633,7 @@ def _pretty_arg(node: ArgNode, indent: int):
 # DOMAIN / NEIGHBORHOOD
 # =========================================================
 
+
 @register(DomainNode)
 def _pretty_domain(node: DomainNode, indent: int):
     pad = _pad(indent)
@@ -644,6 +658,7 @@ def _pretty_neighborhood(node: NeighborhoodNode, indent: int):
 # =========================================================
 # EXPRESSIONS
 # =========================================================
+
 
 @register(AtExprNode)
 def _pretty_at(node: AtExprNode, indent: int):
@@ -696,6 +711,7 @@ def _pretty_quantifier(node: QuantifierExprNode, indent: int):
 # PROBLEM
 # =========================================================
 
+
 @register(ProblemNode)
 def _pretty_problem(node: ProblemNode, indent: int):
     pad = _pad(indent)
@@ -710,6 +726,7 @@ def _pretty_problem(node: ProblemNode, indent: int):
 # PROPERTY
 # =========================================================
 
+
 @register(PropertyRuleNode)
 def _pretty_rule(node: PropertyRuleNode, indent: int):
     pad = _pad(indent)
@@ -719,10 +736,12 @@ def _pretty_rule(node: PropertyRuleNode, indent: int):
         pretty(node.scope, indent + 1),
     ]
 
-    lines.extend([
-        f"{pad}assertion:",
-        pretty(node.assertion, indent + 1),
-    ])
+    lines.extend(
+        [
+            f"{pad}assertion:",
+            pretty(node.assertion, indent + 1),
+        ]
+    )
 
     return "\n".join(lines)
 
@@ -744,28 +763,29 @@ def _pretty_property(node: PropertyNode, indent: int):
 # HEADER / PROGRAM
 # =========================================================
 
+
 @register(HeaderNode)
 def _pretty_header(node: HeaderNode, indent: int):
     pad = _pad(indent)
 
-    return "\n".join([
-        f"{pad}model := {node.model}",
-        f"{pad}target := {node.target}",
-    ])
+    return "\n".join(
+        [
+            f"{pad}model := {node.model}",
+            f"{pad}target := {node.target}",
+        ]
+    )
 
 
 @register(ProgramNode)
 def _pretty_program(node: ProgramNode, indent: int):
-    lines = [
-        pretty(node.header, indent),
-        ""
-    ]
+    lines = [pretty(node.header, indent), ""]
 
     for prop in node.body:
         lines.append(pretty(prop, indent))
         lines.append("")
 
     return "\n".join(lines).strip()
+
 
 ===== dsl\builder\core\pretty_tree.py =====
 
@@ -836,6 +856,7 @@ def _get_children(node: Any):
         return [(k, v) for k, v in node.__dict__.items()]
 
     return []
+
 
 ===== dsl\builder\core\strict.py =====
 
@@ -930,6 +951,7 @@ def safe_find_node(tree: Tree, name: str) -> Tree:
     node = find_node(tree, name)
     return require_tree(node, f"Expected node '{name}' not found")
 
+
 ===== dsl\builder\core\types.py =====
 
 from __future__ import annotations
@@ -945,6 +967,7 @@ from typing import Union
 
 LarkNode = Union[Tree, Token]
 LarkTree = Tree
+
 
 ===== dsl\builder\core\utils.py =====
 
@@ -1084,6 +1107,7 @@ def get_node_name_or_value(node: Tree) -> str | None:
 # ASSIGNMENT EXTRACTION
 # ============================================================================
 
+
 def get_assignment_value_node(decl_tree: LarkTree) -> LarkNode | None:
     """
     Extract the RHS (right-hand side) of an assignment.
@@ -1112,6 +1136,7 @@ def get_assignment_value_node(decl_tree: LarkTree) -> LarkNode | None:
 # DEBUG UTILITIES
 # ============================================================================
 
+
 def debug_tree(tree: LarkTree) -> None:
     """
     Pretty-print a Lark tree for debugging purposes.
@@ -1127,7 +1152,6 @@ from dsl.builder.core.utils import find_child, find_all_nodes, find_node
 from dsl.builder.core.ast_utils import node_value, clean_string
 from dsl.ast.nodes.domain import DomainNode
 
-
 # ============================================================================
 # DOMAIN PARSER
 # ============================================================================
@@ -1140,29 +1164,20 @@ def parse_domain(node: Tree) -> DomainNode:
     # ------------------------------------------------------------------------
     # Retrieve domain node (must exist)
     # ------------------------------------------------------------------------
-    domain = require_node(
-        find_node(node, "domain"),
-        "Domain node not found"
-    )
+    domain = require_node(find_node(node, "domain"), "Domain node not found")
 
     # ------------------------------------------------------------------------
     # Extract domain identifier (must exist and be valid string)
     # ------------------------------------------------------------------------
     identifier_node = find_child(domain, "identifier")
 
-    name = require_value(
-        node_value(identifier_node),
-        "Missing domain name"
-    )
+    name = require_value(node_value(identifier_node), "Missing domain name")
 
     # ------------------------------------------------------------------------
     # Extract and sanitize domain values
     # ------------------------------------------------------------------------
     values = [
-        require_value(
-            clean_string(node_value(v)),
-            "Invalid domain value"
-        )
+        require_value(clean_string(node_value(v)), "Invalid domain value")
         for v in find_all_nodes(domain, "value")
     ]
 
@@ -1174,16 +1189,22 @@ def parse_domain(node: Tree) -> DomainNode:
         values=values,
     )
 
+
 ===== dsl\builder\expressions.py =====
 
 from lark import Tree
 from dsl.ast.nodes.expressions import (
-    AtExprNode, 
-    CheckAtExprNode, 
+    AtExprNode,
+    CheckAtExprNode,
     PairwiseExprNode,
-    QuantifierExprNode
+    QuantifierExprNode,
 )
-from dsl.builder.core.strict import optional, require_value, safe_find_child, safe_find_node
+from dsl.builder.core.strict import (
+    optional,
+    require_value,
+    safe_find_child,
+    safe_find_node,
+)
 from dsl.builder.core.utils import find_child, find_node, get_node_name_or_value
 from dsl.builder.core.ast_utils import node_value
 from dsl.builder.domain import parse_domain
@@ -1194,6 +1215,7 @@ from dsl.builder.core.strict import require_node
 # ============================================================================
 # EXPRESSIONS (AT / CHECK / PAIRWISE / QUANTIFIER)
 # ============================================================================
+
 
 def parse_at(prop: Tree) -> AtExprNode:
     # =========================================================================
@@ -1208,8 +1230,7 @@ def parse_at(prop: Tree) -> AtExprNode:
     identifier_node = safe_find_child(node, "identifier")
 
     variable = require_value(
-        node_value(identifier_node),
-        "Identifier value cannot be None"
+        node_value(identifier_node), "Identifier value cannot be None"
     )
 
     neighborhood = optional(node, "neighborhood", parse_neighborhood)
@@ -1220,9 +1241,6 @@ def parse_at(prop: Tree) -> AtExprNode:
         neighborhood=neighborhood,
         domain=domain,
     )
-
-
-
 
 
 # ============================================================================
@@ -1237,20 +1255,15 @@ def parse_pairwise(prop: Tree) -> PairwiseExprNode:
 
     # --- 1. Ensure pairwise_expr exists ---
     node = require_node(
-        find_node(prop, "pairwise_expr"),
-        "pairwise_expr node not found"
+        find_node(prop, "pairwise_expr"), "pairwise_expr node not found"
     )
 
     # --- 2. Extract pair token (mandatory) ---
     pair_node = require_node(
-        find_child(node, "pairwise_token"),
-        "pairwise_token node not found"
+        find_child(node, "pairwise_token"), "pairwise_token node not found"
     )
 
-    pair = require_value(
-        node_value(pair_node),
-        "pairwise_token is missing or invalid"
-    )
+    pair = require_value(node_value(pair_node), "pairwise_token is missing or invalid")
 
     # --- 3. Neighborhood (depends on your grammar: required here) ---
     neighborhood = parse_neighborhood(node)
@@ -1259,29 +1272,23 @@ def parse_pairwise(prop: Tree) -> PairwiseExprNode:
     domain = optional(node, "domain", parse_domain)
 
     # --- 5. Build AST ---
-    return PairwiseExprNode(
-        pair=pair,
-        neighborhood=neighborhood,
-        domain=domain
-    )
+    return PairwiseExprNode(pair=pair, neighborhood=neighborhood, domain=domain)
+
 
 # ---------------------------------------------------------------------------
+
 
 def parse_check_at(prop: Tree) -> CheckAtExprNode:
     """
     Parse a check_at expression into a strict AST node.
     """
 
-    node = require_node(
-        find_node(prop, "check_expr"),
-        "check_expr node not found"
-    )
+    node = require_node(find_node(prop, "check_expr"), "check_expr node not found")
 
     identifier_node = find_child(node, "identifier")
 
     variable = require_value(
-        node_value(identifier_node),
-        "identifier is missing or invalid"
+        node_value(identifier_node), "identifier is missing or invalid"
     )
 
     return CheckAtExprNode(variable=variable)
@@ -1289,24 +1296,20 @@ def parse_check_at(prop: Tree) -> CheckAtExprNode:
 
 # ---------------------------------------------------------------------------
 
+
 def parse_quantifier(prop: Tree) -> QuantifierExprNode:
 
     node = require_node(
-        find_node(prop, "quantifier_expr"),
-        "quantifier_expr node not found"
+        find_node(prop, "quantifier_expr"), "quantifier_expr node not found"
     )
 
     quantifier_node = require_node(
-        find_child(node, "quantifier"),
-        "quantifier node not found"
+        find_child(node, "quantifier"), "quantifier node not found"
     )
 
     quantifier = get_node_name_or_value(quantifier_node)
-    
-    quantifier = require_value(
-        quantifier,
-        "quantifier is missing or invalid"
-    )
+
+    quantifier = require_value(quantifier, "quantifier is missing or invalid")
 
     domain = optional(node, "domain", parse_domain)
 
@@ -1314,6 +1317,7 @@ def parse_quantifier(prop: Tree) -> QuantifierExprNode:
         quantifier=quantifier,
         domain=domain,
     )
+
 
 ===== dsl\builder\header.py =====
 
@@ -1324,7 +1328,6 @@ from dsl.ast.nodes.header import HeaderNode
 from dsl.builder.core.utils import find_child
 from dsl.builder.core.ast_utils import node_value, clean_string
 from dsl.builder.core.strict import require_node, require_value
-
 
 # ============================================================================
 # HEADER PARSING
@@ -1338,13 +1341,11 @@ def get_header(tree: Tree) -> Tree:
     """
     Extract header node from full AST.
     """
-    return require_node(
-        find_child(tree, "header"),
-        "Header node not found"
-    )
+    return require_node(find_child(tree, "header"), "Header node not found")
 
 
 # ---------------------------------------------------------------------------
+
 
 def parse_model(tree: Tree) -> str:
     """
@@ -1356,12 +1357,12 @@ def parse_model(tree: Tree) -> str:
     model_node = find_child(header, "model_declaration")
 
     return require_value(
-        clean_string(node_value(model_node)),
-        "Model declaration is missing or invalid"
+        clean_string(node_value(model_node)), "Model declaration is missing or invalid"
     )
 
 
 # ---------------------------------------------------------------------------
+
 
 def parse_target(tree: Tree) -> str:
     """
@@ -1374,11 +1375,12 @@ def parse_target(tree: Tree) -> str:
 
     return require_value(
         clean_string(node_value(target_node)),
-        "Target declaration is missing or invalid"
+        "Target declaration is missing or invalid",
     )
 
 
 # ---------------------------------------------------------------------------
+
 
 def parse_header(tree: Tree) -> HeaderNode:
     """
@@ -1390,10 +1392,8 @@ def parse_header(tree: Tree) -> HeaderNode:
     model = parse_model(header_tree)
     target = parse_target(header_tree)
 
-    return HeaderNode(
-        model=model,
-        target=target
-    )
+    return HeaderNode(model=model, target=target)
+
 
 ===== dsl\builder\neighborhood.py =====
 
@@ -1406,6 +1406,7 @@ from dsl.builder.core.strict import require_node, require_value
 
 from typing import List, Any
 
+from dsl.parser.errors import ParserDeclarationError, ParserPropertyError
 
 # ============================================================================
 # NEIGHBORHOOD PARSER
@@ -1438,26 +1439,26 @@ def _parse_numeric(value: Any) -> Any:
 # ---------------------------------------------------------------------------
 # Argument parsing
 # ---------------------------------------------------------------------------
-def _parse_arg(arg_node: Tree) -> ArgNode | None:
+def _parse_arg(arg_node: Tree) -> ArgNode:
     """
     Parse a single argument node into an ArgNode.
     """
 
     eq = find_child(arg_node, "arg_identifier_eq")
     if eq is None:
-        return None
+        raise ParserPropertyError("Missing '=' in argument")
 
     key_node = find_child(eq, "quoted_identifier")
     val_node = find_child(eq, "value")
 
-    key = require_value(
-        node_value(key_node),
-        "Missing argument key"
-    )
+    if val_node is None:
+        raise ParserPropertyError("Missing argument value in neighborhood argument")
+
+    key = require_value(node_value(key_node), "Missing argument key")
 
     raw_val = node_value(val_node)
     if raw_val is None:
-        raise ValueError("Missing argument value")
+        raise ParserPropertyError(f"Missing argument value for key={key}")
 
     # Try numeric conversion first, fallback to cleaned string
     try:
@@ -1482,9 +1483,7 @@ def _parse_args(args_node: Tree | None) -> List[ArgNode]:
     args: List[ArgNode] = []
 
     for arg in find_all_nodes(args_node, "arg"):
-        parsed = _parse_arg(arg)
-        if parsed is not None:
-            args.append(parsed)
+        args.append(_parse_arg(arg))
 
     return args
 
@@ -1516,20 +1515,15 @@ def parse_neighborhood(node: Tree) -> NeighborhoodNode:
         neighborhood = metric + args
     """
 
-    n = require_node(
-        find_node(node, "neighborhood"),
-        "Neighborhood node not found"
-    )
+    n = require_node(find_node(node, "neighborhood"), "Neighborhood node not found")
 
     metric = _extract_metric(n)
 
     args_node = find_child(n, "args")
     args = _parse_args(args_node)
 
-    return NeighborhoodNode(
-        metric=metric,
-        args=args
-    )
+    return NeighborhoodNode(metric=metric, args=args)
+
 
 ===== dsl\builder\program.py =====
 
@@ -1542,10 +1536,10 @@ from dsl.builder.property import parse_property
 from dsl.ast.nodes.program import ProgramNode
 from dsl.ast.nodes.header import HeaderNode
 
-
 # ============================================================================
 # PROGRAM ENTRYPOINT
 # ============================================================================
+
 
 def parse_program(tree: Tree) -> ProgramNode:
     # ------------------------------------------------------------------------
@@ -1554,26 +1548,18 @@ def parse_program(tree: Tree) -> ProgramNode:
     model = parse_model(tree)
     target = parse_target(tree)
 
-    header = HeaderNode(
-        model=model,
-        target=target
-    )
+    header = HeaderNode(model=model, target=target)
 
     # ------------------------------------------------------------------------
     # BODY
     # ------------------------------------------------------------------------
-    properties = [
-        parse_property(p)
-        for p in find_all_nodes(tree, "property_section")
-    ]
+    properties = [parse_property(p) for p in find_all_nodes(tree, "property_section")]
 
     # ------------------------------------------------------------------------
     # PROGRAM NODE
     # ------------------------------------------------------------------------
-    return ProgramNode(
-        header=header,
-        body=properties
-    )
+    return ProgramNode(header=header, body=properties)
+
 
 ===== dsl\builder\property.py =====
 
@@ -1586,14 +1572,8 @@ from dsl.builder.core.strict import require_value
 from dsl.builder.core.utils import find_node
 from dsl.builder.core.ast_utils import node_value
 from dsl.language.vocabulary.properties import EnumProperty
-from .expressions import (
-    parse_at,
-    parse_pairwise,
-    parse_check_at,
-    parse_quantifier
-)
+from .expressions import parse_at, parse_pairwise, parse_check_at, parse_quantifier
 from .assertion import parse_assertion
-
 
 # ============================================================================
 # PROPERTY CORE PARSING
@@ -1608,6 +1588,7 @@ from .assertion import parse_assertion
 # ---------------------------------------------------------------------------
 # Mode detection
 # ---------------------------------------------------------------------------
+
 
 def detect_mode(prop: Tree) -> str:
     """
@@ -1629,6 +1610,7 @@ def detect_mode(prop: Tree) -> str:
 # ---------------------------------------------------------------------------
 # RHS extraction
 # ---------------------------------------------------------------------------
+
 
 def extract_rhs(prop: Tree) -> Tree:
     """
@@ -1663,9 +1645,11 @@ def extract_rhs(prop: Tree) -> Tree:
 
     raise ValueError("Missing RHS in property")
 
+
 # ---------------------------------------------------------------------------
 # Main parser
 # ---------------------------------------------------------------------------
+
 
 def parse_property(prop: Tree) -> PropertyNode:
     """
@@ -1687,13 +1671,13 @@ def parse_property(prop: Tree) -> PropertyNode:
     # -----------------------------------------------------------------------
     # Parse LHS expression
     # -----------------------------------------------------------------------
-    
+
     left = expr_map[mode](prop)
 
     # -----------------------------------------------------------------------
     # Parse RHS assertion
     # -----------------------------------------------------------------------
-    
+
     right_node = extract_rhs(prop)
 
     logical_root = parse_assertion(right_node)
@@ -1703,7 +1687,7 @@ def parse_property(prop: Tree) -> PropertyNode:
     # -----------------------------------------------------------------------
     # Parse backend configuration (strict)
     # -----------------------------------------------------------------------
-    
+
     backend_node = find_node(prop, "backend")
     backend = parse_backend(backend_node)
 
@@ -1713,8 +1697,7 @@ def parse_property(prop: Tree) -> PropertyNode:
     property_type_node = find_node(prop, "property_type")
 
     property_type = require_value(
-        node_value(property_type_node),
-        "Property type is missing"
+        node_value(property_type_node), "Property type is missing"
     )
 
     property_type = EnumProperty(property_type)
@@ -1724,9 +1707,6 @@ def parse_property(prop: Tree) -> PropertyNode:
     # -----------------------------------------------------------------------
     return PropertyNode(
         type=property_type,
-        rule=PropertyRuleNode(
-            scope=left,
-            assertion=right
-        ),
-        backend=backend
+        rule=PropertyRuleNode(scope=left, assertion=right),
+        backend=backend,
     )

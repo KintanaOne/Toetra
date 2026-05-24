@@ -12,14 +12,15 @@ from dsl.ast.nodes.expressions import (
     QuantifierExprNode,
 )
 from dsl.builder.program import parse_program
+from dsl.language.vocabulary.properties import EnumProperty
 from dsl.parser.parser import parse_forml_code
-
 
 T = TypeVar("T")
 
 # ======================================================================================================================
 # HEADER
 # ======================================================================================================================
+
 
 def assert_header(
     program,
@@ -42,6 +43,7 @@ def assert_header(
 # ----------------------------------------------------------------------------------------------------------------------
 # Parse / Build helpers
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def parse(code: str) -> Tree:
     """
@@ -71,14 +73,14 @@ def build_property(code: str):
 # Scope helpers
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 def assert_scope_type(scope, expected_type: Type[T]) -> T:
     """
     Assert the scope node type and return the properly typed scope.
     """
 
     assert isinstance(scope, expected_type), (
-        f"Expected scope type {expected_type.__name__}, "
-        f"got {type(scope).__name__}"
+        f"Expected scope type {expected_type.__name__}, " f"got {type(scope).__name__}"
     )
 
     return cast(T, scope)
@@ -88,7 +90,10 @@ def assert_scope_type(scope, expected_type: Type[T]) -> T:
 # Property helpers
 # ----------------------------------------------------------------------------------------------------------------------
 
-def assert_property_basics(prop, expected_type: str = "ROBUSTNESS") -> None:
+
+def assert_property_basics(
+    prop, expected_type: EnumProperty = EnumProperty.ROBUSTNESS
+) -> None:
     """
     Assert common property invariants.
     """
@@ -104,6 +109,7 @@ def assert_property_basics(prop, expected_type: str = "ROBUSTNESS") -> None:
 # Neighborhood helpers
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 def assert_neighborhood(neighborhood, metric: str, **expected_args) -> None:
     """
     Assert neighborhood structure and arguments.
@@ -113,18 +119,17 @@ def assert_neighborhood(neighborhood, metric: str, **expected_args) -> None:
 
     assert neighborhood.metric == metric
 
-    args = {
-        arg.key: arg.value
-        for arg in neighborhood.args
-    }
+    args = {arg.key: arg.value for arg in neighborhood.args}
 
     for key, expected_value in expected_args.items():
         assert key in args
         assert args[key] == expected_value
 
+
 # ----------------------------------------------------------------------------------------------------------------------
 # Domain helpers
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def assert_domain(domain, name: str, values: list[str]) -> None:
     """
@@ -141,6 +146,7 @@ def assert_domain(domain, name: str, values: list[str]) -> None:
 # Backend helpers
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 def assert_backend(
     prop,
     expected_name: str,
@@ -156,20 +162,14 @@ def assert_backend(
 
     assert backend.name == expected_name
 
-    args = {
-        arg.key: arg.value
-        for arg in backend.args
-    }
+    args = {arg.key: arg.value for arg in backend.args}
 
     for key, expected_value in expected_args.items():
 
-        assert key in args, (
-            f"Missing backend arg '{key}'"
-        )
+        assert key in args, f"Missing backend arg '{key}'"
 
         assert args[key] == expected_value, (
-            f"Expected backend arg '{key}'="
-            f"{expected_value}, got {args[key]}"
+            f"Expected backend arg '{key}'=" f"{expected_value}, got {args[key]}"
         )
 
 
@@ -185,6 +185,7 @@ def assert_no_backend(prop) -> None:
 # Pairwise helpers
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 def assert_pair(
     pair: str,
     left_expected: str,
@@ -197,14 +198,9 @@ def assert_pair(
     parts = pair.split("~")
 
     if len(parts) != 2:
-        raise ValueError(
-            f"Invalid pair format: {pair}"
-        )
+        raise ValueError(f"Invalid pair format: {pair}")
 
-    left, right = [
-        x.strip()
-        for x in parts
-    ]
+    left, right = [x.strip() for x in parts]
 
     assert left == left_expected
     assert right == right_expected
@@ -213,6 +209,7 @@ def assert_pair(
 # ----------------------------------------------------------------------------------------------------------------------
 # Scope shortcuts
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def assert_at_scope(prop) -> AtExprNode:
     return assert_scope_type(prop.rule.scope, AtExprNode)
@@ -229,14 +226,27 @@ def assert_pairwise_scope(prop) -> PairwiseExprNode:
 def assert_quantifier_scope(prop) -> QuantifierExprNode:
     return assert_scope_type(prop.rule.scope, QuantifierExprNode)
 
+
 ===== test\unit\parsing\test_at.py =====
 
 # test/unit/parsing/test_at.py
 
 import pytest
 
-from test.fixtures.properties_samples import *
 
+from test.fixtures.properties_samples import (
+    # VALID
+    VALID_AT_WITH_DOMAIN,
+    VALID_AT_WITH_NEIGHBORHOOD,
+    VALID_AT_WITH_NEIGHBORHOOD_AND_DOMAIN,
+    VALID_MINIMAL_AT,
+    # INVALID
+    INVALID_AT_MISSING_IDENTIFIER,
+    INVALID_AT_INVALID_NEIGHBORHOOD_ARGUMENTS,
+    INVALID_AT_INVALID_NEIGHBORHOOD_SYNTAX,
+    INVALID_AT_INVALID_DOMAIN_VALUES,
+    INVALID_AT_INVALID_DOMAIN_SYNTAX,
+)
 from test.unit.parsing.helper import (
     assert_at_scope,
     assert_domain,
@@ -247,10 +257,10 @@ from test.unit.parsing.helper import (
     parse,
 )
 
-
 # ----------------------------------------------------------------------------------------------------------------------
 # VALID
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def test_at_basic():
 
@@ -308,9 +318,7 @@ def test_at_with_domain():
 
 def test_at_with_neighborhood_and_domain():
 
-    prop = build_property(
-        VALID_AT_WITH_NEIGHBORHOOD_AND_DOMAIN
-    )
+    prop = build_property(VALID_AT_WITH_NEIGHBORHOOD_AND_DOMAIN)
 
     scope = assert_at_scope(prop)
 
@@ -350,6 +358,7 @@ def test_at_invalid(code):
     with pytest.raises(Exception):
         parse(code)
 
+
 ===== test\unit\parsing\test_body.py =====
 
 # test/unit/parsing/test_body.py
@@ -373,16 +382,14 @@ from test.unit.parsing.helper import (
     parse,
 )
 
-
 # ----------------------------------------------------------------------------------------------------------------------
 # VALID
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 def test_body_simple_assertion():
 
-    prop = build_property(
-        VALID_PROGRAM_WITH_BODY_SIMPLE_ASSERTION
-    )
+    prop = build_property(VALID_PROGRAM_WITH_BODY_SIMPLE_ASSERTION)
 
     scope = assert_pairwise_scope(prop)
 
@@ -435,14 +442,22 @@ def test_body_invalid(code):
     with pytest.raises(Exception):
         parse(code)
 
+
 ===== test\unit\parsing\test_check_at.py =====
 
 # test/unit/parsing/test_check_at.py
 
 import pytest
 
-from test.fixtures.properties_samples import *
-
+from test.fixtures.properties_samples import (
+    # VALID
+    VALID_CHECK_AT_WITH_COMPLEX_ASSERTION,
+    VALID_MINIMAL_CHECK_AT,
+    # INVALID
+    INVALID_CHECK_AT_MISSING_IDENTIFIER,
+    INVALID_CHECK_AT_MISSING_ASSERTION,
+    INVALID_CHECK_AT_INVALID_IDENTIFIER,
+)
 from test.unit.parsing.helper import (
     assert_check_at_scope,
     assert_no_backend,
@@ -451,10 +466,10 @@ from test.unit.parsing.helper import (
     parse,
 )
 
-
 # ----------------------------------------------------------------------------------------------------------------------
 # VALID
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def test_check_at_basic():
 
@@ -471,9 +486,7 @@ def test_check_at_basic():
 
 def test_check_at_complex_assertion():
 
-    prop = build_property(
-        VALID_CHECK_AT_WITH_COMPLEX_ASSERTION
-    )
+    prop = build_property(VALID_CHECK_AT_WITH_COMPLEX_ASSERTION)
 
     scope = assert_check_at_scope(prop)
 
@@ -501,12 +514,17 @@ def test_check_at_invalid(code):
     with pytest.raises(Exception):
         parse(code)
 
+
 ===== test\unit\parsing\test_exists.py =====
 
 # test/unit/parsing/test_exists.py
 
-from test.fixtures.properties_samples import *
 
+from test.fixtures.properties_samples import (
+    # VALID
+    VALID_EXISTS_WITH_DOMAIN,
+    VALID_MINIMAL_EXISTS,
+)
 from test.unit.parsing.helper import (
     assert_domain,
     assert_no_backend,
@@ -515,10 +533,10 @@ from test.unit.parsing.helper import (
     build_property,
 )
 
-
 # ----------------------------------------------------------------------------------------------------------------------
 # VALID
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def test_exists_basic():
 
@@ -553,10 +571,10 @@ def test_exists_with_domain():
 
     assert_no_backend(prop)
 
+
 ===== test\unit\parsing\test_footer.py =====
 
 from dsl.parser.parser import parse_forml_code
-from dsl.builder.core.utils import *
 
 
 def test_footer_empty():
@@ -575,10 +593,9 @@ def test_footer_empty():
     """
 
     result = parse_forml_code(code)
-    pass
 
-    #footer = find_node(result, "footer")
-    # assert footer is None
+    assert not hasattr(result, "footer")
+
 
 def test_footer_with_simple_comment():
     code = """
@@ -598,16 +615,19 @@ def test_footer_with_simple_comment():
     """
 
     result = parse_forml_code(code)
-    pass
-    #  = find_node(result, "footer")
-    #assert footer is None
+
+    assert not hasattr(result, "footer")
+
 
 ===== test\unit\parsing\test_forall.py =====
 
 # test/unit/parsing/test_forall.py
 
-from test.fixtures.properties_samples import *
-
+from test.fixtures.properties_samples import (
+    # VALID
+    VALID_FORALL_WITH_DOMAIN,
+    VALID_MINIMAL_FORALL,
+)
 from test.unit.parsing.helper import (
     assert_domain,
     assert_no_backend,
@@ -616,10 +636,10 @@ from test.unit.parsing.helper import (
     build_property,
 )
 
-
 # ----------------------------------------------------------------------------------------------------------------------
 # VALID
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def test_forall_basic():
 
@@ -654,6 +674,7 @@ def test_forall_with_domain():
 
     assert_no_backend(prop)
 
+
 ===== test\unit\parsing\test_header.py =====
 
 # test/unit/parsing/test_header.py
@@ -679,10 +700,10 @@ from test.unit.parsing.helper import (
     parse,
 )
 
-
 # ----------------------------------------------------------------------------------------------------------------------
 # VALID
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def test_header_valid():
 
@@ -725,8 +746,8 @@ def test_header_invalid(code):
     with pytest.raises(Exception):
         parse(code)
 
-===== test\unit\parsing\test_logic.py =====
 
+===== test\unit\parsing\test_logic.py =====
 
 import pytest
 from lark import Tree
@@ -756,10 +777,10 @@ from test.fixtures.logic_samples import (
     VALID_IMPLICATION_PROPERTY,
 )
 
-
 # ----------------------------------------------------------------------------------------------------------------------
 # Helpers
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def parse(code: str) -> Tree:
     return parse_forml_code(code)
@@ -772,6 +793,7 @@ def build(code: str):
 # ----------------------------------------------------------------------------------------------------------------------
 # BASIC
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def test_simple_logic_in_property():
 
@@ -809,6 +831,7 @@ def test_simple_problem_in_property():
 # ----------------------------------------------------------------------------------------------------------------------
 # PRECEDENCE
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def test_logic_operator_precedence():
     """
@@ -880,6 +903,7 @@ def test_logic_not_precedence():
 # IMPLICATION
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 def test_logic_implication():
 
     prop = build(VALID_IMPLICATION_PROPERTY)
@@ -902,10 +926,7 @@ def test_logic_nested_implication():
 
     match assertion:
         case AssertionNode(
-            root=ImplicationNode(
-                left=_,
-                right=ImplicationNode(left=_, right=_)
-            )
+            root=ImplicationNode(left=_, right=ImplicationNode(left=_, right=_))
         ):
             pass
 
@@ -917,6 +938,7 @@ def test_logic_nested_implication():
 # INVALID
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 def test_invalid_logic_syntax():
     with pytest.raises(Exception):
         build(INVALID_LOGIC_SYNTAX)
@@ -925,6 +947,7 @@ def test_invalid_logic_syntax():
 def test_invalid_parentheses():
     with pytest.raises(Exception):
         build(INVALID_PARENTHESES)
+
 
 ===== test\unit\parsing\test_pairwise.py =====
 
@@ -955,10 +978,10 @@ from test.unit.parsing.helper import (
     parse,
 )
 
-
 # ----------------------------------------------------------------------------------------------------------------------
 # VALID
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def test_pairwise_basic():
 
@@ -987,9 +1010,7 @@ def test_pairwise_basic():
 
 def test_pairwise_with_backend():
 
-    prop = build_property(
-        VALID_PAIRWISE_WITH_ABSTRACTOR
-    )
+    prop = build_property(VALID_PAIRWISE_WITH_ABSTRACTOR)
 
     scope = assert_pairwise_scope(prop)
 
@@ -1036,6 +1057,7 @@ def test_pairwise_invalid(code):
     with pytest.raises(Exception):
         parse(code)
 
+
 ===== test\unit\parsing\test_semantic.py =====
 
 from typing import cast
@@ -1050,6 +1072,7 @@ from dsl.ast.nodes.expressions import (
     QuantifierExprNode,
 )
 from dsl.builder.program import parse_program
+from dsl.language.vocabulary.properties import EnumProperty
 from dsl.parser.parser import parse_forml_code
 
 from test.fixtures.program_samples import (
@@ -1066,10 +1089,10 @@ from test.fixtures.properties_samples import (
     VALID_PAIRWISE_WITH_ABSTRACTOR,
 )
 
-
 # ----------------------------------------------------------------------------------------------------------------------
 # Helpers
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def parse(code: str) -> Tree:
     return parse_forml_code(code)
@@ -1082,6 +1105,7 @@ def build_program(code: str):
 # ----------------------------------------------------------------------------------------------------------------------
 # HEADER
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def test_program_header():
 
@@ -1098,6 +1122,7 @@ def test_program_header():
 # AT
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 def test_program_with_at():
 
     prop = build_program(VALID_AT_WITH_NEIGHBORHOOD).body[0]
@@ -1109,7 +1134,7 @@ def test_program_with_at():
 
     neighborhood = scope.neighborhood
 
-    assert prop.type == "ROBUSTNESS"
+    assert prop.type == EnumProperty.ROBUSTNESS
     assert prop.rule.assertion is not None
 
     assert neighborhood is not None
@@ -1124,6 +1149,7 @@ def test_program_with_at():
 # CHECK_AT
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 def test_program_with_check_at():
 
     prop = build_program(VALID_MINIMAL_CHECK_AT).body[0]
@@ -1133,7 +1159,7 @@ def test_program_with_check_at():
     assert isinstance(scope, CheckAtExprNode)
     scope = cast(CheckAtExprNode, scope)
 
-    assert prop.type == "ROBUSTNESS"
+    assert prop.type == EnumProperty.ROBUSTNESS
     assert scope.variable == "x0"
     assert prop.rule.assertion is not None
 
@@ -1143,6 +1169,7 @@ def test_program_with_check_at():
 # ----------------------------------------------------------------------------------------------------------------------
 # PAIRWISE
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def test_program_with_pairwise():
 
@@ -1155,7 +1182,7 @@ def test_program_with_pairwise():
 
     neighborhood = scope.neighborhood
 
-    assert prop.type == "ROBUSTNESS"
+    assert prop.type == EnumProperty.ROBUSTNESS
     assert prop.rule.assertion is not None
 
     assert neighborhood is not None
@@ -1171,6 +1198,7 @@ def test_program_with_pairwise():
 # QUANTIFIER
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 def test_program_with_quantifier():
 
     prop = build_program(VALID_FORALL_WITH_DOMAIN).body[0]
@@ -1182,7 +1210,7 @@ def test_program_with_quantifier():
 
     domain = scope.domain
 
-    assert prop.type == "ROBUSTNESS"
+    assert prop.type == EnumProperty.ROBUSTNESS
     assert prop.rule.assertion is not None
 
     assert domain is not None
@@ -1195,6 +1223,7 @@ def test_program_with_quantifier():
 # ----------------------------------------------------------------------------------------------------------------------
 # MULTIPLE PROPERTIES
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def test_program_multiple_properties():
 
@@ -1210,6 +1239,7 @@ def test_program_multiple_properties():
 # DOMAIN + NEIGHBORHOOD
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 def test_program_with_domain_and_neighborhood():
 
     prop = build_program(VALID_AT_WITH_NEIGHBORHOOD_AND_DOMAIN).body[0]
@@ -1222,7 +1252,7 @@ def test_program_with_domain_and_neighborhood():
     neighborhood = scope.neighborhood
     domain = scope.domain
 
-    assert prop.type == "ROBUSTNESS"
+    assert prop.type == EnumProperty.ROBUSTNESS
     assert prop.rule.assertion is not None
 
     assert neighborhood is not None
@@ -1240,6 +1270,7 @@ def test_program_with_domain_and_neighborhood():
 # ----------------------------------------------------------------------------------------------------------------------
 # INVALID
 # ----------------------------------------------------------------------------------------------------------------------
+
 
 def test_invalid_multiple_expr():
 

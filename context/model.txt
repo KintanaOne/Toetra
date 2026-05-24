@@ -44,29 +44,22 @@ class ModelDetector:
         # XGBoost
         # -----------------------------------------
 
-        if (
-            XGBModel is not None
-            and isinstance(model, XGBModel)
-        ):
+        if XGBModel is not None and isinstance(model, XGBModel):
             return EnumModelFramework.XGBOOST
 
         # -----------------------------------------
         # Scikit-learn
         # -----------------------------------------
 
-        if (
-            BaseEstimator is not None
-            and isinstance(model, BaseEstimator)
-        ):
+        if BaseEstimator is not None and isinstance(model, BaseEstimator):
             return EnumModelFramework.SKLEARN
 
         # -----------------------------------------
         # Unsupported
         # -----------------------------------------
 
-        raise UnsupportedModelError(
-            f"Unsupported model type: {type(model)}"
-        )
+        raise UnsupportedModelError(f"Unsupported model type: {type(model)}")
+
 
 ===== model\detector\model_framework.py =====
 
@@ -77,11 +70,12 @@ class EnumModelFramework(Enum):
     """
     A class representing the supported machine learning frameworks.
     """
-    
+
     SKLEARN = "sklearn"
     TENSORFLOW = "tensorflow"
     PYTORCH = "pytorch"
     XGBOOST = "xgboost"
+
 
 ===== model\errors\base.py =====
 
@@ -89,7 +83,9 @@ class ModelError(Exception):
     """
     Base exception for model subsystem.
     """
+
     pass
+
 
 ===== model\errors\detection.py =====
 
@@ -103,6 +99,7 @@ class ModelDetectionError(ModelError):
 class UnsupportedModelError(ModelError):
     pass
 
+
 ===== model\errors\introspection.py =====
 
 from model.errors.base import ModelError
@@ -115,8 +112,10 @@ class ModelIntrospectionError(ModelError):
 class MissingFeatureMetadataError(ModelIntrospectionError):
     pass
 
+
 class UnsupportedIntrospectorError(ModelIntrospectionError):
     pass
+
 
 ===== model\errors\loading.py =====
 
@@ -139,6 +138,7 @@ class ModelFileNotFoundError(ModelLoadingError):
 
 class ModelDeserializationError(ModelLoadingError):
     """Raised when model deserialization fails."""
+
 
 ===== model\introspector\base_introspector.py =====
 
@@ -174,11 +174,7 @@ class BaseIntrospector(ABC):
         self.model = model
 
         # Optional dataset path
-        self.source_path = (
-            Path(source_path)
-            if source_path is not None
-            else None
-        )
+        self.source_path = Path(source_path) if source_path is not None else None
 
         # Optional external schema
         self.input_schema = schema
@@ -228,6 +224,7 @@ class BaseIntrospector(ABC):
             "module": type(self.model).__module__,
         }
 
+
 ===== model\introspector\introspector_factory.py =====
 
 from model.detector.model_framework import EnumModelFramework
@@ -254,10 +251,7 @@ class IntrospectorFactory:
     detected ML framework.
     """
 
-    INTROSPECTORS: dict[
-        EnumModelFramework,
-        type[BaseIntrospector]
-    ] = {
+    INTROSPECTORS: dict[EnumModelFramework, type[BaseIntrospector]] = {
         EnumModelFramework.SKLEARN: SklearnIntrospector,
         EnumModelFramework.XGBOOST: XGBoostIntrospector,
     }
@@ -275,9 +269,7 @@ class IntrospectorFactory:
         Create the appropriate introspector instance.
         """
 
-        introspector_class = cls.INTROSPECTORS.get(
-            framework
-        )
+        introspector_class = cls.INTROSPECTORS.get(framework)
 
         if introspector_class is None:
 
@@ -292,8 +284,8 @@ class IntrospectorFactory:
             serialization_format=serialization_format,
         )
 
-===== model\introspector\sklearn_introspector.py =====
 
+===== model\introspector\sklearn_introspector.py =====
 
 import pandas as pd
 
@@ -347,9 +339,7 @@ class SklearnIntrospector(BaseIntrospector):
         """
 
         if self.source_path is None:
-            raise ValueError(
-                "Feature detection requires a dataset source path."
-            )
+            raise ValueError("Feature detection requires a dataset source path.")
 
         data = pd.read_csv(self.source_path)
 
@@ -415,10 +405,7 @@ class SklearnIntrospector(BaseIntrospector):
         Detect prediction target.
         """
 
-        if (
-            self.input_schema is not None
-            and self.input_schema.target is not None
-        ):
+        if self.input_schema is not None and self.input_schema.target is not None:
             return self.input_schema.target
 
         return "target"
@@ -434,13 +421,16 @@ class SklearnIntrospector(BaseIntrospector):
 
         metadata = self._build_base_metadata()
 
-        metadata.update({
-            "n_features_in": self._safe_getattr("n_features_in_"),
-            "classes": self._safe_getattr("classes_"),
-            "feature_names_in": self._safe_getattr("feature_names_in_"),
-        })
+        metadata.update(
+            {
+                "n_features_in": self._safe_getattr("n_features_in_"),
+                "classes": self._safe_getattr("classes_"),
+                "feature_names_in": self._safe_getattr("feature_names_in_"),
+            }
+        )
 
         return metadata
+
 
 ===== model\introspector\xgboost_introspector.py =====
 
@@ -486,9 +476,7 @@ class XGBoostIntrospector(BaseIntrospector):
         # Inject XGBoost-specific metadata
         # --------------------------------------------------
 
-        sklearn_schema.metadata.update({
-            "xgboost": self._extract_xgb_metadata()
-        })
+        sklearn_schema.metadata.update({"xgboost": self._extract_xgb_metadata()})
 
         return sklearn_schema
 
@@ -503,26 +491,18 @@ class XGBoostIntrospector(BaseIntrospector):
 
         metadata = {}
 
-        metadata["n_estimators"] = self._safe_getattr(
-            "n_estimators"
-        )
+        metadata["n_estimators"] = self._safe_getattr("n_estimators")
 
-        metadata["max_depth"] = self._safe_getattr(
-            "max_depth"
-        )
+        metadata["max_depth"] = self._safe_getattr("max_depth")
 
-        metadata["objective"] = self._safe_getattr(
-            "objective"
-        )
+        metadata["objective"] = self._safe_getattr("objective")
 
-        metadata["booster"] = self._safe_getattr(
-            "booster"
-        )
+        metadata["booster"] = self._safe_getattr("booster")
 
         return metadata
 
-===== model\loader\base_loader.py =====
 
+===== model\loader\base_loader.py =====
 
 from pathlib import Path
 
@@ -531,11 +511,11 @@ class BaseModelLoader:
     def __init__(self, path: str | Path) -> None:
         """Base class for model loaders."""
         self.path = Path(path)
-        
 
     def load(self):
         """Load the model."""
         raise NotImplementedError("Subclasses must implement this method.")
+
 
 ===== model\loader\joblib_loader.py =====
 
@@ -553,14 +533,15 @@ class JoblibModelLoader(BaseModelLoader):
         try:
 
             return joblib.load(self.path)
-        
+
         except FileNotFoundError as e:
             raise ModelFileNotFoundError(str(self.path)) from e
-        
+
         except Exception as e:
             raise ModelDeserializationError(
                 f"Failed to deserialize joblib model: {self.path}"
             ) from e
+
 
 ===== model\loader\json_loader.py =====
 
@@ -571,22 +552,22 @@ from model.loader.base_loader import BaseModelLoader
 
 
 class JsonModelLoader(BaseModelLoader):
-    
+
     def load(self):
         """Load the model from a JSON file."""
-        
+
         try:
 
-            with open(self.path, 'r') as f:
+            with open(self.path, "r") as f:
                 model_data = json.load(f)
             return model_data
 
         except Exception as e:
 
             raise ModelLoadError(
-                f"Failed to load JSON model "
-                f"'{self.path}': {e}"
+                f"Failed to load JSON model " f"'{self.path}': {e}"
             ) from e
+
 
 ===== model\loader\loader_factory.py =====
 
@@ -619,11 +600,10 @@ class LoaderFactory:
         loader_class = cls.LOADERS.get(extension)
 
         if loader_class is None:
-            raise UnsupportedModelFormatError(
-                f"Unsupported model format: {extension}"
-            )
+            raise UnsupportedModelFormatError(f"Unsupported model format: {extension}")
 
         return loader_class(model_path)
+
 
 ===== model\loader\pkl_loader.py =====
 
@@ -651,6 +631,7 @@ class PklModelLoader(BaseModelLoader):
             raise ModelDeserializationError(
                 f"Failed to deserialize pickle model: {self.path}"
             ) from e
+
 
 ===== model\runtime\manager.py =====
 
@@ -693,11 +674,7 @@ class ModelManager:
 
         self.model_path = Path(model_path)
 
-        self.dataset_path = (
-            Path(dataset_path)
-            if dataset_path is not None
-            else None
-        )
+        self.dataset_path = Path(dataset_path) if dataset_path is not None else None
 
         self.schema = schema
 
@@ -722,9 +699,7 @@ class ModelManager:
         # 1. Select loader
         # --------------------------------------------------
 
-        loader = LoaderFactory.get_loader(
-            self.model_path
-        )
+        loader = LoaderFactory.get_loader(self.model_path)
 
         # --------------------------------------------------
         # 2. Load serialized model
@@ -736,9 +711,7 @@ class ModelManager:
         # 3. Detect ML framework
         # --------------------------------------------------
 
-        self.framework = ModelDetector().detect(
-            self.model
-        )
+        self.framework = ModelDetector().detect(self.model)
 
         # --------------------------------------------------
         # 4. Select introspector
@@ -760,12 +733,12 @@ class ModelManager:
         assert self.model_schema is not None
         return self.model_schema
 
+
 ===== model\schema\feature_schema.py =====
 
 from dataclasses import dataclass
 
 from dsl.semantic.types.enums import EnumDataType
-
 
 
 @dataclass
@@ -775,6 +748,7 @@ class FeatureSchema:
     dtype: EnumDataType
     nullable: bool = False
 
+
 ===== model\schema\model_schema.py =====
 
 from dataclasses import dataclass, field
@@ -783,12 +757,13 @@ from typing import Any
 from model.detector.model_framework import EnumModelFramework
 from model.schema.feature_schema import FeatureSchema
 
+
 @dataclass
 class ModelSchema:
-    """ Normalized FORML model representation.
-    This schema acts as the semantic bridge between: 
-        - ML frameworks 
-        - DSL semantic validation 
+    """Normalized FORML model representation.
+    This schema acts as the semantic bridge between:
+        - ML frameworks
+        - DSL semantic validation
         - backend lowering
     """
 
@@ -810,7 +785,7 @@ class ModelSchema:
     # ML task metadata
     # ======================================================
 
-    task : str
+    task: str
 
     # ======================================================
     # Optional framework-specific metadata

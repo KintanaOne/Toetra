@@ -21,6 +21,7 @@ from dsl.ast.nodes.program import ProgramNode
 
 from test.hypothesis.mutations.base import (
     MutationImpact,
+    MutationLayer,
     mutation,
     MutationNature,
     MutationSeverity,
@@ -29,7 +30,8 @@ from test.hypothesis.mutations.base import (
 
 
 @mutation(
-    nature=MutationNature.STRUCTURAL,
+    layer=MutationLayer.STRUCTURAL,
+    nature=MutationNature.DELETION,
     severity=MutationSeverity.CRITICAL,
     severity_score=0.9,
     impact={MutationImpact.AST_INVALID},
@@ -38,6 +40,8 @@ from test.hypothesis.mutations.base import (
     },
     preserves_valid_ast=False,
     preserves_typing=False,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=False,
 )
 def remove_model(ast: ProgramNode) -> ProgramNode:
     """
@@ -51,13 +55,16 @@ def remove_model(ast: ProgramNode) -> ProgramNode:
 
 
 @mutation(
-    nature=MutationNature.STRUCTURAL,
+    layer=MutationLayer.STRUCTURAL,
+    nature=MutationNature.DELETION,
     severity=MutationSeverity.CRITICAL,
     severity_score=0.9,
     impact={MutationImpact.AST_INVALID},
     expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
     preserves_valid_ast=False,
     preserves_typing=False,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=False,
 )
 def remove_target(ast: ProgramNode) -> ProgramNode:
     """
@@ -71,13 +78,16 @@ def remove_target(ast: ProgramNode) -> ProgramNode:
 
 
 @mutation(
-    nature=MutationNature.STRUCTURAL,
+    layer=MutationLayer.STRUCTURAL,
+    nature=MutationNature.DELETION,
     severity=MutationSeverity.CATASTROPHIC,
     severity_score=1.0,
     impact={MutationImpact.AST_INVALID},
     expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
     preserves_valid_ast=False,
     preserves_typing=False,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=False,
 )
 def remove_body(ast: ProgramNode) -> ProgramNode:
     """
@@ -95,7 +105,8 @@ def remove_body(ast: ProgramNode) -> ProgramNode:
 
 
 @mutation(
-    nature=MutationNature.STRUCTURAL,
+    layer=MutationLayer.STRUCTURAL,
+    nature=MutationNature.REORDERING,
     severity=MutationSeverity.HIGH,
     severity_score=0.7,
     impact={MutationImpact.AST_INVALID},
@@ -105,6 +116,8 @@ def remove_body(ast: ProgramNode) -> ProgramNode:
     },
     preserves_valid_ast=False,
     preserves_typing=False,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=False,
 )
 def reorder_sections(ast: ProgramNode) -> ProgramNode:
     """
@@ -126,23 +139,15 @@ def reorder_sections(ast: ProgramNode) -> ProgramNode:
     return ast
 
 
-STRUCTURAL_MUTATIONS = [
+INVARIANTS_MUTATIONS= [
     remove_model,
     remove_target,
     remove_body,
     reorder_sections,
 ]
 
-
-def apply_structural_mutations(ast: ProgramNode, n: int = 1) -> ProgramNode:
-    """
-    Apply N structural mutations.
-    """
-
+def apply_structural_mutations(ast: ProgramNode, n: int = 1):
     mutated = ast
-
     for _ in range(n):
-        mutation_fn = random.choice(STRUCTURAL_MUTATIONS)
-        mutated = mutation_fn(mutated)
-
+        mutated = random.choice(INVARIANTS_MUTATIONS)(mutated)
     return mutated

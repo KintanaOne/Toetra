@@ -61,9 +61,8 @@ class SemanticContext:
     # Symbol table for semantic lookup
     # ---------------------------------------------
 
-    symbol_table: SymbolTable = field(
-        default_factory=SymbolTable
-    )
+    symbol_table: SymbolTable = field(default_factory=SymbolTable)
+
 
 ===== dsl\semantic\context\graph.py =====
 
@@ -126,11 +125,7 @@ class SemanticGraph:
         """
         Register a semantic node.
         """
-        self.nodes[node_id] = SemanticNode(
-            id=node_id,
-            type=node_type,
-            data=data
-        )
+        self.nodes[node_id] = SemanticNode(id=node_id, type=node_type, data=data)
 
     # ─────────────────────────────────────────────
     # Edge API
@@ -150,19 +145,15 @@ class SemanticGraph:
         """
         Return all outgoing edges from a node.
         """
-        return [
-            e for e in self.edges if e.src == node_id
-        ]
+        return [e for e in self.edges if e.src == node_id]
 
     # ─────────────────────────────────────────────
     # Debug
     # ─────────────────────────────────────────────
 
     def __repr__(self) -> str:
-        return (
-            f"SemanticGraph(nodes={len(self.nodes)}, "
-            f"edges={len(self.edges)})"
-        )
+        return f"SemanticGraph(nodes={len(self.nodes)}, " f"edges={len(self.edges)})"
+
 
 ===== dsl\semantic\context\scope.py =====
 
@@ -170,16 +161,18 @@ class SemanticGraph:
 
 from enum import Enum
 
+
 class SemanticScope(Enum):
     QUANTIFIER = "quantifier"
     LOCAL = "local"
     POINTWISE = "pointwise"
     PAIRWISE = "pairwise"
 
+
 def get_scope_from_property(prop):
     if prop.pairwise_expr:
         return SemanticScope.PAIRWISE
-    
+
     if prop.anchor_expr:
         # check_at vs at
         if prop.anchor_expr.anchor == "check_at":
@@ -190,6 +183,7 @@ def get_scope_from_property(prop):
         return SemanticScope.QUANTIFIER
 
     return None
+
 
 ===== dsl\semantic\core\binding.py =====
 
@@ -241,9 +235,7 @@ class BindingValidator:
         rhs,
     ):
 
-        self.tracer.log(
-            f"Binding validation context: {context}"
-        )
+        self.tracer.log(f"Binding validation context: {context}")
 
         self._check_node(rhs, context)
 
@@ -260,16 +252,10 @@ class BindingValidator:
         if isinstance(node, ComparisonNode):
 
             if isinstance(node.left, AttributeNode):
-                self._resolve_attribute(
-                    node.left,
-                    context
-                )
+                self._resolve_attribute(node.left, context)
 
             if isinstance(node.right, AttributeNode):
-                self._resolve_attribute(
-                    node.right,
-                    context
-                )
+                self._resolve_attribute(node.right, context)
 
             return
 
@@ -303,9 +289,7 @@ class BindingValidator:
         if isinstance(node, ProblemNode):
             return
 
-        raise TypeError(
-            f"Unsupported node type: {type(node)}"
-        )
+        raise TypeError(f"Unsupported node type: {type(node)}")
 
     # ─────────────────────────────────────────────
     # SEMANTIC INITIALIZATION
@@ -315,7 +299,6 @@ class BindingValidator:
         if not hasattr(node, "semantic") or node.semantic is None:
             node.semantic = SemanticAnnotations()
         return node.semantic
-    
 
     def _resolve_symbol(self, symbol_table, name):
         """
@@ -400,9 +383,7 @@ class BindingValidator:
                     resolved = next(iter(variables.keys()))
                     symbol = resolve(resolved)
 
-                    self.tracer.log(
-                        f"Alias resolution: {attr.entity} → {resolved}"
-                    )
+                    self.tracer.log(f"Alias resolution: {attr.entity} → {resolved}")
 
                     semantic.resolved_entity = resolved
                     semantic.resolved_symbol = symbol
@@ -455,6 +436,7 @@ class BindingValidator:
             f"with variables {list(variables.keys())}"
         )
 
+
 ===== dsl\semantic\core\lhs.py =====
 
 from dsl.semantic.context.context import SemanticContext
@@ -470,6 +452,7 @@ from dsl.ast.nodes.expressions import (
 )
 
 from dsl.semantic.symbols.table import Symbol
+
 
 class LHSValidator:
     """
@@ -527,10 +510,8 @@ class LHSValidator:
 
         context = SemanticContext(
             type=SemanticScope.POINTWISE,
-            variables={
-                lhs.variable: "anchor"
-            },
-            default_entity=lhs.variable
+            variables={lhs.variable: "anchor"},
+            default_entity=lhs.variable,
         )
 
         # ---------------------------------------------
@@ -573,13 +554,10 @@ class LHSValidator:
 
         context = SemanticContext(
             type=SemanticScope.LOCAL,
-            variables={
-                x: "anchor",
-                x_prime: "perturbation"
-            },
+            variables={x: "anchor", x_prime: "perturbation"},
             default_entity=x_prime,
             domain=lhs.domain,
-            neighborhood=lhs.neighborhood
+            neighborhood=lhs.neighborhood,
         )
 
         # ---------------------------------------------
@@ -646,13 +624,10 @@ class LHSValidator:
 
         context = SemanticContext(
             type=SemanticScope.PAIRWISE,
-            variables={
-                left: "anchor",
-                right: "perturbation"
-            },
+            variables={left: "anchor", right: "perturbation"},
             default_entity=right,
             domain=lhs.domain,
-            neighborhood=lhs.neighborhood
+            neighborhood=lhs.neighborhood,
         )
 
         # ---------------------------------------------
@@ -703,20 +678,16 @@ class LHSValidator:
         quantifier = lhs.quantifier.strip()
 
         if quantifier not in {"forall", "exists"}:
-            raise InvalidPropertyError(
-                f"Unknown quantifier '{quantifier}'"
-            )
+            raise InvalidPropertyError(f"Unknown quantifier '{quantifier}'")
 
         var = "_x"
 
         context = SemanticContext(
             type=SemanticScope.QUANTIFIER,
             quantifier=quantifier,
-            variables={
-                var: "symbolic"
-            },
+            variables={var: "symbolic"},
             default_entity=var,
-            domain=lhs.domain
+            domain=lhs.domain,
         )
 
         # ---------------------------------------------
@@ -731,6 +702,7 @@ class LHSValidator:
         )
 
         return context
+
 
 ===== dsl\semantic\core\logic.py =====
 
@@ -774,9 +746,7 @@ class LogicValidator:
 
     def validate(self, node, context):
 
-        self.tracer.log(
-            f"Validating logic node: {node}"
-        )
+        self.tracer.log(f"Validating logic node: {node}")
 
         if isinstance(node, ComparisonNode):
             return self._validate_comparison(node, context)
@@ -796,9 +766,7 @@ class LogicValidator:
         if isinstance(node, ProblemNode):
             return self._validate_problem(node, context)
 
-        raise InvalidPropertyError(
-            f"Unknown logical node type: {type(node)}"
-        )
+        raise InvalidPropertyError(f"Unknown logical node type: {type(node)}")
 
     # ─────────────────────────────
     # COMPARISON
@@ -806,15 +774,11 @@ class LogicValidator:
 
     def _validate_comparison(self, node, context):
 
-        self.tracer.log(
-            f"Validating ComparisonNode: {node}"
-        )
+        self.tracer.log(f"Validating ComparisonNode: {node}")
 
         if node.left is None or node.right is None:
 
-            raise InvalidPropertyError(
-                "Invalid comparison: missing operands"
-            )
+            raise InvalidPropertyError("Invalid comparison: missing operands")
 
         self._validate_operand(node.left, context)
         self._validate_operand(node.right, context)
@@ -825,15 +789,11 @@ class LogicValidator:
 
     def _validate_and(self, node, context):
 
-        self.tracer.log(
-            f"Validating AndNode: {node}"
-        )
+        self.tracer.log(f"Validating AndNode: {node}")
 
         if not node.operands:
 
-            raise InvalidPropertyError(
-                "AND node has no operands"
-            )
+            raise InvalidPropertyError("AND node has no operands")
 
         for op in node.operands:
             self.validate(op, context)
@@ -844,15 +804,11 @@ class LogicValidator:
 
     def _validate_or(self, node, context):
 
-        self.tracer.log(
-            f"Validating OrNode: {node}"
-        )
+        self.tracer.log(f"Validating OrNode: {node}")
 
         if not node.operands:
 
-            raise InvalidPropertyError(
-                "OR node has no operands"
-            )
+            raise InvalidPropertyError("OR node has no operands")
 
         for op in node.operands:
             self.validate(op, context)
@@ -863,15 +819,11 @@ class LogicValidator:
 
     def _validate_not(self, node, context):
 
-        self.tracer.log(
-            f"Validating NotNode: {node}"
-        )
+        self.tracer.log(f"Validating NotNode: {node}")
 
         if node.operand is None:
 
-            raise InvalidPropertyError(
-                "NOT expression missing operand"
-            )
+            raise InvalidPropertyError("NOT expression missing operand")
 
         self.validate(node.operand, context)
 
@@ -881,15 +833,11 @@ class LogicValidator:
 
     def _validate_implication(self, node, context):
 
-        self.tracer.log(
-            f"Validating ImplicationNode: {node}"
-        )
+        self.tracer.log(f"Validating ImplicationNode: {node}")
 
         if node.left is None or node.right is None:
 
-            raise InvalidPropertyError(
-                "Implication missing left or right operand"
-            )
+            raise InvalidPropertyError("Implication missing left or right operand")
 
         self.validate(node.left, context)
         self.validate(node.right, context)
@@ -900,13 +848,9 @@ class LogicValidator:
 
     def _validate_problem(self, node, context):
 
-        self.tracer.log(
-            f"Validating ProblemNode: {node}"
-        )
+        self.tracer.log(f"Validating ProblemNode: {node}")
 
-        ProblemValidator(
-            tracer=self.tracer
-        ).validate(node)
+        ProblemValidator(tracer=self.tracer).validate(node)
 
     # ─────────────────────────────
     # OPERANDS (LEAVES)
@@ -925,9 +869,7 @@ class LogicValidator:
         if isinstance(node, ConstantNode):
             return
 
-        raise InvalidPropertyError(
-            f"Invalid operand type: {type(node)}"
-        )
+        raise InvalidPropertyError(f"Invalid operand type: {type(node)}")
 
     # ─────────────────────────────
     # ATTRIBUTE
@@ -935,9 +877,7 @@ class LogicValidator:
 
     def _validate_attribute(self, node, context):
 
-        self.tracer.log(
-            f"Validating AttributeNode: {node}"
-        )
+        self.tracer.log(f"Validating AttributeNode: {node}")
 
         if not node.feature:
             raise InvalidPropertyError("Attribute missing feature name")
@@ -953,6 +893,7 @@ class LogicValidator:
             raise InvalidPropertyError(
                 f"Unresolved attribute '{node.feature}' (binding failed)"
             )
+
 
 ===== dsl\semantic\core\problem.py =====
 
@@ -977,21 +918,16 @@ class ProblemValidator:
         try:
             function = EnumFunction[function_str]
         except KeyError:
-            raise IncompatibleFunctionError(
-                f"Unknown function '{function_str}'"
-            )
+            raise IncompatibleFunctionError(f"Unknown function '{function_str}'")
 
         allowed = PROBLEM_FUNCTION_COMPATIBILITY.get(problem)
 
         if not allowed:
-            raise IncompatibleFunctionError(
-                f"Unknown problem '{problem}'"
-            )
+            raise IncompatibleFunctionError(f"Unknown problem '{problem}'")
 
         if function not in allowed:
-            raise IncompatibleFunctionError(
-                f"{function_str} not allowed for {problem}"
-            )
+            raise IncompatibleFunctionError(f"{function_str} not allowed for {problem}")
+
 
 ===== dsl\semantic\core\property.py =====
 
@@ -1054,9 +990,7 @@ class PropertyValidator:
 
     def validate(self, prop):
 
-        self.tracer.log(
-            f"Validating Property: {prop.type}"
-        )
+        self.tracer.log(f"Validating Property: {prop.type}")
 
         # --------------------------------------------------
         # Structural sanity checks
@@ -1065,9 +999,7 @@ class PropertyValidator:
         if not hasattr(prop, "rule") or prop.rule is None:
 
             raise InvalidPropertyError(
-                message="Missing rule",
-                node=prop,
-                context="PropertyValidator"
+                message="Missing rule", node=prop, context="PropertyValidator"
             )
 
         rule = prop.rule
@@ -1101,9 +1033,7 @@ class PropertyValidator:
             #
             # ==================================================
 
-            context = LHSValidator(
-                tracer=self.tracer
-            ).validate(scope)
+            context = LHSValidator(tracer=self.tracer).validate(scope)
 
             prop.semantic.context = context
 
@@ -1131,12 +1061,7 @@ class PropertyValidator:
             #
             # ==================================================
 
-            BindingValidator(
-                tracer=self.tracer
-            ).validate(
-                context,
-                root
-            )
+            BindingValidator(tracer=self.tracer).validate(context, root)
 
             # ==================================================
             # 3. LOGIC VALIDATION
@@ -1151,12 +1076,7 @@ class PropertyValidator:
             #
             # ==================================================
 
-            LogicValidator(
-                tracer=self.tracer
-            ).validate(
-                root,
-                context
-            )
+            LogicValidator(tracer=self.tracer).validate(root, context)
 
             # ==================================================
             # PROPERTY ↔ SCOPE COMPATIBILITY
@@ -1165,20 +1085,13 @@ class PropertyValidator:
             try:
                 property_type = EnumProperty[prop.type.upper()]
             except KeyError:
-                raise InvalidPropertyError(
-                    f"Unknown property type '{prop.type}'"
-                )
+                raise InvalidPropertyError(f"Unknown property type '{prop.type}'")
 
-            allowed_scopes = PROPERTY_SCOPE_COMPATIBILITY.get(
-                property_type,
-                set()
-            )
+            allowed_scopes = PROPERTY_SCOPE_COMPATIBILITY.get(property_type, set())
 
             if context.type not in allowed_scopes:
 
-                allowed = ", ".join(
-                    s.value for s in allowed_scopes
-                )
+                allowed = ", ".join(s.value for s in allowed_scopes)
 
                 raise InvalidPropertyError(
                     f"Property '{prop.type}' does not support "
@@ -1209,25 +1122,24 @@ class PropertyValidator:
             raise InvalidPropertyError(
                 message=f"Property '{prop.type}' invalid: {e}",
                 node=prop,
-                context="PropertyValidator"
+                context="PropertyValidator",
             ) from e
 
-        self.tracer.log(
-            f"✔ Property '{prop.type}' validated"
-        )
+        self.tracer.log(f"✔ Property '{prop.type}' validated")
 
         return True
+
 
 ===== dsl\semantic\core\validator.py =====
 
 from dsl.builder.program import parse_program
+from dsl.parser.errors import ParserError
 from dsl.parser.parser import parse_forml_code
 from dsl.semantic.runtime.tracer import ValidationTracer
 
 from dsl.semantic.core.property import PropertyValidator
-from test.fixtures.properties_samples import (
-    VALID_MINIMAL_AT
-)
+from test.fixtures.properties_samples import VALID_MINIMAL_AT
+
 
 class FORMLValidator:
 
@@ -1240,14 +1152,21 @@ class FORMLValidator:
 
         self.tracer.log(f"Validating FORMLValidator: {program}")
 
-        for prop in program.body:
-            PropertyValidator(tracer=self.tracer).validate(prop)
+        try:
+            for prop in program.body:
+                PropertyValidator(tracer=self.tracer).validate(prop)
+
+        except ParserError:
+            raise
+
+        except Exception as e:
+            raise ParserError(str(e)) from e
 
         return True
 
 
 if __name__ == "__main__":
-    """ This script is for quick testing of the validator. It parses a sample property and prints the resulting AST than validates it """
+    """This script is for quick testing of the validator. It parses a sample property and prints the resulting AST than validates it"""
     CST = parse_forml_code(VALID_MINIMAL_AT)
     print(CST.pretty())
 
@@ -1257,6 +1176,7 @@ if __name__ == "__main__":
     tracer = ValidationTracer(enabled=True)
     validator = FORMLValidator()
     validator.validate(AST, tracer=tracer)
+
 
 ===== dsl\semantic\errors\errors.py =====
 
@@ -1292,6 +1212,7 @@ class InvalidOperatorError(SemanticError):
 class IncompatibleFunctionError(SemanticError):
     pass
 
+
 ===== dsl\semantic\rules\compatibility.py =====
 
 # forml/semantic/compatibility.py
@@ -1300,7 +1221,6 @@ from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.problems import EnumProblem
 from dsl.language.vocabulary.properties import EnumProperty
 from dsl.semantic.context.scope import SemanticScope
-
 
 # -------------------------------
 # Problem ↔ Function
@@ -1317,7 +1237,7 @@ PROBLEM_FUNCTION_COMPATIBILITY = {
         EnumFunction.DECREASING,
         EnumFunction.BETWEEN,
     },
-    EnumProblem.CLUSTERING: set()
+    EnumProblem.CLUSTERING: set(),
 }
 
 
@@ -1354,8 +1274,13 @@ PROPERTY_SCOPE_COMPATIBILITY = {
 PROPERTY_MODEL_COMPATIBILITY = {
     "ONNX": {EnumProperty.ROBUSTNESS, EnumProperty.STABILITY, EnumProperty.FAIRNESS},
     "SKLEARN": {EnumProperty.FAIRNESS, EnumProperty.BOUND},
-    "PYTORCH": {EnumProperty.ROBUSTNESS, EnumProperty.MONOTONICITY, EnumProperty.STABILITY},
+    "PYTORCH": {
+        EnumProperty.ROBUSTNESS,
+        EnumProperty.MONOTONICITY,
+        EnumProperty.STABILITY,
+    },
 }
+
 
 ===== dsl\semantic\rules\type_system.py =====
 
@@ -1373,6 +1298,7 @@ class FloatType(Type):
 
 class BoolType(Type):
     pass
+
 
 ===== dsl\semantic\runtime\annotations.py =====
 
@@ -1499,10 +1425,8 @@ class SemanticAnnotations:
         Returns True if semantic resolution occurred.
         """
 
-        return (
-            self.resolved_entity is not None
-            or self.resolved_symbol is not None
-        )
+        return self.resolved_entity is not None or self.resolved_symbol is not None
+
 
 ===== dsl\semantic\runtime\tracer.py =====
 
@@ -1514,13 +1438,13 @@ class ValidationTracer:
         if self.enabled:
             print(message)
 
+
 ===== dsl\semantic\symbols\symbol.py =====
 
 from dataclasses import dataclass
 from typing import Optional
 
 from dsl.semantic.types.enums import EnumDataType
-
 
 
 @dataclass
@@ -1564,6 +1488,7 @@ class Symbol:
 
     origin: Optional[object] = None
 
+
 ===== dsl\semantic\symbols\table.py =====
 
 from dsl.semantic.symbols.symbol import Symbol
@@ -1601,9 +1526,7 @@ class SymbolTable:
         """
 
         if symbol.name in self.symbols:
-            raise ValueError(
-                f"Symbol '{symbol.name}' already registered"
-            )
+            raise ValueError(f"Symbol '{symbol.name}' already registered")
 
         self.symbols[symbol.name] = symbol
 
@@ -1648,11 +1571,8 @@ class SymbolTable:
     # ─────────────────────────────────────────────
 
     def __repr__(self):
-        return (
-            f"SymbolTable("
-            f"symbols={list(self.symbols.keys())}"
-            f")"
-        )
+        return f"SymbolTable(" f"symbols={list(self.symbols.keys())}" f")"
+
 
 ===== dsl\semantic\types\enums.py =====
 

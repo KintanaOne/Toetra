@@ -1,4 +1,5 @@
 from dsl.builder.program import parse_program
+from dsl.parser.errors import ParserError
 from dsl.parser.parser import parse_forml_code
 from dsl.semantic.runtime.tracer import ValidationTracer
 
@@ -17,8 +18,15 @@ class FORMLValidator:
 
         self.tracer.log(f"Validating FORMLValidator: {program}")
 
-        for prop in program.body:
-            PropertyValidator(tracer=self.tracer).validate(prop)
+        try:
+            for prop in program.body:
+                PropertyValidator(tracer=self.tracer).validate(prop)
+
+        except ParserError:
+            raise
+
+        except Exception as e:
+            raise ParserError(str(e)) from e
 
         return True
 

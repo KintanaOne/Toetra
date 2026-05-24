@@ -1,0 +1,557 @@
+
+===== test\hypothesis\mutations\cst\__init__.py =====
+
+
+
+===== test\hypothesis\mutations\cst\grammar.py =====
+
+# test/hypothesis/mutations/cst/grammar.py
+
+from __future__ import annotations
+
+import random
+from copy import deepcopy
+
+from lark import Tree
+
+from test.hypothesis.mutations.base import (
+    mutation,
+    MutationLayer,
+    MutationNature,
+    MutationSeverity,
+    MutationImpact,
+    PipelineStage,
+)
+
+
+@mutation(
+    layer=MutationLayer.STRUCTURAL,
+    nature=MutationNature.REORDERING,
+    severity=MutationSeverity.CRITICAL,
+    severity_score=0.95,
+    impact={MutationImpact.CST_INVALID},
+    expected_failures={
+        PipelineStage.PARSING,
+        PipelineStage.AST_BUILDING,
+    },
+    preserves_valid_cst=False,
+    preserves_valid_ast=False,
+    preserves_typing=False,
+    preserves_semantic_equivalence=False,
+)
+def reorder_grammar_rules(
+    tree: Tree,
+) -> Tree:
+    """
+    Randomly reorder grammar children.
+    """
+
+    mutated = deepcopy(tree)
+
+    if mutated.children:
+        random.shuffle(mutated.children)
+
+    return mutated
+
+
+@mutation(
+    layer=MutationLayer.STRUCTURAL,
+    nature=MutationNature.DELETION,
+    severity=MutationSeverity.CRITICAL,
+    severity_score=1.0,
+    impact={MutationImpact.CST_INVALID},
+    expected_failures={
+        PipelineStage.PARSING,
+        PipelineStage.AST_BUILDING,
+    },
+    preserves_valid_cst=False,
+    preserves_valid_ast=False,
+    preserves_typing=False,
+    preserves_semantic_equivalence=False,
+)
+def remove_random_subtree(
+    tree: Tree,
+) -> Tree:
+    """
+    Remove a random subtree.
+    """
+
+    mutated = deepcopy(tree)
+
+    candidates = [
+        i
+        for i, child in enumerate(mutated.children)
+        if isinstance(child, Tree)
+    ]
+
+    if candidates:
+        idx = random.choice(candidates)
+        mutated.children.pop(idx)
+
+    return mutated
+
+
+INVALID_GRAMMAR_MUTATIONS = [
+    reorder_grammar_rules,
+    remove_random_subtree,
+]
+
+
+===== test\hypothesis\mutations\cst\parse.py =====
+
+# test/hypothesis/mutations/cst/parse.py
+
+from __future__ import annotations
+
+import random
+from copy import deepcopy
+
+from lark import Tree
+
+from test.hypothesis.mutations.base import (
+    mutation,
+    MutationLayer,
+    MutationNature,
+    MutationSeverity,
+    MutationImpact,
+    PipelineStage,
+)
+
+
+@mutation(
+    layer=MutationLayer.STRUCTURAL,
+    nature=MutationNature.SUBSTITUTION,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.8,
+    impact={MutationImpact.CST_INVALID},
+    expected_failures={
+        PipelineStage.AST_BUILDING,
+    },
+    preserves_valid_cst=False,
+    preserves_valid_ast=False,
+    preserves_typing=False,
+    preserves_semantic_equivalence=False,
+)
+def corrupt_tree_data(
+    tree: Tree,
+) -> Tree:
+    """
+    Replace rule name with random invalid one.
+    """
+
+    mutated = deepcopy(tree)
+
+    queue = [mutated]
+
+    while queue:
+
+        current = queue.pop()
+
+        if isinstance(current, Tree):
+
+            if random.random() < 0.3:
+                current.data = "corrupted_rule"
+
+            queue.extend(
+                child
+                for child in current.children
+                if isinstance(child, Tree)
+            )
+
+    return mutated
+
+
+INVALID_PARSE_MUTATIONS = [
+    corrupt_tree_data,
+]
+
+
+===== test\hypothesis\mutations\cst\structural.py =====
+
+"""
+Structural mutations (AST LEVEL)
+
+GOAL:
+    Modify the structure of the AST.
+
+ROLE IN FORML:
+    - test AST builder robustness
+    - break structural invariants
+    - simulate upstream corruption
+
+CHARACTERISTICS:
+    ✔ AST exists
+    ❌ semantic validity not guaranteed
+    ❌ structural invariants often violated
+"""
+
+import random
+
+from dsl.ast.nodes.program import ProgramNode
+
+from test.hypothesis.mutations.base import (
+    MutationImpact,
+    MutationLayer,
+    mutation,
+    MutationNature,
+    MutationSeverity,
+    PipelineStage,
+)
+
+
+@mutation(
+    layer=MutationLayer.STRUCTURAL,
+    nature=MutationNature.REORDERING,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.7,
+    impact={MutationImpact.AST_INVALID},
+    expected_failures={
+        PipelineStage.AST_BUILDING,
+        PipelineStage.SEMANTIC_ANALYSIS,
+    },
+    preserves_valid_ast=False,
+    preserves_typing=False,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=False,
+)
+def reorder_sections(ast: ProgramNode) -> ProgramNode:
+    """
+    Shuffle top-level AST sections.
+
+    EFFECT:
+        - breaks structural consistency
+    """
+
+    if not hasattr(ast, "__dict__"):
+        return ast
+
+    items = list(vars(ast).items())
+    random.shuffle(items)
+
+    for k, v in items:
+        setattr(ast, k, v)
+
+    return ast
+
+
+STRUCTURAL_MUTATIONS = [
+    reorder_sections,
+]
+
+
+def apply_structural_mutations(ast: ProgramNode, n: int = 1) -> ProgramNode:
+    """
+    Apply N structural mutations.
+    """
+
+    mutated = ast
+
+    for _ in range(n):
+        mutation_fn = random.choice(STRUCTURAL_MUTATIONS)
+        mutated = mutation_fn(mutated)
+
+    return mutated
+
+
+===== test\hypothesis\mutations\cst\syntax.py =====
+
+# test/hypothesis/mutations/cst/syntax.py
+
+from __future__ import annotations
+
+import random
+from copy import deepcopy
+
+from lark import Tree, Token
+
+from test.hypothesis.mutations.base import (
+    mutation,
+    MutationLayer,
+    MutationNature,
+    MutationSeverity,
+    MutationImpact,
+    PipelineStage,
+)
+
+
+@mutation(
+    layer=MutationLayer.STRUCTURAL,
+    nature=MutationNature.DELETION,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.75,
+    impact={MutationImpact.CST_INVALID},
+    expected_failures={
+        PipelineStage.PARSING,
+    },
+    preserves_valid_cst=False,
+    preserves_valid_ast=False,
+    preserves_typing=False,
+    preserves_semantic_equivalence=False,
+)
+def remove_random_token(
+    tree: Tree,
+) -> Tree:
+    """
+    Remove random token from CST.
+    """
+
+    mutated = deepcopy(tree)
+
+    queue = [mutated]
+
+    while queue:
+
+        current = queue.pop()
+
+        if not isinstance(current, Tree):
+            continue
+
+        token_indices = [
+            i
+            for i, child in enumerate(current.children)
+            if isinstance(child, Token)
+        ]
+
+        if token_indices and random.random() < 0.3:
+
+            idx = random.choice(token_indices)
+            current.children.pop(idx)
+
+        for child in current.children:
+
+            if isinstance(child, Tree):
+                queue.append(child)
+
+    return mutated
+
+
+INVALID_SYNTAX_MUTATIONS = [
+    remove_random_token,
+]
+
+
+===== test\hypothesis\mutations\cst\tokens.py =====
+
+# test/hypothesis/mutations/cst/tokens.py
+
+from __future__ import annotations
+
+import random
+from copy import deepcopy
+
+from lark import Tree, Token
+
+from test.hypothesis.mutations.base import (
+    mutation,
+    MutationLayer,
+    MutationNature,
+    MutationSeverity,
+    MutationImpact,
+    PipelineStage,
+)
+
+
+INVALID_TOKEN_TYPES = [
+    "INVALID",
+    "CORRUPTED",
+    "UNKNOWN",
+]
+
+
+@mutation(
+    layer=MutationLayer.LEXICAL,
+    nature=MutationNature.CORRUPTION,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.85,
+    impact={MutationImpact.CST_INVALID},
+    expected_failures={
+        PipelineStage.PARSING,
+    },
+    preserves_valid_cst=False,
+    preserves_valid_ast=False,
+    preserves_typing=False,
+    preserves_semantic_equivalence=False,
+)
+def corrupt_token_type(
+    tree: Tree,
+) -> Tree:
+    """
+    Replace token type with invalid type.
+    """
+
+    mutated = deepcopy(tree)
+
+    queue = [mutated]
+
+    while queue:
+
+        current = queue.pop()
+
+        if not isinstance(current, Tree):
+            continue
+
+        for i, child in enumerate(current.children):
+
+            if isinstance(child, Token):
+
+                if random.random() < 0.3:
+
+                    current.children[i] = Token(
+                        random.choice(INVALID_TOKEN_TYPES),
+                        child.value,
+                    )
+
+            elif isinstance(child, Tree):
+                queue.append(child)
+
+    return mutated
+
+
+@mutation(
+    layer=MutationLayer.LEXICAL,
+    nature=MutationNature.CORRUPTION,
+    severity=MutationSeverity.MEDIUM,
+    severity_score=0.6,
+    impact={MutationImpact.CST_INVALID},
+    expected_failures={
+        PipelineStage.PARSING,
+    },
+    preserves_valid_cst=False,
+    preserves_valid_ast=False,
+    preserves_typing=False,
+    preserves_semantic_equivalence=False,
+)
+def corrupt_token_value(
+    tree: Tree,
+) -> Tree:
+    """
+    Replace token value with garbage.
+    """
+
+    mutated = deepcopy(tree)
+
+    queue = [mutated]
+
+    while queue:
+
+        current = queue.pop()
+
+        if not isinstance(current, Tree):
+            continue
+
+        for i, child in enumerate(current.children):
+
+            if isinstance(child, Token):
+
+                if random.random() < 0.3:
+
+                    current.children[i] = Token(
+                        child.type,
+                        "@@@CORRUPTED@@@",
+                    )
+
+            elif isinstance(child, Tree):
+                queue.append(child)
+
+    return mutated
+
+
+INVALID_TOKENS_MUTATIONS = [
+    corrupt_token_type,
+    corrupt_token_value,
+]
+
+
+===== test\hypothesis\mutations\cst\tree.py =====
+
+# test/hypothesis/mutations/cst/tree.py
+
+from __future__ import annotations
+
+import random
+from copy import deepcopy
+
+from lark import Tree
+
+from test.hypothesis.mutations.base import (
+    mutation,
+    MutationLayer,
+    MutationNature,
+    MutationSeverity,
+    MutationImpact,
+    PipelineStage,
+)
+
+
+@mutation(
+    layer=MutationLayer.STRUCTURAL,
+    nature=MutationNature.DUPLICATION,
+    severity=MutationSeverity.HIGH,
+    severity_score=0.8,
+    impact={MutationImpact.CST_INVALID},
+    expected_failures={
+        PipelineStage.AST_BUILDING,
+    },
+    preserves_valid_cst=False,
+    preserves_valid_ast=False,
+    preserves_typing=False,
+    preserves_semantic_equivalence=False,
+)
+def duplicate_random_subtree(
+    tree: Tree,
+) -> Tree:
+    """
+    Duplicate random subtree.
+    """
+
+    mutated = deepcopy(tree)
+
+    candidates = [
+        child
+        for child in mutated.children
+        if isinstance(child, Tree)
+    ]
+
+    if candidates:
+
+        subtree = deepcopy(
+            random.choice(candidates)
+        )
+
+        mutated.children.append(subtree)
+
+    return mutated
+
+
+@mutation(
+    layer=MutationLayer.STRUCTURAL,
+    nature=MutationNature.REORDERING,
+    severity=MutationSeverity.MEDIUM,
+    severity_score=0.55,
+    impact={MutationImpact.CST_INVALID},
+    expected_failures={
+        PipelineStage.AST_BUILDING,
+    },
+    preserves_valid_cst=False,
+    preserves_valid_ast=False,
+    preserves_typing=False,
+    preserves_semantic_equivalence=False,
+)
+def reverse_tree_children(
+    tree: Tree,
+) -> Tree:
+    """
+    Reverse subtree ordering.
+    """
+
+    mutated = deepcopy(tree)
+
+    mutated.children.reverse()
+
+    return mutated
+
+
+TREE_MUTATIONS = [
+    duplicate_random_subtree,
+    reverse_tree_children,
+]

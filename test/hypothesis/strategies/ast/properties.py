@@ -63,7 +63,7 @@ backends = st.sampled_from(["z3", "Z3", "eran", "ERAN"])
 
 
 @st.composite
-def abstractor(draw):
+def backend(draw):
     backend = draw(backends)
 
     if draw(st.booleans()):
@@ -78,7 +78,7 @@ def property_section(draw):
     prop = draw(property())
 
     if draw(st.booleans()):
-        abs_ = draw(abstractor())
-        return f"{prop} {abs_}"
+        back_ = draw(backend())
+        return f"{prop} {back_}"
 
     return prop

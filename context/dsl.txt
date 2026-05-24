@@ -15,22 +15,27 @@ from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.problems import EnumProblem
 
-
 # ----------------------------------------------------------------------------------------------------------------------
 # ASSERTION (WRAPPER)
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 @dataclass
 class AssertionNode(ASTNode):
     """Top-level assertion (WHAT must be true)."""
+
     root: LogicalNode
     context: ProblemNode | None = None
+
+
 # ----------------------------------------------------------------------------------------------------------------------
 # LOGICAL NODES
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 class LogicalNode(ASTNode):
     """Base class for all logical expressions."""
+
     pass
 
 
@@ -66,6 +71,7 @@ class ImplicationNode(LogicalNode):
 # CONTEXT
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 @dataclass
 class ProblemNode(LogicalNode):
     problem: EnumProblem
@@ -76,9 +82,11 @@ class ProblemNode(LogicalNode):
 # FALLBACK
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 @dataclass
 class UnknownNode(LogicalNode):
     raw: str
+
 
 ===== dsl\ast\nodes\backends.py =====
 
@@ -98,6 +106,7 @@ class BackendNode(ASTNode):
 
     name: str
     args: list[ArgNode]
+
 
 ===== dsl\ast\nodes\base.py =====
 
@@ -123,6 +132,7 @@ class ASTNode:
         repr=False,
     )
 
+
 ===== dsl\ast\nodes\domain.py =====
 
 from __future__ import annotations
@@ -136,6 +146,7 @@ from dsl.ast.nodes.base import ASTNode
 class DomainNode(ASTNode):
     name: str
     values: list[str]
+
 
 ===== dsl\ast\nodes\expressions.py =====
 
@@ -151,6 +162,7 @@ from dsl.ast.nodes.domain import DomainNode
 @dataclass
 class ExpressionNode(ASTNode):
     """WHERE a property is evaluated."""
+
     pass
 
 
@@ -178,6 +190,7 @@ class QuantifierExprNode(ExpressionNode):
     quantifier: str
     domain: DomainNode | None
 
+
 ===== dsl\ast\nodes\header.py =====
 
 from dataclasses import dataclass
@@ -187,6 +200,7 @@ from dataclasses import dataclass
 class HeaderNode:
     model: str
     target: str
+
 
 ===== dsl\ast\nodes\neighborhood.py =====
 
@@ -203,6 +217,7 @@ class NeighborhoodNode(ASTNode):
     metric: str
     args: list[ArgNode]
 
+
 ===== dsl\ast\nodes\primitives.py =====
 
 from __future__ import annotations
@@ -211,7 +226,6 @@ from dataclasses import dataclass
 from typing import Union
 
 from dsl.semantic.types.enums import EnumDataType
-
 
 PrimitiveValue = Union[str, int, float, bool, None]
 
@@ -253,7 +267,6 @@ class AttributeNode:
     path: list[str]
 
 
-
 ===== dsl\ast\nodes\program.py =====
 
 from __future__ import annotations
@@ -268,6 +281,7 @@ from dsl.ast.nodes.property import PropertyNode
 class ProgramNode:
     header: HeaderNode
     body: list[PropertyNode]
+
 
 ===== dsl\ast\nodes\property.py =====
 
@@ -292,6 +306,7 @@ class PropertyNode:
 class PropertyRuleNode:
     scope: ExpressionNode
     assertion: AssertionNode
+
 
 ===== dsl\builder\__init__.py =====
 
@@ -319,10 +334,10 @@ from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.problems import EnumProblem
 
+# ============================================================================
+# COMPARISON
+# ============================================================================
 
-# ============================================================================  
-# COMPARISON  
-# ============================================================================  
 
 def build_comparison_expr(node: Tree) -> ComparisonNode:
     attribute_node = find_node(node, "attribute")
@@ -338,17 +353,20 @@ def build_comparison_expr(node: Tree) -> ComparisonNode:
 
     return ComparisonNode(left=left, op=op, right=right)
 
-# ============================================================================  
-# UTILS  
-# ============================================================================  
+
+# ============================================================================
+# UTILS
+# ============================================================================
+
 
 def _extract_trees(node: Tree) -> List[Tree]:
     return [c for c in node.children if isinstance(c, Tree)]
 
 
-# ============================================================================  
-# CORE PARSER  
-# ============================================================================  
+# ============================================================================
+# CORE PARSER
+# ============================================================================
+
 
 def parse_assertion(node: Tree | Token | None) -> LogicalNode:
 
@@ -377,17 +395,13 @@ def parse_assertion(node: Tree | Token | None) -> LogicalNode:
     # OR
     # ----------------------------------------------------------------------
     if t == "logic_or":
-        return OrNode(
-            operands=[parse_assertion(c) for c in children]
-        )
+        return OrNode(operands=[parse_assertion(c) for c in children])
 
     # ----------------------------------------------------------------------
     # AND
     # ----------------------------------------------------------------------
     if t == "logic_and":
-        return AndNode(
-            operands=[parse_assertion(c) for c in children]
-        )
+        return AndNode(operands=[parse_assertion(c) for c in children])
 
     # ----------------------------------------------------------------------
     # NOT
@@ -396,14 +410,12 @@ def parse_assertion(node: Tree | Token | None) -> LogicalNode:
         if not children:
             raise ValueError("NOT requires an operand")
 
-        return NotNode(
-            operand=parse_assertion(children[-1])
-        )
+        return NotNode(operand=parse_assertion(children[-1]))
 
     # ----------------------------------------------------------------------
     # COMPARISON
     # ----------------------------------------------------------------------
-        
+
     if t == "comparison_expr":
         return build_comparison_expr(node)
 
@@ -434,7 +446,7 @@ def parse_assertion(node: Tree | Token | None) -> LogicalNode:
                     function = EnumFunction(node_value(c))
                 except ValueError:
                     raise ValueError(f"Unknown function: {node_value(c)}")
-                
+
         if problem is None:
             raise ValueError("Missing problem")
 
@@ -449,7 +461,12 @@ def parse_assertion(node: Tree | Token | None) -> LogicalNode:
 ===== dsl\builder\backends.py =====
 
 from lark import Tree
-from dsl.builder.core.utils import find_child, find_all_nodes, find_node, get_node_name_or_value
+from dsl.builder.core.utils import (
+    find_child,
+    find_all_nodes,
+    find_node,
+    get_node_name_or_value,
+)
 from dsl.builder.core.ast_utils import node_value, clean_string
 
 from dsl.ast.nodes.backends import BackendNode
@@ -458,6 +475,7 @@ from dsl.ast.nodes.primitives import ArgNode
 # ============================================================================
 # backend
 # ============================================================================
+
 
 def parse_backend(node: Tree | None):
     if node is None:
@@ -469,7 +487,7 @@ def parse_backend(node: Tree | None):
 
     name_node = n.children[0]
     name = get_node_name_or_value(name_node)
-    
+
     if name is None:
         raise ValueError("Backend name missing")
 
@@ -492,6 +510,7 @@ def parse_backend(node: Tree | None):
 
     return BackendNode(name=name, args=args)
 
+
 ===== dsl\builder\builder.py =====
 
 from dsl.builder.core.pretty_ast import pretty
@@ -501,14 +520,15 @@ from dsl.parser.parser import parse_forml_code
 from test.fixtures.program_samples import VALID_PROGRAM_WITH_BACKEND
 
 if __name__ == "__main__":
-    """ This script is for quick testing of the builder. It parses a sample property and prints the resulting AST """
+    """This script is for quick testing of the builder. It parses a sample property and prints the resulting AST"""
     # LARK
     CST = parse_forml_code(VALID_PROGRAM_WITH_BACKEND)
     print(CST.pretty())
 
     # BUILDER
     AST = parse_program(CST)
-    print(pretty(AST))
+    print((AST))
+
 
 ===== dsl\builder\core\__init__.py =====
 
@@ -560,6 +580,7 @@ def node_value(node: LarkNode | None) -> str | None:
 # ============================================================================
 # STRING NORMALIZATION
 # ============================================================================
+
 
 def clean_string(value: str | None) -> str | None:
     """
@@ -647,14 +668,14 @@ def parse_value(node: Tree) -> ConstantNode:
 
     if cleaned is None:
         raise ValueError("Invalid value: None after cleaning")
-    
+
     if cleaned.lower() == "true":
         return ConstantNode(True, EnumDataType.BOOL)
-    
-    if cleaned.lower() == "false": 
+
+    if cleaned.lower() == "false":
         return ConstantNode(False, EnumDataType.BOOL)
-    
-    if cleaned.lower() == "null": 
+
+    if cleaned.lower() == "null":
         return ConstantNode(None, EnumDataType.NoneType)
 
     # Integer parsing
@@ -697,6 +718,7 @@ def unwrap_single_child(node: Tree) -> Tree:
         node = node.children[0]
 
     return node
+
 
 ===== dsl\builder\core\pretty.py =====
 
@@ -747,6 +769,7 @@ def pretty(node: Any, indent: int = 0) -> str:
     # Fallback
     return f"{pad}{repr(node)}"
 
+
 ===== dsl\builder\core\pretty_ast.py =====
 
 # dsl/utils/pretty_ast.py
@@ -780,10 +803,10 @@ from dsl.ast.nodes.property import PropertyNode, PropertyRuleNode
 from dsl.ast.nodes.header import HeaderNode
 from dsl.ast.nodes.program import ProgramNode
 
-
 # =========================================================
 # ENTRY POINT
 # =========================================================
+
 
 def pretty(node: Any, indent: int = 0) -> str:
     if node is None:
@@ -810,12 +833,14 @@ def register(cls):
     def wrapper(func):
         _DISPATCH[cls] = func
         return func
+
     return wrapper
 
 
 # =========================================================
 # HELPERS
 # =========================================================
+
 
 def _pad(indent: int) -> str:
     return "  " * indent
@@ -850,9 +875,11 @@ def _expr(node):
 
     return str(node)
 
+
 # =========================================================
 # LOGIC
 # =========================================================
+
 
 @register(OrNode)
 def _pretty_or(node: OrNode, indent: int):
@@ -886,6 +913,7 @@ def _pretty_cmp(node: ComparisonNode, indent: int):
 # PRIMITIVES
 # =========================================================
 
+
 @register(AttributeNode)
 def _pretty_attr(node: AttributeNode, indent: int):
     return _pad(indent) + ".".join(node.path)
@@ -914,6 +942,7 @@ def _pretty_arg(node: ArgNode, indent: int):
 # DOMAIN / NEIGHBORHOOD
 # =========================================================
 
+
 @register(DomainNode)
 def _pretty_domain(node: DomainNode, indent: int):
     pad = _pad(indent)
@@ -938,6 +967,7 @@ def _pretty_neighborhood(node: NeighborhoodNode, indent: int):
 # =========================================================
 # EXPRESSIONS
 # =========================================================
+
 
 @register(AtExprNode)
 def _pretty_at(node: AtExprNode, indent: int):
@@ -990,6 +1020,7 @@ def _pretty_quantifier(node: QuantifierExprNode, indent: int):
 # PROBLEM
 # =========================================================
 
+
 @register(ProblemNode)
 def _pretty_problem(node: ProblemNode, indent: int):
     pad = _pad(indent)
@@ -1004,6 +1035,7 @@ def _pretty_problem(node: ProblemNode, indent: int):
 # PROPERTY
 # =========================================================
 
+
 @register(PropertyRuleNode)
 def _pretty_rule(node: PropertyRuleNode, indent: int):
     pad = _pad(indent)
@@ -1013,10 +1045,12 @@ def _pretty_rule(node: PropertyRuleNode, indent: int):
         pretty(node.scope, indent + 1),
     ]
 
-    lines.extend([
-        f"{pad}assertion:",
-        pretty(node.assertion, indent + 1),
-    ])
+    lines.extend(
+        [
+            f"{pad}assertion:",
+            pretty(node.assertion, indent + 1),
+        ]
+    )
 
     return "\n".join(lines)
 
@@ -1038,28 +1072,29 @@ def _pretty_property(node: PropertyNode, indent: int):
 # HEADER / PROGRAM
 # =========================================================
 
+
 @register(HeaderNode)
 def _pretty_header(node: HeaderNode, indent: int):
     pad = _pad(indent)
 
-    return "\n".join([
-        f"{pad}model := {node.model}",
-        f"{pad}target := {node.target}",
-    ])
+    return "\n".join(
+        [
+            f"{pad}model := {node.model}",
+            f"{pad}target := {node.target}",
+        ]
+    )
 
 
 @register(ProgramNode)
 def _pretty_program(node: ProgramNode, indent: int):
-    lines = [
-        pretty(node.header, indent),
-        ""
-    ]
+    lines = [pretty(node.header, indent), ""]
 
     for prop in node.body:
         lines.append(pretty(prop, indent))
         lines.append("")
 
     return "\n".join(lines).strip()
+
 
 ===== dsl\builder\core\pretty_tree.py =====
 
@@ -1130,6 +1165,7 @@ def _get_children(node: Any):
         return [(k, v) for k, v in node.__dict__.items()]
 
     return []
+
 
 ===== dsl\builder\core\strict.py =====
 
@@ -1224,6 +1260,7 @@ def safe_find_node(tree: Tree, name: str) -> Tree:
     node = find_node(tree, name)
     return require_tree(node, f"Expected node '{name}' not found")
 
+
 ===== dsl\builder\core\types.py =====
 
 from __future__ import annotations
@@ -1239,6 +1276,7 @@ from typing import Union
 
 LarkNode = Union[Tree, Token]
 LarkTree = Tree
+
 
 ===== dsl\builder\core\utils.py =====
 
@@ -1378,6 +1416,7 @@ def get_node_name_or_value(node: Tree) -> str | None:
 # ASSIGNMENT EXTRACTION
 # ============================================================================
 
+
 def get_assignment_value_node(decl_tree: LarkTree) -> LarkNode | None:
     """
     Extract the RHS (right-hand side) of an assignment.
@@ -1406,6 +1445,7 @@ def get_assignment_value_node(decl_tree: LarkTree) -> LarkNode | None:
 # DEBUG UTILITIES
 # ============================================================================
 
+
 def debug_tree(tree: LarkTree) -> None:
     """
     Pretty-print a Lark tree for debugging purposes.
@@ -1421,7 +1461,6 @@ from dsl.builder.core.utils import find_child, find_all_nodes, find_node
 from dsl.builder.core.ast_utils import node_value, clean_string
 from dsl.ast.nodes.domain import DomainNode
 
-
 # ============================================================================
 # DOMAIN PARSER
 # ============================================================================
@@ -1434,29 +1473,20 @@ def parse_domain(node: Tree) -> DomainNode:
     # ------------------------------------------------------------------------
     # Retrieve domain node (must exist)
     # ------------------------------------------------------------------------
-    domain = require_node(
-        find_node(node, "domain"),
-        "Domain node not found"
-    )
+    domain = require_node(find_node(node, "domain"), "Domain node not found")
 
     # ------------------------------------------------------------------------
     # Extract domain identifier (must exist and be valid string)
     # ------------------------------------------------------------------------
     identifier_node = find_child(domain, "identifier")
 
-    name = require_value(
-        node_value(identifier_node),
-        "Missing domain name"
-    )
+    name = require_value(node_value(identifier_node), "Missing domain name")
 
     # ------------------------------------------------------------------------
     # Extract and sanitize domain values
     # ------------------------------------------------------------------------
     values = [
-        require_value(
-            clean_string(node_value(v)),
-            "Invalid domain value"
-        )
+        require_value(clean_string(node_value(v)), "Invalid domain value")
         for v in find_all_nodes(domain, "value")
     ]
 
@@ -1468,16 +1498,22 @@ def parse_domain(node: Tree) -> DomainNode:
         values=values,
     )
 
+
 ===== dsl\builder\expressions.py =====
 
 from lark import Tree
 from dsl.ast.nodes.expressions import (
-    AtExprNode, 
-    CheckAtExprNode, 
+    AtExprNode,
+    CheckAtExprNode,
     PairwiseExprNode,
-    QuantifierExprNode
+    QuantifierExprNode,
 )
-from dsl.builder.core.strict import optional, require_value, safe_find_child, safe_find_node
+from dsl.builder.core.strict import (
+    optional,
+    require_value,
+    safe_find_child,
+    safe_find_node,
+)
 from dsl.builder.core.utils import find_child, find_node, get_node_name_or_value
 from dsl.builder.core.ast_utils import node_value
 from dsl.builder.domain import parse_domain
@@ -1488,6 +1524,7 @@ from dsl.builder.core.strict import require_node
 # ============================================================================
 # EXPRESSIONS (AT / CHECK / PAIRWISE / QUANTIFIER)
 # ============================================================================
+
 
 def parse_at(prop: Tree) -> AtExprNode:
     # =========================================================================
@@ -1502,8 +1539,7 @@ def parse_at(prop: Tree) -> AtExprNode:
     identifier_node = safe_find_child(node, "identifier")
 
     variable = require_value(
-        node_value(identifier_node),
-        "Identifier value cannot be None"
+        node_value(identifier_node), "Identifier value cannot be None"
     )
 
     neighborhood = optional(node, "neighborhood", parse_neighborhood)
@@ -1514,9 +1550,6 @@ def parse_at(prop: Tree) -> AtExprNode:
         neighborhood=neighborhood,
         domain=domain,
     )
-
-
-
 
 
 # ============================================================================
@@ -1531,20 +1564,15 @@ def parse_pairwise(prop: Tree) -> PairwiseExprNode:
 
     # --- 1. Ensure pairwise_expr exists ---
     node = require_node(
-        find_node(prop, "pairwise_expr"),
-        "pairwise_expr node not found"
+        find_node(prop, "pairwise_expr"), "pairwise_expr node not found"
     )
 
     # --- 2. Extract pair token (mandatory) ---
     pair_node = require_node(
-        find_child(node, "pairwise_token"),
-        "pairwise_token node not found"
+        find_child(node, "pairwise_token"), "pairwise_token node not found"
     )
 
-    pair = require_value(
-        node_value(pair_node),
-        "pairwise_token is missing or invalid"
-    )
+    pair = require_value(node_value(pair_node), "pairwise_token is missing or invalid")
 
     # --- 3. Neighborhood (depends on your grammar: required here) ---
     neighborhood = parse_neighborhood(node)
@@ -1553,29 +1581,23 @@ def parse_pairwise(prop: Tree) -> PairwiseExprNode:
     domain = optional(node, "domain", parse_domain)
 
     # --- 5. Build AST ---
-    return PairwiseExprNode(
-        pair=pair,
-        neighborhood=neighborhood,
-        domain=domain
-    )
+    return PairwiseExprNode(pair=pair, neighborhood=neighborhood, domain=domain)
+
 
 # ---------------------------------------------------------------------------
+
 
 def parse_check_at(prop: Tree) -> CheckAtExprNode:
     """
     Parse a check_at expression into a strict AST node.
     """
 
-    node = require_node(
-        find_node(prop, "check_expr"),
-        "check_expr node not found"
-    )
+    node = require_node(find_node(prop, "check_expr"), "check_expr node not found")
 
     identifier_node = find_child(node, "identifier")
 
     variable = require_value(
-        node_value(identifier_node),
-        "identifier is missing or invalid"
+        node_value(identifier_node), "identifier is missing or invalid"
     )
 
     return CheckAtExprNode(variable=variable)
@@ -1583,24 +1605,20 @@ def parse_check_at(prop: Tree) -> CheckAtExprNode:
 
 # ---------------------------------------------------------------------------
 
+
 def parse_quantifier(prop: Tree) -> QuantifierExprNode:
 
     node = require_node(
-        find_node(prop, "quantifier_expr"),
-        "quantifier_expr node not found"
+        find_node(prop, "quantifier_expr"), "quantifier_expr node not found"
     )
 
     quantifier_node = require_node(
-        find_child(node, "quantifier"),
-        "quantifier node not found"
+        find_child(node, "quantifier"), "quantifier node not found"
     )
 
     quantifier = get_node_name_or_value(quantifier_node)
-    
-    quantifier = require_value(
-        quantifier,
-        "quantifier is missing or invalid"
-    )
+
+    quantifier = require_value(quantifier, "quantifier is missing or invalid")
 
     domain = optional(node, "domain", parse_domain)
 
@@ -1608,6 +1626,7 @@ def parse_quantifier(prop: Tree) -> QuantifierExprNode:
         quantifier=quantifier,
         domain=domain,
     )
+
 
 ===== dsl\builder\header.py =====
 
@@ -1618,7 +1637,6 @@ from dsl.ast.nodes.header import HeaderNode
 from dsl.builder.core.utils import find_child
 from dsl.builder.core.ast_utils import node_value, clean_string
 from dsl.builder.core.strict import require_node, require_value
-
 
 # ============================================================================
 # HEADER PARSING
@@ -1632,13 +1650,11 @@ def get_header(tree: Tree) -> Tree:
     """
     Extract header node from full AST.
     """
-    return require_node(
-        find_child(tree, "header"),
-        "Header node not found"
-    )
+    return require_node(find_child(tree, "header"), "Header node not found")
 
 
 # ---------------------------------------------------------------------------
+
 
 def parse_model(tree: Tree) -> str:
     """
@@ -1650,12 +1666,12 @@ def parse_model(tree: Tree) -> str:
     model_node = find_child(header, "model_declaration")
 
     return require_value(
-        clean_string(node_value(model_node)),
-        "Model declaration is missing or invalid"
+        clean_string(node_value(model_node)), "Model declaration is missing or invalid"
     )
 
 
 # ---------------------------------------------------------------------------
+
 
 def parse_target(tree: Tree) -> str:
     """
@@ -1668,11 +1684,12 @@ def parse_target(tree: Tree) -> str:
 
     return require_value(
         clean_string(node_value(target_node)),
-        "Target declaration is missing or invalid"
+        "Target declaration is missing or invalid",
     )
 
 
 # ---------------------------------------------------------------------------
+
 
 def parse_header(tree: Tree) -> HeaderNode:
     """
@@ -1684,10 +1701,8 @@ def parse_header(tree: Tree) -> HeaderNode:
     model = parse_model(header_tree)
     target = parse_target(header_tree)
 
-    return HeaderNode(
-        model=model,
-        target=target
-    )
+    return HeaderNode(model=model, target=target)
+
 
 ===== dsl\builder\neighborhood.py =====
 
@@ -1700,6 +1715,7 @@ from dsl.builder.core.strict import require_node, require_value
 
 from typing import List, Any
 
+from dsl.parser.errors import ParserDeclarationError, ParserPropertyError
 
 # ============================================================================
 # NEIGHBORHOOD PARSER
@@ -1732,26 +1748,26 @@ def _parse_numeric(value: Any) -> Any:
 # ---------------------------------------------------------------------------
 # Argument parsing
 # ---------------------------------------------------------------------------
-def _parse_arg(arg_node: Tree) -> ArgNode | None:
+def _parse_arg(arg_node: Tree) -> ArgNode:
     """
     Parse a single argument node into an ArgNode.
     """
 
     eq = find_child(arg_node, "arg_identifier_eq")
     if eq is None:
-        return None
+        raise ParserPropertyError("Missing '=' in argument")
 
     key_node = find_child(eq, "quoted_identifier")
     val_node = find_child(eq, "value")
 
-    key = require_value(
-        node_value(key_node),
-        "Missing argument key"
-    )
+    if val_node is None:
+        raise ParserPropertyError("Missing argument value in neighborhood argument")
+
+    key = require_value(node_value(key_node), "Missing argument key")
 
     raw_val = node_value(val_node)
     if raw_val is None:
-        raise ValueError("Missing argument value")
+        raise ParserPropertyError(f"Missing argument value for key={key}")
 
     # Try numeric conversion first, fallback to cleaned string
     try:
@@ -1776,9 +1792,7 @@ def _parse_args(args_node: Tree | None) -> List[ArgNode]:
     args: List[ArgNode] = []
 
     for arg in find_all_nodes(args_node, "arg"):
-        parsed = _parse_arg(arg)
-        if parsed is not None:
-            args.append(parsed)
+        args.append(_parse_arg(arg))
 
     return args
 
@@ -1810,20 +1824,15 @@ def parse_neighborhood(node: Tree) -> NeighborhoodNode:
         neighborhood = metric + args
     """
 
-    n = require_node(
-        find_node(node, "neighborhood"),
-        "Neighborhood node not found"
-    )
+    n = require_node(find_node(node, "neighborhood"), "Neighborhood node not found")
 
     metric = _extract_metric(n)
 
     args_node = find_child(n, "args")
     args = _parse_args(args_node)
 
-    return NeighborhoodNode(
-        metric=metric,
-        args=args
-    )
+    return NeighborhoodNode(metric=metric, args=args)
+
 
 ===== dsl\builder\program.py =====
 
@@ -1836,10 +1845,10 @@ from dsl.builder.property import parse_property
 from dsl.ast.nodes.program import ProgramNode
 from dsl.ast.nodes.header import HeaderNode
 
-
 # ============================================================================
 # PROGRAM ENTRYPOINT
 # ============================================================================
+
 
 def parse_program(tree: Tree) -> ProgramNode:
     # ------------------------------------------------------------------------
@@ -1848,26 +1857,18 @@ def parse_program(tree: Tree) -> ProgramNode:
     model = parse_model(tree)
     target = parse_target(tree)
 
-    header = HeaderNode(
-        model=model,
-        target=target
-    )
+    header = HeaderNode(model=model, target=target)
 
     # ------------------------------------------------------------------------
     # BODY
     # ------------------------------------------------------------------------
-    properties = [
-        parse_property(p)
-        for p in find_all_nodes(tree, "property_section")
-    ]
+    properties = [parse_property(p) for p in find_all_nodes(tree, "property_section")]
 
     # ------------------------------------------------------------------------
     # PROGRAM NODE
     # ------------------------------------------------------------------------
-    return ProgramNode(
-        header=header,
-        body=properties
-    )
+    return ProgramNode(header=header, body=properties)
+
 
 ===== dsl\builder\property.py =====
 
@@ -1880,14 +1881,8 @@ from dsl.builder.core.strict import require_value
 from dsl.builder.core.utils import find_node
 from dsl.builder.core.ast_utils import node_value
 from dsl.language.vocabulary.properties import EnumProperty
-from .expressions import (
-    parse_at,
-    parse_pairwise,
-    parse_check_at,
-    parse_quantifier
-)
+from .expressions import parse_at, parse_pairwise, parse_check_at, parse_quantifier
 from .assertion import parse_assertion
-
 
 # ============================================================================
 # PROPERTY CORE PARSING
@@ -1902,6 +1897,7 @@ from .assertion import parse_assertion
 # ---------------------------------------------------------------------------
 # Mode detection
 # ---------------------------------------------------------------------------
+
 
 def detect_mode(prop: Tree) -> str:
     """
@@ -1923,6 +1919,7 @@ def detect_mode(prop: Tree) -> str:
 # ---------------------------------------------------------------------------
 # RHS extraction
 # ---------------------------------------------------------------------------
+
 
 def extract_rhs(prop: Tree) -> Tree:
     """
@@ -1957,9 +1954,11 @@ def extract_rhs(prop: Tree) -> Tree:
 
     raise ValueError("Missing RHS in property")
 
+
 # ---------------------------------------------------------------------------
 # Main parser
 # ---------------------------------------------------------------------------
+
 
 def parse_property(prop: Tree) -> PropertyNode:
     """
@@ -1981,13 +1980,13 @@ def parse_property(prop: Tree) -> PropertyNode:
     # -----------------------------------------------------------------------
     # Parse LHS expression
     # -----------------------------------------------------------------------
-    
+
     left = expr_map[mode](prop)
 
     # -----------------------------------------------------------------------
     # Parse RHS assertion
     # -----------------------------------------------------------------------
-    
+
     right_node = extract_rhs(prop)
 
     logical_root = parse_assertion(right_node)
@@ -1997,7 +1996,7 @@ def parse_property(prop: Tree) -> PropertyNode:
     # -----------------------------------------------------------------------
     # Parse backend configuration (strict)
     # -----------------------------------------------------------------------
-    
+
     backend_node = find_node(prop, "backend")
     backend = parse_backend(backend_node)
 
@@ -2007,8 +2006,7 @@ def parse_property(prop: Tree) -> PropertyNode:
     property_type_node = find_node(prop, "property_type")
 
     property_type = require_value(
-        node_value(property_type_node),
-        "Property type is missing"
+        node_value(property_type_node), "Property type is missing"
     )
 
     property_type = EnumProperty(property_type)
@@ -2018,12 +2016,10 @@ def parse_property(prop: Tree) -> PropertyNode:
     # -----------------------------------------------------------------------
     return PropertyNode(
         type=property_type,
-        rule=PropertyRuleNode(
-            scope=left,
-            assertion=right
-        ),
-        backend=backend
+        rule=PropertyRuleNode(scope=left, assertion=right),
+        backend=backend,
     )
+
 
 ===== dsl\ir\ir1\__init__.py =====
 
@@ -2042,10 +2038,10 @@ from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.problems import EnumProblem
 from dsl.language.vocabulary.properties import EnumProperty
 
-
 # =============================================================================
 # ROOT EXECUTION UNIT
 # =============================================================================
+
 
 @dataclass
 class VerificationTask:
@@ -2058,6 +2054,7 @@ class VerificationTask:
         - a logical query (RHS expression)
         - a target backend (Z3, ONNX checker, etc.)
     """
+
     property_type: EnumProperty
     scope: ScopeIR
     query: QueryIR
@@ -2067,6 +2064,7 @@ class VerificationTask:
 # =============================================================================
 # SCOPE (LHS SEMANTIC CONTEXT)
 # =============================================================================
+
 
 @dataclass
 class ScopeIR:
@@ -2098,6 +2096,7 @@ class NeighborhoodIR:
     Defines perturbation space around a point.
     Example: L2 ball with epsilon.
     """
+
     metric: str
     eps: float
     args: dict[str, Any]
@@ -2108,6 +2107,7 @@ class DomainIR:
     """
     Optional domain restriction (categorical, numeric bounds, etc.)
     """
+
     name: str
     args: dict[str, Any]
 
@@ -2115,6 +2115,7 @@ class DomainIR:
 # =============================================================================
 # QUERY (RHS SEMANTIC EXPRESSION)
 # =============================================================================
+
 
 @dataclass
 class QueryIR:
@@ -2125,12 +2126,14 @@ class QueryIR:
         - a logical expression (AND/OR/NOT/IMPLY)
         - a problem-level predicate (CLASSIFICATION.EQUAL, etc.)
     """
+
     expression: LogicalIR | ProblemIR
 
 
 # =============================================================================
 # LOGICAL IR (PURE BOOLEAN STRUCTURE)
 # =============================================================================
+
 
 @dataclass
 class LogicalIR:
@@ -2142,12 +2145,14 @@ class LogicalIR:
         - CNF/DNF transformations
         - Z3 encoding
     """
+
     pass
 
 
 # =============================================================================
 # LEAF COMPARISON NODE
 # =============================================================================
+
 
 @dataclass
 class ComparisonIR(LogicalIR):
@@ -2157,6 +2162,7 @@ class ComparisonIR(LogicalIR):
 
     Represents a leaf condition in the logical tree.
     """
+
     entity: str
     feature: str
     op: EnumComparisonOperator
@@ -2167,11 +2173,13 @@ class ComparisonIR(LogicalIR):
 # LOGICAL OPERATORS
 # =============================================================================
 
+
 @dataclass
 class AndIR(LogicalIR):
     """
     Logical AND over multiple operands.
     """
+
     operands: list[LogicalIR]
 
 
@@ -2180,6 +2188,7 @@ class OrIR(LogicalIR):
     """
     Logical OR over multiple operands.
     """
+
     operands: list[LogicalIR]
 
 
@@ -2188,6 +2197,7 @@ class NotIR(LogicalIR):
     """
     Logical negation of a single operand.
     """
+
     operand: LogicalIR
 
 
@@ -2197,6 +2207,7 @@ class ImplyIR(LogicalIR):
     Logical implication:
         A → B
     """
+
     left: LogicalIR
     right: LogicalIR
 
@@ -2204,6 +2215,7 @@ class ImplyIR(LogicalIR):
 # =============================================================================
 # PROBLEM-LEVEL SEMANTIC OPERATOR
 # =============================================================================
+
 
 @dataclass
 class ProblemIR(LogicalIR):
@@ -2214,9 +2226,11 @@ class ProblemIR(LogicalIR):
         CLASSIFICATION.EQUAL()
         REGRESSION.BETWEEN()
     """
+
     problem: EnumProblem
     function: EnumFunction | None
     args: dict[str, Any] | None = None
+
 
 ===== dsl\ir\ir1\pretty.py =====
 
@@ -2235,10 +2249,10 @@ from dsl.ir.ir1.nodes import (
     ProblemIR,
 )
 
-
 # =============================================================================
 # ENTRY POINT
 # =============================================================================
+
 
 def pretty_print_tasks(tasks: list[VerificationTask]):
     for i, task in enumerate(tasks):
@@ -2249,6 +2263,7 @@ def pretty_print_tasks(tasks: list[VerificationTask]):
 # =============================================================================
 # TASK
 # =============================================================================
+
 
 def pretty_task(task: VerificationTask) -> str:
     lines = []
@@ -2276,6 +2291,7 @@ def pretty_task(task: VerificationTask) -> str:
 # =============================================================================
 # SCOPE
 # =============================================================================
+
 
 def _pretty_scope(scope: ScopeIR) -> list[str]:
     lines = []
@@ -2316,6 +2332,7 @@ def _pretty_scope(scope: ScopeIR) -> list[str]:
 # QUERY
 # =============================================================================
 
+
 def _pretty_query(query: QueryIR) -> list[str]:
     return _pretty_logical(query.expression, indent=2)
 
@@ -2323,6 +2340,7 @@ def _pretty_query(query: QueryIR) -> list[str]:
 # =============================================================================
 # LOGICAL TREE
 # =============================================================================
+
 
 def _pretty_logical(node: LogicalIR, indent=0) -> list[str]:
     space = " " * indent
@@ -2332,9 +2350,7 @@ def _pretty_logical(node: LogicalIR, indent=0) -> list[str]:
     # Comparison
     # -----------------------------
     if isinstance(node, ComparisonIR):
-        lines.append(
-            f"{space}- {node.entity}.{node.feature} == {node.value}"
-        )
+        lines.append(f"{space}- {node.entity}.{node.feature} == {node.value}")
         return lines
 
     # -----------------------------
@@ -2388,6 +2404,7 @@ def _pretty_logical(node: LogicalIR, indent=0) -> list[str]:
     # -----------------------------
     lines.append(f"{space}UNKNOWN NODE: {node}")
     return lines
+
 
 ===== dsl\ir\ir1\run_ir1.py =====
 
@@ -2452,11 +2469,17 @@ if __name__ == "__main__":
 
     pretty_print_tasks(tasks)
 
+
 ===== dsl\ir\ir1\translator.py =====
 
 from __future__ import annotations
 
-from dsl.ast.nodes.expressions import AtExprNode, CheckAtExprNode, PairwiseExprNode, QuantifierExprNode
+from dsl.ast.nodes.expressions import (
+    AtExprNode,
+    CheckAtExprNode,
+    PairwiseExprNode,
+    QuantifierExprNode,
+)
 from dsl.ast.nodes.program import ProgramNode
 from dsl.ast.nodes.property import PropertyNode
 
@@ -2483,7 +2506,7 @@ from dsl.ir.ir1.nodes import (
     ImplyIR,
     ProblemIR,
     NeighborhoodIR,
-    DomainIR
+    DomainIR,
 )
 
 from dsl.language.vocabulary.problems import EnumProblem
@@ -2518,7 +2541,7 @@ class IRTranslator:
             property_type=prop.type,
             scope=scope_ir,
             query=query_ir,
-            backend=EnumBackend[backend] if backend else None
+            backend=EnumBackend[backend] if backend else None,
         )
 
     # --------------------------------------------------------------------------
@@ -2540,10 +2563,7 @@ class IRTranslator:
 
             kind = "local"
 
-            variables = {
-                scope.variable: "anchor",
-                f"{scope.variable}'": "perturbation"
-            }
+            variables = {scope.variable: "anchor", f"{scope.variable}'": "perturbation"}
 
             # --------------------------
             # neighborhood
@@ -2551,20 +2571,14 @@ class IRTranslator:
 
             if scope.neighborhood is not None:
 
-                args_dict = {
-                    arg.key: arg.value
-                    for arg in scope.neighborhood.args
-                }
+                args_dict = {arg.key: arg.value for arg in scope.neighborhood.args}
 
                 eps = args_dict.get("eps")
                 assert eps is not None, "Neighborhood must specify 'eps' parameter"
                 eps = float(eps)
 
-
                 neighborhood_ir = NeighborhoodIR(
-                    metric=scope.neighborhood.metric,
-                    eps=eps,
-                    args=args_dict
+                    metric=scope.neighborhood.metric, eps=eps, args=args_dict
                 )
 
             # --------------------------
@@ -2574,10 +2588,7 @@ class IRTranslator:
             if scope.domain is not None:
 
                 domain_ir = DomainIR(
-                    name=scope.domain.name,
-                    args={
-                        "values": scope.domain.values
-                    }
+                    name=scope.domain.name, args={"values": scope.domain.values}
                 )
 
         # ------------------------------------------------------------------
@@ -2588,15 +2599,9 @@ class IRTranslator:
 
             kind = "pairwise"
 
-            left, right = [
-                x.strip()
-                for x in scope.pair.split(",")
-            ]
+            left, right = [x.strip() for x in scope.pair.split(",")]
 
-            variables = {
-                left: "left",
-                right: "right"
-            }
+            variables = {left: "left", right: "right"}
 
         # ------------------------------------------------------------------
         # CHECK AT
@@ -2606,9 +2611,7 @@ class IRTranslator:
 
             kind = "pointwise"
 
-            variables = {
-                scope.variable: "point"
-            }
+            variables = {scope.variable: "point"}
 
         # ------------------------------------------------------------------
         # QUANTIFIER
@@ -2620,10 +2623,7 @@ class IRTranslator:
 
             if scope.domain is not None:
 
-                domain_ir = DomainIR(
-                    name=scope.domain.name,
-                    args={}
-                )
+                domain_ir = DomainIR(name=scope.domain.name, args={})
 
         # ------------------------------------------------------------------
         # FINAL
@@ -2650,7 +2650,7 @@ class IRTranslator:
                 result.append(n)
 
         return result
-    
+
     def _flatten_or(self, node: OrNode) -> list[LogicalNode]:
         result = []
 
@@ -2661,40 +2661,21 @@ class IRTranslator:
                 result.append(n)
 
         return result
-    
-
 
     def _translate_assertion(self, node: LogicalNode) -> QueryIR:
 
         if isinstance(node, AndNode):
 
-            operands = [
-                self._translate_logical(n)
-                for n in self._flatten_and(node)
-            ]
+            operands = [self._translate_logical(n) for n in self._flatten_and(node)]
 
-            return QueryIR(
-                expression=AndIR(
-                    operands=operands
-                )
-            )
-        
+            return QueryIR(expression=AndIR(operands=operands))
+
         if isinstance(node, OrNode):
 
-            operands = [
-                self._translate_logical(n)
-                for n in self._flatten_or(node)
-            ]
+            operands = [self._translate_logical(n) for n in self._flatten_or(node)]
 
-            return QueryIR(
-                expression=OrIR(
-                    operands=operands
-                )
-            )
-        return QueryIR(
-            expression=self._translate_logical(node)
-        )
-    
+            return QueryIR(expression=OrIR(operands=operands))
+        return QueryIR(expression=self._translate_logical(node))
 
     def _translate_logical(self, node: LogicalNode) -> LogicalIR:
         """
@@ -2720,7 +2701,7 @@ class IRTranslator:
                 entity=node.left.entity,
                 feature=node.left.feature,
                 op=node.op,  # 🔥 important
-                value=node.right.value
+                value=node.right.value,
             )
 
         # -----------------------------
@@ -2728,33 +2709,21 @@ class IRTranslator:
         # -----------------------------
         if isinstance(node, AndNode):
 
-            return AndIR(
-                operands=[
-                    self._translate_logical(n)
-                    for n in node.operands
-                ]
-            )
+            return AndIR(operands=[self._translate_logical(n) for n in node.operands])
 
         # -----------------------------
         # OR
         # -----------------------------
         if isinstance(node, OrNode):
 
-            return OrIR(
-                operands=[
-                    self._translate_logical(n)
-                    for n in node.operands
-                ]
-            )
+            return OrIR(operands=[self._translate_logical(n) for n in node.operands])
 
         # -----------------------------
         # NOT
         # -----------------------------
         if isinstance(node, NotNode):
 
-            return NotIR(
-                operand=self._translate_logical(node.operand)
-            )
+            return NotIR(operand=self._translate_logical(node.operand))
 
         # -----------------------------
         # IMPLICATION
@@ -2763,7 +2732,7 @@ class IRTranslator:
 
             return ImplyIR(
                 left=self._translate_logical(node.left),
-                right=self._translate_logical(node.right)
+                right=self._translate_logical(node.right),
             )
 
         # -----------------------------
@@ -2774,16 +2743,13 @@ class IRTranslator:
             problem = EnumProblem(node.problem)
             function = EnumFunction(node.function) if node.function else None
 
-            return ProblemIR(
-                problem=problem,
-                function=function,
-                args={}
-            )
+            return ProblemIR(problem=problem, function=function, args={})
 
         # -----------------------------
         # FAIL SAFE
         # -----------------------------
         raise ValueError(f"Unsupported LogicalNode type: {type(node)}")
+
 
 ===== dsl\language\tools\constants.py =====
 
@@ -2800,8 +2766,10 @@ from dsl.language.vocabulary.quantifiers import official_quantifiers
 from dsl.language.vocabulary.functions import official_functions
 from dsl.language.vocabulary.backends import official_backends
 from dsl.language.vocabulary.metrics import official_metrics
-from dsl.language.vocabulary.operators import official_logic_operators, official_comparaison_operations
-
+from dsl.language.vocabulary.operators import (
+    official_logic_operators,
+    official_comparaison_operations,
+)
 
 # =========================
 # RAW DICTIONARIES
@@ -2825,11 +2793,12 @@ OFFICIAL_MAPS = {
 # HEADER BLOCK GENERATION
 # =========================
 
+
 def format_rule_block(title: str, items: dict) -> list[str]:
     """Convert dictionary into Lark rule list."""
-    return [f"# === {title.upper()} ==="] + [
-        f"{k} : {v}" for k, v in items.items()
-    ] + [""]
+    return (
+        [f"# === {title.upper()} ==="] + [f"{k} : {v}" for k, v in items.items()] + [""]
+    )
 
 
 def build_header() -> list[str]:
@@ -2859,11 +2828,12 @@ def build_header() -> list[str]:
     header += [
         "# === TOKENS ===",
         "PAIRWISE.2 : /[A-Za-z][A-Za-z0-9_]*\\s*~\\s*[A-Za-z][A-Za-z0-9_']*/",
-        "PROPERTY_IMPLY : \"=>\"",
+        'PROPERTY_IMPLY : "=>"',
         "",
     ]
 
     return header
+
 
 ===== dsl\language\tools\formatter.py =====
 
@@ -2880,7 +2850,7 @@ def format_lark_output(lines: list[str]) -> str:
 
     def is_rule(line: str) -> bool:
         return ":" in line and not line.strip().startswith("#")
-    
+
     def split_outside_regex(s: str, sep: str = "|") -> list[str]:
         parts = []
         current = []
@@ -2890,7 +2860,7 @@ def format_lark_output(lines: list[str]) -> str:
         while i < len(s):
             c = s[i]
 
-            if c == "/" and (i == 0 or s[i-1] != "\\"):
+            if c == "/" and (i == 0 or s[i - 1] != "\\"):
                 in_regex = not in_regex
                 current.append(c)
 
@@ -2906,7 +2876,7 @@ def format_lark_output(lines: list[str]) -> str:
             parts.append("".join(current).strip())
 
         return parts
-    
+
     def normalize_or_spacing(s: str) -> str:
         parts = re.split(r"(/[^/]+/)", s)
         result = []
@@ -2958,7 +2928,7 @@ def format_lark_output(lines: list[str]) -> str:
             if len(parts) <= 1:
                 formatted.append(f"{lhs} : {parts[0]}")
             else:
-                for j,part in enumerate(parts):
+                for j, part in enumerate(parts):
                     # 🔥 CRITICAL: always same prefix, no variation
                     if j == 0:
                         formatted.append(f"{lhs} : {part}")
@@ -2983,6 +2953,7 @@ def format_lark_output(lines: list[str]) -> str:
     result = re.sub(r"\n\s*\|", "\n    |", result)
 
     return result
+
 
 ===== dsl\language\tools\generator.py =====
 
@@ -3079,13 +3050,13 @@ def main():
 if __name__ == "__main__":
     main()
 
+
 ===== dsl\language\tools\registry.py =====
 
 # dsl/language/tools/registry.py
 
 from dsl.language.vocabulary.protected_words import protected_words
 from dsl.language.tools.constants import OFFICIAL_MAPS
-
 
 SPECIAL_SEQ = {
     "official_properties": " | ".join(OFFICIAL_MAPS["properties"].keys()),
@@ -3124,6 +3095,7 @@ GRAMMAR_REGISTRY = {
     "PROTECTED_WORDS": protected_words,
 }
 
+
 ===== dsl\language\tools\transforms.py =====
 
 # dsl/language/tools/transforms.py
@@ -3134,10 +3106,10 @@ EBNF → Lark transformation utilities.
 
 import re
 
-
 # =========================
 # RULE CONTEXT DETECTION
 # =========================
+
 
 def is_rule_root(line: str) -> bool:
     """
@@ -3150,6 +3122,7 @@ def is_rule_root(line: str) -> bool:
 # ASSIGNMENT FIRST (IMPORTANT)
 # =========================
 
+
 def convert_assignment(line: str) -> str:
     """
     Convert EBNF assignment to Lark BEFORE any transformation.
@@ -3160,6 +3133,7 @@ def convert_assignment(line: str) -> str:
 # =========================
 # BRACKET PROTECTION
 # =========================
+
 
 def protect_brackets(line: str) -> str:
     def repl(match):
@@ -3197,13 +3171,14 @@ def unprotect_brackets(line: str) -> str:
 # EBNF STRUCTURES
 # =========================
 
+
 def transform_ebnf_brackets(line: str) -> str:
     def repl_curly(match):
         return f"({match.group(1)})*"
 
     def repl_brackets(match):
         return f"({match.group(1)})?"
-    
+
     def protect_or_groups(line: str) -> str:
         """
         Ensure OR chains are preserved as atomic blocks.
@@ -3214,11 +3189,7 @@ def transform_ebnf_brackets(line: str) -> str:
             return f"( {group} )"
 
         # match A | B | C pattern
-        return re.sub(
-            r"(?:[A-Z_]+\s*\|\s*)+[A-Z_]+",
-            repl,
-            line
-        )
+        return re.sub(r"(?:[A-Z_]+\s*\|\s*)+[A-Z_]+", repl, line)
 
     prev = None
     while prev != line:
@@ -3233,6 +3204,7 @@ def transform_ebnf_brackets(line: str) -> str:
 # =========================
 # MAIN RESOLVER (FIXED)
 # =========================
+
 
 def replace_all_sequences(line: str, registry: dict) -> str:
     """
@@ -3282,9 +3254,11 @@ def replace_all_sequences(line: str, registry: dict) -> str:
 
     return re.sub(r"\?\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\?", repl, line)
 
+
 # =========================
 # CLEANERS
 # =========================
+
 
 def normalize_whitespace(line: str) -> str:
     parts = re.split(r"(/[^/]+/)", line)  # split regex vs non-regex
@@ -3329,6 +3303,7 @@ def remove_ebnf_commas(line: str) -> str:
 # PIPELINE SAFETY FOR OR BLOCKS
 # =========================
 
+
 def group_or_blocks(line: str) -> str:
     """
     Force parentheses around OR blocks when they are followed by tokens.
@@ -3337,16 +3312,13 @@ def group_or_blocks(line: str) -> str:
     """
 
     # pattern: A | B | C "." D  => (A | B | C) "." D
-    return re.sub(
-        r"((?:[A-Z_]+\s*\|\s*)+[A-Z_]+)\s*(\.)",
-        r"(\1) \2",
-        line
-    )
+    return re.sub(r"((?:[A-Z_]+\s*\|\s*)+[A-Z_]+)\s*(\.)", r"(\1) \2", line)
 
 
 # =========================
 # NEIGHBORHOOD PRECEDENCE
 # =========================
+
 
 def fix_neighborhood_precedence(line: str) -> str:
     """
@@ -3359,9 +3331,8 @@ def fix_neighborhood_precedence(line: str) -> str:
     return re.sub(
         r"\(\s*metric\s*=\s*\)\?\s*([A-Z0-9_]+)\s*\|\s*([A-Z0-9_]+)\s*\|\s*([A-Z0-9_]+)",
         r'("metric" "=")? (\1 | \2 | \3)',
-        line
+        line,
     )
-
 
 
 ===== dsl\language\vocabulary\__init__.py =====
@@ -3375,17 +3346,17 @@ def fix_neighborhood_precedence(line: str) -> str:
 from enum import Enum
 from dsl.language.vocabulary.utils import EnumMixin
 
-
 official_backends = {
-    "eran" : '"eran"',
-    "ERAN" : '"ERAN"',
-    "zonotope" : '"zonotope"',
-    "ZONOTOPE" : '"ZONOTOPE"',
-    "box" : '"box"',
-    "BOX" : '"BOX"',
-    "z3" : '"z3"',
-    "Z3" : '"Z3"'
+    "eran": '"eran"',
+    "ERAN": '"ERAN"',
+    "zonotope": '"zonotope"',
+    "ZONOTOPE": '"ZONOTOPE"',
+    "box": '"box"',
+    "BOX": '"BOX"',
+    "z3": '"z3"',
+    "Z3": '"Z3"',
 }
+
 
 class EnumBackend(EnumMixin, Enum):
     ERAN = "ERAN"
@@ -3396,6 +3367,7 @@ class EnumBackend(EnumMixin, Enum):
     z3 = "z3"
     Z3 = "Z3"
 
+
 ===== dsl\language\vocabulary\distances.py =====
 
 # /forml/grammar/official_contents/distance.py
@@ -3403,17 +3375,18 @@ class EnumBackend(EnumMixin, Enum):
 from enum import Enum
 from dsl.language.vocabulary.utils import EnumMixin
 
-
 official_distances = {
-    "hyperball" : '"hyperball"',
-    "levenshtein" : '"levenshtein"',
-    "euclidian" : '"euclidian"',
+    "hyperball": '"hyperball"',
+    "levenshtein": '"levenshtein"',
+    "euclidian": '"euclidian"',
 }
+
 
 class EnumDistance(EnumMixin, Enum):
     hyperball = "hyperball"
     levenshtein = "levenshtein"
     euclidian = "euclidian"
+
 
 ===== dsl\language\vocabulary\functions.py =====
 
@@ -3422,14 +3395,14 @@ class EnumDistance(EnumMixin, Enum):
 from enum import Enum
 from dsl.language.vocabulary.utils import EnumMixin
 
-
 official_functions = {
-    "EQUAL" : '"EQUAL"',
-    "EQUITY" : '"EQUITY"',
-    "BETWEEN" : '"BETWEEN"',
-    "INCREASING" : '"INCREASING"',
-    "DECREASING" : '"DECREASING"'
+    "EQUAL": '"EQUAL"',
+    "EQUITY": '"EQUITY"',
+    "BETWEEN": '"BETWEEN"',
+    "INCREASING": '"INCREASING"',
+    "DECREASING": '"DECREASING"',
 }
+
 
 class EnumFunction(EnumMixin, Enum):
     EQUAL = "EQUAL"
@@ -3438,6 +3411,7 @@ class EnumFunction(EnumMixin, Enum):
     INCREASING = "INCREASING"
     DECREASING = "DECREASING"
 
+
 ===== dsl\language\vocabulary\metrics.py =====
 
 # /formel/grammar/official_contents/sets.py
@@ -3445,11 +3419,8 @@ class EnumFunction(EnumMixin, Enum):
 from enum import Enum
 from dsl.language.vocabulary.utils import EnumMixin
 
-official_metrics = {
-    "L1": '"L1"',
-    "L2": '"L2"',
-    "LINF": '"Linf"'
-}
+official_metrics = {"L1": '"L1"', "L2": '"L2"', "LINF": '"Linf"'}
+
 
 class EnumMetric(EnumMixin, Enum):
     L1 = '"L1"'
@@ -3469,7 +3440,7 @@ official_logic_operators = {
     "OR": '"or"',
     "NOT": '"not"',
     "XOR": '"xor"',
-    "IMPLY": '"->"'
+    "IMPLY": '"->"',
 }
 
 official_comparaison_operations = {
@@ -3481,6 +3452,7 @@ official_comparaison_operations = {
     "GTE": '">="',
 }
 
+
 class EnumComparisonOperator(EnumMixin, Enum):
     EQ = "=="
     NEQ = "!="
@@ -3489,12 +3461,13 @@ class EnumComparisonOperator(EnumMixin, Enum):
     GT = ">"
     GTE = ">="
 
+
 class EnumLogicalOperator(EnumMixin, Enum):
     AND = "and"
     OR = "or"
     NOT = "not"
     IMPLY = "->"
-    
+
 
 ===== dsl\language\vocabulary\problems.py =====
 
@@ -3503,15 +3476,15 @@ class EnumLogicalOperator(EnumMixin, Enum):
 from enum import Enum
 from dsl.language.vocabulary.utils import EnumMixin
 
-
 official_problems = {
-    "CLASSIFICATION" : '"CLASSIFICATION"',
-    "PREDICTION" : '"PREDICTION"',
-    "REGRESSION" : '"REGRESSION"',
-    "CLUSTERING" : '"CLUSTERING"',
-    "ANOMALY_DETECTION" : '"ANOMALY_DETECTION"',
-    "REINFORCEMENT_LEARNING" : '"REINFORCEMENT_LEARNING"',
+    "CLASSIFICATION": '"CLASSIFICATION"',
+    "PREDICTION": '"PREDICTION"',
+    "REGRESSION": '"REGRESSION"',
+    "CLUSTERING": '"CLUSTERING"',
+    "ANOMALY_DETECTION": '"ANOMALY_DETECTION"',
+    "REINFORCEMENT_LEARNING": '"REINFORCEMENT_LEARNING"',
 }
+
 
 class EnumProblem(EnumMixin, Enum):
     CLASSIFICATION = "CLASSIFICATION"
@@ -3521,6 +3494,7 @@ class EnumProblem(EnumMixin, Enum):
     ANOMALY_DETECTION = "ANOMALY_DETECTION"
     REINFORCEMENT_LEARNING = "REINFORCEMENT_LEARNING"
 
+
 ===== dsl\language\vocabulary\properties.py =====
 
 # /forml/grammar/official_contents/properties.py
@@ -3528,16 +3502,15 @@ class EnumProblem(EnumMixin, Enum):
 from enum import Enum
 from dsl.language.vocabulary.utils import EnumMixin
 
-
 official_properties = {
-    "ROBUSTNESS" : '"ROBUSTNESS"',
-    "STABILITY" : '"STABILITY"',
-    "FAIRNESS" : '"FAIRNESS"',
-    "MONOTONICITY" : '"MONOTONICITY"',
-    "BOUND" : '"BOUND"',
-    "LOGIC" : '"LOGIC"',
-
+    "ROBUSTNESS": '"ROBUSTNESS"',
+    "STABILITY": '"STABILITY"',
+    "FAIRNESS": '"FAIRNESS"',
+    "MONOTONICITY": '"MONOTONICITY"',
+    "BOUND": '"BOUND"',
+    "LOGIC": '"LOGIC"',
 }
+
 
 class EnumProperty(EnumMixin, Enum):
     ROBUSTNESS = "ROBUSTNESS"
@@ -3547,6 +3520,7 @@ class EnumProperty(EnumMixin, Enum):
     BOUND = "BOUND"
     LOGIC = "LOGIC"
 
+
 ===== dsl\language\vocabulary\protected_words.py =====
 
 # /forml/grammar/official_contents/protected_words.py
@@ -3554,17 +3528,17 @@ class EnumProperty(EnumMixin, Enum):
 from enum import Enum
 from dsl.language.vocabulary.utils import EnumMixin
 
-
 protected_words = {
-    "IN":           '"in"',
-    "WITH":         '''"with"''',
-    "AT":           '"at"',
-    "CHECK_AT":     '"check_at"',
-    "USING":        '"using"',
-    "MODEL":        '"model"',
-    "TARGET":       '"target"',
+    "IN": '"in"',
+    "WITH": '''"with"''',
+    "AT": '"at"',
+    "CHECK_AT": '"check_at"',
+    "USING": '"using"',
+    "MODEL": '"model"',
+    "TARGET": '"target"',
     "NEIGHBORHOOD": '"neighborhood"',
 }
+
 
 class EnumProtectedWord(EnumMixin, Enum):
     IN = '"in"'
@@ -3575,6 +3549,7 @@ class EnumProtectedWord(EnumMixin, Enum):
     MODEL = '"model"'
     TARGET = '"target"'
     NEIGHBORHOOD = '"neighborhood"'
+
 
 ===== dsl\language\vocabulary\quantifiers.py =====
 
@@ -3587,8 +3562,9 @@ official_quantifiers = {
     "FORALL": '"∀"',
     "EXIST": '"∃"',
     "FORALL_WORD ": '"forall"',
-    "EXISTS_WORD ": '"exists"'
+    "EXISTS_WORD ": '"exists"',
 }
+
 
 class EnumQuantifier(EnumMixin, Enum):
     FORALL = "FORALL"
@@ -3596,16 +3572,16 @@ class EnumQuantifier(EnumMixin, Enum):
     forall = "forall"
     exists = "exists"
 
+
 ===== dsl\language\vocabulary\utils.py =====
 
 # /forml/grammar/official_contents/utils.py
 
+
 class EnumMixin:
     @classmethod
     def from_str(cls, name: str):
-        """
-        
-        """
+        """ """
         normalized = name.strip('"').upper()
         for member in cls:
             if member.value.upper() == normalized:
@@ -3621,124 +3597,180 @@ class EnumMixin:
 # General Errors
 # ───────────────────────────────
 
+
 class ParserError(Exception):
     """General FORML parsing error"""
+
     pass
+
 
 class ParserHeaderError(ParserError):
     """Error in the header"""
+
     pass
+
 
 class ParserBodyError(ParserError):
     """Error in the body"""
+
     pass
+
 
 class ParserFooterError(ParserError):
     """Error in the footer"""
+
     pass
+
 
 class ParserSectionError(ParserError):
     """Error in a section"""
+
     pass
+
 
 # ───────────────────────────────
 # Header Errors
 # ───────────────────────────────
 
+
 class ParserHeaderDeclarationError(ParserHeaderError):
     """Error in a header declaration"""
+
     pass
+
 
 class ParserHeaderModelError(ParserHeaderDeclarationError):
     """Error in the model declaration"""
+
     pass
+
 
 class ParserHeaderTargetError(ParserHeaderDeclarationError):
     """Error in the target declaration"""
+
     pass
+
 
 # ───────────────────────────────
 # Section Errors
 # ───────────────────────────────
 
+
 class ParserDeclarationError(ParserSectionError):
     """Error in a declaration"""
+
     pass
+
 
 class ParserPropertyError(ParserSectionError):
     """Error in a property"""
+
     pass
+
 
 class ParserAbstractorError(ParserSectionError):
     """Error in an abstractor"""
+
     pass
+
 
 # ───────────────────────────────
 # Property Errors
 # ───────────────────────────────
 
+
 class ParserQuantifierError(ParserPropertyError):
     """Error in a quantifier"""
+
     pass
+
 
 class ParserUniversalError(ParserPropertyError):
     """Error in a universal expression"""
+
     pass
+
 
 class ParserDomainError(ParserPropertyError):
     """Error in a domain expression"""
+
     pass
+
 
 class ParserAnchorError(ParserPropertyError):
     """Error in an anchor expression"""
+
     pass
+
 
 class ParserAttributeFilterError(ParserPropertyError):
     """Error in an attribute filter"""
+
     pass
+
 
 class ParserBackendError(ParserAbstractorError):
     """Error in a backend"""
+
     pass
+
 
 class ParserProblemError(ParserPropertyError):
     """Error in problem"""
+
     pass
+
 
 class ParserFunctionError(ParserPropertyError):
     """Error in a function"""
+
     pass
+
 
 class ParserUniversalSetError(ParserPropertyError):
     """Error in a universal set"""
+
     pass
+
 
 class ParserLogicError(ParserPropertyError):
     """Error in logic expressions"""
+
     pass
+
 
 # ───────────────────────────────
 # Logic Errors
 # ───────────────────────────────
 
+
 class ParserLogicExprError(ParserLogicError):
     """Error in logic expressions"""
+
     pass
+
 
 class ParserLogicConnectionError(ParserLogicError):
     """Error in logic connections"""
+
     pass
+
 
 class ParserLogicAssertionError(ParserLogicError):
     """Error in logic assertions"""
+
     pass
+
 
 class ParserAssertionError(ParserLogicError):
     """Error in assertions"""
+
     pass
+
 
 class ParserImplicationError(ParserLogicError):
     """Error in logic implications"""
+
     pass
 
 
@@ -3761,13 +3793,14 @@ forml_parser = Lark(
     parser="lalr",
     propagate_positions=True,
     maybe_placeholders=True,
-    cache=False
+    cache=False,
 )
 
 
 def parse_forml_code(code: str):
     """Parses the raw DSL code into a Lark tree"""
     return forml_parser.parse(code)
+
 
 if __name__ == "__main__":
     forml = VALID_AT_WITH_NEIGHBORHOOD
@@ -3799,6 +3832,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 ===== dsl\semantic\context\context.py =====
 
@@ -3862,9 +3896,8 @@ class SemanticContext:
     # Symbol table for semantic lookup
     # ---------------------------------------------
 
-    symbol_table: SymbolTable = field(
-        default_factory=SymbolTable
-    )
+    symbol_table: SymbolTable = field(default_factory=SymbolTable)
+
 
 ===== dsl\semantic\context\graph.py =====
 
@@ -3927,11 +3960,7 @@ class SemanticGraph:
         """
         Register a semantic node.
         """
-        self.nodes[node_id] = SemanticNode(
-            id=node_id,
-            type=node_type,
-            data=data
-        )
+        self.nodes[node_id] = SemanticNode(id=node_id, type=node_type, data=data)
 
     # ─────────────────────────────────────────────
     # Edge API
@@ -3951,19 +3980,15 @@ class SemanticGraph:
         """
         Return all outgoing edges from a node.
         """
-        return [
-            e for e in self.edges if e.src == node_id
-        ]
+        return [e for e in self.edges if e.src == node_id]
 
     # ─────────────────────────────────────────────
     # Debug
     # ─────────────────────────────────────────────
 
     def __repr__(self) -> str:
-        return (
-            f"SemanticGraph(nodes={len(self.nodes)}, "
-            f"edges={len(self.edges)})"
-        )
+        return f"SemanticGraph(nodes={len(self.nodes)}, " f"edges={len(self.edges)})"
+
 
 ===== dsl\semantic\context\scope.py =====
 
@@ -3971,16 +3996,18 @@ class SemanticGraph:
 
 from enum import Enum
 
+
 class SemanticScope(Enum):
     QUANTIFIER = "quantifier"
     LOCAL = "local"
     POINTWISE = "pointwise"
     PAIRWISE = "pairwise"
 
+
 def get_scope_from_property(prop):
     if prop.pairwise_expr:
         return SemanticScope.PAIRWISE
-    
+
     if prop.anchor_expr:
         # check_at vs at
         if prop.anchor_expr.anchor == "check_at":
@@ -3991,6 +4018,7 @@ def get_scope_from_property(prop):
         return SemanticScope.QUANTIFIER
 
     return None
+
 
 ===== dsl\semantic\core\binding.py =====
 
@@ -4042,9 +4070,7 @@ class BindingValidator:
         rhs,
     ):
 
-        self.tracer.log(
-            f"Binding validation context: {context}"
-        )
+        self.tracer.log(f"Binding validation context: {context}")
 
         self._check_node(rhs, context)
 
@@ -4061,16 +4087,10 @@ class BindingValidator:
         if isinstance(node, ComparisonNode):
 
             if isinstance(node.left, AttributeNode):
-                self._resolve_attribute(
-                    node.left,
-                    context
-                )
+                self._resolve_attribute(node.left, context)
 
             if isinstance(node.right, AttributeNode):
-                self._resolve_attribute(
-                    node.right,
-                    context
-                )
+                self._resolve_attribute(node.right, context)
 
             return
 
@@ -4104,9 +4124,7 @@ class BindingValidator:
         if isinstance(node, ProblemNode):
             return
 
-        raise TypeError(
-            f"Unsupported node type: {type(node)}"
-        )
+        raise TypeError(f"Unsupported node type: {type(node)}")
 
     # ─────────────────────────────────────────────
     # SEMANTIC INITIALIZATION
@@ -4116,7 +4134,6 @@ class BindingValidator:
         if not hasattr(node, "semantic") or node.semantic is None:
             node.semantic = SemanticAnnotations()
         return node.semantic
-    
 
     def _resolve_symbol(self, symbol_table, name):
         """
@@ -4201,9 +4218,7 @@ class BindingValidator:
                     resolved = next(iter(variables.keys()))
                     symbol = resolve(resolved)
 
-                    self.tracer.log(
-                        f"Alias resolution: {attr.entity} → {resolved}"
-                    )
+                    self.tracer.log(f"Alias resolution: {attr.entity} → {resolved}")
 
                     semantic.resolved_entity = resolved
                     semantic.resolved_symbol = symbol
@@ -4256,6 +4271,7 @@ class BindingValidator:
             f"with variables {list(variables.keys())}"
         )
 
+
 ===== dsl\semantic\core\lhs.py =====
 
 from dsl.semantic.context.context import SemanticContext
@@ -4271,6 +4287,7 @@ from dsl.ast.nodes.expressions import (
 )
 
 from dsl.semantic.symbols.table import Symbol
+
 
 class LHSValidator:
     """
@@ -4328,10 +4345,8 @@ class LHSValidator:
 
         context = SemanticContext(
             type=SemanticScope.POINTWISE,
-            variables={
-                lhs.variable: "anchor"
-            },
-            default_entity=lhs.variable
+            variables={lhs.variable: "anchor"},
+            default_entity=lhs.variable,
         )
 
         # ---------------------------------------------
@@ -4374,13 +4389,10 @@ class LHSValidator:
 
         context = SemanticContext(
             type=SemanticScope.LOCAL,
-            variables={
-                x: "anchor",
-                x_prime: "perturbation"
-            },
+            variables={x: "anchor", x_prime: "perturbation"},
             default_entity=x_prime,
             domain=lhs.domain,
-            neighborhood=lhs.neighborhood
+            neighborhood=lhs.neighborhood,
         )
 
         # ---------------------------------------------
@@ -4447,13 +4459,10 @@ class LHSValidator:
 
         context = SemanticContext(
             type=SemanticScope.PAIRWISE,
-            variables={
-                left: "anchor",
-                right: "perturbation"
-            },
+            variables={left: "anchor", right: "perturbation"},
             default_entity=right,
             domain=lhs.domain,
-            neighborhood=lhs.neighborhood
+            neighborhood=lhs.neighborhood,
         )
 
         # ---------------------------------------------
@@ -4504,20 +4513,16 @@ class LHSValidator:
         quantifier = lhs.quantifier.strip()
 
         if quantifier not in {"forall", "exists"}:
-            raise InvalidPropertyError(
-                f"Unknown quantifier '{quantifier}'"
-            )
+            raise InvalidPropertyError(f"Unknown quantifier '{quantifier}'")
 
         var = "_x"
 
         context = SemanticContext(
             type=SemanticScope.QUANTIFIER,
             quantifier=quantifier,
-            variables={
-                var: "symbolic"
-            },
+            variables={var: "symbolic"},
             default_entity=var,
-            domain=lhs.domain
+            domain=lhs.domain,
         )
 
         # ---------------------------------------------
@@ -4532,6 +4537,7 @@ class LHSValidator:
         )
 
         return context
+
 
 ===== dsl\semantic\core\logic.py =====
 
@@ -4575,9 +4581,7 @@ class LogicValidator:
 
     def validate(self, node, context):
 
-        self.tracer.log(
-            f"Validating logic node: {node}"
-        )
+        self.tracer.log(f"Validating logic node: {node}")
 
         if isinstance(node, ComparisonNode):
             return self._validate_comparison(node, context)
@@ -4597,9 +4601,7 @@ class LogicValidator:
         if isinstance(node, ProblemNode):
             return self._validate_problem(node, context)
 
-        raise InvalidPropertyError(
-            f"Unknown logical node type: {type(node)}"
-        )
+        raise InvalidPropertyError(f"Unknown logical node type: {type(node)}")
 
     # ─────────────────────────────
     # COMPARISON
@@ -4607,15 +4609,11 @@ class LogicValidator:
 
     def _validate_comparison(self, node, context):
 
-        self.tracer.log(
-            f"Validating ComparisonNode: {node}"
-        )
+        self.tracer.log(f"Validating ComparisonNode: {node}")
 
         if node.left is None or node.right is None:
 
-            raise InvalidPropertyError(
-                "Invalid comparison: missing operands"
-            )
+            raise InvalidPropertyError("Invalid comparison: missing operands")
 
         self._validate_operand(node.left, context)
         self._validate_operand(node.right, context)
@@ -4626,15 +4624,11 @@ class LogicValidator:
 
     def _validate_and(self, node, context):
 
-        self.tracer.log(
-            f"Validating AndNode: {node}"
-        )
+        self.tracer.log(f"Validating AndNode: {node}")
 
         if not node.operands:
 
-            raise InvalidPropertyError(
-                "AND node has no operands"
-            )
+            raise InvalidPropertyError("AND node has no operands")
 
         for op in node.operands:
             self.validate(op, context)
@@ -4645,15 +4639,11 @@ class LogicValidator:
 
     def _validate_or(self, node, context):
 
-        self.tracer.log(
-            f"Validating OrNode: {node}"
-        )
+        self.tracer.log(f"Validating OrNode: {node}")
 
         if not node.operands:
 
-            raise InvalidPropertyError(
-                "OR node has no operands"
-            )
+            raise InvalidPropertyError("OR node has no operands")
 
         for op in node.operands:
             self.validate(op, context)
@@ -4664,15 +4654,11 @@ class LogicValidator:
 
     def _validate_not(self, node, context):
 
-        self.tracer.log(
-            f"Validating NotNode: {node}"
-        )
+        self.tracer.log(f"Validating NotNode: {node}")
 
         if node.operand is None:
 
-            raise InvalidPropertyError(
-                "NOT expression missing operand"
-            )
+            raise InvalidPropertyError("NOT expression missing operand")
 
         self.validate(node.operand, context)
 
@@ -4682,15 +4668,11 @@ class LogicValidator:
 
     def _validate_implication(self, node, context):
 
-        self.tracer.log(
-            f"Validating ImplicationNode: {node}"
-        )
+        self.tracer.log(f"Validating ImplicationNode: {node}")
 
         if node.left is None or node.right is None:
 
-            raise InvalidPropertyError(
-                "Implication missing left or right operand"
-            )
+            raise InvalidPropertyError("Implication missing left or right operand")
 
         self.validate(node.left, context)
         self.validate(node.right, context)
@@ -4701,13 +4683,9 @@ class LogicValidator:
 
     def _validate_problem(self, node, context):
 
-        self.tracer.log(
-            f"Validating ProblemNode: {node}"
-        )
+        self.tracer.log(f"Validating ProblemNode: {node}")
 
-        ProblemValidator(
-            tracer=self.tracer
-        ).validate(node)
+        ProblemValidator(tracer=self.tracer).validate(node)
 
     # ─────────────────────────────
     # OPERANDS (LEAVES)
@@ -4726,9 +4704,7 @@ class LogicValidator:
         if isinstance(node, ConstantNode):
             return
 
-        raise InvalidPropertyError(
-            f"Invalid operand type: {type(node)}"
-        )
+        raise InvalidPropertyError(f"Invalid operand type: {type(node)}")
 
     # ─────────────────────────────
     # ATTRIBUTE
@@ -4736,9 +4712,7 @@ class LogicValidator:
 
     def _validate_attribute(self, node, context):
 
-        self.tracer.log(
-            f"Validating AttributeNode: {node}"
-        )
+        self.tracer.log(f"Validating AttributeNode: {node}")
 
         if not node.feature:
             raise InvalidPropertyError("Attribute missing feature name")
@@ -4754,6 +4728,7 @@ class LogicValidator:
             raise InvalidPropertyError(
                 f"Unresolved attribute '{node.feature}' (binding failed)"
             )
+
 
 ===== dsl\semantic\core\problem.py =====
 
@@ -4778,21 +4753,16 @@ class ProblemValidator:
         try:
             function = EnumFunction[function_str]
         except KeyError:
-            raise IncompatibleFunctionError(
-                f"Unknown function '{function_str}'"
-            )
+            raise IncompatibleFunctionError(f"Unknown function '{function_str}'")
 
         allowed = PROBLEM_FUNCTION_COMPATIBILITY.get(problem)
 
         if not allowed:
-            raise IncompatibleFunctionError(
-                f"Unknown problem '{problem}'"
-            )
+            raise IncompatibleFunctionError(f"Unknown problem '{problem}'")
 
         if function not in allowed:
-            raise IncompatibleFunctionError(
-                f"{function_str} not allowed for {problem}"
-            )
+            raise IncompatibleFunctionError(f"{function_str} not allowed for {problem}")
+
 
 ===== dsl\semantic\core\property.py =====
 
@@ -4855,9 +4825,7 @@ class PropertyValidator:
 
     def validate(self, prop):
 
-        self.tracer.log(
-            f"Validating Property: {prop.type}"
-        )
+        self.tracer.log(f"Validating Property: {prop.type}")
 
         # --------------------------------------------------
         # Structural sanity checks
@@ -4866,9 +4834,7 @@ class PropertyValidator:
         if not hasattr(prop, "rule") or prop.rule is None:
 
             raise InvalidPropertyError(
-                message="Missing rule",
-                node=prop,
-                context="PropertyValidator"
+                message="Missing rule", node=prop, context="PropertyValidator"
             )
 
         rule = prop.rule
@@ -4902,9 +4868,7 @@ class PropertyValidator:
             #
             # ==================================================
 
-            context = LHSValidator(
-                tracer=self.tracer
-            ).validate(scope)
+            context = LHSValidator(tracer=self.tracer).validate(scope)
 
             prop.semantic.context = context
 
@@ -4932,12 +4896,7 @@ class PropertyValidator:
             #
             # ==================================================
 
-            BindingValidator(
-                tracer=self.tracer
-            ).validate(
-                context,
-                root
-            )
+            BindingValidator(tracer=self.tracer).validate(context, root)
 
             # ==================================================
             # 3. LOGIC VALIDATION
@@ -4952,12 +4911,7 @@ class PropertyValidator:
             #
             # ==================================================
 
-            LogicValidator(
-                tracer=self.tracer
-            ).validate(
-                root,
-                context
-            )
+            LogicValidator(tracer=self.tracer).validate(root, context)
 
             # ==================================================
             # PROPERTY ↔ SCOPE COMPATIBILITY
@@ -4966,20 +4920,13 @@ class PropertyValidator:
             try:
                 property_type = EnumProperty[prop.type.upper()]
             except KeyError:
-                raise InvalidPropertyError(
-                    f"Unknown property type '{prop.type}'"
-                )
+                raise InvalidPropertyError(f"Unknown property type '{prop.type}'")
 
-            allowed_scopes = PROPERTY_SCOPE_COMPATIBILITY.get(
-                property_type,
-                set()
-            )
+            allowed_scopes = PROPERTY_SCOPE_COMPATIBILITY.get(property_type, set())
 
             if context.type not in allowed_scopes:
 
-                allowed = ", ".join(
-                    s.value for s in allowed_scopes
-                )
+                allowed = ", ".join(s.value for s in allowed_scopes)
 
                 raise InvalidPropertyError(
                     f"Property '{prop.type}' does not support "
@@ -5010,25 +4957,24 @@ class PropertyValidator:
             raise InvalidPropertyError(
                 message=f"Property '{prop.type}' invalid: {e}",
                 node=prop,
-                context="PropertyValidator"
+                context="PropertyValidator",
             ) from e
 
-        self.tracer.log(
-            f"✔ Property '{prop.type}' validated"
-        )
+        self.tracer.log(f"✔ Property '{prop.type}' validated")
 
         return True
+
 
 ===== dsl\semantic\core\validator.py =====
 
 from dsl.builder.program import parse_program
+from dsl.parser.errors import ParserError
 from dsl.parser.parser import parse_forml_code
 from dsl.semantic.runtime.tracer import ValidationTracer
 
 from dsl.semantic.core.property import PropertyValidator
-from test.fixtures.properties_samples import (
-    VALID_MINIMAL_AT
-)
+from test.fixtures.properties_samples import VALID_MINIMAL_AT
+
 
 class FORMLValidator:
 
@@ -5041,14 +4987,21 @@ class FORMLValidator:
 
         self.tracer.log(f"Validating FORMLValidator: {program}")
 
-        for prop in program.body:
-            PropertyValidator(tracer=self.tracer).validate(prop)
+        try:
+            for prop in program.body:
+                PropertyValidator(tracer=self.tracer).validate(prop)
+
+        except ParserError:
+            raise
+
+        except Exception as e:
+            raise ParserError(str(e)) from e
 
         return True
 
 
 if __name__ == "__main__":
-    """ This script is for quick testing of the validator. It parses a sample property and prints the resulting AST than validates it """
+    """This script is for quick testing of the validator. It parses a sample property and prints the resulting AST than validates it"""
     CST = parse_forml_code(VALID_MINIMAL_AT)
     print(CST.pretty())
 
@@ -5058,6 +5011,7 @@ if __name__ == "__main__":
     tracer = ValidationTracer(enabled=True)
     validator = FORMLValidator()
     validator.validate(AST, tracer=tracer)
+
 
 ===== dsl\semantic\errors\errors.py =====
 
@@ -5093,6 +5047,7 @@ class InvalidOperatorError(SemanticError):
 class IncompatibleFunctionError(SemanticError):
     pass
 
+
 ===== dsl\semantic\rules\compatibility.py =====
 
 # forml/semantic/compatibility.py
@@ -5101,7 +5056,6 @@ from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.problems import EnumProblem
 from dsl.language.vocabulary.properties import EnumProperty
 from dsl.semantic.context.scope import SemanticScope
-
 
 # -------------------------------
 # Problem ↔ Function
@@ -5118,7 +5072,7 @@ PROBLEM_FUNCTION_COMPATIBILITY = {
         EnumFunction.DECREASING,
         EnumFunction.BETWEEN,
     },
-    EnumProblem.CLUSTERING: set()
+    EnumProblem.CLUSTERING: set(),
 }
 
 
@@ -5155,8 +5109,13 @@ PROPERTY_SCOPE_COMPATIBILITY = {
 PROPERTY_MODEL_COMPATIBILITY = {
     "ONNX": {EnumProperty.ROBUSTNESS, EnumProperty.STABILITY, EnumProperty.FAIRNESS},
     "SKLEARN": {EnumProperty.FAIRNESS, EnumProperty.BOUND},
-    "PYTORCH": {EnumProperty.ROBUSTNESS, EnumProperty.MONOTONICITY, EnumProperty.STABILITY},
+    "PYTORCH": {
+        EnumProperty.ROBUSTNESS,
+        EnumProperty.MONOTONICITY,
+        EnumProperty.STABILITY,
+    },
 }
+
 
 ===== dsl\semantic\rules\type_system.py =====
 
@@ -5174,6 +5133,7 @@ class FloatType(Type):
 
 class BoolType(Type):
     pass
+
 
 ===== dsl\semantic\runtime\annotations.py =====
 
@@ -5300,10 +5260,8 @@ class SemanticAnnotations:
         Returns True if semantic resolution occurred.
         """
 
-        return (
-            self.resolved_entity is not None
-            or self.resolved_symbol is not None
-        )
+        return self.resolved_entity is not None or self.resolved_symbol is not None
+
 
 ===== dsl\semantic\runtime\tracer.py =====
 
@@ -5315,13 +5273,13 @@ class ValidationTracer:
         if self.enabled:
             print(message)
 
+
 ===== dsl\semantic\symbols\symbol.py =====
 
 from dataclasses import dataclass
 from typing import Optional
 
 from dsl.semantic.types.enums import EnumDataType
-
 
 
 @dataclass
@@ -5365,6 +5323,7 @@ class Symbol:
 
     origin: Optional[object] = None
 
+
 ===== dsl\semantic\symbols\table.py =====
 
 from dsl.semantic.symbols.symbol import Symbol
@@ -5402,9 +5361,7 @@ class SymbolTable:
         """
 
         if symbol.name in self.symbols:
-            raise ValueError(
-                f"Symbol '{symbol.name}' already registered"
-            )
+            raise ValueError(f"Symbol '{symbol.name}' already registered")
 
         self.symbols[symbol.name] = symbol
 
@@ -5449,11 +5406,8 @@ class SymbolTable:
     # ─────────────────────────────────────────────
 
     def __repr__(self):
-        return (
-            f"SymbolTable("
-            f"symbols={list(self.symbols.keys())}"
-            f")"
-        )
+        return f"SymbolTable(" f"symbols={list(self.symbols.keys())}" f")"
+
 
 ===== dsl\semantic\types\enums.py =====
 

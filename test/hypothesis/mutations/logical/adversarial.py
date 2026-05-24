@@ -24,6 +24,7 @@ from dsl.builder.program import ProgramNode
 from dsl.ast.nodes.assertion import NotNode, AndNode, OrNode
 
 from test.hypothesis.mutations.base import (
+    MutationLayer,
     mutation,
     MutationNature,
     MutationSeverity,
@@ -37,15 +38,18 @@ from test.hypothesis.mutations.base import (
 
 
 @mutation(
-    nature=MutationNature.ADVERSARIAL,
+    layer=MutationLayer.ADVERSARIAL,
+    nature=MutationNature.CORRUPTION,
     severity=MutationSeverity.HIGH,
     severity_score=0.85,
     impact={MutationImpact.SEMANTIC_INVALID},
     expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
     preserves_valid_ast=True,
     preserves_typing=True,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=True
 )
-def inject_tautology(ast: ProgramNode) -> ProgramNode:
+def inject_adversarial_tautology(ast: ProgramNode) -> ProgramNode:
     """
     Inject tautological expressions.
     A becomes A OR NOT(A)
@@ -63,54 +67,21 @@ def inject_tautology(ast: ProgramNode) -> ProgramNode:
 
 
 # =========================================================
-# MUTATION 2 : contradiction injection
+# MUTATION 2 : nested NOT explosion
 # =========================================================
 
 
 @mutation(
-    nature=MutationNature.ADVERSARIAL,
-    severity=MutationSeverity.CRITICAL,
-    severity_score=0.95,
-    impact={MutationImpact.SEMANTIC_INVALID},
-    expected_failures={
-        PipelineStage.SEMANTIC_ANALYSIS,
-        PipelineStage.EXECUTION,
-    },
-    preserves_valid_ast=True,
-    preserves_typing=True,
-)
-def inject_contradiction(ast: ProgramNode) -> ProgramNode:
-    """
-    Inject contradictory expressions.
-    A becomes A AND NOT(A)
-    """
-
-    mutated = deepcopy(ast)
-
-    for p in mutated.body:
-
-        root = deepcopy(p.rule.assertion.root)
-
-        p.rule.assertion.root = AndNode(
-            operands=[root, NotNode(operand=deepcopy(root))]
-        )
-
-    return mutated
-
-
-# =========================================================
-# MUTATION 3 : nested NOT explosion
-# =========================================================
-
-
-@mutation(
-    nature=MutationNature.ADVERSARIAL,
+    layer=MutationLayer.ADVERSARIAL,
+    nature=MutationNature.CORRUPTION,
     severity=MutationSeverity.MEDIUM,
     severity_score=0.6,
     impact={MutationImpact.SEMANTIC_INVALID},
     expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
     preserves_valid_ast=True,
     preserves_typing=True,
+    preserves_semantic_equivalence=False,
+    preserves_valid_cst=True
 )
 def nest_negations(ast: ProgramNode) -> ProgramNode:
     """
@@ -134,8 +105,7 @@ def nest_negations(ast: ProgramNode) -> ProgramNode:
 
 
 ADVERSARIAL_MUTATIONS = [
-    inject_tautology,
-    inject_contradiction,
+    inject_adversarial_tautology,
     nest_negations,
 ]
 
@@ -152,3 +122,9 @@ def apply_adversarial_mutations(ast: ProgramNode, n: int = 1) -> ProgramNode:
         mutated = mutation_fn(mutated)
 
     return mutated
+
+
+ADVERSARIAL_MUTATIONS = [
+    inject_adversarial_tautology,
+    nest_negations,
+]

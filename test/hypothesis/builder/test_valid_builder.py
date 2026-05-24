@@ -5,13 +5,13 @@ from dsl.builder.program import parse_program
 from dsl.parser.parser import parse_forml_code
 
 from test.hypothesis.settings import DEFAULT_SETTINGS
-from test.hypothesis.strategies.valid.program_valid import valid_program
+from test.hypothesis.strategies.valid.program_string import valid_string_program
 
 pytestmark = pytest.mark.wip
 
 
 @DEFAULT_SETTINGS
-@given(valid_program())
+@given(valid_string_program())
 def test_builder_accepts_valid_programs(program):
 
     cst = parse_forml_code(program)

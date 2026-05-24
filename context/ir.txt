@@ -16,10 +16,10 @@ from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.problems import EnumProblem
 from dsl.language.vocabulary.properties import EnumProperty
 
-
 # =============================================================================
 # ROOT EXECUTION UNIT
 # =============================================================================
+
 
 @dataclass
 class VerificationTask:
@@ -32,6 +32,7 @@ class VerificationTask:
         - a logical query (RHS expression)
         - a target backend (Z3, ONNX checker, etc.)
     """
+
     property_type: EnumProperty
     scope: ScopeIR
     query: QueryIR
@@ -41,6 +42,7 @@ class VerificationTask:
 # =============================================================================
 # SCOPE (LHS SEMANTIC CONTEXT)
 # =============================================================================
+
 
 @dataclass
 class ScopeIR:
@@ -72,6 +74,7 @@ class NeighborhoodIR:
     Defines perturbation space around a point.
     Example: L2 ball with epsilon.
     """
+
     metric: str
     eps: float
     args: dict[str, Any]
@@ -82,6 +85,7 @@ class DomainIR:
     """
     Optional domain restriction (categorical, numeric bounds, etc.)
     """
+
     name: str
     args: dict[str, Any]
 
@@ -89,6 +93,7 @@ class DomainIR:
 # =============================================================================
 # QUERY (RHS SEMANTIC EXPRESSION)
 # =============================================================================
+
 
 @dataclass
 class QueryIR:
@@ -99,12 +104,14 @@ class QueryIR:
         - a logical expression (AND/OR/NOT/IMPLY)
         - a problem-level predicate (CLASSIFICATION.EQUAL, etc.)
     """
+
     expression: LogicalIR | ProblemIR
 
 
 # =============================================================================
 # LOGICAL IR (PURE BOOLEAN STRUCTURE)
 # =============================================================================
+
 
 @dataclass
 class LogicalIR:
@@ -116,12 +123,14 @@ class LogicalIR:
         - CNF/DNF transformations
         - Z3 encoding
     """
+
     pass
 
 
 # =============================================================================
 # LEAF COMPARISON NODE
 # =============================================================================
+
 
 @dataclass
 class ComparisonIR(LogicalIR):
@@ -131,6 +140,7 @@ class ComparisonIR(LogicalIR):
 
     Represents a leaf condition in the logical tree.
     """
+
     entity: str
     feature: str
     op: EnumComparisonOperator
@@ -141,11 +151,13 @@ class ComparisonIR(LogicalIR):
 # LOGICAL OPERATORS
 # =============================================================================
 
+
 @dataclass
 class AndIR(LogicalIR):
     """
     Logical AND over multiple operands.
     """
+
     operands: list[LogicalIR]
 
 
@@ -154,6 +166,7 @@ class OrIR(LogicalIR):
     """
     Logical OR over multiple operands.
     """
+
     operands: list[LogicalIR]
 
 
@@ -162,6 +175,7 @@ class NotIR(LogicalIR):
     """
     Logical negation of a single operand.
     """
+
     operand: LogicalIR
 
 
@@ -171,6 +185,7 @@ class ImplyIR(LogicalIR):
     Logical implication:
         A → B
     """
+
     left: LogicalIR
     right: LogicalIR
 
@@ -178,6 +193,7 @@ class ImplyIR(LogicalIR):
 # =============================================================================
 # PROBLEM-LEVEL SEMANTIC OPERATOR
 # =============================================================================
+
 
 @dataclass
 class ProblemIR(LogicalIR):
@@ -188,9 +204,11 @@ class ProblemIR(LogicalIR):
         CLASSIFICATION.EQUAL()
         REGRESSION.BETWEEN()
     """
+
     problem: EnumProblem
     function: EnumFunction | None
     args: dict[str, Any] | None = None
+
 
 ===== dsl\ir\ir1\pretty.py =====
 
@@ -209,10 +227,10 @@ from dsl.ir.ir1.nodes import (
     ProblemIR,
 )
 
-
 # =============================================================================
 # ENTRY POINT
 # =============================================================================
+
 
 def pretty_print_tasks(tasks: list[VerificationTask]):
     for i, task in enumerate(tasks):
@@ -223,6 +241,7 @@ def pretty_print_tasks(tasks: list[VerificationTask]):
 # =============================================================================
 # TASK
 # =============================================================================
+
 
 def pretty_task(task: VerificationTask) -> str:
     lines = []
@@ -250,6 +269,7 @@ def pretty_task(task: VerificationTask) -> str:
 # =============================================================================
 # SCOPE
 # =============================================================================
+
 
 def _pretty_scope(scope: ScopeIR) -> list[str]:
     lines = []
@@ -290,6 +310,7 @@ def _pretty_scope(scope: ScopeIR) -> list[str]:
 # QUERY
 # =============================================================================
 
+
 def _pretty_query(query: QueryIR) -> list[str]:
     return _pretty_logical(query.expression, indent=2)
 
@@ -297,6 +318,7 @@ def _pretty_query(query: QueryIR) -> list[str]:
 # =============================================================================
 # LOGICAL TREE
 # =============================================================================
+
 
 def _pretty_logical(node: LogicalIR, indent=0) -> list[str]:
     space = " " * indent
@@ -306,9 +328,7 @@ def _pretty_logical(node: LogicalIR, indent=0) -> list[str]:
     # Comparison
     # -----------------------------
     if isinstance(node, ComparisonIR):
-        lines.append(
-            f"{space}- {node.entity}.{node.feature} == {node.value}"
-        )
+        lines.append(f"{space}- {node.entity}.{node.feature} == {node.value}")
         return lines
 
     # -----------------------------
@@ -362,6 +382,7 @@ def _pretty_logical(node: LogicalIR, indent=0) -> list[str]:
     # -----------------------------
     lines.append(f"{space}UNKNOWN NODE: {node}")
     return lines
+
 
 ===== dsl\ir\ir1\run_ir1.py =====
 
@@ -426,11 +447,17 @@ if __name__ == "__main__":
 
     pretty_print_tasks(tasks)
 
+
 ===== dsl\ir\ir1\translator.py =====
 
 from __future__ import annotations
 
-from dsl.ast.nodes.expressions import AtExprNode, CheckAtExprNode, PairwiseExprNode, QuantifierExprNode
+from dsl.ast.nodes.expressions import (
+    AtExprNode,
+    CheckAtExprNode,
+    PairwiseExprNode,
+    QuantifierExprNode,
+)
 from dsl.ast.nodes.program import ProgramNode
 from dsl.ast.nodes.property import PropertyNode
 
@@ -457,7 +484,7 @@ from dsl.ir.ir1.nodes import (
     ImplyIR,
     ProblemIR,
     NeighborhoodIR,
-    DomainIR
+    DomainIR,
 )
 
 from dsl.language.vocabulary.problems import EnumProblem
@@ -492,7 +519,7 @@ class IRTranslator:
             property_type=prop.type,
             scope=scope_ir,
             query=query_ir,
-            backend=EnumBackend[backend] if backend else None
+            backend=EnumBackend[backend] if backend else None,
         )
 
     # --------------------------------------------------------------------------
@@ -514,10 +541,7 @@ class IRTranslator:
 
             kind = "local"
 
-            variables = {
-                scope.variable: "anchor",
-                f"{scope.variable}'": "perturbation"
-            }
+            variables = {scope.variable: "anchor", f"{scope.variable}'": "perturbation"}
 
             # --------------------------
             # neighborhood
@@ -525,20 +549,14 @@ class IRTranslator:
 
             if scope.neighborhood is not None:
 
-                args_dict = {
-                    arg.key: arg.value
-                    for arg in scope.neighborhood.args
-                }
+                args_dict = {arg.key: arg.value for arg in scope.neighborhood.args}
 
                 eps = args_dict.get("eps")
                 assert eps is not None, "Neighborhood must specify 'eps' parameter"
                 eps = float(eps)
 
-
                 neighborhood_ir = NeighborhoodIR(
-                    metric=scope.neighborhood.metric,
-                    eps=eps,
-                    args=args_dict
+                    metric=scope.neighborhood.metric, eps=eps, args=args_dict
                 )
 
             # --------------------------
@@ -548,10 +566,7 @@ class IRTranslator:
             if scope.domain is not None:
 
                 domain_ir = DomainIR(
-                    name=scope.domain.name,
-                    args={
-                        "values": scope.domain.values
-                    }
+                    name=scope.domain.name, args={"values": scope.domain.values}
                 )
 
         # ------------------------------------------------------------------
@@ -562,15 +577,9 @@ class IRTranslator:
 
             kind = "pairwise"
 
-            left, right = [
-                x.strip()
-                for x in scope.pair.split(",")
-            ]
+            left, right = [x.strip() for x in scope.pair.split(",")]
 
-            variables = {
-                left: "left",
-                right: "right"
-            }
+            variables = {left: "left", right: "right"}
 
         # ------------------------------------------------------------------
         # CHECK AT
@@ -580,9 +589,7 @@ class IRTranslator:
 
             kind = "pointwise"
 
-            variables = {
-                scope.variable: "point"
-            }
+            variables = {scope.variable: "point"}
 
         # ------------------------------------------------------------------
         # QUANTIFIER
@@ -594,10 +601,7 @@ class IRTranslator:
 
             if scope.domain is not None:
 
-                domain_ir = DomainIR(
-                    name=scope.domain.name,
-                    args={}
-                )
+                domain_ir = DomainIR(name=scope.domain.name, args={})
 
         # ------------------------------------------------------------------
         # FINAL
@@ -624,7 +628,7 @@ class IRTranslator:
                 result.append(n)
 
         return result
-    
+
     def _flatten_or(self, node: OrNode) -> list[LogicalNode]:
         result = []
 
@@ -635,40 +639,21 @@ class IRTranslator:
                 result.append(n)
 
         return result
-    
-
 
     def _translate_assertion(self, node: LogicalNode) -> QueryIR:
 
         if isinstance(node, AndNode):
 
-            operands = [
-                self._translate_logical(n)
-                for n in self._flatten_and(node)
-            ]
+            operands = [self._translate_logical(n) for n in self._flatten_and(node)]
 
-            return QueryIR(
-                expression=AndIR(
-                    operands=operands
-                )
-            )
-        
+            return QueryIR(expression=AndIR(operands=operands))
+
         if isinstance(node, OrNode):
 
-            operands = [
-                self._translate_logical(n)
-                for n in self._flatten_or(node)
-            ]
+            operands = [self._translate_logical(n) for n in self._flatten_or(node)]
 
-            return QueryIR(
-                expression=OrIR(
-                    operands=operands
-                )
-            )
-        return QueryIR(
-            expression=self._translate_logical(node)
-        )
-    
+            return QueryIR(expression=OrIR(operands=operands))
+        return QueryIR(expression=self._translate_logical(node))
 
     def _translate_logical(self, node: LogicalNode) -> LogicalIR:
         """
@@ -694,7 +679,7 @@ class IRTranslator:
                 entity=node.left.entity,
                 feature=node.left.feature,
                 op=node.op,  # 🔥 important
-                value=node.right.value
+                value=node.right.value,
             )
 
         # -----------------------------
@@ -702,33 +687,21 @@ class IRTranslator:
         # -----------------------------
         if isinstance(node, AndNode):
 
-            return AndIR(
-                operands=[
-                    self._translate_logical(n)
-                    for n in node.operands
-                ]
-            )
+            return AndIR(operands=[self._translate_logical(n) for n in node.operands])
 
         # -----------------------------
         # OR
         # -----------------------------
         if isinstance(node, OrNode):
 
-            return OrIR(
-                operands=[
-                    self._translate_logical(n)
-                    for n in node.operands
-                ]
-            )
+            return OrIR(operands=[self._translate_logical(n) for n in node.operands])
 
         # -----------------------------
         # NOT
         # -----------------------------
         if isinstance(node, NotNode):
 
-            return NotIR(
-                operand=self._translate_logical(node.operand)
-            )
+            return NotIR(operand=self._translate_logical(node.operand))
 
         # -----------------------------
         # IMPLICATION
@@ -737,7 +710,7 @@ class IRTranslator:
 
             return ImplyIR(
                 left=self._translate_logical(node.left),
-                right=self._translate_logical(node.right)
+                right=self._translate_logical(node.right),
             )
 
         # -----------------------------
@@ -748,11 +721,7 @@ class IRTranslator:
             problem = EnumProblem(node.problem)
             function = EnumFunction(node.function) if node.function else None
 
-            return ProblemIR(
-                problem=problem,
-                function=function,
-                args={}
-            )
+            return ProblemIR(problem=problem, function=function, args={})
 
         # -----------------------------
         # FAIL SAFE
