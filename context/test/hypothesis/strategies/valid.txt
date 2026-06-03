@@ -1,5 +1,20 @@
 
-===== test\hypothesis\strategies\valid\valid_ast.py =====
+===== test\hypothesis\strategies\valid\valid_lexical.py =====
+
+from hypothesis import strategies as st
+from ..ast.header import header
+from ..ast.body import body
+
+
+@st.composite
+def valid_lexical_program(draw) -> str:
+    h = draw(header())
+    b = draw(body())
+
+    return f"{h}\n\n{b}"
+
+
+===== test\hypothesis\strategies\valid\valid_semantic.py =====
 
 from hypothesis import strategies as st
 
@@ -20,7 +35,7 @@ def valid_cst_program(draw) -> ProgramNode:
     return parse_program(cst)
 
 
-===== test\hypothesis\strategies\valid\valid_cst.py =====
+===== test\hypothesis\strategies\valid\valid_syntactic.py =====
 
 from hypothesis import strategies as st
 from lark import ParseTree
@@ -31,24 +46,9 @@ from ..ast.body import body
 
 
 @st.composite
-def valid_cst_program(draw) -> ParseTree:
+def valid_syntactic_program(draw) -> ParseTree:
     h = draw(header())
     b = draw(body())
 
     program = f"{h}\n\n{b}"
     return parse_forml_code(program)
-
-
-===== test\hypothesis\strategies\valid\valid_string.py =====
-
-from hypothesis import strategies as st
-from ..ast.header import header
-from ..ast.body import body
-
-
-@st.composite
-def valid_string_program(draw) -> str:
-    h = draw(header())
-    b = draw(body())
-
-    return f"{h}\n\n{b}"

@@ -1,0 +1,463 @@
+
+===== test\hypothesis\mutation\core\artifact.py =====
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Generic, TypeVar
+
+T = TypeVar("T")
+
+
+@dataclass(frozen=True, slots=True)
+class Artifact(Generic[T]):
+    """
+    Represents a DSL artifact at a specific pipeline layer.
+
+    This is the fundamental unit manipulated by mutation testing.
+    """
+
+    value: T
+    layer: str  # string | cst | ast | ir
+
+===== test\hypothesis\mutation\core\decorator.py =====
+
+from core.mutation import Mutation
+
+
+def mutation(name: str):
+    """
+    Minimal decorator :
+    trandform function to mutation
+    """
+
+    def wrapper(fn):
+
+        return Mutation(
+            name=name,
+            fn=fn,
+        )
+
+    return wrapper
+
+===== test\hypothesis\mutation\core\executor.py =====
+
+from __future__ import annotations
+
+from core.artifact import Artifact
+from core.mutation import Mutation
+
+
+class MutationExecutor:
+    """
+    Executes a mutation on a DSL artifact.
+
+    This class contains no domain logic.
+    """
+
+    def apply(self, mutation: Mutation, artifact: Artifact) -> Artifact:
+        """
+        Apply a mutation function to an artifact.
+
+        Args:
+            mutation: The mutation operator to apply.
+            artifact: The input DSL artifact.
+
+        Returns:
+            A new mutated artifact.
+        """
+
+        new_value = mutation.fn(artifact.value)
+
+        return Artifact(
+            value=new_value,
+            layer=artifact.layer,
+        )
+
+===== test\hypothesis\mutation\core\filtering.py =====
+
+from __future__ import annotations
+
+from typing import List, Optional
+
+from metadata.descriptor import MutationDescriptor
+from metadata.enums import Layer, Domain, Strategy
+from metadata.contract import PreservationLevel
+
+
+class MutationFilterEngine:
+    """
+    Filtering system for mutation descriptors.
+
+    Supports:
+    - layer filtering
+    - domain filtering
+    - strategy filtering
+    - contract-based constraints
+    """
+
+    def filter(
+        self,
+        items: List[MutationDescriptor],
+        *,
+        layer: Optional[Layer] = None,
+        domain: Optional[Domain] = None,
+        strategy: Optional[Strategy] = None,
+        min_semantic_preservation: Optional[PreservationLevel] = None,
+    ) -> List[MutationDescriptor]:
+
+        result = items
+
+        # -----------------------------------------------------
+        # layer filter
+        # -----------------------------------------------------
+        if layer is not None:
+            result = [
+                d for d in result
+                if d.layer == layer
+            ]
+
+        # -----------------------------------------------------
+        # domain filter
+        # -----------------------------------------------------
+        if domain is not None:
+            result = [
+                d for d in result
+                if d.domain == domain
+            ]
+
+        # -----------------------------------------------------
+        # strategy filter
+        # -----------------------------------------------------
+        if strategy is not None:
+            result = [
+                d for d in result
+                if d.strategy == strategy
+            ]
+
+        # -----------------------------------------------------
+        # contract filter (semantic constraint)
+        # -----------------------------------------------------
+        if min_semantic_preservation is not None:
+
+            def ok(d: MutationDescriptor) -> bool:
+                return d.contract.semantics.value >= min_semantic_preservation.value
+
+            result = [d for d in result if ok(d)]
+
+        return result
+
+===== test\hypothesis\mutation\core\hypothesis_strategy.py =====
+
+from __future__ import annotations
+
+from hypothesis import strategies as st
+
+from registry import MutationRegistry
+from filtering import MutationFilterEngine
+
+
+def mutation_strategy(
+    registry: MutationRegistry,
+    filter_engine: MutationFilterEngine,
+    **filters,
+):
+    """
+    Generate Hypothesis strategies from mutation descriptors.
+    """
+
+    descriptors = registry.filter(
+        engine=filter_engine,
+        **filters,
+    )
+
+    return st.sampled_from(descriptors)
+
+===== test\hypothesis\mutation\core\mutation.py =====
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Callable, Generic, TypeVar, Any
+
+T = TypeVar("T")
+
+MutationFn = Callable[[T], T]
+
+
+@dataclass(frozen=True, slots=True)
+class Mutation:
+    """
+    Pure transformation operator applied to an Artifact.
+
+    A Mutation is stateless and deterministic by design.
+    """
+
+    name: str
+    fn: MutationFn[Any]
+
+===== test\hypothesis\mutation\core\pipeline.py =====
+
+from __future__ import annotations
+
+from typing import List
+
+from core.artifact import Artifact
+from core.mutation import Mutation
+from core.executor import MutationExecutor
+
+
+class MutationPipeline:
+    """
+    Sequential composition of mutations applied to a DSL artifact.
+    """
+
+    def __init__(self, mutations: List[Mutation]):
+        self.mutations = mutations
+        self.executor = MutationExecutor()
+
+    def run(self, artifact: Artifact) -> Artifact:
+        """
+        Apply all mutations sequentially.
+
+        Args:
+            artifact: Input DSL artifact.
+
+        Returns:
+            Mutated artifact after full pipeline execution.
+        """
+
+        for mutation in self.mutations:
+            artifact = self.executor.apply(mutation, artifact)
+
+        return artifact
+
+===== test\hypothesis\mutation\core\registry.py =====
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import List, Iterable
+
+from metadata.descriptor import MutationDescriptor
+from metadata.enums import Layer, Domain, Strategy
+from metadata.contract import MutationContract
+from test.hypothesis.mutation.core.filtering import MutationFilterEngine
+
+
+@dataclass
+class MutationRegistry:
+    """
+    Central registry of MutationDescriptors.
+
+    This is the source of truth for all mutation strategies.
+    """
+
+    _items: List[MutationDescriptor] = field(default_factory=list)
+
+    # ---------------------------------------------------------
+    # registration
+    # ---------------------------------------------------------
+
+    def register(self, descriptor: MutationDescriptor) -> None:
+        """
+        Register a new mutation descriptor.
+        """
+        self._items.append(descriptor)
+
+    # ---------------------------------------------------------
+    # access
+    # ---------------------------------------------------------
+
+    def all(self) -> List[MutationDescriptor]:
+        """
+        Return all registered mutations.
+        """
+        return list(self._items)
+
+    # ---------------------------------------------------------
+    # filtering entrypoint
+    # (delegates to filtering engine)
+    # ---------------------------------------------------------
+
+    def filter(self, engine: MutationFilterEngine, **kwargs) -> List[MutationDescriptor]:
+        """
+        Filter mutations using a filtering engine.
+        """
+        return engine.filter(self._items, **kwargs)
+
+===== test\hypothesis\mutation\core\selection.py =====
+
+from __future__ import annotations
+
+import random
+from typing import List, Optional
+
+from metadata.descriptor import MutationDescriptor
+from metadata.enums import Layer, Domain, Strategy
+
+
+class MutationSelectionEngine:
+    """
+    Intelligent mutation sampler for Hypothesis or fuzzing.
+
+    Supports weighted or constrained selection.
+    """
+
+    def __init__(self, seed: Optional[int] = None):
+        self.random = random.Random(seed)
+
+    # ---------------------------------------------------------
+    # main entrypoint
+    # ---------------------------------------------------------
+
+    def select(
+        self,
+        items: List[MutationDescriptor],
+        *,
+        layer: Optional[Layer] = None,
+        domain: Optional[Domain] = None,
+        strategy: Optional[Strategy] = None,
+    ) -> MutationDescriptor:
+        """
+        Select a single mutation matching constraints.
+        """
+
+        filtered = items
+
+        # -----------------------------------------------------
+        # constraints
+        # -----------------------------------------------------
+        if layer is not None:
+            filtered = [d for d in filtered if d.layer == layer]
+
+        if domain is not None:
+            filtered = [d for d in filtered if d.domain == domain]
+
+        if strategy is not None:
+            filtered = [d for d in filtered if d.strategy == strategy]
+
+        if not filtered:
+            raise ValueError("No mutation matches constraints")
+
+        # -----------------------------------------------------
+        # sampling strategy (simple v1)
+        # -----------------------------------------------------
+        return self.random.choice(filtered)
+
+===== test\hypothesis\mutation\decorators\mutation.py =====
+
+from __future__ import annotations
+
+from core.mutation import Mutation
+from metadata.contract import MutationContract
+from metadata.enums import Layer, Nature, Strategy, Domain
+from test.hypothesis.mutation.metadata.descriptor import MutationDescriptor
+
+
+def mutation(
+    *,
+    name: str,
+    layer: Layer,
+    nature: Nature,
+    strategy: Strategy,
+    domain: Domain,
+    contract: MutationContract,
+    severity: float | None = None,
+):
+
+    def wrapper(fn):
+
+        return MutationDescriptor(
+            mutation=Mutation(name=name, fn=fn),
+            layer=layer,
+            nature=nature,
+            strategy=strategy,
+            domain=domain,
+            contract=contract,
+            severity=severity,
+        )
+
+    return wrapper
+
+===== test\hypothesis\mutation\metadata\contract.py =====
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from enum import Enum, auto
+
+
+class PreservationLevel(Enum):
+    """
+    Degree of structural or semantic preservation.
+    """
+
+    NONE = auto()
+    PARTIAL = auto()
+    FULL = auto()
+
+
+@dataclass(frozen=True, slots=True)
+class MutationContract:
+    """
+    Formal guarantees provided by a mutation.
+
+    This replaces multiple boolean 'preserves_*' flags.
+    """
+
+    cst: PreservationLevel
+    ast: PreservationLevel
+    typing: PreservationLevel
+    semantics: PreservationLevel
+
+===== test\hypothesis\mutation\metadata\descriptor.py =====
+
+from dataclasses import dataclass
+
+from test.hypothesis.mutation.core.mutation import Mutation
+from test.hypothesis.mutation.metadata.contract import MutationContract
+from test.hypothesis.mutation.metadata.enums import Domain, Layer, Nature, Strategy
+
+
+@dataclass(frozen=True, slots=True)
+class MutationDescriptor:
+    mutation: Mutation
+    layer: Layer
+    nature: Nature
+    strategy: Strategy
+    domain: Domain
+    contract: MutationContract
+    severity: float | None = None
+
+===== test\hypothesis\mutation\metadata\enums.py =====
+
+from enum import Enum, auto
+
+
+class Layer(Enum):
+    STRING = auto()
+    CST = auto()
+    AST = auto()
+    IR = auto()
+
+
+class Nature(Enum):
+    INSERTION = auto()
+    DELETION = auto()
+    SUBSTITUTION = auto()
+    REORDERING = auto()
+    CORRUPTION = auto()
+
+
+class Strategy(Enum):
+    VALID = auto()
+    MUTATED = auto()
+    CORRUPTED = auto()
+
+
+class Domain(Enum):
+    STRUCTURAL = auto()
+    SEMANTIC = auto()
+    LOGICAL = auto()
+    TYPING = auto()

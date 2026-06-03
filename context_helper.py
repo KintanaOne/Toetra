@@ -81,6 +81,11 @@ if __name__ == "__main__":
         output_file="context/test/hypothesis/mutations/ast.txt",
     )
     concat_files_in_folder(
+        "test/hypothesis/mutation",
+        recursive=True,
+        output_file="context/test/hypothesis/mutation.txt",
+    )
+    concat_files_in_folder(
         "test/hypothesis/mutations/string",
         recursive=True,
         output_file="context/test/hypothesis/mutations/string.txt",

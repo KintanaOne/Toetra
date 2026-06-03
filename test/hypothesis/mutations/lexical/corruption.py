@@ -1,9 +1,19 @@
 import random
 import re
-from turtle import st
 
-from test.hypothesis.mutations.base import MutationImpact, MutationLayer, MutationNature, MutationSeverity, PipelineStage, mutation
+from test.hypothesis.mutation.decorators.mutation import mutation
 
+from test.hypothesis.mutation.metadata.contract import (
+    MutationContract,
+    PreservationLevel,
+)
+
+from test.hypothesis.mutation.metadata.enums import (
+    Domain,
+    Layer,
+    Nature,
+    Strategy,
+)
 
 IDENTIFIER_PATTERN = r"\b[A-Za-z_][A-Za-z0-9_]*\b"
 
@@ -56,16 +66,18 @@ def find_valid_identifiers(program: str):
     ]
 
 @mutation(
-    layer=MutationLayer.LEXICAL,
-    nature=MutationNature.DELETION,
-    severity=MutationSeverity.MEDIUM,
-    severity_score=0.4,
-    impact={MutationImpact.CST_INVALID},
-    expected_failures={PipelineStage.CST_VALIDATION},
-    preserves_valid_ast=False,
-    preserves_typing=False,
-    preserves_semantic_equivalence=False,
-    preserves_valid_cst=False
+    name="replace_random_identifier",
+    layer=Layer.STRING,
+    nature=Nature.SUBSTITUTION,
+    strategy=Strategy.MUTATED,
+    domain=Domain.SEMANTIC,
+    severity=0.4,
+    contract=MutationContract(
+        cst=PreservationLevel.FULL,
+        ast=PreservationLevel.PARTIAL,
+        typing=PreservationLevel.PARTIAL,
+        semantics=PreservationLevel.NONE,
+    ),
 )
 def replace_random_identifier(program: str) -> str:
     """
@@ -94,19 +106,18 @@ def replace_random_identifier(program: str) -> str:
 # =========================================================
 
 @mutation(
-    layer=MutationLayer.LEXICAL,
-    nature=MutationNature.CORRUPTION,
-    severity=MutationSeverity.HIGH,
-    severity_score=0.75,
-    impact={MutationImpact.SEMANTIC_INVALID},
-    expected_failures={
-        PipelineStage.PARSING,
-        PipelineStage.SEMANTIC_ANALYSIS,
-    },
-    preserves_valid_ast=False,
-    preserves_typing=False,
-    preserves_semantic_equivalence=False,
-    preserves_valid_cst=False
+    name="inject_unicode_confusable",
+    layer=Layer.STRING,
+    nature=Nature.CORRUPTION,
+    strategy=Strategy.CORRUPTED,
+    domain=Domain.SEMANTIC,
+    severity=0.75,
+    contract=MutationContract(
+        cst=PreservationLevel.NONE,
+        ast=PreservationLevel.NONE,
+        typing=PreservationLevel.NONE,
+        semantics=PreservationLevel.NONE,
+    ),
 )
 def inject_unicode_confusable(program: str) -> str:
 
@@ -127,19 +138,18 @@ def inject_unicode_confusable(program: str) -> str:
     )
 
 @mutation(
-    layer=MutationLayer.LEXICAL,
-    nature=MutationNature.CORRUPTION,
-    severity=MutationSeverity.HIGH,
-    severity_score=0.75,
-    impact={MutationImpact.SEMANTIC_INVALID},
-    expected_failures={
-        PipelineStage.PARSING,
-        PipelineStage.SEMANTIC_ANALYSIS,
-    },
-    preserves_valid_ast=False,
-    preserves_typing=False,
-    preserves_semantic_equivalence=False,
-    preserves_valid_cst=False
+    name="inject_zero_width",
+    layer=Layer.STRING,
+    nature=Nature.CORRUPTION,
+    strategy=Strategy.CORRUPTED,
+    domain=Domain.STRUCTURAL,
+    severity=0.75,
+    contract=MutationContract(
+        cst=PreservationLevel.NONE,
+        ast=PreservationLevel.NONE,
+        typing=PreservationLevel.NONE,
+        semantics=PreservationLevel.NONE,
+    ),
 )
 def inject_zero_width(program: str) -> str:
 
@@ -154,16 +164,18 @@ def inject_zero_width(program: str) -> str:
     )
 
 @mutation(
-    layer=MutationLayer.LEXICAL,
-    nature=MutationNature.DELETION,
-    severity=MutationSeverity.LOW,
-    severity_score=0.4,
-    impact={MutationImpact.CST_INVALID},
-    expected_failures={PipelineStage.CST_VALIDATION},
-    preserves_valid_ast=False,
-    preserves_typing=False,
-    preserves_semantic_equivalence=False,
-    preserves_valid_cst=False
+    name="remove_random_character",
+    layer=Layer.STRING,
+    nature=Nature.CORRUPTION,
+    strategy=Strategy.CORRUPTED,
+    domain=Domain.STRUCTURAL,
+    severity=0.4,
+    contract=MutationContract(
+        cst=PreservationLevel.PARTIAL,
+        ast=PreservationLevel.PARTIAL,
+        typing=PreservationLevel.PARTIAL,
+        semantics=PreservationLevel.PARTIAL,
+    ),
 )
 def remove_random_character(program: str) -> str:
     """
@@ -179,16 +191,18 @@ def remove_random_character(program: str) -> str:
 
 
 @mutation(
-    layer=MutationLayer.LEXICAL,
-    nature=MutationNature.CORRUPTION,
-    severity=MutationSeverity.HIGH,
-    severity_score=0.7,
-    impact={MutationImpact.CST_INVALID},
-    expected_failures={PipelineStage.CST_VALIDATION},
-    preserves_valid_ast=False,
-    preserves_typing=False,
-    preserves_semantic_equivalence=False,
-    preserves_valid_cst=False
+    name="inject_noise",
+    layer=Layer.STRING,
+    nature=Nature.CORRUPTION,
+    strategy=Strategy.CORRUPTED,
+    domain=Domain.STRUCTURAL,
+    severity=0.7,
+    contract=MutationContract(
+        cst=PreservationLevel.NONE,
+        ast=PreservationLevel.NONE,
+        typing=PreservationLevel.NONE,
+        semantics=PreservationLevel.NONE,
+    ),
 )
 def inject_noise(program: str) -> str:
     """
@@ -212,19 +226,18 @@ def inject_noise(program: str) -> str:
 
 
 @mutation(
-    layer=MutationLayer.LEXICAL,
-    nature=MutationNature.CORRUPTION,
-    severity=MutationSeverity.HIGH,
-    severity_score=0.75,
-    impact={MutationImpact.SEMANTIC_INVALID},
-    expected_failures={
-        PipelineStage.PARSING,
-        PipelineStage.SEMANTIC_ANALYSIS,
-    },
-    preserves_valid_ast=False,
-    preserves_typing=False,
-    preserves_semantic_equivalence=False,
-    preserves_valid_cst=False
+    name="corrupt_keyword",
+    layer=Layer.STRING,
+    nature=Nature.CORRUPTION,
+    strategy=Strategy.CORRUPTED,
+    domain=Domain.SEMANTIC,
+    severity=0.8,
+    contract=MutationContract(
+        cst=PreservationLevel.NONE,
+        ast=PreservationLevel.NONE,
+        typing=PreservationLevel.NONE,
+        semantics=PreservationLevel.NONE,
+    ),
 )
 def corrupt_keyword(program: str) -> str:
     """
@@ -250,16 +263,18 @@ def corrupt_keyword(program: str) -> str:
 
 
 @mutation(
-    layer=MutationLayer.STRUCTURAL,
-    nature=MutationNature.REORDERING,    
-    severity=MutationSeverity.MEDIUM,
-    severity_score=0.5,
-    impact={MutationImpact.CST_INVALID},
-    expected_failures={PipelineStage.CST_VALIDATION},
-    preserves_valid_ast=False,
-    preserves_typing=False,
-    preserves_semantic_equivalence=False,
-    preserves_valid_cst=False
+    name="shuffle_lines",
+    layer=Layer.STRING,
+    nature=Nature.REORDERING,
+    strategy=Strategy.CORRUPTED,
+    domain=Domain.STRUCTURAL,
+    severity=0.5,
+    contract=MutationContract(
+        cst=PreservationLevel.NONE,
+        ast=PreservationLevel.NONE,
+        typing=PreservationLevel.NONE,
+        semantics=PreservationLevel.NONE,
+    ),
 )
 def shuffle_lines(program: str) -> str:
     """
@@ -275,12 +290,3 @@ def shuffle_lines(program: str) -> str:
 
     return "\n".join(lines)
 
-CORRUPTION_MUTATIONS = [
-    replace_random_identifier,
-    inject_zero_width,
-    inject_noise,
-    inject_unicode_confusable,
-    remove_random_character,
-    corrupt_keyword,
-    shuffle_lines,
-]
