@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Generic, TypeVar
 
+from test.hypothesis.mutation.metadata.enums import Layer
+
 T = TypeVar("T")
 
 
@@ -15,4 +17,4 @@ class Artifact(Generic[T]):
     """
 
     value: T
-    layer: str  # string | cst | ast | ir
+    layer: Layer  # STRING | CST | AST | IR

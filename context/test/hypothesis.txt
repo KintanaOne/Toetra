@@ -358,6 +358,12 @@ class MutationRegistry:
         Filter mutations using a filtering engine.
         """
         return engine.filter(self._items, **kwargs)
+    
+# =========================================================
+# GLOBAL SINGLETON (IMPORTANT)
+# =========================================================
+
+GLOBAL_MUTATION_REGISTRY = MutationRegistry()
 
 ===== test\hypothesis\mutation\core\selection.py =====
 
@@ -425,6 +431,7 @@ from __future__ import annotations
 from core.mutation import Mutation
 from metadata.contract import MutationContract
 from metadata.enums import Layer, Nature, Strategy, Domain
+from test.hypothesis.mutation.core.registry import GLOBAL_MUTATION_REGISTRY
 from test.hypothesis.mutation.metadata.descriptor import MutationDescriptor
 
 
@@ -441,7 +448,7 @@ def mutation(
 
     def wrapper(fn):
 
-        return MutationDescriptor(
+        descriptor = MutationDescriptor(
             mutation=Mutation(name=name, fn=fn),
             layer=layer,
             nature=nature,
@@ -451,91 +458,19 @@ def mutation(
             severity=severity,
         )
 
+        # =====================================================
+        # 🔥 REGISTRY IMPLICITE
+        # =====================================================
+        GLOBAL_MUTATION_REGISTRY.register(descriptor)
+
+        # Optionnel : attacher le descriptor à la fonction
+        fn._mutation_descriptor = descriptor
+
+        return descriptor
+
     return wrapper
 
-===== test\hypothesis\mutation\metadata\contract.py =====
-
-from __future__ import annotations
-
-from dataclasses import dataclass
-from enum import Enum, auto
-
-
-class PreservationLevel(Enum):
-    """
-    Degree of structural or semantic preservation.
-    """
-
-    NONE = auto()
-    PARTIAL = auto()
-    FULL = auto()
-
-
-@dataclass(frozen=True, slots=True)
-class MutationContract:
-    """
-    Formal guarantees provided by a mutation.
-
-    This replaces multiple boolean 'preserves_*' flags.
-    """
-
-    cst: PreservationLevel
-    ast: PreservationLevel
-    typing: PreservationLevel
-    semantics: PreservationLevel
-
-===== test\hypothesis\mutation\metadata\descriptor.py =====
-
-from dataclasses import dataclass
-
-from test.hypothesis.mutation.core.mutation import Mutation
-from test.hypothesis.mutation.metadata.contract import MutationContract
-from test.hypothesis.mutation.metadata.enums import Domain, Layer, Nature, Strategy
-
-
-@dataclass(frozen=True, slots=True)
-class MutationDescriptor:
-    mutation: Mutation
-    layer: Layer
-    nature: Nature
-    strategy: Strategy
-    domain: Domain
-    contract: MutationContract
-    severity: float | None = None
-
-===== test\hypothesis\mutation\metadata\enums.py =====
-
-from enum import Enum, auto
-
-
-class Layer(Enum):
-    STRING = auto()
-    CST = auto()
-    AST = auto()
-    IR = auto()
-
-
-class Nature(Enum):
-    INSERTION = auto()
-    DELETION = auto()
-    SUBSTITUTION = auto()
-    REORDERING = auto()
-    CORRUPTION = auto()
-
-
-class Strategy(Enum):
-    VALID = auto()
-    MUTATED = auto()
-    CORRUPTED = auto()
-
-
-class Domain(Enum):
-    STRUCTURAL = auto()
-    SEMANTIC = auto()
-    LOGICAL = auto()
-    TYPING = auto()
-
-===== test\hypothesis\mutations\base.py =====
+===== test\hypothesis\mutation\functions\base.py =====
 
 from __future__ import annotations
 
@@ -863,11 +798,11 @@ def mutation(
 
     return decorator
 
-===== test\hypothesis\mutations\lexical\__init__.py =====
+===== test\hypothesis\mutation\functions\lexical\__init__.py =====
 
 
 
-===== test\hypothesis\mutations\lexical\base_helpers.py =====
+===== test\hypothesis\mutation\functions\lexical\base_helpers.py =====
 
 """
 Base helpers for lexical invalid mutation system.
@@ -886,7 +821,24 @@ IDENTIFIER_RE = re.compile(r"\b[A-Za-z_][A-Za-z0-9_]*\b")
 NUMBER_RE = re.compile(r"\b\d+(\.\d+)?\b")
 STRING_RE = re.compile(r'"([^"\\]|\\.)*"')
 OPERATOR_RE = re.compile(r"(==|!=|<=|>=|->|~|=|\+|-|\*|/)")
+ASSIGNMENT_RE = re.compile(r"(?P<lhs>[A-Za-z_][A-Za-z0-9_]*)\s*=")
 
+KEYWORDS = [
+    "forall",
+    "exists",
+    "using",
+    "in",
+    "with",
+    "check_at",
+]
+
+UNICODE_POOL = [
+    "𝔄", "𝔅", "𝒜", "𝓐",
+    "Ω", "Σ", "Δ",
+    "∑", "∫", "∞",
+    "\u200b", "\u200d",  # zero-width
+    "�",
+]
 # -------------------------------------------------
 # Core safe mutation helpers
 # -------------------------------------------------
@@ -909,14 +861,67 @@ def random_char_noise():
 def random_ascii_garbage():
     return random.choice(["�", "\x00", "\x1f", "\uffff"])
 
-===== test\hypothesis\mutations\lexical\corruption.py =====
+def find_identifiers(text: str):
+    """
+    Return all identifiers appearing on the LHS of assignments.
+    """
+    return list(ASSIGNMENT_RE.finditer(text))
+
+
+def replace_identifier(
+    text: str,
+    replacement: str,
+    *,
+    replace_all: bool = False
+) -> str:
+    """
+    Replace identifiers defined as LHS of assignments:
+        foo = bar
+
+    Args:
+        text: input program
+        replacement: string to substitute identifiers with
+        replace_all: if True replace all identifiers, else only one
+
+    Returns:
+        mutated text
+    """
+
+    matches = list(ASSIGNMENT_RE.finditer(text))
+
+    if not matches:
+        return text
+
+    if replace_all:
+        # replace from right to left to avoid offset issues
+        for m in reversed(matches):
+            start, end = m.span("lhs")
+            text = text[:start] + replacement + text[end:]
+        return text
+
+    m = random.choice(matches)
+    start, end = m.span("lhs")
+
+    return text[:start] + replacement + text[end:]
+
+===== test\hypothesis\mutation\functions\lexical\corruption.py =====
 
 import random
 import re
-from turtle import st
 
-from test.hypothesis.mutations.base import MutationImpact, MutationLayer, MutationNature, MutationSeverity, PipelineStage, mutation
+from test.hypothesis.mutation.decorators.mutation import mutation
 
+from test.hypothesis.mutation.metadata.contract import (
+    MutationContract,
+    PreservationLevel,
+)
+
+from test.hypothesis.mutation.metadata.enums import (
+    Domain,
+    Layer,
+    Nature,
+    Strategy,
+)
 
 IDENTIFIER_PATTERN = r"\b[A-Za-z_][A-Za-z0-9_]*\b"
 
@@ -969,16 +974,18 @@ def find_valid_identifiers(program: str):
     ]
 
 @mutation(
-    layer=MutationLayer.LEXICAL,
-    nature=MutationNature.DELETION,
-    severity=MutationSeverity.MEDIUM,
-    severity_score=0.4,
-    impact={MutationImpact.CST_INVALID},
-    expected_failures={PipelineStage.CST_VALIDATION},
-    preserves_valid_ast=False,
-    preserves_typing=False,
-    preserves_semantic_equivalence=False,
-    preserves_valid_cst=False
+    name="replace_random_identifier",
+    layer=Layer.STRING,
+    nature=Nature.SUBSTITUTION,
+    strategy=Strategy.MUTATED,
+    domain=Domain.SEMANTIC,
+    severity=0.4,
+    contract=MutationContract(
+        cst=PreservationLevel.FULL,
+        ast=PreservationLevel.PARTIAL,
+        typing=PreservationLevel.PARTIAL,
+        semantics=PreservationLevel.NONE,
+    ),
 )
 def replace_random_identifier(program: str) -> str:
     """
@@ -1007,19 +1014,18 @@ def replace_random_identifier(program: str) -> str:
 # =========================================================
 
 @mutation(
-    layer=MutationLayer.LEXICAL,
-    nature=MutationNature.CORRUPTION,
-    severity=MutationSeverity.HIGH,
-    severity_score=0.75,
-    impact={MutationImpact.SEMANTIC_INVALID},
-    expected_failures={
-        PipelineStage.PARSING,
-        PipelineStage.SEMANTIC_ANALYSIS,
-    },
-    preserves_valid_ast=False,
-    preserves_typing=False,
-    preserves_semantic_equivalence=False,
-    preserves_valid_cst=False
+    name="inject_unicode_confusable",
+    layer=Layer.STRING,
+    nature=Nature.CORRUPTION,
+    strategy=Strategy.CORRUPTED,
+    domain=Domain.SEMANTIC,
+    severity=0.75,
+    contract=MutationContract(
+        cst=PreservationLevel.NONE,
+        ast=PreservationLevel.NONE,
+        typing=PreservationLevel.NONE,
+        semantics=PreservationLevel.NONE,
+    ),
 )
 def inject_unicode_confusable(program: str) -> str:
 
@@ -1040,19 +1046,18 @@ def inject_unicode_confusable(program: str) -> str:
     )
 
 @mutation(
-    layer=MutationLayer.LEXICAL,
-    nature=MutationNature.CORRUPTION,
-    severity=MutationSeverity.HIGH,
-    severity_score=0.75,
-    impact={MutationImpact.SEMANTIC_INVALID},
-    expected_failures={
-        PipelineStage.PARSING,
-        PipelineStage.SEMANTIC_ANALYSIS,
-    },
-    preserves_valid_ast=False,
-    preserves_typing=False,
-    preserves_semantic_equivalence=False,
-    preserves_valid_cst=False
+    name="inject_zero_width",
+    layer=Layer.STRING,
+    nature=Nature.CORRUPTION,
+    strategy=Strategy.CORRUPTED,
+    domain=Domain.STRUCTURAL,
+    severity=0.75,
+    contract=MutationContract(
+        cst=PreservationLevel.NONE,
+        ast=PreservationLevel.NONE,
+        typing=PreservationLevel.NONE,
+        semantics=PreservationLevel.NONE,
+    ),
 )
 def inject_zero_width(program: str) -> str:
 
@@ -1067,16 +1072,18 @@ def inject_zero_width(program: str) -> str:
     )
 
 @mutation(
-    layer=MutationLayer.LEXICAL,
-    nature=MutationNature.DELETION,
-    severity=MutationSeverity.LOW,
-    severity_score=0.4,
-    impact={MutationImpact.CST_INVALID},
-    expected_failures={PipelineStage.CST_VALIDATION},
-    preserves_valid_ast=False,
-    preserves_typing=False,
-    preserves_semantic_equivalence=False,
-    preserves_valid_cst=False
+    name="remove_random_character",
+    layer=Layer.STRING,
+    nature=Nature.CORRUPTION,
+    strategy=Strategy.CORRUPTED,
+    domain=Domain.STRUCTURAL,
+    severity=0.4,
+    contract=MutationContract(
+        cst=PreservationLevel.PARTIAL,
+        ast=PreservationLevel.PARTIAL,
+        typing=PreservationLevel.PARTIAL,
+        semantics=PreservationLevel.PARTIAL,
+    ),
 )
 def remove_random_character(program: str) -> str:
     """
@@ -1092,16 +1099,18 @@ def remove_random_character(program: str) -> str:
 
 
 @mutation(
-    layer=MutationLayer.LEXICAL,
-    nature=MutationNature.CORRUPTION,
-    severity=MutationSeverity.HIGH,
-    severity_score=0.7,
-    impact={MutationImpact.CST_INVALID},
-    expected_failures={PipelineStage.CST_VALIDATION},
-    preserves_valid_ast=False,
-    preserves_typing=False,
-    preserves_semantic_equivalence=False,
-    preserves_valid_cst=False
+    name="inject_noise",
+    layer=Layer.STRING,
+    nature=Nature.CORRUPTION,
+    strategy=Strategy.CORRUPTED,
+    domain=Domain.STRUCTURAL,
+    severity=0.7,
+    contract=MutationContract(
+        cst=PreservationLevel.NONE,
+        ast=PreservationLevel.NONE,
+        typing=PreservationLevel.NONE,
+        semantics=PreservationLevel.NONE,
+    ),
 )
 def inject_noise(program: str) -> str:
     """
@@ -1125,19 +1134,18 @@ def inject_noise(program: str) -> str:
 
 
 @mutation(
-    layer=MutationLayer.LEXICAL,
-    nature=MutationNature.CORRUPTION,
-    severity=MutationSeverity.HIGH,
-    severity_score=0.75,
-    impact={MutationImpact.SEMANTIC_INVALID},
-    expected_failures={
-        PipelineStage.PARSING,
-        PipelineStage.SEMANTIC_ANALYSIS,
-    },
-    preserves_valid_ast=False,
-    preserves_typing=False,
-    preserves_semantic_equivalence=False,
-    preserves_valid_cst=False
+    name="corrupt_keyword",
+    layer=Layer.STRING,
+    nature=Nature.CORRUPTION,
+    strategy=Strategy.CORRUPTED,
+    domain=Domain.SEMANTIC,
+    severity=0.8,
+    contract=MutationContract(
+        cst=PreservationLevel.NONE,
+        ast=PreservationLevel.NONE,
+        typing=PreservationLevel.NONE,
+        semantics=PreservationLevel.NONE,
+    ),
 )
 def corrupt_keyword(program: str) -> str:
     """
@@ -1163,16 +1171,18 @@ def corrupt_keyword(program: str) -> str:
 
 
 @mutation(
-    layer=MutationLayer.STRUCTURAL,
-    nature=MutationNature.REORDERING,    
-    severity=MutationSeverity.MEDIUM,
-    severity_score=0.5,
-    impact={MutationImpact.CST_INVALID},
-    expected_failures={PipelineStage.CST_VALIDATION},
-    preserves_valid_ast=False,
-    preserves_typing=False,
-    preserves_semantic_equivalence=False,
-    preserves_valid_cst=False
+    name="shuffle_lines",
+    layer=Layer.STRING,
+    nature=Nature.REORDERING,
+    strategy=Strategy.CORRUPTED,
+    domain=Domain.STRUCTURAL,
+    severity=0.5,
+    contract=MutationContract(
+        cst=PreservationLevel.NONE,
+        ast=PreservationLevel.NONE,
+        typing=PreservationLevel.NONE,
+        semantics=PreservationLevel.NONE,
+    ),
 )
 def shuffle_lines(program: str) -> str:
     """
@@ -1188,44 +1198,91 @@ def shuffle_lines(program: str) -> str:
 
     return "\n".join(lines)
 
-CORRUPTION_MUTATIONS = [
-    replace_random_identifier,
-    inject_zero_width,
-    inject_noise,
-    inject_unicode_confusable,
-    remove_random_character,
-    corrupt_keyword,
-    shuffle_lines,
-]
 
-===== test\hypothesis\mutations\lexical\encoding_mutations.py =====
+
+===== test\hypothesis\mutation\functions\lexical\encoding_mutations.py =====
 
 """
 Encoding-level corruption mutations.
 
 Goal:
-- simulate broken UTF-8 / binary noise
+- simulate broken UTF-8
+- simulate binary corruption
 """
 
-import random
-from token import ENCODING
-from .base_helpers import inject_noise, random_char_noise
+from __future__ import annotations
 
+import random
+
+from test.hypothesis.mutation.decorators.mutation import mutation
+
+from test.hypothesis.mutation.metadata.contract import (
+    MutationContract,
+    PreservationLevel,
+)
+
+from test.hypothesis.mutation.metadata.enums import (
+    Domain,
+    Layer,
+    Nature,
+    Strategy,
+)
+
+from .base_helpers import (
+    inject_noise,
+    random_char_noise,
+)
+
+@mutation(
+    name="encoding_corruption",
+    layer=Layer.STRING,
+    nature=Nature.CORRUPTION,
+    strategy=Strategy.CORRUPTED,
+    domain=Domain.STRUCTURAL,
+    severity=0.8,
+    contract=MutationContract(
+        cst=PreservationLevel.NONE,
+        ast=PreservationLevel.NONE,
+        typing=PreservationLevel.NONE,
+        semantics=PreservationLevel.NONE,
+    ),
+)
 def encoding_corruption(text: str) -> str:
+    """
+    Inject invalid unicode surrogate bytes.
+    """
     return inject_noise(text, "\udcff")
 
-
+@mutation(
+    name="binary_noise",
+    layer=Layer.STRING,
+    nature=Nature.CORRUPTION,
+    strategy=Strategy.CORRUPTED,
+    domain=Domain.STRUCTURAL,
+    severity=0.9,
+    contract=MutationContract(
+        cst=PreservationLevel.NONE,
+        ast=PreservationLevel.NONE,
+        typing=PreservationLevel.NONE,
+        semantics=PreservationLevel.NONE,
+    ),
+)
 def binary_noise(text: str) -> str:
-    noise = "".join(random_char_noise() for _ in range(3))
-    return inject_noise(text, noise)
+    """
+    Inject random binary-like control characters.
+    """
 
+    noise = "".join(
+        random_char_noise()
+        for _ in range(3)
+    )
 
-ENCODING_MUTATIONS = [
-    encoding_corruption,
-    binary_noise
-]
+    return inject_noise(
+        text,
+        noise,
+    )
 
-===== test\hypothesis\mutations\lexical\operator_arity_mutations.py =====
+===== test\hypothesis\mutation\functions\lexical\operator_arity_mutations.py =====
 
 """
 Operator arity violation mutations.
@@ -1235,107 +1292,318 @@ Goal:
 - create valid-looking but invalid AST shapes
 """
 
+from __future__ import annotations
+
 import random
 import re
 
-OPS = ["==", "!=", "~", "->", "<=", ">="]
+from test.hypothesis.mutation.decorators.mutation import mutation
 
-def remove_operand(text: str) -> str:
-    return re.sub(r"(==|!=|<=|>=|->|~)\s*\w+", r"\1", text)
+from test.hypothesis.mutation.metadata.contract import (
+    MutationContract,
+    PreservationLevel,
+)
 
+from test.hypothesis.mutation.metadata.enums import (
+    Domain,
+    Layer,
+    Nature,
+    Strategy,
+)
 
-def duplicate_operator(text: str) -> str:
-    return re.sub(r"(==|!=|<=|>=|->|~)", r"\1\1", text)
-
-
-def operator_shuffle(text: str) -> str:
-    return re.sub(r"(==|!=|<=|>=|->|~)", lambda _: random.choice(OPS), text)
-
-
-def break_infix(text: str) -> str:
-    return re.sub(r"(==|!=|<=|>=|->|~)\s*\w+", r"\1", text)
-
-OPERATOR_ARITY_MUTATIONS = [
-    remove_operand,
-    duplicate_operator,
-    operator_shuffle,
-    break_infix,
+OPS = [
+    "==",
+    "!=",
+    "~",
+    "->",
+    "<=",
+    ">=",
 ]
 
-===== test\hypothesis\mutations\lexical\reserved_keyword_mutations.py =====
+
+@mutation(
+    name="remove_operand",
+    layer=Layer.STRING,
+    nature=Nature.DELETION,
+    strategy=Strategy.CORRUPTED,
+    domain=Domain.STRUCTURAL,
+    severity=0.8,
+    contract=MutationContract(
+        cst=PreservationLevel.PARTIAL,
+        ast=PreservationLevel.NONE,
+        typing=PreservationLevel.NONE,
+        semantics=PreservationLevel.NONE,
+    ),
+)
+def remove_operand(text: str) -> str:
+
+    return re.sub(
+        r"(==|!=|<=|>=|->|~)\s*\w+",
+        r"\1",
+        text,
+    )
+
+
+@mutation(
+    name="duplicate_operator",
+    layer=Layer.STRING,
+    nature=Nature.CORRUPTION,
+    strategy=Strategy.CORRUPTED,
+    domain=Domain.STRUCTURAL,
+    severity=0.9,
+    contract=MutationContract(
+        cst=PreservationLevel.NONE,
+        ast=PreservationLevel.NONE,
+        typing=PreservationLevel.NONE,
+        semantics=PreservationLevel.NONE,
+    ),
+)
+def duplicate_operator(text: str) -> str:
+
+    return re.sub(
+        r"(==|!=|<=|>=|->|~)",
+        r"\1\1",
+        text,
+    )
+
+@mutation(
+    name="operator_shuffle",
+    layer=Layer.STRING,
+    nature=Nature.SUBSTITUTION,
+    strategy=Strategy.MUTATED,
+    domain=Domain.LOGICAL,
+    severity=0.6,
+    contract=MutationContract(
+        cst=PreservationLevel.FULL,
+        ast=PreservationLevel.FULL,
+        typing=PreservationLevel.PARTIAL,
+        semantics=PreservationLevel.NONE,
+    ),
+)
+def operator_shuffle(text: str) -> str:
+
+    return re.sub(
+        r"(==|!=|<=|>=|->|~)",
+        lambda _: random.choice(OPS),
+        text,
+    )
+
+
+===== test\hypothesis\mutation\functions\lexical\reserved_keyword_mutations.py =====
 
 """
 Reserved keyword misuse mutations.
 
 Goal:
-- break grammar by injecting keywords in invalid positions
+- break grammar by injecting keywords
+- misuse reserved words
 """
 
+from __future__ import annotations
+
+import re
 import random
 
-KEYWORDS = [
-    "forall",
-    "exists",
-    "using",
-    "in",
-    "with",
-    "check_at",
-]
+from test.hypothesis.mutation.decorators.mutation import mutation
 
+from test.hypothesis.mutation.metadata.contract import (
+    MutationContract,
+    PreservationLevel,
+)
+
+from test.hypothesis.mutation.metadata.enums import (
+    Domain,
+    Layer,
+    Nature,
+    Strategy,
+)
+from test.hypothesis.mutation.functions.lexical.base_helpers import KEYWORDS, replace_identifier
+
+
+@mutation(
+    name="replace_random_identifier",
+    layer=Layer.STRING,
+    nature=Nature.SUBSTITUTION,
+    strategy=Strategy.MUTATED,
+    domain=Domain.STRUCTURAL,
+    severity=0.5,
+    contract=MutationContract(
+        cst=PreservationLevel.FULL,
+        ast=PreservationLevel.PARTIAL,
+        typing=PreservationLevel.PARTIAL,
+        semantics=PreservationLevel.NONE,
+    ),
+)
+def replace_random_identifier(program: str) -> str:
+    """
+    Replace a random LHS identifier in assignments with a random token.
+    """
+
+    replacement_pool = [
+        "foo",
+        "bar",
+        "baz",
+        "qux",
+        "var",
+        "temp",
+    ]
+
+    replacement = random.choice(replacement_pool)
+
+    return replace_identifier(program, replacement)
+
+@mutation(
+    name="keyword_as_identifier",
+    layer=Layer.STRING,
+    nature=Nature.SUBSTITUTION,
+    strategy=Strategy.MUTATED,
+    domain=Domain.STRUCTURAL,
+    severity=0.5,
+    contract=MutationContract(
+        cst=PreservationLevel.FULL,
+        ast=PreservationLevel.PARTIAL,
+        typing=PreservationLevel.PARTIAL,
+        semantics=PreservationLevel.NONE,
+    ),
+)
 def keyword_as_identifier(text: str) -> str:
     kw = random.choice(KEYWORDS)
-    return text.replace("A", kw)
+
+    # replace ONLY ONE identifier
+    return replace_identifier(text, kw)
 
 
+@mutation(
+    name="keyword_duplication",
+    layer=Layer.STRING,
+    nature=Nature.CORRUPTION,
+    strategy=Strategy.CORRUPTED,
+    domain=Domain.STRUCTURAL,
+    severity=0.8,
+    contract=MutationContract(
+        cst=PreservationLevel.NONE,
+        ast=PreservationLevel.NONE,
+        typing=PreservationLevel.NONE,
+        semantics=PreservationLevel.NONE,
+    ),
+)
 def keyword_duplication(text: str) -> str:
+
     kw = random.choice(KEYWORDS)
-    return text.replace(kw, kw + kw)
 
+    return text.replace(
+        kw,
+        kw + " " + kw,
+        1,
+    )
 
+@mutation(
+    name="keyword_injection",
+    layer=Layer.STRING,
+    nature=Nature.INSERTION,
+    strategy=Strategy.CORRUPTED,
+    domain=Domain.STRUCTURAL,
+    severity=0.8,
+    contract=MutationContract(
+        cst=PreservationLevel.NONE,
+        ast=PreservationLevel.NONE,
+        typing=PreservationLevel.NONE,
+        semantics=PreservationLevel.NONE,
+    ),
+)
 def keyword_injection(text: str) -> str:
     kw = random.choice(KEYWORDS)
     i = random.randint(0, len(text))
-    return text[:i] + f" {kw} " + text[i:]
+    return (
+        text[:i] 
+        + f" {kw} " 
+        + text[i:]
+        )
 
 
-RESERVED_KEYWORD_MUTATIONS = [
-    keyword_as_identifier,
-    keyword_duplication,
-    keyword_injection,
-]
 
-===== test\hypothesis\mutations\lexical\unicode_mutations.py =====
+===== test\hypothesis\mutation\functions\lexical\unicode_mutations.py =====
 
 """
 Unicode-based lexical corruption.
 Breaks tokenizer assumptions and normalization layers.
 """
 
+
+from __future__ import annotations
+
 import random
-from .base_helpers import inject_noise
 
-UNICODE_POOL = [
-    "𝔄", "𝔅", "𝒜", "𝓐",
-    "Ω", "Σ", "Δ",
-    "∑", "∫", "∞",
-    "\u200b", "\u200d",  # zero-width
-    "�",
-]
+from test.hypothesis.mutation.decorators.mutation import mutation
 
+from test.hypothesis.mutation.metadata.contract import (
+    MutationContract,
+    PreservationLevel,
+)
+
+from test.hypothesis.mutation.metadata.enums import (
+    Domain,
+    Layer,
+    Nature,
+    Strategy,
+)
+
+from .base_helpers import UNICODE_POOL, inject_noise, replace_identifier
+
+
+
+@mutation(
+    name="unicode_injection",
+    layer=Layer.STRING,
+    nature=Nature.CORRUPTION,
+    strategy=Strategy.CORRUPTED,
+    domain=Domain.STRUCTURAL,
+    severity=0.85,
+    contract=MutationContract(
+        cst=PreservationLevel.NONE,
+        ast=PreservationLevel.NONE,
+        typing=PreservationLevel.NONE,
+        semantics=PreservationLevel.NONE,
+    ),
+)
 def unicode_injection(text: str) -> str:
-    return inject_noise(text, random.choice(UNICODE_POOL))
+    """
+    Injects random unicode artifacts into the program text.
+    """
+
+    return inject_noise(
+        text,
+        random.choice(UNICODE_POOL),
+    )
 
 
+@mutation(
+    name="unicode_identifier_break",
+    layer=Layer.STRING,
+    nature=Nature.SUBSTITUTION,
+    strategy=Strategy.CORRUPTED,
+    domain=Domain.STRUCTURAL,
+    severity=0.7,
+    contract=MutationContract(
+        cst=PreservationLevel.FULL,
+        ast=PreservationLevel.PARTIAL,
+        typing=PreservationLevel.PARTIAL,
+        semantics=PreservationLevel.NONE,
+    ),
+)
 def unicode_identifier_break(text: str) -> str:
-    return text.replace("A", "A" + random.choice(UNICODE_POOL))
+    """
+    Break identifiers by injecting unicode artifacts into LHS variables.
+    """
+
+    return replace_identifier(
+        text,
+        replacement=random.choice(UNICODE_POOL),
+    )
 
 
-UNICODE_MUTATIONS = [
-    unicode_injection,
-    unicode_identifier_break,
-]
 
-===== test\hypothesis\mutations\logical\adversarial.py =====
+===== test\hypothesis\mutation\functions\logical\adversarial.py =====
 
 """
 Adversarial mutations (ROBUSTNESS & SAFETY LAYER)
@@ -1362,7 +1630,7 @@ from copy import deepcopy
 from dsl.builder.program import ProgramNode
 from dsl.ast.nodes.assertion import NotNode, AndNode, OrNode
 
-from test.hypothesis.mutations.base import (
+from test.hypothesis.mutation.functions.base import (
     MutationLayer,
     mutation,
     MutationNature,
@@ -1468,7 +1736,7 @@ ADVERSARIAL_MUTATIONS = [
     nest_negations,
 ]
 
-===== test\hypothesis\mutations\logical\boolean.py =====
+===== test\hypothesis\mutation\functions\logical\boolean.py =====
 
 
 
@@ -1485,7 +1753,7 @@ from dsl.builder.assertion import (
 
 from dsl.builder.program import ProgramNode
 
-from test.hypothesis.mutations.base import (
+from test.hypothesis.mutation.functions.base import (
     MutationLayer,
     MutationLayer,
     mutation,
@@ -1715,7 +1983,7 @@ BOOLEAN_MUTATIONS = [
     flatten_boolean_tree,
 ]
 
-===== test\hypothesis\mutations\logical\contradiction.py =====
+===== test\hypothesis\mutation\functions\logical\contradiction.py =====
 
 from copy import deepcopy
 
@@ -1727,7 +1995,7 @@ from dsl.builder.assertion import (
 
 from dsl.builder.program import ProgramNode
 
-from test.hypothesis.mutations.base import (
+from test.hypothesis.mutation.functions.base import (
     MutationLayer,
     MutationLayer,
     mutation,
@@ -1736,7 +2004,7 @@ from test.hypothesis.mutations.base import (
     MutationSeverity,
     PipelineStage,
 )
-from test.hypothesis.mutations.semantic.contradiction import CONTRADICTION_MUTATIONS
+from test.hypothesis.mutation.functions.semantic.contradiction import CONTRADICTION_MUTATIONS
 
 @mutation(
     layer=MutationLayer.LOGICAL,
@@ -1855,7 +2123,7 @@ CONTRADICTION_MUTATIONS = [
     inject_global_contradiction,
 ]
 
-===== test\hypothesis\mutations\logical\implication.py =====
+===== test\hypothesis\mutation\functions\logical\implication.py =====
 
 
 import random
@@ -1867,7 +2135,7 @@ from dsl.builder.assertion import (
 
 from dsl.builder.program import ProgramNode
 
-from test.hypothesis.mutations.base import (
+from test.hypothesis.mutation.functions.base import (
     MutationLayer,
     MutationLayer,
     mutation,
@@ -1912,7 +2180,7 @@ IMPLICATION_MUTATIONS = [
     reverse_implication,
 ]
 
-===== test\hypothesis\mutations\logical\negation.py =====
+===== test\hypothesis\mutation\functions\logical\negation.py =====
 
 import random
 from copy import deepcopy
@@ -1927,7 +2195,7 @@ from dsl.builder.assertion import (
 
 from dsl.builder.program import ProgramNode
 
-from test.hypothesis.mutations.base import (
+from test.hypothesis.mutation.functions.base import (
     MutationLayer,
     MutationLayer,
     mutation,
@@ -2039,7 +2307,7 @@ NEGATION_MUTATIONS = [
     inject_double_negation,
 ]
 
-===== test\hypothesis\mutations\semantic\causality.py =====
+===== test\hypothesis\mutation\functions\semantic\causality.py =====
 
 # test/hypothesis/mutations/semantic/causality.py
 
@@ -2071,7 +2339,7 @@ from dsl.builder.assertion import (
     ImplicationNode,
 )
 
-from test.hypothesis.mutations.base import (
+from test.hypothesis.mutation.functions.base import (
     mutation,
     MutationLayer,
     MutationNature,
@@ -2129,7 +2397,7 @@ CAUSALITY_MUTATIONS = [
     reverse_causality,
 ]
 
-===== test\hypothesis\mutations\semantic\constraints.py =====
+===== test\hypothesis\mutation\functions\semantic\constraints.py =====
 
 # test/hypothesis/mutations/semantic/constraints.py
 
@@ -2162,7 +2430,7 @@ from dsl.ast.nodes.assertion import (
     NotNode,
 )
 
-from test.hypothesis.mutations.base import (
+from test.hypothesis.mutation.functions.base import (
     mutation,
     MutationLayer,
     MutationNature,
@@ -2225,7 +2493,7 @@ CONSTRAINT_MUTATIONS = [
     inject_impossible_constraint,
 ]
 
-===== test\hypothesis\mutations\semantic\context.py =====
+===== test\hypothesis\mutation\functions\semantic\context.py =====
 
 # test/hypothesis/mutations/semantic/context.py
 
@@ -2260,7 +2528,7 @@ from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.problems import EnumProblem
 from dsl.language.vocabulary.functions import EnumFunction
 
-from test.hypothesis.mutations.base import (
+from test.hypothesis.mutation.functions.base import (
     mutation,
     MutationLayer,
     MutationNature,
@@ -2411,7 +2679,7 @@ CONTEXT_MUTATIONS = [
 ]
 
 
-===== test\hypothesis\mutations\semantic\contradiction.py =====
+===== test\hypothesis\mutation\functions\semantic\contradiction.py =====
 
 import random
 from copy import deepcopy
@@ -2419,7 +2687,7 @@ from copy import deepcopy
 from dsl.builder.program import ProgramNode
 from dsl.builder.assertion import NotNode, OrNode, AndNode
 
-from test.hypothesis.mutations.base import (
+from test.hypothesis.mutation.functions.base import (
     mutation,
     MutationLayer,
     MutationNature,
@@ -2527,7 +2795,7 @@ CONTRADICTION_MUTATIONS = [
 ]
 
 
-===== test\hypothesis\mutations\semantic\redundancy.py =====
+===== test\hypothesis\mutation\functions\semantic\redundancy.py =====
 
 # test/hypothesis/mutations/semantic/redundancy.py
 
@@ -2560,7 +2828,7 @@ from dsl.ast.nodes.assertion import (
     NotNode,
 )
 
-from test.hypothesis.mutations.base import (
+from test.hypothesis.mutation.functions.base import (
     mutation,
     MutationLayer,
     MutationNature,
@@ -2623,7 +2891,7 @@ REDUNDANCY_MUTATIONS = [
     inject_tautological_redundancy,
 ]
 
-===== test\hypothesis\mutations\semantic\relationnal.py =====
+===== test\hypothesis\mutation\functions\semantic\relationnal.py =====
 
 # test/hypothesis/mutations/semantic/relational.py
 
@@ -2652,7 +2920,7 @@ from copy import deepcopy
 
 from dsl.builder.program import ProgramNode
 
-from test.hypothesis.mutations.base import (
+from test.hypothesis.mutation.functions.base import (
     mutation,
     MutationLayer,
     MutationNature,
@@ -2735,7 +3003,7 @@ RELATIONAL_MUTATIONS = [
     shuffle_properties,
 ]
 
-===== test\hypothesis\mutations\semantic\scope.py =====
+===== test\hypothesis\mutation\functions\semantic\scope.py =====
 
 # test/hypothesis/mutations/semantic/scope.py
 
@@ -2767,7 +3035,7 @@ from dsl.ast.nodes.expressions import (
     AtExprNode,
 )
 
-from test.hypothesis.mutations.base import (
+from test.hypothesis.mutation.functions.base import (
     mutation,
     MutationLayer,
     MutationNature,
@@ -2828,7 +3096,7 @@ SCOPE_MUTATIONS = [
     remove_neighborhood,
 ]
 
-===== test\hypothesis\mutations\semantic\typing.py =====
+===== test\hypothesis\mutation\functions\semantic\typing.py =====
 
 # test/hypothesis/mutations/semantic/typing_semantic.py
 
@@ -2860,7 +3128,7 @@ from dsl.language.vocabulary.properties import (
     EnumProperty,
 )
 
-from test.hypothesis.mutations.base import (
+from test.hypothesis.mutation.functions.base import (
     mutation,
     MutationLayer,
     MutationNature,
@@ -2923,7 +3191,7 @@ TYPING_MUTATIONS = [
     invalidate_property_semantic,
 ]
 
-===== test\hypothesis\mutations\structural\cooruotion.py =====
+===== test\hypothesis\mutation\functions\structural\cooruotion.py =====
 
 """
 Structural corruption mutations
@@ -2940,7 +3208,7 @@ import random
 from copy import deepcopy
 
 from dsl.ast.nodes.program import ProgramNode
-from test.hypothesis.mutations.base import PipelineStage, mutation, MutationLayer, MutationNature, MutationSeverity, MutationImpact
+from test.hypothesis.mutation.functions.base import PipelineStage, mutation, MutationLayer, MutationNature, MutationSeverity, MutationImpact
 
 
 @mutation(
@@ -2998,7 +3266,7 @@ def apply_corruption(ast, n=1):
         mutated = random.choice(CORRUPTION_MUTATIONS)(mutated)
     return mutated
 
-===== test\hypothesis\mutations\structural\deletion.py =====
+===== test\hypothesis\mutation\functions\structural\deletion.py =====
 
 """
 Structural deletion mutations (AST integrity breaking)
@@ -3021,7 +3289,7 @@ import random
 from copy import deepcopy
 
 from dsl.ast.nodes.program import ProgramNode
-from test.hypothesis.mutations.base import (
+from test.hypothesis.mutation.functions.base import (
     mutation,
     MutationLayer,
     MutationNature,
@@ -3100,7 +3368,7 @@ def apply_deletion(ast: ProgramNode, n: int = 1):
         mutated = random.choice(DELETION_MUTATIONS)(mutated)
     return mutated
 
-===== test\hypothesis\mutations\structural\duplication.py =====
+===== test\hypothesis\mutation\functions\structural\duplication.py =====
 
 """
 Structural duplication mutations
@@ -3116,7 +3384,7 @@ ROLE IN FORML:
 import random
 from copy import deepcopy
 
-from test.hypothesis.mutations.base import PipelineStage, mutation, MutationLayer, MutationNature, MutationSeverity, MutationImpact
+from test.hypothesis.mutation.functions.base import PipelineStage, mutation, MutationLayer, MutationNature, MutationSeverity, MutationImpact
 
 
 @mutation(
@@ -3150,7 +3418,7 @@ def apply_duplication(ast, n=1):
         mutated = random.choice(DUPLICATION_MUTATIONS)(mutated)
     return mutated
 
-===== test\hypothesis\mutations\structural\hierarchy.py =====
+===== test\hypothesis\mutation\functions\structural\hierarchy.py =====
 
 """
 Structural hierarchy mutations
@@ -3167,7 +3435,7 @@ ROLE IN FORML:
 import random
 from copy import deepcopy
 
-from test.hypothesis.mutations.base import mutation, MutationLayer, MutationNature, MutationSeverity, MutationImpact, PipelineStage
+from test.hypothesis.mutation.functions.base import mutation, MutationLayer, MutationNature, MutationSeverity, MutationImpact, PipelineStage
 
 
 @mutation(
@@ -3224,7 +3492,7 @@ def apply_hierarchy(ast, n=1):
         mutated = random.choice(HIERARCHY_MUTATIONS)(mutated)
     return mutated
 
-===== test\hypothesis\mutations\structural\invariants.py =====
+===== test\hypothesis\mutation\functions\structural\invariants.py =====
 
 """
 Structural mutations (AST LEVEL)
@@ -3247,7 +3515,7 @@ import random
 
 from dsl.ast.nodes.program import ProgramNode
 
-from test.hypothesis.mutations.base import (
+from test.hypothesis.mutation.functions.base import (
     MutationImpact,
     MutationLayer,
     mutation,
@@ -3380,7 +3648,7 @@ def apply_structural_mutations(ast: ProgramNode, n: int = 1):
         mutated = random.choice(INVARIANTS_MUTATIONS)(mutated)
     return mutated
 
-===== test\hypothesis\mutations\structural\ordering.py =====
+===== test\hypothesis\mutation\functions\structural\ordering.py =====
 
 """
 Structural ordering mutations
@@ -3402,7 +3670,7 @@ import random
 from copy import deepcopy
 
 from dsl.ast.nodes.program import ProgramNode
-from test.hypothesis.mutations.base import mutation, MutationLayer, MutationNature, MutationSeverity, MutationImpact, PipelineStage
+from test.hypothesis.mutation.functions.base import mutation, MutationLayer, MutationNature, MutationSeverity, MutationImpact, PipelineStage
 
 
 @mutation(
@@ -3437,11 +3705,11 @@ def apply_ordering(ast: ProgramNode, n: int = 1):
         mutated = random.choice(ORDERING_MUTATIONS)(mutated)
     return mutated
 
-===== test\hypothesis\mutations\syntactic\__init__.py =====
+===== test\hypothesis\mutation\functions\syntactic\__init__.py =====
 
 
 
-===== test\hypothesis\mutations\syntactic\grammar.py =====
+===== test\hypothesis\mutation\functions\syntactic\grammar.py =====
 
 # test/hypothesis/mutations/cst/grammar.py
 
@@ -3452,7 +3720,7 @@ from copy import deepcopy
 
 from lark import Tree
 
-from test.hypothesis.mutations.base import (
+from test.hypothesis.mutation.functions.base import (
     mutation,
     MutationLayer,
     MutationNature,
@@ -3535,7 +3803,7 @@ GRAMMAR_MUTATIONS = [
 ]
 
 
-===== test\hypothesis\mutations\syntactic\parse.py =====
+===== test\hypothesis\mutation\functions\syntactic\parse.py =====
 
 # test/hypothesis/mutations/cst/parse.py
 
@@ -3546,7 +3814,7 @@ from copy import deepcopy
 
 from lark import Tree
 
-from test.hypothesis.mutations.base import (
+from test.hypothesis.mutation.functions.base import (
     mutation,
     MutationLayer,
     MutationNature,
@@ -3604,7 +3872,7 @@ PARSE_MUTATIONS = [
 ]
 
 
-===== test\hypothesis\mutations\syntactic\syntax.py =====
+===== test\hypothesis\mutation\functions\syntactic\syntax.py =====
 
 # test/hypothesis/mutations/cst/syntax.py
 
@@ -3615,7 +3883,7 @@ from copy import deepcopy
 
 from lark import Tree, Token
 
-from test.hypothesis.mutations.base import (
+from test.hypothesis.mutation.functions.base import (
     mutation,
     MutationLayer,
     MutationNature,
@@ -3681,7 +3949,7 @@ SYNTAX_MUTATIONS = [
 ]
 
 
-===== test\hypothesis\mutations\syntactic\tokens.py =====
+===== test\hypothesis\mutation\functions\syntactic\tokens.py =====
 
 # test/hypothesis/mutations/cst/tokens.py
 
@@ -3692,7 +3960,7 @@ from copy import deepcopy
 
 from lark import Tree, Token
 
-from test.hypothesis.mutations.base import (
+from test.hypothesis.mutation.functions.base import (
     mutation,
     MutationLayer,
     MutationNature,
@@ -3813,7 +4081,7 @@ TOKENS_MUTATIONS = [
 ]
 
 
-===== test\hypothesis\mutations\syntactic\tree.py =====
+===== test\hypothesis\mutation\functions\syntactic\tree.py =====
 
 # test/hypothesis/mutations/cst/tree.py
 
@@ -3824,7 +4092,7 @@ from copy import deepcopy
 
 from lark import Tree
 
-from test.hypothesis.mutations.base import (
+from test.hypothesis.mutation.functions.base import (
     mutation,
     MutationLayer,
     MutationNature,
@@ -3907,7 +4175,7 @@ TREE_MUTATIONS = [
     reverse_tree_children,
 ]
 
-===== test\hypothesis\mutations\type\categorical.py =====
+===== test\hypothesis\mutation\functions\type\categorical.py =====
 
 """
 Categorical mutations (DISCRETE SEMANTICS)
@@ -3936,7 +4204,7 @@ from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.problems import EnumProblem
 
-from test.hypothesis.mutations.base import (
+from test.hypothesis.mutation.functions.base import (
     mutation,
     MutationNature,
     MutationSeverity,
@@ -4062,7 +4330,7 @@ def apply_categorical_mutations(ast: ProgramNode, n: int = 1) -> ProgramNode:
     return mutated
 
 
-===== test\hypothesis\mutations\type\numerical.py =====
+===== test\hypothesis\mutation\functions\type\numerical.py =====
 
 """
 Numerical mutations (VALUE LEVEL)
@@ -4089,7 +4357,7 @@ from dsl.ast.nodes.assertion import ComparisonNode
 from dsl.builder.program import ProgramNode
 from dsl.ast.nodes.primitives import ConstantNode
 
-from test.hypothesis.mutations.base import (
+from test.hypothesis.mutation.functions.base import (
     MutationLayer,
     mutation,
     MutationNature,
@@ -4177,6 +4445,88 @@ NUMERICAL_MUTATIONS = [
     explode_constants,
     invert_numeric_sign,
 ]
+
+===== test\hypothesis\mutation\metadata\contract.py =====
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from enum import Enum, auto
+
+
+class PreservationLevel(Enum):
+    """
+    Degree of structural or semantic preservation.
+    """
+
+    NONE = auto()
+    PARTIAL = auto()
+    FULL = auto()
+
+
+@dataclass(frozen=True, slots=True)
+class MutationContract:
+    """
+    Formal guarantees provided by a mutation.
+
+    This replaces multiple boolean 'preserves_*' flags.
+    """
+
+    cst: PreservationLevel
+    ast: PreservationLevel
+    typing: PreservationLevel
+    semantics: PreservationLevel
+
+===== test\hypothesis\mutation\metadata\descriptor.py =====
+
+from dataclasses import dataclass
+
+from test.hypothesis.mutation.core.mutation import Mutation
+from test.hypothesis.mutation.metadata.contract import MutationContract
+from test.hypothesis.mutation.metadata.enums import Domain, Layer, Nature, Strategy
+
+
+@dataclass(frozen=True, slots=True)
+class MutationDescriptor:
+    mutation: Mutation
+    layer: Layer
+    nature: Nature
+    strategy: Strategy
+    domain: Domain
+    contract: MutationContract
+    severity: float | None = None
+
+===== test\hypothesis\mutation\metadata\enums.py =====
+
+from enum import Enum, auto
+
+
+class Layer(Enum):
+    STRING = auto()
+    CST = auto()
+    AST = auto()
+    IR = auto()
+
+
+class Nature(Enum):
+    INSERTION = auto()
+    DELETION = auto()
+    SUBSTITUTION = auto()
+    REORDERING = auto()
+    CORRUPTION = auto()
+
+
+class Strategy(Enum):
+    VALID = auto()
+    MUTATED = auto()
+    CORRUPTED = auto()
+
+
+class Domain(Enum):
+    STRUCTURAL = auto()
+    SEMANTIC = auto()
+    LOGICAL = auto()
+    TYPING = auto()
 
 ===== test\hypothesis\parser\test_edge_cases.py =====
 
@@ -4592,11 +4942,11 @@ Used as first stage in FORML adversarial pipeline.
 import random
 from turtle import st
 
-from test.hypothesis.mutations.lexical.corruption import CORRUPTION_MUTATIONS
-from test.hypothesis.mutations.lexical.encoding_mutations import ENCODING_MUTATIONS
-from test.hypothesis.mutations.lexical.operator_arity_mutations import OPERATOR_ARITY_MUTATIONS
-from test.hypothesis.mutations.lexical.reserved_keyword_mutations import RESERVED_KEYWORD_MUTATIONS
-from test.hypothesis.mutations.lexical.unicode_mutations import UNICODE_MUTATIONS
+from test.hypothesis.mutation.functions.lexical.corruption import CORRUPTION_MUTATIONS
+from test.hypothesis.mutation.functions.lexical.encoding_mutations import ENCODING_MUTATIONS
+from test.hypothesis.mutation.functions.lexical.operator_arity_mutations import OPERATOR_ARITY_MUTATIONS
+from test.hypothesis.mutation.functions.lexical.reserved_keyword_mutations import RESERVED_KEYWORD_MUTATIONS
+from test.hypothesis.mutation.functions.lexical.unicode_mutations import UNICODE_MUTATIONS
 
 
 INVALID_STRING_MUTATIONS = \
@@ -4663,11 +5013,11 @@ def invalid_lexical_program(draw, base_program : str) -> str:
 import random
 from hypothesis import strategies as st
 
-from test.hypothesis.mutations.logical.adversarial import ADVERSARIAL_MUTATIONS
-from test.hypothesis.mutations.logical.boolean import BOOLEAN_MUTATIONS
-from test.hypothesis.mutations.logical.implication import IMPLICATION_MUTATIONS
-from test.hypothesis.mutations.logical.negation import NEGATION_MUTATIONS
-from test.hypothesis.mutations.logical.contradiction import CONTRADICTION_MUTATIONS
+from test.hypothesis.mutation.functions.logical.adversarial import ADVERSARIAL_MUTATIONS
+from test.hypothesis.mutation.functions.logical.boolean import BOOLEAN_MUTATIONS
+from test.hypothesis.mutation.functions.logical.implication import IMPLICATION_MUTATIONS
+from test.hypothesis.mutation.functions.logical.negation import NEGATION_MUTATIONS
+from test.hypothesis.mutation.functions.logical.contradiction import CONTRADICTION_MUTATIONS
 
 
 INVALID_LOGICAL_MUTATIONS = \
@@ -4813,14 +5163,14 @@ def invalid_program(
 import random
 from hypothesis import strategies as st
 
-from test.hypothesis.mutations.semantic.causality import CAUSALITY_MUTATIONS
-from test.hypothesis.mutations.semantic.constraints import CONSTRAINT_MUTATIONS
-from test.hypothesis.mutations.semantic.context import CONTEXT_MUTATIONS
-from test.hypothesis.mutations.semantic.contradiction import CONTRADICTION_MUTATIONS
-from test.hypothesis.mutations.semantic.redundancy import REDUNDANCY_MUTATIONS
-from test.hypothesis.mutations.semantic.relationnal import RELATIONAL_MUTATIONS
-from test.hypothesis.mutations.semantic.scope import SCOPE_MUTATIONS
-from test.hypothesis.mutations.semantic.typing import TYPING_MUTATIONS
+from test.hypothesis.mutation.functions.semantic.causality import CAUSALITY_MUTATIONS
+from test.hypothesis.mutation.functions.semantic.constraints import CONSTRAINT_MUTATIONS
+from test.hypothesis.mutation.functions.semantic.context import CONTEXT_MUTATIONS
+from test.hypothesis.mutation.functions.semantic.contradiction import CONTRADICTION_MUTATIONS
+from test.hypothesis.mutation.functions.semantic.redundancy import REDUNDANCY_MUTATIONS
+from test.hypothesis.mutation.functions.semantic.relationnal import RELATIONAL_MUTATIONS
+from test.hypothesis.mutation.functions.semantic.scope import SCOPE_MUTATIONS
+from test.hypothesis.mutation.functions.semantic.typing import TYPING_MUTATIONS
 
 
 INVALID_SEMANTIC_MUTATIONS = \
@@ -4860,12 +5210,12 @@ def invalid_logic_program(draw, base_ast):
 import random
 from hypothesis import strategies as st
 
-from test.hypothesis.mutations.structural.cooruotion import CORRUPTION_MUTATIONS
-from test.hypothesis.mutations.structural.deletion import DELETION_MUTATIONS
-from test.hypothesis.mutations.structural.duplication import DUPLICATION_MUTATIONS
-from test.hypothesis.mutations.structural.hierarchy import HIERARCHY_MUTATIONS
-from test.hypothesis.mutations.structural.invariants import INVARIANTS_MUTATIONS
-from test.hypothesis.mutations.structural.ordering import ORDERING_MUTATIONS
+from test.hypothesis.mutation.functions.structural.cooruotion import CORRUPTION_MUTATIONS
+from test.hypothesis.mutation.functions.structural.deletion import DELETION_MUTATIONS
+from test.hypothesis.mutation.functions.structural.duplication import DUPLICATION_MUTATIONS
+from test.hypothesis.mutation.functions.structural.hierarchy import HIERARCHY_MUTATIONS
+from test.hypothesis.mutation.functions.structural.invariants import INVARIANTS_MUTATIONS
+from test.hypothesis.mutation.functions.structural.ordering import ORDERING_MUTATIONS
 
 
 INVALID_STRUCTURAL_MUTATIONS = \
@@ -4935,11 +5285,11 @@ from hypothesis import strategies as st
 
 from lark import Tree
 
-from test.hypothesis.mutations.syntactic.grammar import GRAMMAR_MUTATIONS
-from test.hypothesis.mutations.syntactic.parse import PARSE_MUTATIONS
-from test.hypothesis.mutations.syntactic.syntax import SYNTAX_MUTATIONS
-from test.hypothesis.mutations.syntactic.tokens import TOKENS_MUTATIONS
-from test.hypothesis.mutations.syntactic.tree import TREE_MUTATIONS
+from test.hypothesis.mutation.functions.syntactic.grammar import GRAMMAR_MUTATIONS
+from test.hypothesis.mutation.functions.syntactic.parse import PARSE_MUTATIONS
+from test.hypothesis.mutation.functions.syntactic.syntax import SYNTAX_MUTATIONS
+from test.hypothesis.mutation.functions.syntactic.tokens import TOKENS_MUTATIONS
+from test.hypothesis.mutation.functions.syntactic.tree import TREE_MUTATIONS
 
 # =========================================================
 # Registry

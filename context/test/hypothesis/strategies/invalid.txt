@@ -16,11 +16,11 @@ Used as first stage in FORML adversarial pipeline.
 import random
 from turtle import st
 
-from test.hypothesis.mutations.lexical.corruption import CORRUPTION_MUTATIONS
-from test.hypothesis.mutations.lexical.encoding_mutations import ENCODING_MUTATIONS
-from test.hypothesis.mutations.lexical.operator_arity_mutations import OPERATOR_ARITY_MUTATIONS
-from test.hypothesis.mutations.lexical.reserved_keyword_mutations import RESERVED_KEYWORD_MUTATIONS
-from test.hypothesis.mutations.lexical.unicode_mutations import UNICODE_MUTATIONS
+from test.hypothesis.mutation.functions.lexical.corruption import CORRUPTION_MUTATIONS
+from test.hypothesis.mutation.functions.lexical.encoding_mutations import ENCODING_MUTATIONS
+from test.hypothesis.mutation.functions.lexical.operator_arity_mutations import OPERATOR_ARITY_MUTATIONS
+from test.hypothesis.mutation.functions.lexical.reserved_keyword_mutations import RESERVED_KEYWORD_MUTATIONS
+from test.hypothesis.mutation.functions.lexical.unicode_mutations import UNICODE_MUTATIONS
 
 
 INVALID_STRING_MUTATIONS = \
@@ -87,11 +87,11 @@ def invalid_lexical_program(draw, base_program : str) -> str:
 import random
 from hypothesis import strategies as st
 
-from test.hypothesis.mutations.logical.adversarial import ADVERSARIAL_MUTATIONS
-from test.hypothesis.mutations.logical.boolean import BOOLEAN_MUTATIONS
-from test.hypothesis.mutations.logical.implication import IMPLICATION_MUTATIONS
-from test.hypothesis.mutations.logical.negation import NEGATION_MUTATIONS
-from test.hypothesis.mutations.logical.contradiction import CONTRADICTION_MUTATIONS
+from test.hypothesis.mutation.functions.logical.adversarial import ADVERSARIAL_MUTATIONS
+from test.hypothesis.mutation.functions.logical.boolean import BOOLEAN_MUTATIONS
+from test.hypothesis.mutation.functions.logical.implication import IMPLICATION_MUTATIONS
+from test.hypothesis.mutation.functions.logical.negation import NEGATION_MUTATIONS
+from test.hypothesis.mutation.functions.logical.contradiction import CONTRADICTION_MUTATIONS
 
 
 INVALID_LOGICAL_MUTATIONS = \
@@ -237,14 +237,14 @@ def invalid_program(
 import random
 from hypothesis import strategies as st
 
-from test.hypothesis.mutations.semantic.causality import CAUSALITY_MUTATIONS
-from test.hypothesis.mutations.semantic.constraints import CONSTRAINT_MUTATIONS
-from test.hypothesis.mutations.semantic.context import CONTEXT_MUTATIONS
-from test.hypothesis.mutations.semantic.contradiction import CONTRADICTION_MUTATIONS
-from test.hypothesis.mutations.semantic.redundancy import REDUNDANCY_MUTATIONS
-from test.hypothesis.mutations.semantic.relationnal import RELATIONAL_MUTATIONS
-from test.hypothesis.mutations.semantic.scope import SCOPE_MUTATIONS
-from test.hypothesis.mutations.semantic.typing import TYPING_MUTATIONS
+from test.hypothesis.mutation.functions.semantic.causality import CAUSALITY_MUTATIONS
+from test.hypothesis.mutation.functions.semantic.constraints import CONSTRAINT_MUTATIONS
+from test.hypothesis.mutation.functions.semantic.context import CONTEXT_MUTATIONS
+from test.hypothesis.mutation.functions.semantic.contradiction import CONTRADICTION_MUTATIONS
+from test.hypothesis.mutation.functions.semantic.redundancy import REDUNDANCY_MUTATIONS
+from test.hypothesis.mutation.functions.semantic.relationnal import RELATIONAL_MUTATIONS
+from test.hypothesis.mutation.functions.semantic.scope import SCOPE_MUTATIONS
+from test.hypothesis.mutation.functions.semantic.typing import TYPING_MUTATIONS
 
 
 INVALID_SEMANTIC_MUTATIONS = \
@@ -284,12 +284,12 @@ def invalid_logic_program(draw, base_ast):
 import random
 from hypothesis import strategies as st
 
-from test.hypothesis.mutations.structural.cooruotion import CORRUPTION_MUTATIONS
-from test.hypothesis.mutations.structural.deletion import DELETION_MUTATIONS
-from test.hypothesis.mutations.structural.duplication import DUPLICATION_MUTATIONS
-from test.hypothesis.mutations.structural.hierarchy import HIERARCHY_MUTATIONS
-from test.hypothesis.mutations.structural.invariants import INVARIANTS_MUTATIONS
-from test.hypothesis.mutations.structural.ordering import ORDERING_MUTATIONS
+from test.hypothesis.mutation.functions.structural.cooruotion import CORRUPTION_MUTATIONS
+from test.hypothesis.mutation.functions.structural.deletion import DELETION_MUTATIONS
+from test.hypothesis.mutation.functions.structural.duplication import DUPLICATION_MUTATIONS
+from test.hypothesis.mutation.functions.structural.hierarchy import HIERARCHY_MUTATIONS
+from test.hypothesis.mutation.functions.structural.invariants import INVARIANTS_MUTATIONS
+from test.hypothesis.mutation.functions.structural.ordering import ORDERING_MUTATIONS
 
 
 INVALID_STRUCTURAL_MUTATIONS = \
@@ -359,11 +359,11 @@ from hypothesis import strategies as st
 
 from lark import Tree
 
-from test.hypothesis.mutations.syntactic.grammar import GRAMMAR_MUTATIONS
-from test.hypothesis.mutations.syntactic.parse import PARSE_MUTATIONS
-from test.hypothesis.mutations.syntactic.syntax import SYNTAX_MUTATIONS
-from test.hypothesis.mutations.syntactic.tokens import TOKENS_MUTATIONS
-from test.hypothesis.mutations.syntactic.tree import TREE_MUTATIONS
+from test.hypothesis.mutation.functions.syntactic.grammar import GRAMMAR_MUTATIONS
+from test.hypothesis.mutation.functions.syntactic.parse import PARSE_MUTATIONS
+from test.hypothesis.mutation.functions.syntactic.syntax import SYNTAX_MUTATIONS
+from test.hypothesis.mutation.functions.syntactic.tokens import TOKENS_MUTATIONS
+from test.hypothesis.mutation.functions.syntactic.tree import TREE_MUTATIONS
 
 # =========================================================
 # Registry

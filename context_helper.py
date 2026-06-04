@@ -63,33 +63,25 @@ if __name__ == "__main__":
         "test/unit", recursive=True, output_file="context/test/unit.txt"
     )
     concat_files_in_folder(
-        "test/hypothesis", recursive=True, output_file="context/test/hypothesis.txt"
-    )
-    concat_files_in_folder(
-        "test/hypothesis/mutations",
-        recursive=True,
-        output_file="context/test/hypothesis/mutations.txt",
-    )
-    concat_files_in_folder(
-        "test/hypothesis/mutations/cst",
-        recursive=True,
-        output_file="context/test/hypothesis/mutations/cst.txt",
-    )
-    concat_files_in_folder(
-        "test/hypothesis/mutations/ast",
-        recursive=True,
-        output_file="context/test/hypothesis/mutations/ast.txt",
+        "test/hypothesis", 
+        recursive=True, 
+        output_file="context/test/hypothesis.txt"
     )
     concat_files_in_folder(
         "test/hypothesis/mutation",
         recursive=True,
         output_file="context/test/hypothesis/mutation.txt",
     )
+
+
+    # mutations
     concat_files_in_folder(
-        "test/hypothesis/mutations/string",
+        "test/hypothesis/mutation/core",
         recursive=True,
-        output_file="context/test/hypothesis/mutations/string.txt",
+        output_file="context/test/hypothesis/mutations/core.txt",
     )
+
+    # strategies
     concat_files_in_folder(
         "test/hypothesis/strategies/valid",
         recursive=True,

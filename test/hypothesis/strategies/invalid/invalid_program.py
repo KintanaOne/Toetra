@@ -1,106 +1,127 @@
 """
-Multi-layer invalid FORML program generation.
+Multi-layer invalid FORML generation.
 
-Pipeline:
-    valid_program (string)
-        ↓
-    lexical invalid strategy
-        ↓
-    CST
-        ↓
-    structural invalid strategy
-        ↓
-    AST
-        ↓
-    semantic invalid strategy
+This module orchestrates corruption across
+the FORML compilation pipeline.
 
-This module orchestrates invalid generation across
-FORML pipeline layers.
+It does NOT contain mutation logic.
+
+Mutation selection is delegated to the
+generic mutation engine.
 """
 
+from __future__ import annotations
+
 import random
+from hypothesis import strategies as st
+
 from hypothesis.strategies import composite
 
 from dsl.parser.parser import parse_forml_code
 from dsl.builder.program import parse_program
 
-from test.hypothesis.strategies.valid.valid_lexical import valid_lexical_program
+from test.hypothesis.strategies.valid.valid_lexical import (
+    valid_lexical_program,
+)
 
-# ================================
-# STRATEGY LAYERS (NOT MUTATIONS)
-# ================================
+from test.hypothesis.strategies.invalid.generic import (
+    invalid_program_for,
+)
 
-from test.hypothesis.strategies.invalid.invalid_lexical import invalid_lexical_program
-from test.hypothesis.strategies.invalid.invalid_syntactic import invalid_syntactic_program
-from test.hypothesis.strategies.invalid.invalid_logical import invalid_ast_program
+from test.hypothesis.mutation.metadata.enums import (
+    Layer,
+    Domain,
+    Strategy,
+)
 
-
-# =========================================================
-# MAIN STRATEGY
-# =========================================================
 
 @composite
 def invalid_program(
     draw,
+    registry,
+    filter_engine,
+    *,
     string_ratio: float = 0.4,
     cst_ratio: float = 0.3,
     ast_ratio: float = 0.3,
 ):
     """
-    Generate invalid FORML programs across multiple layers.
+    Generate invalid artifacts at different
+    compilation stages.
 
-    Each layer has its own invalid strategy responsible
-    for producing controlled corruption.
+    Corruption may happen at:
+
+        - raw text
+        - CST
+        - AST
     """
 
-    assert 0 <= string_ratio <= 1, "string_ratio must be in [0, 1]"
-    assert 0 <= cst_ratio <= 1, "cst_ratio must be in [0, 1]"
-    assert 0 <= ast_ratio <= 1, "ast_ratio must be in [0, 1]"
-    assert (string_ratio + cst_ratio + ast_ratio) <= 1, "Total ratio must be <= 1"
+    program = draw(
+        valid_lexical_program()
+    )
 
-    # -----------------------------------------------------
-    # STEP 1: valid program
-    # -----------------------------------------------------
-
-    program = draw(valid_lexical_program())
-
-    # -----------------------------------------------------
-    # STEP 2: string corruption
-    # -----------------------------------------------------
+    # ------------------------------------------
+    # STRING
+    # ------------------------------------------
 
     if random.random() < string_ratio:
-        program = draw(invalid_lexical_program(program))
 
-    # -----------------------------------------------------
-    # STEP 3: parse CST
-    # -----------------------------------------------------
+        program = draw(
+            invalid_program_for(
+                base_strategy=st.just(program),
+                registry=registry,
+                filter_engine=filter_engine,
+                artifact_layer=Layer.STRING,
+                layer=Layer.STRING,
+                strategy=Strategy.CORRUPTED,
+            )
+        )
 
     try:
         cst = parse_forml_code(program)
+
     except Exception:
+
         return program
 
-    # -----------------------------------------------------
-    # STEP 4: cst corruption
-    # -----------------------------------------------------
+    # ------------------------------------------
+    # CST
+    # ------------------------------------------
 
     if random.random() < cst_ratio:
-        cst = draw(invalid_syntactic_program(cst))
 
-    # -----------------------------------------------------
-    # STEP 5: parse AST
-    # -----------------------------------------------------
+        cst = draw(
+            invalid_program_for(
+                base_strategy=st.just(cst),
+                registry=registry,
+                filter_engine=filter_engine,
+                artifact_layer=Layer.CST,
+                layer=Layer.CST,
+                strategy=Strategy.CORRUPTED,
+            )
+        )
 
     try:
         ast = parse_program(cst)
+
     except Exception:
+
         return cst
 
-    # -----------------------------------------------------
-    # STEP 6: ast corruption
-    # -----------------------------------------------------
+    # ------------------------------------------
+    # AST
+    # ------------------------------------------
 
     if random.random() < ast_ratio:
-        ast = draw(invalid_ast_program(ast))
+
+        ast = draw(
+            invalid_program_for(
+                base_strategy=st.just(ast),
+                registry=registry,
+                filter_engine=filter_engine,
+                artifact_layer=Layer.AST,
+                layer=Layer.AST,
+            )
+        )
 
     return ast
