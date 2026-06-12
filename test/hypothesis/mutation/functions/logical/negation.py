@@ -1,110 +1,121 @@
-import random
+"""
+Logical negation mutations (FORML CORE)
+
+GOAL:
+    Manipulate negation structure in logical AST.
+
+ROLE:
+    - test logical inversion robustness
+    - validate normalization layers
+    - stress semantic equivalence detection
+"""
+
+from __future__ import annotations
+
 from copy import deepcopy
-from tkinter import NE
 
-from dsl.builder.assertion import (
-    AndNode,
-    ImplicationNode,
-    NotNode,
-    OrNode,
+from test.hypothesis.mutation.decorators.mutation import mutation
+
+from test.hypothesis.mutation.metadata.contract import MutationContract, PreservationLevel
+from test.hypothesis.mutation.metadata.enums import Layer, Nature, Strategy, Domain
+
+from dsl.builder.assertion import NotNode
+
+
+# =========================================================
+# CONTRACTS
+# =========================================================
+
+FULL_SEMANTIC_PRESERVE = MutationContract(
+    cst=PreservationLevel.FULL,
+    ast=PreservationLevel.FULL,
+    typing=PreservationLevel.FULL,
+    semantics=PreservationLevel.FULL,
 )
 
-from dsl.builder.program import ProgramNode
-
-from test.hypothesis.mutation.functions.base import (
-    MutationLayer,
-    MutationLayer,
-    mutation,
-    MutationImpact,
-    MutationNature,
-    MutationSeverity,
-    PipelineStage,
+PARTIAL_SEMANTIC_BREAK = MutationContract(
+    cst=PreservationLevel.FULL,
+    ast=PreservationLevel.FULL,
+    typing=PreservationLevel.FULL,
+    semantics=PreservationLevel.PARTIAL,
 )
+
+FULL_SEMANTIC_BREAK = MutationContract(
+    cst=PreservationLevel.FULL,
+    ast=PreservationLevel.FULL,
+    typing=PreservationLevel.FULL,
+    semantics=PreservationLevel.NONE,
+)
+
+
+# =========================================================
+# 1. NEGATE ASSERTION
+# =========================================================
 
 @mutation(
-    layer=MutationLayer.LOGICAL,
-    nature=MutationNature.PERTURBATION,
-    severity=MutationSeverity.HIGH,
-    severity_score=0.8,
-    impact={MutationImpact.SEMANTIC_INVALID},
-    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
-    preserves_valid_ast=True,
-    preserves_typing=True,
-    preserves_semantic_equivalence=False,
-    preserves_valid_cst=True
+    name="negate_assertion",
+    layer=Layer.AST,
+    nature=Nature.SUBSTITUTION,
+    strategy=Strategy.MUTATED,
+    domain=Domain.LOGICAL,
+    severity=0.8,
+    contract=FULL_SEMANTIC_BREAK,
 )
-def negate_assertion(ast: ProgramNode) -> ProgramNode:
-    """
-    Negate assertion roots.
-
-    Example:
-        A becomes NOT(A)
-    """
+def negate_assertion(ast):
 
     mutated = deepcopy(ast)
 
     for p in mutated.body:
 
         root = p.rule.assertion.root
+
         p.rule.assertion.root = NotNode(operand=root)
 
     return mutated
 
 
-@mutation(
-    layer=MutationLayer.LOGICAL,
-    nature=MutationNature.PERTURBATION,
-    severity=MutationSeverity.MEDIUM,
-    severity_score=0.55,
-    impact={MutationImpact.SEMANTIC_INVALID},
-    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
-    preserves_valid_ast=True,
-    preserves_typing=True,
-    preserves_semantic_equivalence=False,
-    preserves_valid_cst=True
-)
-def remove_negation(ast: ProgramNode) -> ProgramNode:
-    """
-    Remove NOT operators.
+# =========================================================
+# 2. REMOVE NEGATION (NORMALIZATION STEP)
+# =========================================================
 
-    Example:
-        NOT(A) becomes A
-    """
+@mutation(
+    name="remove_negation",
+    layer=Layer.AST,
+    nature=Nature.DELETION,
+    strategy=Strategy.VALID,
+    domain=Domain.LOGICAL,
+    severity=0.5,
+    contract=PARTIAL_SEMANTIC_BREAK,
+)
+def remove_negation(ast):
 
     mutated = deepcopy(ast)
 
+    def _unwrap(node):
+        if isinstance(node, NotNode):
+            return node.operand
+        return node
+
     for p in mutated.body:
-
-        root = p.rule.assertion.root
-
-        if isinstance(root, NotNode):
-            p.rule.assertion.root = root.operand
+        p.rule.assertion.root = _unwrap(p.rule.assertion.root)
 
     return mutated
 
 
+# =========================================================
+# 3. DOUBLE NEGATION (SEMANTIC NO-OP)
+# =========================================================
+
 @mutation(
-    layer=MutationLayer.LOGICAL,
-    nature=MutationNature.PERTURBATION,
-    severity=MutationSeverity.INFO,
-    severity_score=0.1,
-    impact={MutationImpact.NONE},
-    expected_failures=set(),
-    preserves_valid_ast=True,
-    preserves_typing=True,
-    preserves_semantic_equivalence=True,
-    preserves_valid_cst=True
+    name="inject_double_negation",
+    layer=Layer.AST,
+    nature=Nature.INSERTION,
+    strategy=Strategy.VALID,
+    domain=Domain.LOGICAL,
+    severity=0.1,
+    contract=FULL_SEMANTIC_PRESERVE,
 )
-def inject_double_negation(ast: ProgramNode) -> ProgramNode:
-    """
-    Inject double negation.
-
-    Example:
-        A becomes NOT(NOT(A))
-
-    NOTE:
-        Logically equivalent.
-    """
+def inject_double_negation(ast):
 
     mutated = deepcopy(ast)
 
@@ -112,13 +123,8 @@ def inject_double_negation(ast: ProgramNode) -> ProgramNode:
 
         root = deepcopy(p.rule.assertion.root)
 
-        p.rule.assertion.root = NotNode(operand=NotNode(operand=root))
+        p.rule.assertion.root = NotNode(
+            operand=NotNode(operand=root)
+        )
 
     return mutated
-
-
-NEGATION_MUTATIONS = [
-    negate_assertion,
-    remove_negation,
-    inject_double_negation,
-]

@@ -17,45 +17,37 @@ CHARACTERISTICS:
     ✔ typing preserved
     ❌ semantic causality corrupted
 """
-
-from __future__ import annotations
-
 from copy import deepcopy
 
-from dsl.builder.program import ProgramNode
+from dsl.ast.nodes.assertion import ImplicationNode
+from dsl.ast.nodes.program import ProgramNode
+from test.hypothesis.mutation.decorators.mutation import mutation
 
-from dsl.builder.assertion import (
-    ImplicationNode,
+from test.hypothesis.mutation.metadata.contract import (
+    MutationContract,
+    PreservationLevel,
 )
 
-from test.hypothesis.mutation.functions.base import (
-    mutation,
-    MutationLayer,
-    MutationNature,
-    MutationSeverity,
-    MutationImpact,
-    PipelineStage,
+from test.hypothesis.mutation.metadata.enums import (
+    Domain,
+    Layer,
+    Nature,
+    Strategy,
 )
-
-
-# =========================================================
-# MUTATION 1 : reverse causality
-# =========================================================
-
 
 @mutation(
-    layer=MutationLayer.SEMANTIC,
-    nature=MutationNature.REORDERING,
-    severity=MutationSeverity.HIGH,
-    severity_score=0.80,
-    impact={MutationImpact.SEMANTIC_INVALID},
-    expected_failures={
-        PipelineStage.SEMANTIC_ANALYSIS,
-    },
-    preserves_valid_cst=True,
-    preserves_valid_ast=True,
-    preserves_typing=True,
-    preserves_semantic_equivalence=False,
+    name="reverse_causality",
+    layer=Layer.AST,
+    nature=Nature.REORDERING,
+    strategy=Strategy.CORRUPTED,
+    domain=Domain.SEMANTIC,
+    severity=0.8,
+    contract=MutationContract(
+        cst=PreservationLevel.FULL,
+        ast=PreservationLevel.FULL,
+        typing=PreservationLevel.FULL,
+        semantics=PreservationLevel.NONE,
+    ),
 )
 def reverse_causality(
     ast: ProgramNode,
@@ -80,8 +72,3 @@ def reverse_causality(
             )
 
     return mutated
-
-
-CAUSALITY_MUTATIONS = [
-    reverse_causality,
-]

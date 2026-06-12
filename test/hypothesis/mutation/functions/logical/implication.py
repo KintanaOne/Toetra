@@ -1,54 +1,136 @@
+"""
+Logical contradiction & tautology mutations (FORML CORE)
 
-import random
+GOAL:
+    Inject semantic impossibilities into AST structures.
+
+ROLE:
+    - stress semantic validation layer
+    - detect reasoning instability
+    - simulate adversarial logical corruption
+"""
+
+from __future__ import annotations
+
 from copy import deepcopy
 
-from dsl.builder.assertion import (
-    ImplicationNode,
+from test.hypothesis.mutation.decorators.mutation import mutation
+
+from test.hypothesis.mutation.metadata.contract import MutationContract, PreservationLevel
+from test.hypothesis.mutation.metadata.enums import Layer, Nature, Strategy, Domain
+
+from dsl.builder.assertion import AndNode, OrNode, NotNode
+
+
+# =========================================================
+# SHARED CONTRACTS
+# =========================================================
+
+FULL_AST_BUT_SEMANTIC_BREAK = MutationContract(
+    cst=PreservationLevel.FULL,
+    ast=PreservationLevel.FULL,
+    typing=PreservationLevel.FULL,
+    semantics=PreservationLevel.NONE,
 )
 
-from dsl.builder.program import ProgramNode
-
-from test.hypothesis.mutation.functions.base import (
-    MutationLayer,
-    MutationLayer,
-    mutation,
-    MutationImpact,
-    MutationNature,
-    MutationSeverity,
-    PipelineStage,
+PARTIAL_SEMANTIC_BREAK = MutationContract(
+    cst=PreservationLevel.FULL,
+    ast=PreservationLevel.FULL,
+    typing=PreservationLevel.FULL,
+    semantics=PreservationLevel.PARTIAL,
 )
+
+
+# =========================================================
+# 1. LOCAL CONTRADICTION
+# =========================================================
 
 @mutation(
-    layer=MutationLayer.LEXICAL,
-    nature=MutationNature.CORRUPTION,
-    severity=MutationSeverity.HIGH,
-    severity_score=0.75,
-    impact={MutationImpact.SEMANTIC_INVALID},
-    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
-    preserves_valid_ast=True,
-    preserves_typing=True,
-    preserves_semantic_equivalence=False,
-    preserves_valid_cst=True
+    name="logical.inject_contradiction",
+    layer=Layer.AST,
+    nature=Nature.CORRUPTION,
+    strategy=Strategy.CORRUPTED,
+    domain=Domain.LOGICAL,
+    severity=0.95,
+    contract=FULL_AST_BUT_SEMANTIC_BREAK,
 )
-def reverse_implication(ast: ProgramNode) -> ProgramNode:
-    """
-    Reverse implication direction.
-
-    Example:
-        A -> B becomes B -> A
-    """
+def inject_contradiction(ast):
 
     mutated = deepcopy(ast)
 
     for p in mutated.body:
 
-        root = p.rule.assertion.root
+        root = deepcopy(p.rule.assertion.root)
 
-        if isinstance(root, ImplicationNode):
-            root.left, root.right = root.right, root.left
+        p.rule.assertion.root = AndNode(
+            operands=[
+                root,
+                NotNode(operand=deepcopy(root)),
+            ]
+        )
 
     return mutated
 
-IMPLICATION_MUTATIONS = [
-    reverse_implication,
-]
+
+# =========================================================
+# 2. TAUTOLOGY INJECTION
+# =========================================================
+
+@mutation(
+    name="logical.inject_tautology",
+    layer=Layer.AST,
+    nature=Nature.CORRUPTION,
+    strategy=Strategy.CORRUPTED,
+    domain=Domain.LOGICAL,
+    severity=0.8,
+    contract=FULL_AST_BUT_SEMANTIC_BREAK,
+)
+def inject_logical_tautology(ast):
+
+    mutated = deepcopy(ast)
+
+    for p in mutated.body:
+
+        root = deepcopy(p.rule.assertion.root)
+
+        p.rule.assertion.root = OrNode(
+            operands=[
+                root,
+                NotNode(operand=deepcopy(root)),
+            ]
+        )
+
+    return mutated
+
+
+# =========================================================
+# 3. GLOBAL CONTRADICTION (semantic-level injection)
+# =========================================================
+
+@mutation(
+    name="logical.inject_global_contradiction",
+    layer=Layer.AST,
+    nature=Nature.INSERTION,
+    strategy=Strategy.CORRUPTED,
+    domain=Domain.LOGICAL,
+    severity=0.98,
+    contract=FULL_AST_BUT_SEMANTIC_BREAK,
+)
+def inject_global_contradiction(ast):
+
+    mutated = deepcopy(ast)
+
+    for p in mutated.body:
+
+        root = deepcopy(p.rule.assertion.root)
+
+        contradiction = AndNode(
+            operands=[
+                root,
+                NotNode(operand=deepcopy(root)),
+            ]
+        )
+
+        p.rule.assertion.root = contradiction
+
+    return mutated
