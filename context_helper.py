@@ -41,26 +41,56 @@ def concat_files_in_folder(
 
 
 if __name__ == "__main__":
-    concat_files_in_folder("dsl/", recursive=True, output_file="context/dsl.txt")
-    concat_files_in_folder("dsl/ast", recursive=True, output_file="context/ast.txt")
+    # all
     concat_files_in_folder(
-        "dsl/semantic", recursive=True, output_file="context/semantic.txt"
+        "dsl/", 
+        recursive=True, 
+        output_file="context/dsl.txt"
     )
-    concat_files_in_folder(
-        "dsl/builder", recursive=True, output_file="context/builder.txt"
-    )
-    concat_files_in_folder(
-        "dsl/language", recursive=True, output_file="context/language.txt"
-    )
-    concat_files_in_folder(
-        "dsl/parser", recursive=True, output_file="context/parser.txt"
-    )
-    concat_files_in_folder("dsl/ir", recursive=True, output_file="context/ir.txt")
 
-    concat_files_in_folder("model", recursive=True, output_file="context/model.txt")
+    # dsl subfolders
+    concat_files_in_folder(
+        "dsl/ast", 
+        recursive=True, 
+        output_file="context/dsl/ast.txt"
+    )
+    concat_files_in_folder(
+        "dsl/semantic", 
+        recursive=True, 
+        output_file="context/dsl/semantic.txt"
+    )
+    concat_files_in_folder(
+        "dsl/builder", 
+        recursive=True, 
+        output_file="context/dsl/builder.txt"
+    )
+    concat_files_in_folder(
+        "dsl/language", 
+        recursive=True, 
+        output_file="context/dsl/language.txt"
+    )
+    concat_files_in_folder(
+        "dsl/parser", 
+        recursive=True, 
+        output_file="context/dsl/parser.txt"
+    )
+    concat_files_in_folder(
+        "dsl/ir", 
+        recursive=True, 
+        output_file="context/dsl/ir.txt"
+    )
+
+    # test
+    concat_files_in_folder(
+        "model", 
+        recursive=True, 
+        output_file="context/model/model.txt"
+    )
 
     concat_files_in_folder(
-        "test/unit", recursive=True, output_file="context/test/unit.txt"
+        "test/unit", 
+        recursive=True, 
+        output_file="context/test/unit.txt"
     )
     concat_files_in_folder(
         "test/hypothesis", 
@@ -74,11 +104,25 @@ if __name__ == "__main__":
     )
 
 
-    # mutations
+    # core
     concat_files_in_folder(
         "test/hypothesis/mutation/core",
         recursive=True,
         output_file="context/test/hypothesis/mutations/core.txt",
+    )
+
+    # decorators
+    concat_files_in_folder(
+        "test/hypothesis/mutation/decorators",
+        recursive=True,
+        output_file="context/test/hypothesis/mutations/decorator.txt",
+    )
+
+    # metadata
+    concat_files_in_folder(
+        "test/hypothesis/mutation/metadata",
+        recursive=True,
+        output_file="context/test/hypothesis/mutations/metadata.txt",
     )
 
     # strategies
@@ -92,3 +136,19 @@ if __name__ == "__main__":
         recursive=True,
         output_file="context/test/hypothesis/strategies/invalid.txt",
     )
+
+    concat_files_in_folder(
+        "test/hypothesis/mutation/functions/semantic",
+        recursive=True,
+        output_file="context/test/hypothesis/mutation/semantic.txt",
+    )
+
+
+    concat_files_in_folder(
+        "test/hypothesis/mutation/functions/semantic/helper",
+        recursive=True,
+        output_file="context/test/hypothesis/mutation/helper.txt",
+    )
+
+
+    

@@ -127,11 +127,3 @@ def inject_global_contradiction(ast: ProgramNode) -> ProgramNode:
         p.rule.assertion.root = contradiction
 
     return mutated
-
-    
-
-CONTRADICTION_MUTATIONS = [
-    inject_contradiction,
-    inject_logical_tautology,
-    inject_global_contradiction,
-]

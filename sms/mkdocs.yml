@@ -1,0 +1,38 @@
+site_name: SMS v1 — Stable Mutations System
+site_description: Architecture of a contract-driven invariant-checked transformation system
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.instant
+    - search.highlight
+    - content.code.copy
+
+nav:
+  - Home: index.md
+
+  - Architecture:
+      - SMS v1 Spec: architecture/sms_v1_architecture_spec.md
+
+  - Models:
+      - Artifact: models/artifact_model.md
+      - Transformation: models/transformation_model.md
+      - Contract: models/contract_model.md
+      - Invariant: models/invariant_model.md
+      - Engine: models/engine_model.md
+      - Registry: models/registry_model.md
+
+  - Semantics:
+      - Execution Lifecycle: semantics/execution_lifecycle.md
+      - Outcomes: semantics/outcome_classification.md
+
+  - ADR:
+      - ADRs: adr/
+
+  - Diagrams:
+      - Overview: diagrams/
+
+  - Implementation:
+      - Notes: implementation/

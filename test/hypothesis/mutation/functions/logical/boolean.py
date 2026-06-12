@@ -1,48 +1,63 @@
 
 
-from ctypes.wintypes import BOOLEAN
+from __future__ import annotations
+
 import random
+
 from copy import deepcopy
 
-from dsl.builder.assertion import (
-    AndNode,
-    ImplicationNode,
-    NotNode,
-    OrNode,
+from test.hypothesis.mutation.decorators.mutation import mutation
+
+from test.hypothesis.mutation.metadata.contract import MutationContract, PreservationLevel
+from test.hypothesis.mutation.metadata.enums import (
+    Domain,
+    Layer,
+    Nature,
+    Strategy,
 )
 
-from dsl.builder.program import ProgramNode
+from dsl.ast.nodes.assertion import AndNode, OrNode, NotNode
 
-from test.hypothesis.mutation.functions.base import (
-    MutationLayer,
-    MutationLayer,
-    mutation,
-    MutationImpact,
-    MutationNature,
-    MutationSeverity,
-    PipelineStage,
+# =========================================================
+# CONTRACTS
+# =========================================================
+
+FULL_PRESERVE = MutationContract(
+    cst=PreservationLevel.FULL,
+    ast=PreservationLevel.FULL,
+    typing=PreservationLevel.FULL,
+    semantics=PreservationLevel.FULL,
 )
 
+PARTIAL_SEMANTIC = MutationContract(
+    cst=PreservationLevel.FULL,
+    ast=PreservationLevel.FULL,
+    typing=PreservationLevel.FULL,
+    semantics=PreservationLevel.PARTIAL,
+)
+
+NONE_SEMANTIC = MutationContract(
+    cst=PreservationLevel.FULL,
+    ast=PreservationLevel.FULL,
+    typing=PreservationLevel.FULL,
+    semantics=PreservationLevel.NONE,
+)
+
+
+# =========================================================
+# 1. SWAP AND / OR
+# =========================================================
 
 @mutation(
-    layer=MutationLayer.LOGICAL,
-    nature=MutationNature.PERTURBATION,
-    severity=MutationSeverity.MEDIUM,
-    severity_score=0.6,
-    impact={MutationImpact.SEMANTIC_INVALID},
-    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
-    preserves_valid_ast=True,
-    preserves_typing=True,
-    preserves_semantic_equivalence=False,
-    preserves_valid_cst=True
+    name="swap_boolean_operators",
+    layer=Layer.AST,
+    nature=Nature.CORRUPTION,
+    strategy=Strategy.MUTATED,
+    domain=Domain.LOGICAL,
+    severity=0.6,
+    contract=PARTIAL_SEMANTIC,
 )
-def swap_boolean_operators(ast: ProgramNode) -> ProgramNode:
-    """
-    Swap AND/OR operators.
-
-    Example:
-        A AND B becomes A OR B
-    """
+def swap_boolean_operators(ast):
 
     mutated = deepcopy(ast)
 
@@ -51,38 +66,28 @@ def swap_boolean_operators(ast: ProgramNode) -> ProgramNode:
         root = p.rule.assertion.root
 
         if isinstance(root, AndNode):
-
             p.rule.assertion.root = OrNode(operands=root.operands)
 
         elif isinstance(root, OrNode):
-
             p.rule.assertion.root = AndNode(operands=root.operands)
 
     return mutated
 
 
+# =========================================================
+# 2. DUPLICATE OPERAND
+# =========================================================
+
 @mutation(
-    layer=MutationLayer.LOGICAL,
-    nature=MutationNature.PERTURBATION,
-    severity=MutationSeverity.LOW,
-    severity_score=0.3,
-    impact={MutationImpact.NONE},
-    expected_failures=set(),
-    preserves_valid_ast=True,
-    preserves_typing=True,
-    preserves_semantic_equivalence=True,
-    preserves_valid_cst=True
+    name="duplicate_operand",
+    layer=Layer.AST,
+    nature=Nature.CORRUPTION,
+    strategy=Strategy.MUTATED,
+    domain=Domain.LOGICAL,
+    severity=0.3,
+    contract=FULL_PRESERVE,
 )
-def duplicate_operand(ast: ProgramNode) -> ProgramNode:
-    """
-    Duplicate logical operands.
-
-    Example:
-        A AND B becomes A AND A
-
-    NOTE:
-        Often logically equivalent.
-    """
+def duplicate_operand(ast):
 
     mutated = deepcopy(ast)
 
@@ -90,40 +95,29 @@ def duplicate_operand(ast: ProgramNode) -> ProgramNode:
 
         root = p.rule.assertion.root
 
-        if isinstance(root, (AndNode, OrNode)):
-
-            if not root.operands:
-                continue
+        if isinstance(root, (AndNode, OrNode)) and root.operands:
 
             first = deepcopy(root.operands[0])
 
-            root.operands = [
-                first,
-                deepcopy(first),
-            ]
+            root.operands = [first, deepcopy(first)]
 
     return mutated
 
 
-@mutation(
-    layer=MutationLayer.LOGICAL,
-    nature=MutationNature.DELETION,
-    severity=MutationSeverity.HIGH,
-    severity_score=0.7,
-    impact={MutationImpact.SEMANTIC_INVALID},
-    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
-    preserves_valid_ast=True,
-    preserves_typing=True,
-    preserves_semantic_equivalence=False,
-    preserves_valid_cst=True
-)
-def remove_operand(ast: ProgramNode) -> ProgramNode:
-    """
-    Remove one operand from boolean expressions.
+# =========================================================
+# 3. REMOVE OPERAND
+# =========================================================
 
-    Example:
-        A AND B becomes A
-    """
+@mutation(
+    name="remove_operand",
+    layer=Layer.AST,
+    nature=Nature.CORRUPTION,
+    strategy=Strategy.CORRUPTED,
+    domain=Domain.LOGICAL,
+    severity=0.7,
+    contract=NONE_SEMANTIC,
+)
+def remove_operand(ast):
 
     mutated = deepcopy(ast)
 
@@ -131,38 +125,26 @@ def remove_operand(ast: ProgramNode) -> ProgramNode:
 
         root = p.rule.assertion.root
 
-        if isinstance(root, (AndNode, OrNode)):
-
-            if len(root.operands) <= 1:
-                continue
-
+        if isinstance(root, (AndNode, OrNode)) and len(root.operands) > 1:
             root.operands.pop()
 
     return mutated
 
 
+# =========================================================
+# 4. PERMUTE OPERANDS
+# =========================================================
+
 @mutation(
-    layer=MutationLayer.LOGICAL,
-    nature=MutationNature.PERTURBATION,
-    severity=MutationSeverity.INFO,
-    severity_score=0.1,
-    impact={MutationImpact.NONE},
-    expected_failures=set(),
-    preserves_valid_ast=True,
-    preserves_typing=True,
-    preserves_semantic_equivalence=True,
-    preserves_valid_cst=True
+    name="permute_operands",
+    layer=Layer.AST,
+    nature=Nature.CORRUPTION,
+    strategy=Strategy.MUTATED,
+    domain=Domain.LOGICAL,
+    severity=0.1,
+    contract=FULL_PRESERVE,
 )
-def permute_operands(ast: ProgramNode) -> ProgramNode:
-    """
-    Randomly permute boolean operands.
-
-    Example:
-        A AND B AND C becomes C AND A AND B
-
-    NOTE:
-        Logically equivalent for commutative operators.
-    """
+def permute_operands(ast):
 
     mutated = deepcopy(ast)
 
@@ -176,27 +158,20 @@ def permute_operands(ast: ProgramNode) -> ProgramNode:
     return mutated
 
 
-@mutation(
-    layer=MutationLayer.LOGICAL,
-    nature=MutationNature.PERTURBATION,
-    severity=MutationSeverity.INFO,
-    severity_score=0.15,
-    impact={MutationImpact.NONE},
-    expected_failures=set(),
-    preserves_valid_ast=True,
-    preserves_typing=True,
-    preserves_semantic_equivalence=True,
-    preserves_valid_cst=True
-)
-def flatten_boolean_tree(ast: ProgramNode) -> ProgramNode:
-    """
-    Flatten nested boolean operators.
+# =========================================================
+# 5. FLATTEN TREE
+# =========================================================
 
-    Example:
-        A AND (B AND C)
-        becomes
-        A AND B AND C
-    """
+@mutation(
+    name="flatten_boolean_tree",
+    layer=Layer.AST,
+    nature=Nature.CORRUPTION,
+    strategy=Strategy.MUTATED,
+    domain=Domain.LOGICAL,
+    severity=0.15,
+    contract=FULL_PRESERVE,
+)
+def flatten_boolean_tree(ast):
 
     mutated = deepcopy(ast)
 
@@ -207,38 +182,23 @@ def flatten_boolean_tree(ast: ProgramNode) -> ProgramNode:
         if isinstance(root, AndNode):
 
             flattened = []
-
-            for operand in root.operands:
-
-                if isinstance(operand, AndNode):
-                    flattened.extend(operand.operands)
-
+            for op in root.operands:
+                if isinstance(op, AndNode):
+                    flattened.extend(op.operands)
                 else:
-                    flattened.append(operand)
+                    flattened.append(op)
 
             root.operands = flattened
 
         elif isinstance(root, OrNode):
 
             flattened = []
-
-            for operand in root.operands:
-
-                if isinstance(operand, OrNode):
-                    flattened.extend(operand.operands)
-
+            for op in root.operands:
+                if isinstance(op, OrNode):
+                    flattened.extend(op.operands)
                 else:
-                    flattened.append(operand)
+                    flattened.append(op)
 
             root.operands = flattened
 
     return mutated
-
-
-BOOLEAN_MUTATIONS = [
-    swap_boolean_operators,
-    duplicate_operand,
-    remove_operand,
-    permute_operands,
-    flatten_boolean_tree,
-]

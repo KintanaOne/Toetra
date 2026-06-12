@@ -1,130 +1,115 @@
 """
-Adversarial mutations (ROBUSTNESS & SAFETY LAYER)
+Adversarial logical mutations (AST layer)
 
-GOAL:
-    Create valid but misleading or pathological ASTs.
-
-ROLE IN FORML:
-    - test validator robustness
-    - detect silent corruption
-    - stress semantic safety checks
-    - simulate malicious or edge-case inputs
-
-CHARACTERISTICS:
-    ✔ AST valid
-    ✔ syntax valid
-    ✔ often passes shallow checks
-    ❌ semantically misleading or dangerous
+Goal:
+- inject logical contradictions
+- create semantic instability
+- stress reasoning and validation layers
 """
 
+from __future__ import annotations
+
 import random
+
 from copy import deepcopy
 
-from dsl.builder.program import ProgramNode
-from dsl.ast.nodes.assertion import NotNode, AndNode, OrNode
+from test.hypothesis.mutation.decorators.mutation import mutation
 
-from test.hypothesis.mutation.functions.base import (
-    MutationLayer,
-    mutation,
-    MutationNature,
-    MutationSeverity,
-    MutationImpact,
-    PipelineStage,
+from test.hypothesis.mutation.metadata.contract import MutationContract, PreservationLevel
+from test.hypothesis.mutation.metadata.enums import (
+    Domain,
+    Layer,
+    Nature,
+    Strategy,
 )
 
-# =========================================================
-# MUTATION 1 : tautology injection
-# =========================================================
+from dsl.ast.nodes.assertion import AndNode, OrNode, NotNode
 
+
+# =========================================================
+# 1. TAUTOLOGY INJECTION
+# =========================================================
 
 @mutation(
-    layer=MutationLayer.ADVERSARIAL,
-    nature=MutationNature.CORRUPTION,
-    severity=MutationSeverity.HIGH,
-    severity_score=0.85,
-    impact={MutationImpact.SEMANTIC_INVALID},
-    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
-    preserves_valid_ast=True,
-    preserves_typing=True,
-    preserves_semantic_equivalence=False,
-    preserves_valid_cst=True
+    name="inject_tautology",
+    layer=Layer.AST,
+    nature=Nature.CORRUPTION,
+    strategy=Strategy.MUTATED,
+    domain=Domain.LOGICAL,
+    severity=0.9,
+    contract=MutationContract(
+        cst=PreservationLevel.FULL,
+        ast=PreservationLevel.FULL,
+        typing=PreservationLevel.FULL,
+        semantics=PreservationLevel.NONE,
+    ),
 )
-def inject_adversarial_tautology(ast: ProgramNode) -> ProgramNode:
-    """
-    Inject tautological expressions.
-    A becomes A OR NOT(A)
-    """
+def inject_tautology(ast):
 
-    mutated = deepcopy(ast)
+    root = deepcopy(ast)
 
-    for p in mutated.body:
-
-        root = deepcopy(p.rule.assertion.root)
-
-        p.rule.assertion.root = OrNode(operands=[root, NotNode(operand=deepcopy(root))])
-
-    return mutated
+    return OrNode(
+        operands=[
+            root,
+            NotNode(operand=deepcopy(root)),
+        ],
+    )
 
 
 # =========================================================
-# MUTATION 2 : nested NOT explosion
+# 2. NEGATION CHAOS
 # =========================================================
-
 
 @mutation(
-    layer=MutationLayer.ADVERSARIAL,
-    nature=MutationNature.CORRUPTION,
-    severity=MutationSeverity.MEDIUM,
-    severity_score=0.6,
-    impact={MutationImpact.SEMANTIC_INVALID},
-    expected_failures={PipelineStage.SEMANTIC_ANALYSIS},
-    preserves_valid_ast=True,
-    preserves_typing=True,
-    preserves_semantic_equivalence=False,
-    preserves_valid_cst=True
+    name="nest_negations",
+    layer=Layer.AST,
+    nature=Nature.CORRUPTION,
+    strategy=Strategy.MUTATED,
+    domain=Domain.LOGICAL,
+    severity=0.6,
+    contract=MutationContract(
+        cst=PreservationLevel.FULL,
+        ast=PreservationLevel.FULL,
+        typing=PreservationLevel.FULL,
+        semantics=PreservationLevel.PARTIAL,
+    ),
 )
-def nest_negations(ast: ProgramNode) -> ProgramNode:
-    """
-    Wrap assertion in multiple NOT layers.
-    """
+def nest_negations(ast):
 
-    mutated = deepcopy(ast)
+    root = deepcopy(ast)
+    depth = random.randint(2, 6)
 
-    for p in mutated.body:
+    for _ in range(depth):
+        root = NotNode(operand=root)
 
-        root = p.rule.assertion.root
-
-        depth = random.randint(2, 5)
-
-        for _ in range(depth):
-            root = NotNode(operand=root)
-
-        p.rule.assertion.root = root
-
-    return mutated
+    return root
 
 
-ADVERSARIAL_MUTATIONS = [
-    inject_adversarial_tautology,
-    nest_negations,
-]
+# =========================================================
+# 3. CONTRADICTION INJECTION
+# =========================================================
 
+@mutation(
+    name="inject_contradiction",
+    layer=Layer.AST,
+    nature=Nature.CORRUPTION,
+    strategy=Strategy.CORRUPTED,
+    domain=Domain.LOGICAL,
+    severity=0.95,
+    contract=MutationContract(
+        cst=PreservationLevel.FULL,
+        ast=PreservationLevel.FULL,
+        typing=PreservationLevel.FULL,
+        semantics=PreservationLevel.NONE,
+    ),
+)
+def inject_contradiction(ast):
 
-def apply_adversarial_mutations(ast: ProgramNode, n: int = 1) -> ProgramNode:
-    """
-    Apply N adversarial mutations.
-    """
+    root = deepcopy(ast)
 
-    mutated = ast
-
-    for _ in range(n):
-        mutation_fn = random.choice(ADVERSARIAL_MUTATIONS)
-        mutated = mutation_fn(mutated)
-
-    return mutated
-
-
-ADVERSARIAL_MUTATIONS = [
-    inject_adversarial_tautology,
-    nest_negations,
-]
+    return AndNode(
+        operands=[
+            root,
+            NotNode(operand=deepcopy(root)),
+        ],
+    )
