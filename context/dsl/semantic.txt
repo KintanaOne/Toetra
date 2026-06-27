@@ -1,4 +1,60 @@
 
+===== dsl\semantic\__pycache__\binding.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe6 in position 9: invalid continuation byte]
+
+===== dsl\semantic\__pycache__\compatibility.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa6 in position 8: invalid start byte]
+
+===== dsl\semantic\__pycache__\context.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xfe in position 8: invalid start byte]
+
+===== dsl\semantic\__pycache__\errors.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xea in position 10: invalid continuation byte]
+
+===== dsl\semantic\__pycache__\implication.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xaf in position 8: invalid start byte]
+
+===== dsl\semantic\__pycache__\lhs.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xda in position 8: invalid continuation byte]
+
+===== dsl\semantic\__pycache__\logic.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 9: invalid continuation byte]
+
+===== dsl\semantic\__pycache__\problem.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode bytes in position 8-9: invalid continuation byte]
+
+===== dsl\semantic\__pycache__\property.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe1 in position 9: invalid continuation byte]
+
+===== dsl\semantic\__pycache__\scope.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa6 in position 8: invalid start byte]
+
+===== dsl\semantic\__pycache__\tracer.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa6 in position 8: invalid start byte]
+
+===== dsl\semantic\__pycache__\validator.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa6 in position 8: invalid start byte]
+
+===== dsl\semantic\context\__pycache__\context.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== dsl\semantic\context\__pycache__\scope.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
 ===== dsl\semantic\context\context.py =====
 
 from dataclasses import dataclass, field
@@ -184,6 +240,30 @@ def get_scope_from_property(prop):
 
     return None
 
+
+===== dsl\semantic\core\__pycache__\binding.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== dsl\semantic\core\__pycache__\lhs.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== dsl\semantic\core\__pycache__\logic.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== dsl\semantic\core\__pycache__\problem.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== dsl\semantic\core\__pycache__\property.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== dsl\semantic\core\__pycache__\validator.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xbf in position 8: invalid start byte]
 
 ===== dsl\semantic\core\binding.py =====
 
@@ -1178,6 +1258,10 @@ if __name__ == "__main__":
     validator.validate(AST, tracer=tracer)
 
 
+===== dsl\semantic\errors\__pycache__\errors.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
 ===== dsl\semantic\errors\errors.py =====
 
 class SemanticError(Exception):
@@ -1212,6 +1296,14 @@ class InvalidOperatorError(SemanticError):
 class IncompatibleFunctionError(SemanticError):
     pass
 
+
+===== dsl\semantic\rules\__pycache__\compatibility.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== dsl\semantic\rules\__pycache__\type_system.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xab in position 8: invalid start byte]
 
 ===== dsl\semantic\rules\compatibility.py =====
 
@@ -1299,6 +1391,14 @@ class FloatType(Type):
 class BoolType(Type):
     pass
 
+
+===== dsl\semantic\runtime\__pycache__\annotations.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== dsl\semantic\runtime\__pycache__\tracer.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
 ===== dsl\semantic\runtime\annotations.py =====
 
@@ -1439,6 +1539,14 @@ class ValidationTracer:
             print(message)
 
 
+===== dsl\semantic\symbols\__pycache__\symbol.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== dsl\semantic\symbols\__pycache__\table.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
 ===== dsl\semantic\symbols\symbol.py =====
 
 from dataclasses import dataclass
@@ -1573,6 +1681,10 @@ class SymbolTable:
     def __repr__(self):
         return f"SymbolTable(" f"symbols={list(self.symbols.keys())}" f")"
 
+
+===== dsl\semantic\types\__pycache__\enums.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
 ===== dsl\semantic\types\enums.py =====
 

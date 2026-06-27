@@ -1,4 +1,48 @@
 
+===== test\unit\parsing\__pycache__\helper.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xaf in position 8: invalid start byte]
+
+===== test\unit\parsing\__pycache__\test_at.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== test\unit\parsing\__pycache__\test_body.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== test\unit\parsing\__pycache__\test_check_at.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== test\unit\parsing\__pycache__\test_exists.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== test\unit\parsing\__pycache__\test_footer.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== test\unit\parsing\__pycache__\test_forall.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== test\unit\parsing\__pycache__\test_header.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== test\unit\parsing\__pycache__\test_logic.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== test\unit\parsing\__pycache__\test_pairwise.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== test\unit\parsing\__pycache__\test_semantic.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0x85 in position 9: invalid start byte]
+
 ===== test\unit\parsing\helper.py =====
 
 from typing import Type, TypeVar, cast

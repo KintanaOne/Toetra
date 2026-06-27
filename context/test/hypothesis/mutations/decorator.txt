@@ -1,4 +1,8 @@
 
+===== test\hypothesis\mutation\decorators\__pycache__\mutation.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa6 in position 8: invalid start byte]
+
 ===== test\hypothesis\mutation\decorators\mutation.py =====
 
 from __future__ import annotations

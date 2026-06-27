@@ -20,9 +20,9 @@ def concat_files_in_folder(
     base_path = Path(folder_path)
 
     if recursive:
-        files = sorted([f for f in base_path.rglob("*.py") if f.is_file()])
+        files = sorted([f for f in base_path.rglob("*") if f.is_file()])
     else:
-        files = sorted([f for f in base_path.glob("*.py") if f.is_file()])
+        files = sorted([f for f in base_path.glob("*") if f.is_file()])
 
     parts = []
 
@@ -151,4 +151,41 @@ if __name__ == "__main__":
     )
 
 
+    # docs
+    concat_files_in_folder(
+        "docs/architecture/ast",
+        recursive=True,
+        output_file="context/architecture/ast.txt",
+    )
+
+
+    concat_files_in_folder(
+        "docs/architecture/forml",
+        recursive=True,
+        output_file="context/architecture/forml.txt",
+    )
+
+
+    concat_files_in_folder(
+        "docs/architecture/layers",
+        recursive=True,
+        output_file="context/architecture/layers.txt",
+    )
+
+
+    concat_files_in_folder(
+        "docs/architecture/parsing",
+        recursive=True,
+        output_file="context/architecture/parsing.txt",
+    )
+
+    
+    concat_files_in_folder(
+        "model",
+        recursive=True,
+        output_file="context/model/model.txt",
+    )
+
+
+    
     
