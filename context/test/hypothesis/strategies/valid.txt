@@ -1,4 +1,20 @@
 
+===== test\hypothesis\strategies\valid\__pycache__\program.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xd7 in position 9: invalid continuation byte]
+
+===== test\hypothesis\strategies\valid\__pycache__\program_string.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe5 in position 12: invalid continuation byte]
+
+===== test\hypothesis\strategies\valid\__pycache__\program_valid.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe4 in position 12: invalid continuation byte]
+
+===== test\hypothesis\strategies\valid\__pycache__\valid_lexical.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xda in position 9: invalid continuation byte]
+
 ===== test\hypothesis\strategies\valid\valid_lexical.py =====
 
 from hypothesis import strategies as st

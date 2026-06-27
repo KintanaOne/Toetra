@@ -41,7 +41,7 @@ from test.hypothesis.mutation.metadata.enums import (
 @mutation(
     name="reverse_causality",
     layer=Layer.AST,
-    nature=Nature.SUBSTITUTION,
+    nature=Nature.REORDERING,
     strategy=Strategy.CORRUPTED,
     domain=Domain.SEMANTIC,
     severity=0.8,
@@ -177,97 +177,6 @@ def create_fake_domain_violation(node):
 
     # placeholder: DO NOT use logical NOT
     return node  # to be replaced by real semantic inversion engine
-
-===== test\hypothesis\mutation\functions\semantic\context.py =====
-
-# test/hypothesis/mutations/semantic/context.py
-
-"""
-Semantic context mismatch mutations.
-
-GOAL:
-    Corrupt semantic contexts while preserving AST validity.
-
-ROLE IN FORML:
-    - stress semantic analyzers
-    - validate semantic consistency
-    - test incompatible semantic combinations
-
-CHARACTERISTICS:
-    ✔ AST valid
-    ✔ syntax valid
-    ✔ typing preserved
-    ❌ semantic meaning corrupted
-"""
-
-from __future__ import annotations
-
-from copy import deepcopy
-
-from test.hypothesis.mutation.decorators.mutation import mutation
-
-from test.hypothesis.mutation.functions.semantic.helper.engine import (
-    SemanticConstraintEngine,
-)
-
-from test.hypothesis.mutation.functions.semantic.helper.extractor import (
-    SemanticConstraintExtractor,
-)
-
-from test.hypothesis.mutation.functions.semantic.helper.rebuilder import (
-    SemanticASTRebuilder,
-)
-
-from test.hypothesis.mutation.metadata.contract import (
-    MutationContract,
-    PreservationLevel,
-)
-
-from test.hypothesis.mutation.metadata.enums import (
-    Domain,
-    Layer,
-    Nature,
-    Strategy,
-)
-
-
-@mutation(
-    name="semantic.inject_impossible_constraint",
-    layer=Layer.AST,
-    nature=Nature.CORRUPTION,
-    strategy=Strategy.CORRUPTED,
-    domain=Domain.SEMANTIC,
-    severity=0.85,
-    contract=MutationContract(
-        cst=PreservationLevel.FULL,
-        ast=PreservationLevel.FULL,
-        typing=PreservationLevel.FULL,
-        semantics=PreservationLevel.NONE,
-    ),
-)
-def inject_impossible_constraint(ast):
-
-    mutated = deepcopy(ast)
-
-    extractor = SemanticConstraintExtractor()
-    engine = SemanticConstraintEngine()
-    rebuilder = SemanticASTRebuilder()
-
-    for property_node in mutated.body:
-
-        constraints = extractor.extract(
-            property_node.rule.assertion.root
-        )
-
-        corrupted_constraints = (
-            engine.inject_contradiction(constraints)
-        )
-
-        property_node.rule.assertion.root = (
-            rebuilder.rebuild(corrupted_constraints)
-        )
-
-    return mutated
 
 ===== test\hypothesis\mutation\functions\semantic\contradiction.py =====
 
@@ -864,6 +773,19 @@ from test.hypothesis.mutation.functions.base import (
     PipelineStage,
 )
 
+from test.hypothesis.mutation.decorators.mutation import mutation
+
+from test.hypothesis.mutation.functions.semantic.helper.engine import SemanticConstraintEngine
+from test.hypothesis.mutation.functions.semantic.helper.extractor import SemanticConstraintExtractor
+from test.hypothesis.mutation.functions.semantic.helper.rebuilder import SemanticASTRebuilder
+from test.hypothesis.mutation.metadata.contract import MutationContract, PreservationLevel
+from test.hypothesis.mutation.metadata.enums import (
+    Domain,
+    Layer,
+    Nature,
+    Strategy,
+)
+
 
 # =========================================================
 # MUTATION 1 : tautological redundancy
@@ -883,6 +805,21 @@ from test.hypothesis.mutation.functions.base import (
     preserves_valid_ast=True,
     preserves_typing=True,
     preserves_semantic_equivalence=False,
+)
+
+@mutation(
+    name="semantic.inject_impossible_constraint",
+    layer=Layer.AST,
+    nature=Nature.CORRUPTION,
+    strategy=Strategy.CORRUPTED,
+    domain=Domain.LOGICAL,
+    severity=0.55,
+    contract=MutationContract(
+        cst=PreservationLevel.FULL,
+        ast=PreservationLevel.FULL,
+        typing=PreservationLevel.FULL,
+        semantics=PreservationLevel.NONE,
+    ),
 )
 def inject_tautological_redundancy(
     ast: ProgramNode,
@@ -913,10 +850,6 @@ def inject_tautological_redundancy(
 
     return mutated
 
-
-REDUNDANCY_MUTATIONS = [
-    inject_tautological_redundancy,
-]
 
 ===== test\hypothesis\mutation\functions\semantic\relationnal.py =====
 

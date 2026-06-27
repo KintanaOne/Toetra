@@ -1,4 +1,12 @@
 
+===== dsl\parser\__pycache__\errors.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== dsl\parser\__pycache__\parser.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
 ===== dsl\parser\errors.py =====
 
 # errors.py

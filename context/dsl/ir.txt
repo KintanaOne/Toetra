@@ -3,6 +3,26 @@
 
 
 
+===== dsl\ir\ir1\__pycache__\__init__.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xc8 in position 9: invalid continuation byte]
+
+===== dsl\ir\ir1\__pycache__\nodes.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xcb in position 8: invalid continuation byte]
+
+===== dsl\ir\ir1\__pycache__\pretty.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xdc in position 8: invalid continuation byte]
+
+===== dsl\ir\ir1\__pycache__\translator.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0x93 in position 8: invalid start byte]
+
+===== dsl\ir\ir1\__pycache__\utils.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0x8a in position 8: invalid start byte]
+
 ===== dsl\ir\ir1\nodes.py =====
 
 from __future__ import annotations

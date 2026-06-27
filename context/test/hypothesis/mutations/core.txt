@@ -1,4 +1,12 @@
 
+===== test\hypothesis\mutation\core\__pycache__\artifact.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0x8e in position 9: invalid start byte]
+
+===== test\hypothesis\mutation\core\__pycache__\pipeline.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0x88 in position 8: invalid start byte]
+
 ===== test\hypothesis\mutation\core\artifact.py =====
 
 from __future__ import annotations

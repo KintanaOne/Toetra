@@ -1,4 +1,48 @@
 
+===== test\hypothesis\__pycache__\settings.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== test\hypothesis\__pycache__\test_determinism.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf7 in position 8: invalid start byte]
+
+===== test\hypothesis\__pycache__\test_invariant_semantic.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf8 in position 12: invalid start byte]
+
+===== test\hypothesis\__pycache__\test_parser.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa6 in position 8: invalid start byte]
+
+===== test\hypothesis\__pycache__\test_roundtrip.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf3 in position 37: invalid continuation byte]
+
+===== test\hypothesis\__pycache__\test_semantic_extraction.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xd8 in position 12: invalid continuation byte]
+
+===== test\hypothesis\__pycache__\test_semantic_roundtrip.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode bytes in position 37-38: invalid continuation byte]
+
+===== test\hypothesis\builder\__pycache__\test_builder.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe8 in position 8: invalid continuation byte]
+
+===== test\hypothesis\builder\__pycache__\test_builder_consistency.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode bytes in position 37-38: invalid continuation byte]
+
+===== test\hypothesis\builder\__pycache__\test_invalid_builder.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf3 in position 37: invalid continuation byte]
+
+===== test\hypothesis\builder\__pycache__\test_valid_builder.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf3 in position 37: invalid continuation byte]
+
 ===== test\hypothesis\builder\test_builder_consistency.py =====
 
 from hypothesis import given, settings, HealthCheck
@@ -71,6 +115,14 @@ def test_builder_accepts_valid_programs(program):
 
     assert ast is not None
 
+
+===== test\hypothesis\mutation\core\__pycache__\artifact.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0x8e in position 9: invalid start byte]
+
+===== test\hypothesis\mutation\core\__pycache__\pipeline.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0x88 in position 8: invalid start byte]
 
 ===== test\hypothesis\mutation\core\artifact.py =====
 
@@ -452,6 +504,10 @@ class MutationSelectionEngine:
         # -----------------------------------------------------
         return self.random.choice(filtered)
 
+===== test\hypothesis\mutation\decorators\__pycache__\mutation.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa6 in position 8: invalid start byte]
+
 ===== test\hypothesis\mutation\decorators\mutation.py =====
 
 from __future__ import annotations
@@ -497,6 +553,10 @@ def mutation(
         return descriptor
 
     return wrapper
+
+===== test\hypothesis\mutation\functions\__pycache__\base.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0x86 in position 8: invalid start byte]
 
 ===== test\hypothesis\mutation\functions\base.py =====
 
@@ -829,6 +889,34 @@ def mutation(
 ===== test\hypothesis\mutation\functions\lexical\__init__.py =====
 
 
+
+===== test\hypothesis\mutation\functions\lexical\__pycache__\__init__.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
+
+===== test\hypothesis\mutation\functions\lexical\__pycache__\base_helpers.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
+
+===== test\hypothesis\mutation\functions\lexical\__pycache__\corruption.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe8 in position 8: invalid continuation byte]
+
+===== test\hypothesis\mutation\functions\lexical\__pycache__\encoding_mutations.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf4 in position 12: invalid continuation byte]
+
+===== test\hypothesis\mutation\functions\lexical\__pycache__\operator_arity_mutations.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 12: invalid start byte]
+
+===== test\hypothesis\mutation\functions\lexical\__pycache__\reserved_keyword_mutations.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xed in position 12: invalid continuation byte]
+
+===== test\hypothesis\mutation\functions\lexical\__pycache__\unicode_mutations.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
 
 ===== test\hypothesis\mutation\functions\lexical\base_helpers.py =====
 
@@ -2405,7 +2493,7 @@ from test.hypothesis.mutation.metadata.enums import (
 @mutation(
     name="reverse_causality",
     layer=Layer.AST,
-    nature=Nature.SUBSTITUTION,
+    nature=Nature.REORDERING,
     strategy=Strategy.CORRUPTED,
     domain=Domain.SEMANTIC,
     severity=0.8,
@@ -2541,97 +2629,6 @@ def create_fake_domain_violation(node):
 
     # placeholder: DO NOT use logical NOT
     return node  # to be replaced by real semantic inversion engine
-
-===== test\hypothesis\mutation\functions\semantic\context.py =====
-
-# test/hypothesis/mutations/semantic/context.py
-
-"""
-Semantic context mismatch mutations.
-
-GOAL:
-    Corrupt semantic contexts while preserving AST validity.
-
-ROLE IN FORML:
-    - stress semantic analyzers
-    - validate semantic consistency
-    - test incompatible semantic combinations
-
-CHARACTERISTICS:
-    ✔ AST valid
-    ✔ syntax valid
-    ✔ typing preserved
-    ❌ semantic meaning corrupted
-"""
-
-from __future__ import annotations
-
-from copy import deepcopy
-
-from test.hypothesis.mutation.decorators.mutation import mutation
-
-from test.hypothesis.mutation.functions.semantic.helper.engine import (
-    SemanticConstraintEngine,
-)
-
-from test.hypothesis.mutation.functions.semantic.helper.extractor import (
-    SemanticConstraintExtractor,
-)
-
-from test.hypothesis.mutation.functions.semantic.helper.rebuilder import (
-    SemanticASTRebuilder,
-)
-
-from test.hypothesis.mutation.metadata.contract import (
-    MutationContract,
-    PreservationLevel,
-)
-
-from test.hypothesis.mutation.metadata.enums import (
-    Domain,
-    Layer,
-    Nature,
-    Strategy,
-)
-
-
-@mutation(
-    name="semantic.inject_impossible_constraint",
-    layer=Layer.AST,
-    nature=Nature.CORRUPTION,
-    strategy=Strategy.CORRUPTED,
-    domain=Domain.SEMANTIC,
-    severity=0.85,
-    contract=MutationContract(
-        cst=PreservationLevel.FULL,
-        ast=PreservationLevel.FULL,
-        typing=PreservationLevel.FULL,
-        semantics=PreservationLevel.NONE,
-    ),
-)
-def inject_impossible_constraint(ast):
-
-    mutated = deepcopy(ast)
-
-    extractor = SemanticConstraintExtractor()
-    engine = SemanticConstraintEngine()
-    rebuilder = SemanticASTRebuilder()
-
-    for property_node in mutated.body:
-
-        constraints = extractor.extract(
-            property_node.rule.assertion.root
-        )
-
-        corrupted_constraints = (
-            engine.inject_contradiction(constraints)
-        )
-
-        property_node.rule.assertion.root = (
-            rebuilder.rebuild(corrupted_constraints)
-        )
-
-    return mutated
 
 ===== test\hypothesis\mutation\functions\semantic\contradiction.py =====
 
@@ -3228,6 +3225,19 @@ from test.hypothesis.mutation.functions.base import (
     PipelineStage,
 )
 
+from test.hypothesis.mutation.decorators.mutation import mutation
+
+from test.hypothesis.mutation.functions.semantic.helper.engine import SemanticConstraintEngine
+from test.hypothesis.mutation.functions.semantic.helper.extractor import SemanticConstraintExtractor
+from test.hypothesis.mutation.functions.semantic.helper.rebuilder import SemanticASTRebuilder
+from test.hypothesis.mutation.metadata.contract import MutationContract, PreservationLevel
+from test.hypothesis.mutation.metadata.enums import (
+    Domain,
+    Layer,
+    Nature,
+    Strategy,
+)
+
 
 # =========================================================
 # MUTATION 1 : tautological redundancy
@@ -3247,6 +3257,21 @@ from test.hypothesis.mutation.functions.base import (
     preserves_valid_ast=True,
     preserves_typing=True,
     preserves_semantic_equivalence=False,
+)
+
+@mutation(
+    name="semantic.inject_impossible_constraint",
+    layer=Layer.AST,
+    nature=Nature.CORRUPTION,
+    strategy=Strategy.CORRUPTED,
+    domain=Domain.LOGICAL,
+    severity=0.55,
+    contract=MutationContract(
+        cst=PreservationLevel.FULL,
+        ast=PreservationLevel.FULL,
+        typing=PreservationLevel.FULL,
+        semantics=PreservationLevel.NONE,
+    ),
 )
 def inject_tautological_redundancy(
     ast: ProgramNode,
@@ -3277,10 +3302,6 @@ def inject_tautological_redundancy(
 
     return mutated
 
-
-REDUNDANCY_MUTATIONS = [
-    inject_tautological_redundancy,
-]
 
 ===== test\hypothesis\mutation\functions\semantic\relationnal.py =====
 
@@ -4100,6 +4121,30 @@ def apply_ordering(ast: ProgramNode, n: int = 1):
 
 
 
+===== test\hypothesis\mutation\functions\syntactic\__pycache__\__init__.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== test\hypothesis\mutation\functions\syntactic\__pycache__\grammar.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0x83 in position 12: invalid start byte]
+
+===== test\hypothesis\mutation\functions\syntactic\__pycache__\parse.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
+
+===== test\hypothesis\mutation\functions\syntactic\__pycache__\syntax.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xed in position 12: invalid continuation byte]
+
+===== test\hypothesis\mutation\functions\syntactic\__pycache__\tokens.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0x91 in position 12: invalid start byte]
+
+===== test\hypothesis\mutation\functions\syntactic\__pycache__\tree.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
+
 ===== test\hypothesis\mutation\functions\syntactic\grammar.py =====
 
 # test/hypothesis/mutations/cst/grammar.py
@@ -4837,6 +4882,14 @@ NUMERICAL_MUTATIONS = [
     invert_numeric_sign,
 ]
 
+===== test\hypothesis\mutation\metadata\__pycache__\contract.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xba in position 8: invalid start byte]
+
+===== test\hypothesis\mutation\metadata\__pycache__\enums.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe9 in position 8: invalid continuation byte]
+
 ===== test\hypothesis\mutation\metadata\contract.py =====
 
 from __future__ import annotations
@@ -4919,6 +4972,22 @@ class Domain(Enum):
     LOGICAL = auto()
     TYPING = auto()
 
+===== test\hypothesis\parser\__pycache__\test_edge_cases.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf3 in position 37: invalid continuation byte]
+
+===== test\hypothesis\parser\__pycache__\test_invalid_parser.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf0 in position 8: invalid continuation byte]
+
+===== test\hypothesis\parser\__pycache__\test_parser.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe0 in position 9: invalid continuation byte]
+
+===== test\hypothesis\parser\__pycache__\test_valid_parser.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode bytes in position 37-38: invalid continuation byte]
+
 ===== test\hypothesis\parser\test_edge_cases.py =====
 
 
@@ -4959,6 +5028,26 @@ def test_parser_accepts_valid(program):
     cst = parse_forml_code(program)
     assert cst is not None
 
+
+===== test\hypothesis\semantic\__pycache__\test_invalid_semantic.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa6 in position 8: invalid start byte]
+
+===== test\hypothesis\semantic\__pycache__\test_semantic_invariants.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0x81 in position 8: invalid start byte]
+
+===== test\hypothesis\semantic\__pycache__\test_semantic_mutations_invalid.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0x91 in position 8: invalid start byte]
+
+===== test\hypothesis\semantic\__pycache__\test_semantic_structure.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf3 in position 37: invalid continuation byte]
+
+===== test\hypothesis\semantic\__pycache__\test_valid_semantic.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0x80 in position 12: invalid start byte]
 
 ===== test\hypothesis\semantic\test_invalid_semantic.py =====
 
@@ -5121,9 +5210,65 @@ DEFAULT_SETTINGS = settings(
 )
 
 
+===== test\hypothesis\strategies\__pycache__\__init__.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa6 in position 8: invalid start byte]
+
+===== test\hypothesis\strategies\__pycache__\args.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xaf in position 8: invalid start byte]
+
+===== test\hypothesis\strategies\__pycache__\body.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa6 in position 8: invalid start byte]
+
+===== test\hypothesis\strategies\__pycache__\header.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xae in position 8: invalid start byte]
+
+===== test\hypothesis\strategies\__pycache__\logic.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xb0 in position 8: invalid start byte]
+
+===== test\hypothesis\strategies\__pycache__\primitives.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa6 in position 8: invalid start byte]
+
+===== test\hypothesis\strategies\__pycache__\program.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa6 in position 8: invalid start byte]
+
+===== test\hypothesis\strategies\__pycache__\properties.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xb1 in position 8: invalid start byte]
+
+===== test\hypothesis\strategies\__pycache__\values.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xad in position 8: invalid start byte]
+
 ===== test\hypothesis\strategies\ast\__init__.py =====
 
 
+
+===== test\hypothesis\strategies\ast\__pycache__\__init__.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xde in position 9: invalid continuation byte]
+
+===== test\hypothesis\strategies\ast\__pycache__\body.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== test\hypothesis\strategies\ast\__pycache__\header.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== test\hypothesis\strategies\ast\__pycache__\logic.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== test\hypothesis\strategies\ast\__pycache__\properties.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0x94 in position 9: invalid start byte]
 
 ===== test\hypothesis\strategies\ast\body.py =====
 
@@ -5315,6 +5460,34 @@ def property_section(draw):
 
     return prop
 
+
+===== test\hypothesis\strategies\invalid\__pycache__\generic.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0x8e in position 9: invalid start byte]
+
+===== test\hypothesis\strategies\invalid\__pycache__\invalid_cst.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0x8a in position 9: invalid start byte]
+
+===== test\hypothesis\strategies\invalid\__pycache__\invalid_lexical.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
+
+===== test\hypothesis\strategies\invalid\__pycache__\invalid_program.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0x90 in position 9: invalid start byte]
+
+===== test\hypothesis\strategies\invalid\__pycache__\invalid_string.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
+
+===== test\hypothesis\strategies\invalid\__pycache__\invalid_syntactic.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
+
+===== test\hypothesis\strategies\invalid\__pycache__\program.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0x8b in position 9: invalid start byte]
 
 ===== test\hypothesis\strategies\invalid\generic.py =====
 
@@ -5558,6 +5731,22 @@ def invalid_program(
 
 
 
+===== test\hypothesis\strategies\primitives\__pycache__\__init__.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa6 in position 8: invalid start byte]
+
+===== test\hypothesis\strategies\primitives\__pycache__\args.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== test\hypothesis\strategies\primitives\__pycache__\primitives.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== test\hypothesis\strategies\primitives\__pycache__\values.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
 ===== test\hypothesis\strategies\primitives\args.py =====
 
 from hypothesis import strategies as st
@@ -5615,6 +5804,22 @@ from .primitives import numbers, booleans, escaped_strings
 
 values = st.one_of(numbers, booleans, escaped_strings)
 
+
+===== test\hypothesis\strategies\valid\__pycache__\program.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xd7 in position 9: invalid continuation byte]
+
+===== test\hypothesis\strategies\valid\__pycache__\program_string.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe5 in position 12: invalid continuation byte]
+
+===== test\hypothesis\strategies\valid\__pycache__\program_valid.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe4 in position 12: invalid continuation byte]
+
+===== test\hypothesis\strategies\valid\__pycache__\valid_lexical.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xda in position 9: invalid continuation byte]
 
 ===== test\hypothesis\strategies\valid\valid_lexical.py =====
 
@@ -5790,6 +5995,10 @@ def test_semantic_roundtrip(prog):
 
     assert obj1 == obj2
 
+
+===== test\hypothesis\utils\__pycache__\serialize.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
 ===== test\hypothesis\utils\compare_ast.py =====
 

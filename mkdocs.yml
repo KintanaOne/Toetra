@@ -1,0 +1,123 @@
+site_name: FORML Ecosystem
+site_description: Formal Verification and Behavioral Orchestration Platform
+site_author: KintanaOne
+
+theme:
+  name: material
+  language: en
+
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+
+    - content.code.copy
+    - content.code.annotate
+
+    - search.suggest
+    - search.highlight
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+
+  - toc:
+      permalink: true
+
+nav:
+
+  - Home:
+      - Overview: index.md
+      - Philosophy: home/philosophy.md
+      - Architecture Map: home/architecture_map.md
+
+  - FORML Core System:
+
+      - Overview: forml_core/overview.md
+
+      - Language Layer:
+          - Program Structure: forml_core/language/program_structure.md
+          - Header: forml_core/language/header.md
+          - Body: forml_core/language/body.md
+          - Footer: forml_core/language/footer.md
+          - Property Language: forml_core/language/property_language.md
+
+      - Compiler Pipeline:
+          - Overview: forml_core/compiler/overview.md
+          - CST: forml_core/compiler/cst.md
+          - AST: forml_core/compiler/ast.md
+          - Validated AST: forml_core/compiler/validated_ast.md
+          - IR Level 1: forml_core/compiler/ir1.md
+          - IR Level 2: forml_core/compiler/ir2.md
+          - Normalization: forml_core/compiler/normalization.md
+          - Transformations: forml_core/compiler/transformations.md
+
+      - Semantic Model:
+          - Overview: forml_core/semantic/overview.md
+          - Scope Model: forml_core/semantic/scope_model.md
+          - Expression Model: forml_core/semantic/expression_model.md
+          - Assertion Model: forml_core/semantic/assertion_model.md
+          - Validity Rules: forml_core/semantic/validity_rules.md
+          - Semantic Preservation: forml_core/semantic/semantic_preservation.md
+
+      - Intermediate Representations:
+          - Overview: forml_core/ir/overview.md
+          - Logical Forms: forml_core/ir/logical_forms.md
+
+  - Orchestration Layer:
+      - Overview: orchestration/overview.md
+      - Backend Detection: orchestration/backend_detection.md
+      - Capability Model: orchestration/capability_model.md
+      - Routing Engine: orchestration/routing.md
+      - Strategy Selection: orchestration/strategy_selection.md
+      - AutoFORML: orchestration/autoforl.md
+
+  - Backend Representation:
+      - Overview: backend_representation/overview.md
+      - Model Transcription: backend_representation/model_transcription.md
+      - Validation: backend_representation/validation.md
+      - Abstraction Layer: backend_representation/abstraction_layer.md
+
+  - Verification Runtime:
+      - Overview: runtime/overview.md
+      - Execution Engine: runtime/execution_engine.md
+      - Verification Pipeline: runtime/verification_pipeline.md
+      - Monitoring: runtime/monitoring.md
+      - Tracing: runtime/tracing.md
+
+  - Model Bridge:
+      - Overview: model_bridge/overview.md
+      - Supported Models: model_bridge/supported_models.md
+      - Model Abstraction: model_bridge/model_abstraction.md
+      - Inference Interface: model_bridge/inference_interface.md
+      - Compatibility Layer: model_bridge/compatibility_layer.md
+
+  - SMS:
+      - Overview: sms/overview.md
+      - Transformation Model: sms/transformation_model.md
+      - Mutation Engine: sms/mutation_engine.md
+      - Property Mutations: sms/property_mutations.md
+
+  - Formal Theory:
+      - Overview: formal_theory/overview.md
+      - Transition System: formal_theory/transition_system.md
+      - Invariants: formal_theory/invariants.md
+      - Logical System: formal_theory/logical_system.md
+      - Verification Theory: formal_theory/verification_theory.md
+
+  - Appendix:
+      - Glossary: appendix/glossary.md
+      - Architecture Decision Records: appendix/adr.md
+      - Future Work: appendix/future_work.md
