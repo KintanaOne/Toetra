@@ -1,8 +1,0 @@
-# This is a comment
-# Another comment
-model := "path/to/model.onnx"
-target := MyTargetColumn
-
-# pairwise without using
-[ROBUSTNESS]:
-x ~ x' in neighborhood(L2, eps=0.01) => CLASSIFICATION.EQUAL() using z3(par1="val1",par2=2)

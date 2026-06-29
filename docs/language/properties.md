@@ -1,133 +1,257 @@
-# Property Types in FORML
+# Properties
 
-This document describes all **official property types** supported by FORML.
+> Status: Stabilizing  
+> Scope: Property types and their intended semantics  
+> Priority: P1  
+> Audience: DSL users, semantic layer contributors, verification backend authors
 
-Each property type defines **what kind of model behavior is constrained**, independently of **where** it is evaluated (global, local, pairwise, etc.).
+## Purpose
 
----
+A FORML property expresses a behavioral guarantee that a model should satisfy.
 
-## ROBUSTNESS
+Every property combines:
 
-### Intent
-Ensure that small perturbations of the input do not change the model’s prediction.
+```text
+property type
++ evaluation scope
++ assertion
++ optional backend selection
+```
 
-### Typical Use Cases
-- Adversarial robustness  
-- Noise tolerance  
-- Certification under norm-bounded perturbations  
+Example:
 
-### Semantic Invariant
-> Inputs that are *close enough* must produce equivalent outputs.
+```forml
+[ROBUSTNESS]: at x in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUAL()
+```
 
----
-
-## STABILITY
-
-### Intent
-Ensure smoothness or continuity of the model’s behavior.
-
-### Typical Use Cases
-- Preventing erratic predictions  
-- Sensitivity control  
-- Model regularity guarantees  
-
-### Semantic Invariant
-> Small changes in input should result in small (or no) changes in output.
+This expresses a robustness intent evaluated around an anchor point `x`.
 
 ---
 
-## FAIRNESS
+## Property Structure
 
-### Intent
-Ensure non-discriminatory behavior across individuals or groups.
+A property section has the following shape:
 
-### Typical Use Cases
-- Group fairness  
-- Individual fairness  
-- Regulatory compliance  
+```forml
+[PROPERTY_TYPE]: scope => assertion using backend
+```
 
-### Semantic Invariant
-> Comparable individuals or groups must be treated equivalently under defined criteria.
+The backend is optional.
 
----
-
-## MONOTONICITY
-
-### Intent
-Enforce monotonic relationships between inputs and outputs.
-
-### Typical Use Cases
-- Credit scoring  
-- Risk assessment  
-- Interpretable ML systems  
-
-### Semantic Invariant
-> Increasing (or decreasing) a given feature must not violate a predefined order on the output.
+| Element | Role |
+|---|---|
+| `PROPERTY_TYPE` | Declares the kind of behavioral guarantee. |
+| `scope` | Defines where the property is evaluated. |
+| `assertion` | Defines what must hold. |
+| `backend` | Optional verification backend request. |
 
 ---
 
-## BOUND
+## Supported Property Types
 
-### Intent
-Constrain model outputs within numerical limits.
+### `ROBUSTNESS`
 
-### Typical Use Cases
-- Safety constraints  
-- Output normalization  
-- Regulatory bounds  
+Robustness properties express that model behavior should remain stable under controlled perturbations.
 
-### Semantic Invariant
-> Model outputs must remain within specified bounds under all considered conditions.
+Example:
 
----
+```forml
+[ROBUSTNESS]: at x in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUAL()
+```
 
-## LOGIC
+Typical scopes:
 
-### Intent
-Express logical relationships between predictions or conditions.
+| Scope | Status |
+|---|---|
+| `at` | supported |
+| `check_at` | supported |
+| quantifier | supported |
 
-### Typical Use Cases
-- Business rules  
-- Domain constraints  
-- Symbolic reasoning over predictions  
+Typical future backend requirements:
 
-### Semantic Invariant
-> Predictions must satisfy logical formulas or implications.
-
----
-
-## Property Types Summary
-
-| Property Type   | Core Question Answered                     | Typical Constraints                         |
-|-----------------|--------------------------------------------|---------------------------------------------|
-| ROBUSTNESS      | Does the model resist perturbations?        | Equality under perturbation                 |
-| STABILITY       | Is the model smooth?                        | Output similarity                           |
-| FAIRNESS        | Is the model equitable?                    | Equality across individuals or groups       |
-| MONOTONICITY    | Does the model respect order?               | Non-decreasing / non-increasing             |
-| BOUND           | Are outputs safe?                           | Numerical intervals                         |
-| LOGIC           | Does the model obey rules?                  | Logical formulas                            |
+- model constraints,
+- perturbation constraints,
+- output equivalence constraints,
+- solver or verifier encoding.
 
 ---
 
-## Important Design Note
+### `STABILITY`
 
-Property Types define **semantic intent**, not execution strategy.
+Stability properties express that model behavior should remain consistent under controlled conditions.
 
-They do **not** prescribe:
-- how verification is performed  
-- which solver or backend is used  
-- whether evaluation is global, local, or pairwise  
+Example:
 
-These aspects are handled separately by **scopes** and **backends**.
+```forml
+[STABILITY]: at x in neighborhood(metric=L2, eps=0.05) => REGRESSION.BETWEEN()
+```
+
+Stability is close to robustness, but may be used for broader behavioral persistence guarantees.
+
+Typical scopes:
+
+| Scope | Status |
+|---|---|
+| `at` | supported |
+| quantifier | supported |
 
 ---
 
-## Why This Ordering Matters
+### `FAIRNESS`
 
-By defining property types **before** introducing scopes:
+Fairness properties express behavioral constraints between points, groups, or comparable situations.
 
-- Readers acquire a **stable mental model**
-- The language appears **closed and intentional**
-- The DSL feels **designed**, not emergent  
+Example:
 
-This is how mature languages present their semantic foundations.
+```forml
+[FAIRNESS]: x ~ x' in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUITY()
+```
+
+Typical scope:
+
+| Scope | Status |
+|---|---|
+| pairwise | supported |
+
+Fairness will likely require ModelBridge and domain-aware constraints to become fully meaningful.
+
+---
+
+### `MONOTONICITY`
+
+Monotonicity properties express that outputs should move in a consistent direction when a feature or condition changes.
+
+Example:
+
+```forml
+[MONOTONICITY]: x ~ x' in neighborhood(metric=L1, eps=1.0) => REGRESSION.INCREASING()
+```
+
+Typical scopes:
+
+| Scope | Status |
+|---|---|
+| pairwise | supported |
+| quantifier | supported |
+
+Monotonicity is a strong candidate for IR2 and backend-specific lowering because it often requires comparing two symbolic states. Attribute-to-attribute monotonicity forms such as `x'.score >= x.score` should remain marked as planned until the comparison AST supports right-hand-side attributes.
+
+---
+
+### `BOUND`
+
+Bound properties express that a feature, score, probability, or output must remain within a range.
+
+Examples:
+
+```forml
+[BOUND]: check_at x => score >= 0
+```
+
+```forml
+[BOUND]: check_at x => score >= 0 AND score <= 1
+```
+
+Typical scopes:
+
+| Scope | Status |
+|---|---|
+| `check_at` | supported |
+| quantifier | supported |
+
+---
+
+### `LOGIC`
+
+Logic properties express general logical assertions.
+
+Example:
+
+```forml
+[LOGIC]: check_at x => (age >= 18 AND score >= 0.5) -> approved == true
+```
+
+`LOGIC` is useful for testing the compiler and expressing backend-independent logical relationships.
+
+Its exact semantic compatibility rules should be stabilized before public freeze.
+
+---
+
+## Property and Scope Compatibility
+
+Not every property type is compatible with every scope.
+
+Current semantic compatibility should be documented as:
+
+| Property | Supported Scopes |
+|---|---|
+| `ROBUSTNESS` | `local`, `pointwise`, `quantifier` |
+| `STABILITY` | `local`, `quantifier` |
+| `FAIRNESS` | `pairwise` |
+| `MONOTONICITY` | `pairwise`, `quantifier` |
+| `BOUND` | `pointwise`, `quantifier` |
+| `LOGIC` | to define |
+
+This compatibility is not a grammar concern. It is enforced by semantic validation.
+
+---
+
+## Property and Problem Predicates
+
+Some properties use problem-level predicates:
+
+```forml
+CLASSIFICATION.EQUAL()
+REGRESSION.BETWEEN()
+```
+
+These predicates must be validated against:
+
+- the declared or inferred ML task,
+- the model schema,
+- the property type,
+- the backend capability.
+
+Current compatibility examples:
+
+| Problem | Compatible Functions |
+|---|---|
+| `CLASSIFICATION` | `EQUAL`, `EQUITY`, `BETWEEN` |
+| `REGRESSION` | `EQUAL`, `INCREASING`, `DECREASING`, `BETWEEN` |
+
+---
+
+## Current vs Target Semantics
+
+| Layer | Current Role | Target Role |
+|---|---|---|
+| Grammar | Accept property syntax. | Stable public DSL. |
+| Builder | Build `PropertyNode`. | Fully canonical AST property nodes. |
+| Semantic layer | Validate scope and compatibility. | Model-aware property validation. |
+| IR1 | Represent backend-independent logical task. | NNF-normalized task representation. |
+| IR2 | planned | CNF/DNF and backend-preparation forms. |
+| Backend lowering | planned | Generate backend-specific queries. |
+
+---
+
+## Testing Requirements
+
+Each property type should have:
+
+- at least one valid grammar sample,
+- at least one valid semantic sample,
+- at least one invalid scope sample,
+- at least one golden IR1 sample,
+- future IR2 samples,
+- future backend query samples,
+- Hypothesis strategies,
+- Miova mutation scenarios.
+
+---
+
+## Related Documents
+
+- [Scopes](scopes.md)
+- [Assertions](assertions.md)
+- [Vocabulary](vocabulary.md)
+- [Examples](examples.md)

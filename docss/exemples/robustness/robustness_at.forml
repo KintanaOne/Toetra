@@ -1,8 +1,0 @@
-# This is a comment
-# Another comment
-model := "path/to/model.onnx"
-target := MyTargetColumn
-
-# at without using
-[ROBUSTNESS]:
-at x0 in neighborhood(metric=L2, eps=0.01) with sex("male","female") => CLASSIFICATION.EQUAL()

@@ -1,117 +1,232 @@
-# FORML Documentation
+# FORML
 
-## Overview
+> Status: P0 documentation baseline  
+> Scope: Project identity, end-to-end vision, and documentation entry point  
+> Implementation state: Partially implemented, architecturally expanding
 
-FORML is a formalized framework for program representation, transformation, and verification.
-It is designed to enable structured reasoning over programs, from high-level DSL constructs down to executable intermediate representations.
+FORML is a behavioral specification and verification framework for machine learning systems.
 
-At its core, FORML is not only a language — it is a system for **controlling program evolution through structured transformations and verifiable constraints**.
+It provides a domain-specific language and compilation pipeline for expressing, validating, normalizing, and eventually lowering behavioral properties of ML models into backend-specific verification queries.
 
----
+FORML is not only a DSL. It is designed as an end-to-end verification architecture connecting:
 
-## Core Philosophy
+- user-defined behavioral intent,
+- structured compiler artifacts,
+- semantic validation,
+- logical intermediate representations,
+- model metadata and model-derived constraints,
+- backend-oriented query generation,
+- and future verification runtimes.
 
-FORML is built around three fundamental principles:
+## Why FORML exists
 
-### 1. Structured Program Representation
+Machine learning systems are usually evaluated through metrics, datasets, test sets, and monitoring dashboards. These tools are useful, but they rarely express behavioral requirements as explicit, reusable, verifiable properties.
 
-Programs are not treated as raw text but as structured artifacts that evolve through well-defined layers (CST, AST, IR).
+FORML is built around a different question:
 
-### 2. Controlled Transformation
+> What behavioral properties should a model satisfy, and how can those properties be represented, validated, transformed, and checked across a verification pipeline?
 
-Program evolution is not implicit. It is explicitly defined through transformations governed by rules, contracts, and invariants.
+Examples of FORML-style concerns include:
 
-### 3. Verifiable Semantics
+- robustness around a point or within a neighborhood,
+- monotonicity between two model inputs,
+- bounds over model behavior,
+- stability under controlled perturbations,
+- fairness-like pairwise comparisons,
+- and logical combinations of domain constraints and model behavior.
 
-Every transformation can be validated through formal or semi-formal properties, enabling debugging, fuzzing, and correctness reasoning.
+The long-term goal is to make ML behavior specification as explicit as software contracts, test properties, or formal verification assertions.
 
----
+## Core idea
 
-## System Architecture
+A `.forml` file describes properties that should hold for a target ML model.
 
-FORML is composed of several interconnected subsystems:
+FORML progressively transforms this source specification into increasingly formal artifacts:
 
-### 🔷 Core Pipeline
+```text
+.forml source
+    ↓
+CST
+    ↓
+AST
+    ↓
+SemanticValidatedAST
+    ↓
+IR1
+    ↓
+NNF / De Morgan normalization (planned IR1 subphase)
+    ↓
+IR2 / CNF-DNF
+    ↓
+Aggregated Assertion Set
+    ↓
+Lowering / Minimization
+    ↓
+Backend Query
+    ↓
+Verification Result
+```
 
-Responsible for parsing, representation, and multi-layer program transformation.
+The current implementation focuses on the compiler front-end, semantic validation, IR1 generation, and the ModelBridge foundation. Later layers are part of the target end-to-end architecture and are documented explicitly as planned or research-direction components.
 
-* DSL Parser
-* CST / AST construction
-* IR generation (multi-level)
+## Main subsystems
 
----
+### DSL Compiler Pipeline
 
-### 🔷 SMS (Stable Mutations System)
+The compiler pipeline transforms `.forml` specifications into structured and validated representations.
 
-SMS is the transformation and verification engine of FORML.
+Its responsibility is to move from raw text to typed, validated, backend-independent logical artifacts.
 
-It defines:
+```text
+Source → CST → AST → SemanticValidatedAST → IR1
+```
 
-* **Artifact Model** → structured program state
-* **Transformation Model** → state transitions
-* **Contract Model** → intent and expected behavior
-* **Invariant Model** → verifiable truth constraints
-* **Engine Model** → execution and orchestration
-* **Registry Model** → transformation discovery system
+The current compiler already includes parsing, AST construction, semantic context generation, binding validation, logical validation, and IR1 translation.
 
-SMS enables controlled mutation, fuzzing, and property-based validation of programs.
+### Logical Verification Pipeline
 
-👉 [See SMS Documentation](./sms/sms_v1_architecture_spec.md)
+The logical verification pipeline starts after semantic validation.
 
----
+Its role is to normalize, transform, aggregate, simplify, and prepare verification logic before backend-specific lowering.
 
-## Use Cases
+```text
+SemanticValidatedAST
+    ↓
+IR1
+    ↓
+NNF / De Morgan normalization (planned IR1 subphase)
+    ↓
+IR2 / CNF-DNF
+    ↓
+Assertion Aggregation
+    ↓
+Lowering / Minimization
+    ↓
+Backend Query
+```
 
-FORML is designed for:
+IR1 is currently the first backend-independent logical representation. De Morgan and NNF normalization are documented as the next IR1 subphase, but should not be claimed as fully implemented until the transformation pass and golden tests exist. IR2 is planned as the layer responsible for clause-oriented or case-oriented forms such as CNF and DNF.
 
-* Program analysis and transformation
-* DSL execution and verification
-* Formal property testing (PBT / fuzzing)
-* Research in structured program mutation
-* Future integration with LLM-guided program synthesis
+### ModelBridge
 
----
+ModelBridge connects FORML specifications to actual ML model artifacts.
 
-## Documentation Structure
+It is responsible for:
 
-* **FORML Core**
+- loading serialized models,
+- detecting their framework,
+- introspecting model and dataset metadata,
+- producing a normalized `ModelSchema`,
+- supporting semantic validation against model features,
+- and later generating model-side constraints for backend lowering.
 
-  * Language specification
-  * Pipeline architecture
-  * IR design
+ModelBridge is not just a metadata helper. It is the bridge between ML runtime objects and formal verification artifacts.
 
-* **SMS System**
+### Backend Boundary
 
-  * Architecture specification
-  * Models (Artifact, Transformation, Contract, Invariant)
-  * Execution semantics
-  * ADRs and design decisions
+FORML is designed to be backend-agnostic.
 
----
+A backend may be a solver, verifier, symbolic engine, runtime checker, or model-specific verification system.
 
-## Getting Started
+The backend boundary is where FORML-specific logical artifacts become backend-specific queries.
 
-This documentation is organized to support progressive understanding:
+V1 backend scope is intentionally narrow: Z3 is the only backend target for the first functional end-to-end path. ERAN, zonotope/box abstractions, runtime monitors, and other verification engines are post-V1 extensions.
 
-1. Start with this overview
-2. Explore the FORML pipeline
-3. Dive into SMS architecture
-4. Study individual models
-5. Review ADRs for design rationale
+### Miova Integration
 
----
+Miova is not part of the normal FORML verification path.
 
-## Status
+Miova is an external mutation and exploration framework used to challenge FORML artifacts across compiler and verification boundaries.
 
-FORML is an evolving system under active design.
-SMS v1 represents the current stabilized architecture for transformation and verification.
+It helps answer questions such as:
 
----
+- Does a compiler layer reject invalid artifacts correctly?
+- Does a mutation preserve or violate a contract as expected?
+- Which transformations are robust to controlled perturbations?
+- Where are the limits of the DSL, semantic layer, IR, or backend boundary?
 
-## Navigation
+Miova is therefore a testing, validation, and exploration layer around FORML, not a replacement for FORML itself.
 
-* FORML Overview
-* Pipeline & IR
-* SMS Architecture
-* Models
-* ADRs
+## Design principles
+
+### Progressive formalization
+
+Each layer introduces stronger structure and stronger guarantees.
+
+Raw DSL text becomes CST, CST becomes AST, AST becomes semantically validated AST, semantic artifacts become IR, IR becomes normalized logic, and normalized logic becomes backend-ready queries.
+
+### Explicit artifacts
+
+FORML treats each pipeline stage as a meaningful artifact.
+
+This makes transformation boundaries explicit and testable.
+
+### Contract-oriented compilation
+
+Each transformation should have a clear contract:
+
+- input artifact,
+- output artifact,
+- guarantees,
+- failure modes,
+- invariants,
+- and traceability rules.
+
+### Semantic preservation
+
+Transformations should preserve the meaning of user intent unless a pass explicitly documents that it preserves only equisatisfiability or introduces a controlled approximation.
+
+### Backend-agnostic reasoning
+
+The DSL and early IR layers should not depend on a single backend.
+
+Backend-specific choices belong near the backend boundary, not in the parser, AST, or semantic layer.
+
+### Model-aware verification
+
+A FORML property is not fully meaningful until it can be checked against the model schema, task, target, features, and model-derived constraints.
+
+ModelBridge is therefore central to the end-to-end architecture.
+
+## Current implementation snapshot
+
+| Subsystem | Status | Notes |
+|---|---|---|
+| DSL grammar | Implemented / stabilizing | Lark grammar exists; syntax and vocabulary normalization still need cleanup. |
+| Parser | Implemented | Produces CST from `.forml` source. |
+| AST builder | Implemented / stabilizing | Converts CST into structured AST nodes. |
+| Semantic validation | Implemented / stabilizing | Builds semantic context, resolves bindings, validates logic and property-scope compatibility. |
+| IR1 | Implemented / stabilizing | Produces backend-independent verification tasks and logical IR. |
+| IR1 NNF / De Morgan | Planned / critical | Target IR1 subphase; not a current implementation claim until rewrites and golden tests exist. |
+| IR2 CNF / DNF | Planned / critical | Required before advanced backend preparation. |
+| ModelBridge | Partially implemented | Loading, framework detection, introspection, and `ModelSchema` foundation exist. |
+| Assertion aggregation | Planned / critical | Required to combine DSL assertions, semantic constraints, and model constraints. |
+| Lowering / minimization | Planned / critical | Required before backend-specific query generation. |
+| Backend query generation | Planned / critical | Z3 is the first intended target. |
+| Runtime verification | Planned | Depends on backend boundary and query execution. |
+| Miova integration | Planned / critical | Used for mutation campaigns and contract testing. |
+
+## Documentation map
+
+The documentation is organized around several concerns:
+
+- **Architecture**: system views, runtime flow, status matrix.
+- **Language**: grammar, vocabulary, syntax, properties, assertions.
+- **Compiler**: parser, builder, AST, semantic layer, IR1, IR2, aggregation, lowering.
+- **ModelBridge**: model loading, detection, introspection, schema, constraints.
+- **Intermediate Representations**: IR1, IR2, aggregated assertions, backend queries.
+- **Contracts**: layer boundaries and invariants.
+- **Backends**: capabilities, orchestration, Z3 and future backend targets.
+- **Miova Integration**: artifact mutation, contracts, invariants, expected failures.
+- **Testing**: unit tests, golden samples, end-to-end tests, mutation campaigns.
+- **ADRs**: design decisions and architectural trade-offs.
+
+## Next reading
+
+Start with:
+
+1. [Documentation Roadmap](docs-roadmap.md)
+2. [Architecture Overview](architecture/overview.md)
+3. [Status Matrix](architecture/status-matrix.md)
+
+These three documents define the structure used by the rest of the documentation.
