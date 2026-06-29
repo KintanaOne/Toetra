@@ -1,22 +1,47 @@
-site_name: FORML Ecosystem
-site_description: Formal Verification and Behavioral Orchestration Platform
+site_name: FORML
+site_description: Formalized ML behavioral specification and verification platform
 site_author: KintanaOne
+site_url: https://kintanaone.github.io/FORML/
+
+repo_name: KintanaOne/FORML
+repo_url: https://github.com/KintanaOne/FORML
+edit_uri: edit/main/docs/
+
+docs_dir: docs
+use_directory_urls: true
+
+copyright: Copyright &copy; 2026 KintanaOne
 
 theme:
   name: material
   language: en
-
   features:
-    - navigation.tabs
+    - navigation.instant
+    - navigation.tracking
     - navigation.sections
     - navigation.expand
+    - navigation.indexes
     - navigation.top
-
+    - search.highlight
+    - search.suggest
     - content.code.copy
     - content.code.annotate
-
-    - search.suggest
-    - search.highlight
+    - toc.follow
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: deep purple
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: deep purple
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  icon:
+    repo: fontawesome/brands/github
 
 plugins:
   - search
@@ -24,100 +49,162 @@ plugins:
 markdown_extensions:
   - admonition
   - attr_list
+  - def_list
+  - footnotes
   - md_in_html
-
-  - pymdownx.details
-  - pymdownx.superfences
-  - pymdownx.highlight
-  - pymdownx.inlinehilite
-  - pymdownx.tabbed:
-      alternate_style: true
-
+  - tables
   - toc:
       permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
 
 nav:
+  - Home: index.md
+  - Documentation Roadmap: docs-roadmap.md
+  - Review Corrections: review-corrections.md
 
-  - Home:
-      - Overview: index.md
-      - Philosophy: home/philosophy.md
-      - Architecture Map: home/architecture_map.md
+  - Getting Started:
+      - Overview: getting-started/overview.md
+      - Installation: getting-started/installation.md
+      - First FORML Property: getting-started/first-property.md
+      - First Model Schema: getting-started/first-model-schema.md
+      - End-to-End Preview: getting-started/end-to-end-preview.md
 
-  - FORML Core System:
+  - Architecture:
+      - Overview: architecture/overview.md
+      - Pipeline Views: architecture/pipeline-views.md
+      - Runtime Flow: architecture/runtime-flow.md
+      - Status Matrix: architecture/status-matrix.md
+      - Dependencies: architecture/dependencies.md
+      - C4 Context: architecture/c4-context.md
+      - C4 Container: architecture/c4-container.md
+      - Compiler Components: architecture/c4-component-compiler.md
+      - ModelBridge Components: architecture/c4-component-model-bridge.md
+      - Logical Verification Components: architecture/c4-component-logical-pipeline.md
 
-      - Overview: forml_core/overview.md
+  - Language:
+      - Overview: language/overview.md
+      - Grammar: language/grammar.md
+      - Vocabulary: language/vocabulary.md
+      - Syntax: language/syntax.md
+      - Properties: language/properties.md
+      - Scopes: language/scopes.md
+      - Assertions: language/assertions.md
+      - Backends Syntax: language/backends.md
+      - Examples: language/examples.md
 
-      - Language Layer:
-          - Program Structure: forml_core/language/program_structure.md
-          - Header: forml_core/language/header.md
-          - Body: forml_core/language/body.md
-          - Footer: forml_core/language/footer.md
-          - Property Language: forml_core/language/property_language.md
+  - Compiler:
+      - Pipeline: compiler/pipeline.md
+      - Language Layer: compiler/language-layer.md
+      - Parser Layer: compiler/parser-layer.md
+      - Builder Layer: compiler/builder-layer.md
+      - AST Layer: compiler/ast-layer.md
+      - Semantic Layer: compiler/semantic-layer.md
+      - IR1 Layer: compiler/ir1-layer.md
+      - IR2 Layer: compiler/ir2-layer.md
+      - Assertion Aggregation: compiler/assertion-aggregation.md
+      - Lowering and Minimization: compiler/lowering-minimization.md
+      - Backend Boundary: compiler/backend-boundary.md
 
-      - Compiler Pipeline:
-          - Overview: forml_core/compiler/overview.md
-          - CST: forml_core/compiler/cst.md
-          - AST: forml_core/compiler/ast.md
-          - Validated AST: forml_core/compiler/validated_ast.md
-          - IR Level 1: forml_core/compiler/ir1.md
-          - IR Level 2: forml_core/compiler/ir2.md
-          - Normalization: forml_core/compiler/normalization.md
-          - Transformations: forml_core/compiler/transformations.md
+  - ModelBridge:
+      - Overview: model-bridge/overview.md
+      - Loading: model-bridge/model-loading.md
+      - Detection: model-bridge/model-detection.md
+      - Introspection: model-bridge/model-introspection.md
+      - Model Schema: model-bridge/model-schema.md
+      - Model Constraints: model-bridge/model-constraints.md
+      - Supported Frameworks: model-bridge/supported-frameworks.md
 
-      - Semantic Model:
-          - Overview: forml_core/semantic/overview.md
-          - Scope Model: forml_core/semantic/scope_model.md
-          - Expression Model: forml_core/semantic/expression_model.md
-          - Assertion Model: forml_core/semantic/assertion_model.md
-          - Validity Rules: forml_core/semantic/validity_rules.md
-          - Semantic Preservation: forml_core/semantic/semantic_preservation.md
+  - Intermediate Representations:
+      - IR Overview: ir/overview.md
+      - Verification Task: ir/verification-task.md
+      - Scope IR: ir/scope-ir.md
+      - Logical IR: ir/logical-ir.md
+      - IR1 NNF: ir/ir1-nnf.md
+      - IR2 Normal Forms: ir/ir2-normal-forms.md
+      - Aggregated Assertion Set: ir/aggregated-assertion-set.md
+      - Backend Query: ir/backend-query.md
 
-      - Intermediate Representations:
-          - Overview: forml_core/ir/overview.md
-          - Logical Forms: forml_core/ir/logical_forms.md
+  - Contracts:
+      - Overview: contracts/overview.md
+      - Compiler Pipeline: contracts/compiler-pipeline.md
+      - Source to CST: contracts/source-to-cst.md
+      - CST to AST: contracts/cst-to-ast.md
+      - AST Contract: contracts/ast-contract.md
+      - AST to Semantic: contracts/ast-to-semantic.md
+      - Semantic to IR1: contracts/semantic-to-ir1.md
+      - IR1 to IR2: contracts/ir1-to-ir2.md
+      - Model to Schema: contracts/model-to-schema.md
+      - Schema to Semantic: contracts/schema-to-semantic.md
+      - Model Constraints: contracts/model-constraints.md
+      - Assertion Aggregation: contracts/assertion-aggregation.md
+      - Lowering and Minimization: contracts/lowering-minimization.md
+      - IR to Backend: contracts/ir-to-backend.md
+      - Errors: contracts/errors.md
+      - Type Normalization: contracts/type-normalization.md
+      - Mutation Boundaries: contracts/mutation-boundaries.md
 
-  - Orchestration Layer:
-      - Overview: orchestration/overview.md
-      - Backend Detection: orchestration/backend_detection.md
-      - Capability Model: orchestration/capability_model.md
-      - Routing Engine: orchestration/routing.md
-      - Strategy Selection: orchestration/strategy_selection.md
-      - AutoFORML: orchestration/autoforl.md
+  - Backends:
+      - Overview: backends/overview.md
+      - Backend Capabilities: backends/capabilities.md
+      - Backend Orchestration: backends/orchestration.md
+      - Z3 Backend: backends/z3.md
+      - ERAN Backend: backends/eran.md
+      - Diagnostics: backends/diagnostics.md
 
-  - Backend Representation:
-      - Overview: backend_representation/overview.md
-      - Model Transcription: backend_representation/model_transcription.md
-      - Validation: backend_representation/validation.md
-      - Abstraction Layer: backend_representation/abstraction_layer.md
-
-  - Verification Runtime:
+  - Runtime:
       - Overview: runtime/overview.md
-      - Execution Engine: runtime/execution_engine.md
-      - Verification Pipeline: runtime/verification_pipeline.md
+      - Verification Runtime: runtime/verification-runtime.md
       - Monitoring: runtime/monitoring.md
-      - Tracing: runtime/tracing.md
+      - Results and Traces: runtime/results-and-traces.md
 
-  - Model Bridge:
-      - Overview: model_bridge/overview.md
-      - Supported Models: model_bridge/supported_models.md
-      - Model Abstraction: model_bridge/model_abstraction.md
-      - Inference Interface: model_bridge/inference_interface.md
-      - Compatibility Layer: model_bridge/compatibility_layer.md
+  - Miova Integration:
+      - Overview: miova/overview.md
+      - Artifact Boundaries: miova/artifact-boundaries.md
+      - Mutation Campaigns: miova/mutation-campaigns.md
+      - Contract Testing: miova/contract-testing.md
+      - Invariant Testing: miova/invariant-testing.md
+      - Expected Failures: miova/expected-failures.md
+      - Hypothesis Integration: miova/hypothesis-integration.md
 
-  - SMS:
-      - Overview: sms/overview.md
-      - Transformation Model: sms/transformation_model.md
-      - Mutation Engine: sms/mutation_engine.md
-      - Property Mutations: sms/property_mutations.md
+  - Testing:
+      - Strategy: testing/strategy.md
+      - Unit Tests: testing/unit-tests.md
+      - Compiler Contract Tests: testing/compiler-contract-tests.md
+      - Golden Samples: testing/golden-samples.md
+      - End-to-End Tests: testing/end-to-end-tests.md
+      - Property-Based Testing: testing/property-based-testing.md
+      - Intelligent Fuzzing: testing/intelligent-fuzzing.md
+      - Miova Campaigns: testing/miova-campaigns.md
 
-  - Formal Theory:
-      - Overview: formal_theory/overview.md
-      - Transition System: formal_theory/transition_system.md
-      - Invariants: formal_theory/invariants.md
-      - Logical System: formal_theory/logical_system.md
-      - Verification Theory: formal_theory/verification_theory.md
+  - ADR:
+      - Overview: adr/overview.md
+      - ADR-0001 Compiler Pipeline: adr/ADR-0001-compiler-pipeline.md
+      - ADR-0002 Layered Artifacts: adr/ADR-0002-layered-artifacts.md
+      - ADR-0003 AST vs Semantic AST: adr/ADR-0003-ast-vs-semantic-ast.md
+      - ADR-0004 Enum Normalization Boundary: adr/ADR-0004-enum-normalization-boundary.md
+      - ADR-0005 Semantic Annotations: adr/ADR-0005-semantic-annotations.md
+      - ADR-0006 IR1 NNF: adr/ADR-0006-ir1-nnf.md
+      - ADR-0007 IR2 Normal Forms: adr/ADR-0007-ir2-normal-forms.md
+      - ADR-0008 ModelSchema as Bridge: adr/ADR-0008-modelschema-as-bridge.md
+      - ADR-0009 Assertion Aggregation: adr/ADR-0009-assertion-aggregation.md
+      - ADR-0010 Backend Boundary: adr/ADR-0010-backend-boundary.md
+      - ADR-0011 Error Boundaries: adr/ADR-0011-error-boundaries.md
+      - ADR-0012 Miova Mutation Boundaries: adr/ADR-0012-miova-mutation-boundaries.md
 
-  - Appendix:
-      - Glossary: appendix/glossary.md
-      - Architecture Decision Records: appendix/adr.md
-      - Future Work: appendix/future_work.md
+  - Roadmap:
+      - Implementation Roadmap: roadmap/implementation-roadmap.md
+      - Documentation Roadmap: roadmap/documentation-roadmap.md
+      - Open Questions: roadmap/open-questions.md

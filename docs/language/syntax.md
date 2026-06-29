@@ -1,283 +1,356 @@
-# FORML Syntax Specification
+# Syntax
 
-This document defines the **concrete syntax and semantics** of the FORML language.
+> Status: Stabilizing  
+> Scope: User-facing FORML syntax  
+> Priority: P1  
+> Audience: FORML users, test authors, documentation readers
 
-FORML is a **declarative constraint language for machine learning models**.
-It allows expressing *properties* over models in a formal, structured, and backend-agnostic way.
+## Purpose
 
-A key design principle of FORML is that **scope is implicit**, derived from syntax rather than explicitly declared.
+This document describes the user-facing syntax of FORML specifications.
 
----
+It focuses on how to write `.forml` files, not on how the compiler internally represents them.
 
-## 1. Core Principle
-
-In FORML, the **scope of a property is determined by its syntactic form**.
-
-| Syntactic form | Induced scope | Semantics                                       |
-| -------------- | ------------- | ----------------------------------------------- |
-| `forall`       | Global        | Property must hold for all valid inputs         |
-| `exists`       | Global        | Property must hold for at least one valid inputs         |
-| `at x`         | Local region  | Property must hold in a neighborhood around `x` |
-| `check_at x`   | Pointwise     | Property must hold for a specific input `x`     |
-| `x ~ x'`       | Pairwise      | Property relates two inputs `x` and `x'`        |
-
-There is **no explicit `scope` keyword**.
+A FORML specification describes behavioral properties that a machine learning model should satisfy.
 
 ---
 
-## 2. Property Declaration
+## Minimal Program
 
-A property is declared using the following structure:
+A minimal FORML program declares a model, a target, and at least one property:
 
 ```forml
-[PROPERTY_TYPE]:
-<property_expression> -> <assertion>
+model := "model.joblib"
+target := prediction
+
+[BOUND]: check_at x => score >= 0
 ```
 
-Example:
+This program means:
 
-```forml
-[ROBUSTNESS]:
-x ~ x' in neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL()
+```text
+For the model declared in the header, evaluate a BOUND property at point x and assert that score is greater than or equal to zero.
 ```
 
 ---
 
-## 3. Property Expressions
+## Header Syntax
 
-A property expression defines **where and how** the constraint applies.
-
-### 3.1 Global (Quantified)
+The header provides global inputs to the verification pipeline.
 
 ```forml
-forall -> ...
+model := "model.joblib"
+target := prediction
 ```
 
-**Semantics**:
-The constraint must hold for all valid inputs.
+Optional declarations may include:
+
+```forml
+dataset := "data.csv"
+eps := 0.1
+```
+
+### Header Fields
+
+| Field | Required | Example | Meaning |
+|---|---:|---|---|
+| `model` | yes | `model := "model.joblib"` | Model artifact to verify. |
+| `target` | yes | `target := prediction` | Output or target of interest. |
+| `dataset` | no | `dataset := "data.csv"` | Dataset used for schema inference. |
+| variables | no | `eps := 0.1` | Reusable values. |
 
 ---
 
-### 3.2 Local (Neighborhood-based)
+## Property Syntax
+
+A property follows this shape:
 
 ```forml
-at x in neighborhood(L2, eps=0.01) -> ...
+[PROPERTY_TYPE]: scope => assertion using backend
 ```
 
-**Semantics**:
-The constraint must hold for all inputs in a neighborhood around `x`.
-
----
-
-### 3.3 Pointwise
-
-```forml
-check_at x -> ...
-```
-
-**Semantics**:
-The constraint must hold for the specific input `x`.
-
----
-
-### 3.4 Pairwise
-
-```forml
-x ~ x' in neighborhood(L2, eps=0.01) -> ...
-```
-
-**Semantics**:
-The constraint relates two inputs `x` and `x'`, typically under a notion of proximity.
-
-Typical interpretations include:
-
-* robustness (small perturbations)
-* fairness (counterfactual comparison)
-* invariance constraints
-
-The exact semantics may depend on the backend.
-
----
-
-## 4. Neighborhoods
-
-Neighborhoods define **how inputs are related or perturbed**.
-
-General form:
-
-```forml
-<neighborhood>(<arg>=<value>, ...)
-```
-
-Example:
-
-```forml
-neighborhood(L2, eps=0.01)
-```
-
-Arguments are **named and typed**, enabling extensibility and backend compatibility.
-
----
-
-## 5. Assertions
-
-Assertions define **what must hold** once the scope is defined.
-
-General form:
-
-```forml
-<PROBLEM_TYPE>.<FUNCTION>(...)
-```
-
-Example:
-
-```forml
-CLASSIFICATION.EQUAL()
-```
-
----
-
-## 6. Logical Constraints
-
-FORML supports structured logical expressions inside assertions.
-
-### 6.1 Grammar Overview
-
-Assertions follow a standard logical structure with precedence:
-
-- `NOT` (highest precedence)
-- `AND`
-- `OR`
-- `->` (implication, right-associative)
-
-General form:
-
-```forml
-A AND B -> C
-```
-Which is interpreted as:
-```forml
-(A AND B) -> C
-```
-
-### 6.2 Atomic Expressions
-
-The smallest logical units are:
-
-#### Attribute comparisons :
-```forml
-x.feature1 <= 0
-```
-General form:
-```forml
-<attribute> <operator> <value>
-```
-Where:
-
-- <attribute> can be nested: x.feature.subfeature
-- <operator> ∈ ==, !=, <, <=, >, >=
-- <value> is a number, boolean, or string
-
-#### Problem assertions
-```forml
-CLASSIFICATION.EQUAL()
-```
-These represent model-level constraints.
-
-### 6.3 Composition
-
-Logical expressions can be composed:
-```forml
-(x.feature1 <= 0 AND x.feature2 >= 1) -> CLASSIFICATION.EQUAL()
-```
-```forml
-NOT (x.feature1 <= 0) OR CLASSIFICATION.EQUAL()
-```
-Parentheses can be used to control evaluation order.
-
-### 6.4 Semantics
-- Logical expressions define constraints over inputs and model outputs
-- They are declarative, not executable
-- They are later transformed into an internal logical representation (IR)
-
----
-
-## 🆕 Section 7 — Variables and Attributes (FIXED)
-
-## 7. Variables and Attributes
-
-### 7.1 Variables
-
-Variables represent **symbolic inputs** to the model.
+The backend is optional.
 
 Examples:
 
-- `x`
-- `x0`
-- `x'` (used in pairwise relations)
+```forml
+[ROBUSTNESS]: at x in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUAL()
 
-They are:
+[BOUND]: check_at x => score >= 0
 
-- not assigned
-- not evaluated directly
-- used as symbolic references in constraints
+[MONOTONICITY]: x ~ x' in neighborhood(metric=L1, eps=1.0) => REGRESSION.INCREASING()
+```
 
 ---
 
-### 7.2 Attributes
+## Property Type Syntax
 
-Attributes allow accessing features of an input:
+Property types are written between brackets:
 
 ```forml
-x.feature1
-x.feature1.subfeature
+[ROBUSTNESS]
+[BOUND]
+[FAIRNESS]
+[MONOTONICITY]
+[STABILITY]
+[LOGIC]
 ```
-General form :
-```forml
-<identifier> { "." <identifier> }
-```
 
-### 7.3 Key Distinction
-| Concept     | Meaning                 |
-| ----------- | ----------------------- |
-| `x`         | an input instance       |
-| `x.feature` | a feature of that input |
+The property type describes the user intent.
 
-### 7.4 Notes
-- Variables are scoped implicitly via property expressions (at, check_at, x ~ x', etc.)
-- There is no assignment or mutation
-- All variables are purely symbolic
----
-
-## 8. Design Philosophy
-
-FORML is designed to be:
-
-* **Declarative**: describe *what*, not *how*
-* **Compositional**: syntax encodes semantics
-* **Backend-agnostic**: compatible with multiple verification engines
-* **Extensible**: arguments and functions can evolve without breaking syntax
+It does not alone define the full verification problem. The scope and assertion complete the property.
 
 ---
 
-## 9. Summary
+## Scope Syntax
 
-A FORML property is composed of:
+### `check_at`
 
-1. A **scope** (implicit via syntax)
-2. A **relation** (e.g. pairwise, local)
-3. A **constraint** (assertion)
-
-Example:
+Pointwise evaluation:
 
 ```forml
-[ROBUSTNESS]:
-x ~ x' in neighborhood(L2, eps=0.01) -> CLASSIFICATION.EQUAL()
+[BOUND]: check_at x => score >= 0
 ```
 
-Which reads as:
-```forml
-> For any pair of inputs `x` and `x'` within an L2 neighborhood of radius 0.01,
-> the model must produce the same classification output.
+Meaning:
+
+```text
+Evaluate the property at one point x.
 ```
+
 ---
+
+### `at`
+
+Local evaluation around an anchor:
+
+```forml
+[ROBUSTNESS]: at x in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUAL()
+```
+
+Meaning:
+
+```text
+Evaluate robustness around anchor x using a perturbation x'.
+```
+
+Implicit feature references are resolved against `x'` by default.
+
+---
+
+### Pairwise
+
+Pairwise relation between two variables:
+
+```forml
+[FAIRNESS]: x ~ x' in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUITY()
+```
+
+The intended pairwise syntax is:
+
+```text
+x ~ x'
+```
+
+The semantic layer interprets:
+
+| Variable | Role |
+|---|---|
+| `x` | anchor |
+| `x'` | perturbation / paired point |
+
+---
+
+### Quantifiers
+
+Quantified evaluation:
+
+```forml
+[BOUND]: forall with age(18, 65) => score >= 0
+```
+
+Accepted quantifier forms should normalize to:
+
+```text
+forall
+exists
+```
+
+Potential user-facing forms:
+
+```text
+forall
+exists
+∀
+∃
+```
+
+---
+
+## Neighborhood Syntax
+
+Neighborhoods define perturbation spaces.
+
+```forml
+in neighborhood(metric=L2, eps=0.1)
+```
+
+Examples:
+
+```forml
+in neighborhood(metric=L1, eps=1.0)
+in neighborhood(metric=L2, eps=0.1)
+in neighborhood(metric=Linf, eps=0.05)
+```
+
+The most important argument is usually:
+
+| Argument | Meaning |
+|---|---|
+| `eps` | Perturbation radius or tolerance. |
+
+---
+
+## Domain Syntax
+
+Domains restrict evaluation to a set of values.
+
+```forml
+with age(18, 65)
+with segment("A", "B")
+```
+
+A domain can be attached to supported scopes:
+
+```forml
+[BOUND]: forall with age(18, 65) => score >= 0
+```
+
+Domain semantics are not only syntactic. They must later be interpreted by semantic validation and IR lowering.
+
+---
+
+## Assertion Syntax
+
+Assertions describe what must hold.
+
+### Comparisons
+
+```forml
+score >= 0
+age <= 65
+prediction == 1
+```
+
+Current comparison limitation: implemented comparisons are attribute-to-constant. Attribute-to-attribute comparisons are a planned extension and should not be used in V1 examples unless explicitly marked as future syntax.
+
+### Boolean composition
+
+```forml
+score >= 0 AND score <= 1
+```
+
+```forml
+NOT age < 18
+```
+
+```forml
+age >= 18 OR segment == "adult"
+```
+
+### Implication
+
+```forml
+age >= 18 -> score >= 0.5
+```
+
+### Parentheses
+
+```forml
+(age >= 18 AND age <= 65) -> score >= 0.5
+```
+
+### Problem predicates
+
+```forml
+CLASSIFICATION.EQUAL()
+REGRESSION.BETWEEN()
+```
+
+---
+
+## Backend Syntax
+
+A property can optionally specify a backend:
+
+```forml
+[ROBUSTNESS]: at x in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUAL() using z3
+```
+
+With arguments:
+
+```forml
+using z3(timeout=30)
+```
+
+The backend syntax is a request or hint. The backend boundary still validates compatibility before execution.
+
+---
+
+## Recommended Formatting Style
+
+Recommended style for readability:
+
+```forml
+model := "model.joblib"
+target := prediction
+dataset := "data.csv"
+
+[ROBUSTNESS]: at x in neighborhood(metric=L2, eps=0.1)
+  => CLASSIFICATION.EQUAL()
+  using z3
+
+[BOUND]: check_at x
+  => score >= 0 AND score <= 1
+```
+
+This style is not necessarily required by the parser, but it improves readability and documentation consistency.
+
+---
+
+## Invalid Syntax Examples
+
+### Missing header
+
+```forml
+[BOUND]: check_at x => score >= 0
+```
+
+Invalid because `model` and `target` are missing.
+
+### Missing assertion
+
+```forml
+[BOUND]: check_at x =>
+```
+
+Invalid because the property has no RHS assertion.
+
+### Invalid pairwise form
+
+```forml
+[FAIRNESS]: x ~ y in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUITY()
+```
+
+The semantic layer expects the right variable to be the primed version of the left variable, such as `x'`.
+
+---
+
+## Related Documents
+
+- [Grammar](grammar.md)
+- [Properties](properties.md)
+- [Scopes](scopes.md)
+- [Assertions](assertions.md)
+- [Backends Syntax](backends.md)
+- [Examples](examples.md)
