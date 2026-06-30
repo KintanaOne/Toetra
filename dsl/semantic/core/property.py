@@ -149,12 +149,14 @@ class PropertyValidator:
             # PROPERTY ↔ SCOPE COMPATIBILITY
             # ==================================================
 
-            try:
-                property_type = EnumProperty[prop.type.upper()]
-            except KeyError:
-                raise InvalidPropertyError(f"Unknown property type '{prop.type}'")
+            property_type = self._normalize_property_type(prop.type)
 
-            allowed_scopes = PROPERTY_SCOPE_COMPATIBILITY.get(property_type, set())
+            allowed_scopes = PROPERTY_SCOPE_COMPATIBILITY.get(property_type)
+
+            if allowed_scopes is None:
+                raise InvalidPropertyError(
+                    f"No scope compatibility rule defined for property '{property_type.value}'"
+                )
 
             if context.type not in allowed_scopes:
 
@@ -195,3 +197,15 @@ class PropertyValidator:
         self.tracer.log(f"✔ Property '{prop.type}' validated")
 
         return True
+    
+
+    def _normalize_property_type(self, property_type) -> EnumProperty:
+        if isinstance(property_type, EnumProperty):
+            return property_type
+
+        try:
+            return EnumProperty.from_str(str(property_type))
+        except ValueError as e:
+            raise InvalidPropertyError(
+                f"Unknown property type '{property_type}'"
+            ) from e

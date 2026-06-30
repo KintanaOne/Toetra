@@ -48,6 +48,12 @@ PROPERTY_SCOPE_COMPATIBILITY = {
         SemanticScope.POINTWISE,
         SemanticScope.QUANTIFIER,
     },
+    EnumProperty.LOGIC: {
+        SemanticScope.POINTWISE,
+        SemanticScope.LOCAL,
+        SemanticScope.PAIRWISE,
+        SemanticScope.QUANTIFIER,
+    },
 }
 
 
