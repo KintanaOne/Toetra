@@ -1,297 +1,70 @@
 from __future__ import annotations
 
-from dsl.ast.nodes.expressions import (
-    AtExprNode,
-    CheckAtExprNode,
-    PairwiseExprNode,
-    QuantifierExprNode,
-)
 from dsl.ast.nodes.program import ProgramNode
 from dsl.ast.nodes.property import PropertyNode
 
-from dsl.ast.nodes.assertion import (
-    LogicalNode,
-    ComparisonNode,
-    AndNode,
-    OrNode,
-    NotNode,
-    ImplicationNode,
-    ProblemNode,
-)
+from dsl.ir.ir1.nodes import VerificationTask
+from dsl.ir.ir1.scope_translator import ScopeTranslator
+from dsl.ir.ir1.query_translator import QueryTranslator
 
-
-from dsl.ir.ir1.nodes import (
-    VerificationTask,
-    ScopeIR,
-    QueryIR,
-    LogicalIR,
-    ComparisonIR,
-    AndIR,
-    OrIR,
-    NotIR,
-    ImplyIR,
-    ProblemIR,
-    NeighborhoodIR,
-    DomainIR,
-)
-
-from dsl.language.vocabulary.problems import EnumProblem
-from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.backends import EnumBackend
 
 
 class IRTranslator:
     """
-    AST (semantic validated) → IR executable layer
+    AST validated by semantic layer -> IR1 verification tasks.
+
+    Responsibility:
+        ProgramNode / PropertyNode -> VerificationTask
+
+    Detailed translation is delegated to:
+        - ScopeTranslator
+        - QueryTranslator
     """
 
-    # --------------------------------------------------------------------------
-    # ENTRY POINT
-    # --------------------------------------------------------------------------
+    def __init__(
+        self,
+        scope_translator: ScopeTranslator | None = None,
+        query_translator: QueryTranslator | None = None,
+    ):
+        self.scope_translator = scope_translator or ScopeTranslator()
+        self.query_translator = query_translator or QueryTranslator()
+
+    # ------------------------------------------------------------------
+    # PROGRAM
+    # ------------------------------------------------------------------
 
     def translate(self, program: ProgramNode) -> list[VerificationTask]:
-        return [self._translate_property(p) for p in program.body]
+        return [
+            self._translate_property(prop)
+            for prop in program.body
+        ]
 
-    # --------------------------------------------------------------------------
+    # ------------------------------------------------------------------
     # PROPERTY
-    # --------------------------------------------------------------------------
+    # ------------------------------------------------------------------
 
     def _translate_property(self, prop: PropertyNode) -> VerificationTask:
+        scope_ir = self.scope_translator.translate(prop.rule.scope)
+        query_ir = self.query_translator.translate(prop.rule.assertion.root)
 
-        scope_ir = self._translate_scope(prop.rule.scope)
-        query_ir = self._translate_assertion(prop.rule.assertion.root)
-
-        backend = prop.backend.name if prop.backend else None
+        backend = self._translate_backend(prop)
 
         return VerificationTask(
             property_type=prop.type,
             scope=scope_ir,
             query=query_ir,
-            backend=EnumBackend[backend] if backend else None,
+            backend=backend,
         )
-    
 
-    # --------------------------------------------------------------------------
-    # NEIGHBORHOOD / DOMAIN
-    # --------------------------------------------------------------------------
+    # ------------------------------------------------------------------
+    # BACKEND
+    # ------------------------------------------------------------------
 
-    def _translate_neighborhood(self, neighborhood) -> NeighborhoodIR | None:
-        if neighborhood is None:
+    def _translate_backend(self, prop: PropertyNode) -> EnumBackend | None:
+        if prop.backend is None:
             return None
 
-        args_dict = {arg.key: arg.value for arg in neighborhood.args}
+        backend_name = prop.backend.name
 
-        eps = args_dict.get("eps")
-
-        if eps is None:
-            raise ValueError("Neighborhood must specify 'eps' parameter")
-
-        try:
-            eps = float(eps)
-        except (TypeError, ValueError) as e:
-            raise ValueError(f"Invalid neighborhood eps value: {eps}") from e
-
-        return NeighborhoodIR(
-            metric=neighborhood.metric,
-            eps=eps,
-            args=args_dict,
-        )
-
-    def _translate_domain(self, domain) -> DomainIR | None:
-        if domain is None:
-            return None
-
-        return DomainIR(
-            name=domain.name,
-            args={"values": domain.values},
-        )
-
-    # --------------------------------------------------------------------------
-    # SCOPE
-    # --------------------------------------------------------------------------
-
-    def _translate_scope(self, scope) -> ScopeIR:
-
-        variables = {}
-        neighborhood_ir = None
-        domain_ir = None
-        kind = "unknown"
-
-        # ------------------------------------------------------------------
-        # AT
-        # ------------------------------------------------------------------
-
-        if isinstance(scope, AtExprNode):
-
-            kind = "local"
-
-            variables = {
-                scope.variable: "anchor",
-                f"{scope.variable}'": "perturbation",
-            }
-
-            neighborhood_ir = self._translate_neighborhood(scope.neighborhood)
-            domain_ir = self._translate_domain(scope.domain)
-
-        # ------------------------------------------------------------------
-        # PAIRWISE
-        # ------------------------------------------------------------------
-
-        elif isinstance(scope, PairwiseExprNode):
-
-            kind = "pairwise"
-
-            variables = {
-                scope.left: "anchor",
-                scope.right: "perturbation",
-            }
-
-            neighborhood_ir = self._translate_neighborhood(scope.neighborhood)
-            domain_ir = self._translate_domain(scope.domain)
-
-        # ------------------------------------------------------------------
-        # CHECK AT
-        # ------------------------------------------------------------------
-
-        elif isinstance(scope, CheckAtExprNode):
-
-            kind = "pointwise"
-
-            variables = {scope.variable: "anchor"}
-
-        # ------------------------------------------------------------------
-        # QUANTIFIER
-        # ------------------------------------------------------------------
-
-        elif isinstance(scope, QuantifierExprNode):
-
-            kind = "quantifier"
-
-            if scope.domain is not None:
-
-                domain_ir = DomainIR(name=scope.domain.name, args={})
-
-        # ------------------------------------------------------------------
-        # FINAL
-        # ------------------------------------------------------------------
-
-        return ScopeIR(
-            kind=kind,
-            variables=variables,
-            neighborhood=neighborhood_ir,
-            domain=domain_ir,
-        )
-
-    # --------------------------------------------------------------------------
-    # ASSERTION → QUERY
-    # --------------------------------------------------------------------------
-
-    def _flatten_and(self, node: AndNode) -> list[LogicalNode]:
-        result = []
-
-        for n in node.operands:
-            if isinstance(n, AndNode):
-                result.extend(self._flatten_and(n))
-            else:
-                result.append(n)
-
-        return result
-
-    def _flatten_or(self, node: OrNode) -> list[LogicalNode]:
-        result = []
-
-        for n in node.operands:
-            if isinstance(n, OrNode):
-                result.extend(self._flatten_or(n))
-            else:
-                result.append(n)
-
-        return result
-
-    def _translate_assertion(self, node: LogicalNode) -> QueryIR:
-
-        if isinstance(node, AndNode):
-
-            operands = [self._translate_logical(n) for n in self._flatten_and(node)]
-
-            return QueryIR(expression=AndIR(operands=operands))
-
-        if isinstance(node, OrNode):
-
-            operands = [self._translate_logical(n) for n in self._flatten_or(node)]
-
-            return QueryIR(expression=OrIR(operands=operands))
-        return QueryIR(expression=self._translate_logical(node))
-
-    def _translate_logical(self, node: LogicalNode) -> LogicalIR:
-        """
-        Recursively converts AST LogicalNode → IR LogicalIR.
-
-        This function produces a PURE logical tree:
-            - ComparisonIR (leaf)
-            - AndIR / OrIR / NotIR / ImplyIR (structure)
-            - ProblemIR (semantic leaf)
-
-        No QueryIR wrapping here.
-        """
-
-        # -----------------------------
-        # COMPARISON
-        # -----------------------------
-        if isinstance(node, ComparisonNode):
-
-            assert node.left.entity is not None, "Left entity cannot be None"
-            assert node.left.feature is not None, "Left feature cannot be None"
-
-            return ComparisonIR(
-                entity=node.left.entity,
-                feature=node.left.feature,
-                op=node.op,  # 🔥 important
-                value=node.right.value,
-            )
-
-        # -----------------------------
-        # AND
-        # -----------------------------
-        if isinstance(node, AndNode):
-
-            return AndIR(operands=[self._translate_logical(n) for n in node.operands])
-
-        # -----------------------------
-        # OR
-        # -----------------------------
-        if isinstance(node, OrNode):
-
-            return OrIR(operands=[self._translate_logical(n) for n in node.operands])
-
-        # -----------------------------
-        # NOT
-        # -----------------------------
-        if isinstance(node, NotNode):
-
-            return NotIR(operand=self._translate_logical(node.operand))
-
-        # -----------------------------
-        # IMPLICATION
-        # -----------------------------
-        if isinstance(node, ImplicationNode):
-
-            return ImplyIR(
-                left=self._translate_logical(node.left),
-                right=self._translate_logical(node.right),
-            )
-
-        # -----------------------------
-        # PROBLEM NODE
-        # -----------------------------
-        if isinstance(node, ProblemNode):
-
-            problem = EnumProblem(node.problem)
-            function = EnumFunction(node.function) if node.function else None
-
-            return ProblemIR(problem=problem, function=function, args={})
-
-        # -----------------------------
-        # FAIL SAFE
-        # -----------------------------
-        raise ValueError(f"Unsupported LogicalNode type: {type(node)}")
+        return EnumBackend[backend_name]
