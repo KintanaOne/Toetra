@@ -23,9 +23,19 @@ class AtExprNode(ExpressionNode):
 
 @dataclass
 class PairwiseExprNode(ExpressionNode):
-    pair: str
+    left: str
+    right: str
     neighborhood: NeighborhoodNode
     domain: DomainNode | None = None
+
+    @property
+    def pair(self) -> str:
+        """
+        Backward-compatible textual representation.
+
+        Internal code should prefer `left` and `right`.
+        """
+        return f"{self.left} ~ {self.right}"
 
 
 @dataclass

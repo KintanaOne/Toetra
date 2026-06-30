@@ -69,6 +69,42 @@ class IRTranslator:
             query=query_ir,
             backend=EnumBackend[backend] if backend else None,
         )
+    
+
+    # --------------------------------------------------------------------------
+    # NEIGHBORHOOD / DOMAIN
+    # --------------------------------------------------------------------------
+
+    def _translate_neighborhood(self, neighborhood) -> NeighborhoodIR | None:
+        if neighborhood is None:
+            return None
+
+        args_dict = {arg.key: arg.value for arg in neighborhood.args}
+
+        eps = args_dict.get("eps")
+
+        if eps is None:
+            raise ValueError("Neighborhood must specify 'eps' parameter")
+
+        try:
+            eps = float(eps)
+        except (TypeError, ValueError) as e:
+            raise ValueError(f"Invalid neighborhood eps value: {eps}") from e
+
+        return NeighborhoodIR(
+            metric=neighborhood.metric,
+            eps=eps,
+            args=args_dict,
+        )
+
+    def _translate_domain(self, domain) -> DomainIR | None:
+        if domain is None:
+            return None
+
+        return DomainIR(
+            name=domain.name,
+            args={"values": domain.values},
+        )
 
     # --------------------------------------------------------------------------
     # SCOPE
@@ -89,33 +125,13 @@ class IRTranslator:
 
             kind = "local"
 
-            variables = {scope.variable: "anchor", f"{scope.variable}'": "perturbation"}
+            variables = {
+                scope.variable: "anchor",
+                f"{scope.variable}'": "perturbation",
+            }
 
-            # --------------------------
-            # neighborhood
-            # --------------------------
-
-            if scope.neighborhood is not None:
-
-                args_dict = {arg.key: arg.value for arg in scope.neighborhood.args}
-
-                eps = args_dict.get("eps")
-                assert eps is not None, "Neighborhood must specify 'eps' parameter"
-                eps = float(eps)
-
-                neighborhood_ir = NeighborhoodIR(
-                    metric=scope.neighborhood.metric, eps=eps, args=args_dict
-                )
-
-            # --------------------------
-            # domain
-            # --------------------------
-
-            if scope.domain is not None:
-
-                domain_ir = DomainIR(
-                    name=scope.domain.name, args={"values": scope.domain.values}
-                )
+            neighborhood_ir = self._translate_neighborhood(scope.neighborhood)
+            domain_ir = self._translate_domain(scope.domain)
 
         # ------------------------------------------------------------------
         # PAIRWISE
@@ -125,9 +141,13 @@ class IRTranslator:
 
             kind = "pairwise"
 
-            left, right = [x.strip() for x in scope.pair.split(",")]
+            variables = {
+                scope.left: "anchor",
+                scope.right: "perturbation",
+            }
 
-            variables = {left: "left", right: "right"}
+            neighborhood_ir = self._translate_neighborhood(scope.neighborhood)
+            domain_ir = self._translate_domain(scope.domain)
 
         # ------------------------------------------------------------------
         # CHECK AT
@@ -137,7 +157,7 @@ class IRTranslator:
 
             kind = "pointwise"
 
-            variables = {scope.variable: "point"}
+            variables = {scope.variable: "anchor"}
 
         # ------------------------------------------------------------------
         # QUANTIFIER
