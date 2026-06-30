@@ -53,6 +53,36 @@ def parse_at(prop: Tree) -> AtExprNode:
 # EXPRESSIONS PARSERS (STRICT VERSION)
 # ============================================================================
 
+def parse_pairwise_token(pair: str) -> tuple[str, str]:
+    """
+    Parse a raw pairwise token like:
+        x ~ x'
+
+    Returns:
+        (left, right)
+    """
+
+    parts = [p.strip() for p in pair.split("~")]
+
+    if len(parts) != 2:
+        raise ValueError(f"Invalid pairwise token '{pair}', expected 'x ~ x\\''")
+
+    left, right = parts
+
+    if not left or not right:
+        raise ValueError("Pairwise expression requires two variables")
+
+    if not right.endswith("'"):
+        raise ValueError(
+            f"Right variable '{right}' must be a primed version of '{left}'"
+        )
+
+    if right[:-1] != left:
+        raise ValueError(
+            f"Invalid pairwise token '{pair}', expected '{left} ~ {left}\\''"
+        )
+
+    return left, right
 
 def parse_pairwise(prop: Tree) -> PairwiseExprNode:
     """
@@ -71,14 +101,21 @@ def parse_pairwise(prop: Tree) -> PairwiseExprNode:
 
     pair = require_value(node_value(pair_node), "pairwise_token is missing or invalid")
 
-    # --- 3. Neighborhood (depends on your grammar: required here) ---
+    left, right = parse_pairwise_token(pair)
+
+    # --- 3. Neighborhood ---
     neighborhood = parse_neighborhood(node)
 
     # --- 4. Domain (OPTIONAL) ---
     domain = optional(node, "domain", parse_domain)
 
     # --- 5. Build AST ---
-    return PairwiseExprNode(pair=pair, neighborhood=neighborhood, domain=domain)
+    return PairwiseExprNode(
+        left=left,
+        right=right,
+        neighborhood=neighborhood,
+        domain=domain,
+    )
 
 
 # ---------------------------------------------------------------------------

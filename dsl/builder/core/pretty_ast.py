@@ -219,7 +219,7 @@ def _pretty_check(node: CheckAtExprNode, indent: int):
 def _pretty_pairwise(node: PairwiseExprNode, indent: int):
     pad = _pad(indent)
 
-    lines = [f"{pad}pairwise {node.pair}"]
+    lines = [f"{pad}pairwise {node.left} ~ {node.right}"]
 
     if node.domain:
         lines.append(f"{pad}  in {pretty(node.domain, 0).strip()}")

@@ -158,15 +158,8 @@ class LHSValidator:
 
         self.tracer.log(f"Validating PairwiseExprNode: {lhs}")
 
-        if not lhs.pair:
-            raise InvalidPropertyError("Pairwise requires a pair")
-
-        try:
-            left, right = [v.strip() for v in lhs.pair.split("~")]
-        except Exception:
-            raise InvalidPropertyError(
-                f"Invalid pair format '{lhs.pair}', expected 'x ~ x\\''"
-            )
+        left = lhs.left
+        right = lhs.right
 
         if not left or not right:
             raise InvalidPropertyError("Pairwise requires two variables")
