@@ -114,7 +114,9 @@ def _pretty_logical(node: LogicalIR, indent=0) -> list[str]:
     # Comparison
     # -----------------------------
     if isinstance(node, ComparisonIR):
-        lines.append(f"{space}- {node.entity}.{node.feature} == {node.value}")
+        lines.append(
+            f"{space}- {node.entity}.{node.feature} {node.op.value} {node.value}"
+        )
         return lines
 
     # -----------------------------
