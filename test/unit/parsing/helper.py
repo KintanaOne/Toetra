@@ -9,6 +9,7 @@ from dsl.ast.nodes.expressions import (
     QuantifierExprNode,
 )
 from dsl.builder.program import parse_program
+from dsl.language.vocabulary.backends import EnumBackend
 from dsl.language.vocabulary.properties import EnumProperty
 from dsl.parser.parser import parse_forml_code
 
@@ -143,32 +144,36 @@ def assert_domain(domain, name: str, values: list[str]) -> None:
 # Backend helpers
 # ----------------------------------------------------------------------------------------------------------------------
 
-
 def assert_backend(
     prop,
-    expected_name: str,
+    expected_name: str | EnumBackend,
     **expected_args,
 ) -> None:
     """
     Assert backend structure and arguments.
+
+    Backend names are canonicalized as EnumBackend in the AST.
+    Test expectations may still be passed as strings for readability.
     """
 
     assert prop.backend is not None
 
     backend = prop.backend
 
-    assert backend.name == expected_name
+    expected_backend = (
+        expected_name
+        if isinstance(expected_name, EnumBackend)
+        else EnumBackend.from_str(expected_name)
+    )
 
-    args = {arg.key: arg.value for arg in backend.args}
+    assert backend.name == expected_backend
 
-    for key, expected_value in expected_args.items():
+    actual_args = {
+        arg.key: arg.value
+        for arg in backend.args
+    }
 
-        assert key in args, f"Missing backend arg '{key}'"
-
-        assert args[key] == expected_value, (
-            f"Expected backend arg '{key}'=" f"{expected_value}, got {args[key]}"
-        )
-
+    assert actual_args == expected_args
 
 def assert_no_backend(prop) -> None:
     """

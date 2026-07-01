@@ -9,6 +9,7 @@ from dsl.builder.core.ast_utils import node_value, clean_string
 
 from dsl.ast.nodes.backends import BackendNode
 from dsl.ast.nodes.primitives import ArgNode
+from dsl.language.vocabulary.backends import EnumBackend
 
 # ============================================================================
 # backend
@@ -24,10 +25,15 @@ def parse_backend(node: Tree | None):
         return None
 
     name_node = n.children[0]
-    name = get_node_name_or_value(name_node)
+    raw_name = get_node_name_or_value(name_node)
 
-    if name is None:
+    if raw_name is None:
         raise ValueError("Backend name missing")
+
+    try:
+        name = EnumBackend.from_str(raw_name)
+    except ValueError as e:
+        raise ValueError(f"Unsupported backend '{raw_name}'") from e
 
     args: list[ArgNode] = []
 

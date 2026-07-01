@@ -10,6 +10,7 @@ from dsl.ast.nodes.expressions import (
     QuantifierExprNode,
 )
 from dsl.builder.program import parse_program
+from dsl.language.vocabulary.backends import EnumBackend
 from dsl.language.vocabulary.properties import EnumProperty
 from dsl.parser.parser import parse_forml_code
 
@@ -129,7 +130,7 @@ def test_program_with_pairwise():
     assert neighborhood.args[0].value == 0.01
 
     assert prop.backend is not None
-    assert prop.backend.name == "Z3"
+    assert prop.backend.name == EnumBackend.Z3
 
 
 # ----------------------------------------------------------------------------------------------------------------------
