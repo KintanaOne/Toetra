@@ -1,4 +1,5 @@
 from dsl.language.vocabulary.properties import EnumProperty
+from dsl.semantic.rules.backend import validate_backend_for_property
 from dsl.semantic.rules.compatibility import PROPERTY_SCOPE_COMPATIBILITY
 from dsl.semantic.runtime.annotations import SemanticAnnotations
 
@@ -167,7 +168,12 @@ class PropertyValidator:
                     f"scope '{context.type.value}'. "
                     f"Allowed scopes: {allowed}"
                 )
-
+            
+            validate_backend_for_property(
+                property_type=property_type,
+                backend=prop.backend.name if prop.backend else None,
+            )
+            
             # ==================================================
             # 4. CACHE SEMANTIC ROOT
             # ==================================================

@@ -65,6 +65,9 @@ class IRTranslator:
         if prop.backend is None:
             return None
 
-        backend_name = prop.backend.name
+        backend = prop.backend.name
 
-        return EnumBackend[backend_name]
+        if isinstance(backend, EnumBackend):
+            return backend
+
+        return EnumBackend.from_str(str(backend))
