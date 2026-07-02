@@ -26,15 +26,25 @@ def get_header(tree: Tree) -> Tree:
 
 def parse_model(tree: Tree) -> str:
     """
-    model := "path"
+    Parse:
+        model := "path"
     """
 
     header = get_header(tree)
 
-    model_node = find_child(header, "model_declaration")
+    model_declaration = require_node(
+        find_child(header, "model_declaration"),
+        "Model declaration not found",
+    )
+
+    model_node = require_node(
+        find_child(model_declaration, "model"),
+        "Model node not found",
+    )
 
     return require_value(
-        clean_string(node_value(model_node)), "Model declaration is missing or invalid"
+        clean_string(node_value(model_node)),
+        "Model declaration is missing or invalid",
     )
 
 
@@ -43,18 +53,26 @@ def parse_model(tree: Tree) -> str:
 
 def parse_target(tree: Tree) -> str:
     """
-    target := Column
+    Parse:
+        target := Column
     """
 
     header = get_header(tree)
 
-    target_node = find_child(header, "target_declaration")
-
-    return require_value(
-        clean_string(node_value(target_node)),
-        "Target declaration is missing or invalid",
+    target_declaration = require_node(
+        find_child(header, "target_declaration"),
+        "Target declaration not found",
     )
 
+    identifier_node = require_node(
+        find_child(target_declaration, "identifier"),
+        "Target identifier not found",
+    )
+
+    return require_value(
+        clean_string(node_value(identifier_node)),
+        "Target declaration is missing or invalid",
+    )
 
 # ---------------------------------------------------------------------------
 
@@ -64,9 +82,7 @@ def parse_header(tree: Tree) -> HeaderNode:
     Parse header node into a strict HeaderNode AST.
     """
 
-    header_tree = get_header(tree)
-
-    model = parse_model(header_tree)
-    target = parse_target(header_tree)
+    model = parse_model(tree)
+    target = parse_target(tree)
 
     return HeaderNode(model=model, target=target)

@@ -1,4 +1,7 @@
-from lark import Tree
+from lark import Tree, Token
+
+from dsl.ast.nodes.backends import BackendNode
+from dsl.ast.nodes.primitives import ArgNode
 from dsl.builder.core.utils import (
     find_child,
     find_all_nodes,
@@ -6,29 +9,47 @@ from dsl.builder.core.utils import (
     get_node_name_or_value,
 )
 from dsl.builder.core.ast_utils import node_value, clean_string
-
-from dsl.ast.nodes.backends import BackendNode
-from dsl.ast.nodes.primitives import ArgNode
 from dsl.language.vocabulary.backends import EnumBackend
 
-# ============================================================================
-# backend
-# ============================================================================
+
+def _extract_backend_name(node: Tree) -> str:
+    """
+    Extract backend name from a backend node.
+
+    Expected CST shape after protected words:
+        backend
+          USING
+          Z3
+
+    The USING token must be ignored.
+    """
+
+    for child in node.children:
+        if isinstance(child, Token):
+            if child.type == "USING":
+                continue
+
+            return child.value
+
+        if isinstance(child, Tree):
+            value = get_node_name_or_value(child)
+
+            if value is not None:
+                return value
+
+    raise ValueError("Backend name missing")
 
 
 def parse_backend(node: Tree | None):
     if node is None:
         return None
 
-    n = find_node(node, "backend")
-    if n is None:
+    backend_node = find_node(node, "backend")
+
+    if backend_node is None:
         return None
 
-    name_node = n.children[0]
-    raw_name = get_node_name_or_value(name_node)
-
-    if raw_name is None:
-        raise ValueError("Backend name missing")
+    raw_name = _extract_backend_name(backend_node)
 
     try:
         name = EnumBackend.from_str(raw_name)
@@ -37,7 +58,7 @@ def parse_backend(node: Tree | None):
 
     args: list[ArgNode] = []
 
-    args_node = find_child(n, "args")
+    args_node = find_child(backend_node, "args")
 
     if args_node:
         for arg in find_all_nodes(args_node, "arg"):
