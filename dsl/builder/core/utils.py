@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from lark import Tree, Token
 
-from dsl.builder.core.types import LarkNode, LarkTree
+from dsl.builder.core.lark_types import LarkNode, LarkTree
 
 # ============================================================================
 # TREE NAVIGATION HELPERS

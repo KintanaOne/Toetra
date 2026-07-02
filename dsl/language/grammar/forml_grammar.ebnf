@@ -29,14 +29,8 @@ args = arg , { "," , arg } ;
 (* === NEWLINES === *)
 NEWLINE_SEQUENCE = NEWLINE , { NEWLINE } ;
 
-(* === COMMENTS === *)
-simple_comment     = "#" , ? any_character_except_newline ? ;
-multiline_comment  = ? any_character_except_triple_quotes ? ;
-comment            = simple_comment | multiline_comment ;
-comments           = comment , { comment } ;
-
 (* === PADDING === *)
-padding = { NEWLINE_SEQUENCE | comments } ;
+padding = { NEWLINE_SEQUENCE } ;
 
 (* ========================================================= *)
 (* === LOGIC (NON-ROBUSTNESS) ============================== *)
@@ -52,7 +46,8 @@ function_expr   = function , "(" , [ args ] , ")" ;
 problem_expr    = ( ? official_problems ? ) , "." , function_expr ;
 
 (* === ATTRIBUTES === *)
-attribute = identifier , { "." , identifier } ;
+attribute_identifier = identifier | TARGET ;
+attribute = identifier , { "." , attribute_identifier } ;
 logic_expr = attribute , logic_operation , value ;
 comparison_expr = attribute , comparison_operation , value ;
 
@@ -75,7 +70,7 @@ comparison_expr = attribute , comparison_operation , value ;
 (* ========================================================= *)
 
 (* === NEIGHBORHOOD (CRITICAL ABSTRACTION) === *)
-neighborhood = "in" , "neighborhood" , "(" , [ "metric" , "=" ] , ( ? official_metrics ? ) , "," , [ args ] , ")" ;
+neighborhood = IN , NEIGHBORHOOD , "(" , [ "metric" , "=" ] , ( ? official_metrics ? ) , "," , [ args ] , ")" ;
 
 (* ========================================================= *)
 (* === PROPERTY EXPRESSIONS ================================ *)
@@ -96,7 +91,7 @@ quantifier_expr = quantifier , [ domain ] ;
 (* === AT (POINTWISE) ====================================== *)
 (* ========================================================= *)
 
-at_expr = "at" , identifier , [ neighborhood ] , [ domain ] ;
+at_expr = AT , identifier , [ neighborhood ] , [ domain ] ;
 
 (* Exemple : at x0 in hyperball(x0, L2, 0.01) *)
 
@@ -104,7 +99,7 @@ at_expr = "at" , identifier , [ neighborhood ] , [ domain ] ;
 (* === CHECK AT (POINTWISE) ================================ *)
 (* ========================================================= *)
 
-check_expr = "check_at" , identifier ;
+check_expr = CHECK_AT , identifier ;
 
 (* ========================================================= *)
 (* === PAIRWISE (ROBUSTNESS) =============================== *)
@@ -119,7 +114,7 @@ pairwise_expr = pairwise_token , neighborhood , [ domain ] ;
 (* === DOMAIN / CONTEXT ==================================== *)
 (* ========================================================= *)
 
-domain = "with" , identifier , "(" , value , { "," , value } , ")" ;
+domain = WITH , identifier , "(" , value , { "," , value } , ")" ;
 
 (* ========================================================= *)
 (* === PROPERTY DEFINITION ================================= *)
@@ -129,29 +124,28 @@ property_imply = PROPERTY_IMPLY ;
 
 property_type = ? official_properties ? | ? uppercase_string ? ;
 
-property = "[" , property_type , "]" , ":" , property_expr , property_imply , assertion ;
-
-property_section = property , [ backend ] ;
+property = "[" , property_type , "]" , ":" , padding , property_expr , padding , property_imply , padding , assertion , [ backend ] ;
+property_section = property ;
 
 (* ========================================================= *)
 (* === BACKEND ============================================= *)
 (* ========================================================= *)
 
-backend = "using" , ( ? official_backends ? ) , [ "(" , args , ")" ] ;
+backend = USING , ( ? official_backends ? ) , [ "(" , args , ")" ] ;
 
 (* ========================================================= *)
 (* === DECLARATIONS ======================================== *)
 (* ========================================================= *)
 
-target_declaration = "target" , ":=" , identifier ;
+target_declaration = TARGET , ":=" , identifier ;
 
 model = quoted_identifier ;
 
-model_declaration = "model" , ":=" , model ;
+model_declaration = MODEL , ":=" , model ;
 
 dataset = quoted_identifier ;
 
-dataset_declaration = "dataset" , ":=" , dataset ;
+dataset_declaration = DATASET , ":=" , dataset ;
 
 variable_declaration = identifier , ":=" , value ;
 

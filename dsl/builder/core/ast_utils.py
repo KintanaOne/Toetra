@@ -3,8 +3,8 @@ from __future__ import annotations
 from lark import Tree, Token
 
 from dsl.ast.nodes.primitives import AttributeNode, ConstantNode, EnumDataType
-from dsl.builder.core.types import LarkNode
-from dsl.builder.core.utils import get_token_value
+from dsl.builder.core.lark_types import LarkNode
+from dsl.builder.core.utils import get_node_name_or_value, get_token_value
 
 # ============================================================================
 # GENERIC NODE VALUE EXTRACTION
@@ -69,42 +69,42 @@ def clean_string(value: str | None) -> str | None:
 
 def parse_attribute(node: Tree) -> AttributeNode:
     """
-    Parse an attribute expression into an AttributeNode.
+    Parse:
+        x.a
+        x.target
+        x.a.b
 
-    Supported forms:
-    - age
-    - x0.age
-    - user.profile.age
-    - a.b.c.d
-
-    Design rules:
-    - Last identifier = feature
-    - First identifier (if multiple) = entity
-    - Full chain stored in `path`
+    First segment must be a normal identifier.
+    Following segments may be soft identifiers, including protected words
+    such as target.
     """
 
-    def require_str(value: str | None) -> str:
-        if value is None:
-            raise ValueError("Expected string, got None")
-        return value
+    parts: list[str] = []
 
-    identifiers = [
-        require_str(get_token_value(child))
-        for child in node.children
-        if isinstance(child, Tree) and child.data == "identifier"
-    ]
+    for child in node.children:
+        if not isinstance(child, Tree):
+            continue
 
-    identifiers = [i for i in identifiers if i is not None]
+        if child.data in {"identifier", "attribute_identifier"}:
+            value = get_node_name_or_value(child)
+            if value is not None:
+                parts.append(value)
 
-    if not identifiers:
-        raise ValueError("Invalid attribute: no identifiers found")
+    if not parts:
+        raise ValueError("Invalid attribute")
+
+    if len(parts) == 1:
+        return AttributeNode(
+            entity=None,
+            feature=parts[0],
+            path=parts,
+        )
 
     return AttributeNode(
-        entity=identifiers[0] if len(identifiers) > 1 else None,
-        feature=identifiers[-1],
-        path=identifiers,
+        entity=parts[0],
+        feature=".".join(parts[1:]),
+        path=parts,
     )
-
 
 # ============================================================================
 # CONSTANT PARSING

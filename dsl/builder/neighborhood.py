@@ -95,13 +95,19 @@ def _parse_args(args_node: Tree | None) -> List[ArgNode]:
 def _extract_metric(node: Tree) -> str:
     """
     Extract metric token from a neighborhood node.
+
+    Expected shape after protected words:
+        neighborhood
+          IN
+          NEIGHBORHOOD
+          L2
+          args?
     """
 
-    if not node.children:
-        raise ValueError("Neighborhood node is empty")
+    metric_tokens = {"L1", "L2", "LINF"}
 
     for child in node.children:
-        if isinstance(child, Token):
+        if isinstance(child, Token) and child.type in metric_tokens:
             return child.value
 
     raise ValueError("No metric token found in neighborhood")

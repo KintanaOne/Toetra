@@ -51,31 +51,47 @@ def extract_rhs(prop: Tree) -> Tree:
     """
     Extract RHS expression from property.
 
-    IMPORTANT:
-    Lark inline-expands 'assertion', so RHS is directly a logic_* node
-    (e.g. logic_or, logic_and), not an 'assertion' node.
+    The grammar may now contain explicit padding nodes around:
+        - property_expr
+        - property_imply
+        - assertion
+
+    Therefore padding must be treated as syntactic noise.
     """
 
     found_imply = False
 
-    property = prop.children[0]
+    # prop is usually property_section, whose first child is property.
+    property_node = prop.children[0]
 
-    for child in property.children:
+    for child in property_node.children:
 
-        # skip metadata nodes
-        if isinstance(child, Tree) and child.data in (
-            "property_type",
-            "property_expr",
-        ):
+        # Ignore non-tree tokens here.
+        if not isinstance(child, Tree):
             continue
 
-        # detect implication separator
-        if isinstance(child, Tree) and child.data == "property_imply":
+        # Skip syntactic noise before and after implication.
+        if child.data == "padding":
+            continue
+
+        # Skip metadata / LHS nodes.
+        if child.data in {
+            "property_type",
+            "property_expr",
+        }:
+            continue
+
+        # Detect implication separator.
+        if child.data == "property_imply":
             found_imply = True
             continue
 
-        # RHS = first real logic subtree AFTER implication
-        if found_imply and isinstance(child, Tree):
+        # Backend is not part of RHS.
+        if child.data == "backend":
+            continue
+
+        # RHS = first real logical subtree AFTER implication.
+        if found_imply:
             return child
 
     raise ValueError("Missing RHS in property")

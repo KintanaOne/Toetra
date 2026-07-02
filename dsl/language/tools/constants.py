@@ -11,16 +11,19 @@ from dsl.language.vocabulary.quantifiers import official_quantifiers
 from dsl.language.vocabulary.functions import official_functions
 from dsl.language.vocabulary.backends import official_backends
 from dsl.language.vocabulary.metrics import official_metrics
+from dsl.language.vocabulary.protected_words import protected_words
 from dsl.language.vocabulary.operators import (
     official_logic_operators,
     official_comparaison_operations,
 )
+
 
 # =========================
 # RAW DICTIONARIES
 # =========================
 
 OFFICIAL_MAPS = {
+    "protected_words": protected_words,
     "problems": official_problems,
     "properties": official_properties,
     "quantifiers": official_quantifiers,
