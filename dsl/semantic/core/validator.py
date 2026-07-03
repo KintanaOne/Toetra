@@ -4,7 +4,6 @@ from dsl.parser.parser import parse_forml_code
 from dsl.semantic.runtime.tracer import ValidationTracer
 
 from dsl.semantic.core.property import PropertyValidator
-from test.fixtures.properties_samples import VALID_MINIMAL_AT
 
 
 class FORMLValidator:
@@ -33,7 +32,16 @@ class FORMLValidator:
 
 if __name__ == "__main__":
     """This script is for quick testing of the validator. It parses a sample property and prints the resulting AST than validates it"""
-    CST = parse_forml_code(VALID_MINIMAL_AT)
+    
+    sample = """
+    model := "model.onnx"
+    target := MyTarget
+
+    [ROBUSTNESS]:
+    at x0 => CLASSIFICATION.EQUAL()
+    """
+
+    CST = parse_forml_code(sample)
     print(CST.pretty())
 
     AST = parse_program(CST)

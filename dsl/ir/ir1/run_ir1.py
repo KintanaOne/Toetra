@@ -1,13 +1,18 @@
-# /dsl/ir/run_ir.py
-
 from dsl.ir.ir1.pretty import pretty_print_tasks
 from dsl.parser.parser import parse_forml_code
 from dsl.builder.program import parse_program
 from dsl.semantic.runtime.tracer import ValidationTracer
 from dsl.semantic.core.validator import FORMLValidator
-
 from dsl.ir.ir1.translator import IRTranslator
-from test.fixtures.logic_samples import PARENTHESES_PRECEDENCE_PROPERTY
+
+
+DEFAULT_SAMPLE = """
+model := "model.onnx"
+target := MyTarget
+
+[ROBUSTNESS]:
+check_at x0 => (x0.a <= 1 OR x0.b <= 2) AND x0.c <= 3
+"""
 
 
 def run_ir(source: str):
@@ -15,46 +20,26 @@ def run_ir(source: str):
     Full pipeline until IR generation.
 
     Steps:
-        1. Parse (CST)
+        1. Parse CST
         2. Build AST
         3. Semantic validation
-        4. Translate to IR
+        4. Translate to IR1
     """
 
-    # ---------------------------
-    # 1. Parse → CST
-    # ---------------------------
     cst = parse_forml_code(source)
-
-    # ---------------------------
-    # 2. CST → AST
-    # ---------------------------
     ast = parse_program(cst)
 
-    # ---------------------------
-    # 3. Semantic validation
-    # ---------------------------
-    FORMLValidator().validate(ast, tracer=ValidationTracer(enabled=True))
+    FORMLValidator().validate(
+        ast,
+        tracer=ValidationTracer(enabled=True),
+    )
 
-    # ---------------------------
-    # 4. AST → IR
-    # ---------------------------
     translator = IRTranslator()
-    tasks = translator.translate(ast)
+    return translator.translate(ast)
 
-    return tasks
-
-
-# -----------------------------------------------------------------------------
-# QUICK TEST
-# -----------------------------------------------------------------------------
 
 if __name__ == "__main__":
-
-    SAMPLE = PARENTHESES_PRECEDENCE_PROPERTY
-
-    tasks = run_ir(SAMPLE)
+    tasks = run_ir(DEFAULT_SAMPLE)
 
     print("\n=== IR OUTPUT ===\n")
-
     pretty_print_tasks(tasks)
