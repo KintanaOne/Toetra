@@ -51,6 +51,10 @@
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
+===== dsl\semantic\context\__pycache__\graph.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
 ===== dsl\semantic\context\__pycache__\scope.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
@@ -247,7 +251,7 @@ def get_scope_from_property(prop):
 
 ===== dsl\semantic\core\__pycache__\lhs.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe2 in position 8: invalid continuation byte]
 
 ===== dsl\semantic\core\__pycache__\logic.cpython-314.pyc =====
 
@@ -255,15 +259,15 @@ def get_scope_from_property(prop):
 
 ===== dsl\semantic\core\__pycache__\problem.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
 
 ===== dsl\semantic\core\__pycache__\property.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe0 in position 9: invalid continuation byte]
 
 ===== dsl\semantic\core\__pycache__\validator.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xbf in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xde in position 8: invalid continuation byte]
 
 ===== dsl\semantic\core\binding.py =====
 
@@ -679,15 +683,8 @@ class LHSValidator:
 
         self.tracer.log(f"Validating PairwiseExprNode: {lhs}")
 
-        if not lhs.pair:
-            raise InvalidPropertyError("Pairwise requires a pair")
-
-        try:
-            left, right = [v.strip() for v in lhs.pair.split("~")]
-        except Exception:
-            raise InvalidPropertyError(
-                f"Invalid pair format '{lhs.pair}', expected 'x ~ x\\''"
-            )
+        left = lhs.left
+        right = lhs.right
 
         if not left or not right:
             raise InvalidPropertyError("Pairwise requires two variables")
@@ -978,12 +975,20 @@ class LogicValidator:
 ===== dsl\semantic\core\problem.py =====
 
 from dsl.language.vocabulary.functions import EnumFunction
+from dsl.language.vocabulary.problems import EnumProblem
 from dsl.semantic.rules.compatibility import PROBLEM_FUNCTION_COMPATIBILITY
 from dsl.semantic.errors.errors import IncompatibleFunctionError
 from dsl.semantic.runtime.tracer import ValidationTracer
 
 
 class ProblemValidator:
+    """
+    Validate compatibility between a problem family and a problem-level function.
+
+    Examples:
+        CLASSIFICATION.EQUAL()
+        REGRESSION.BETWEEN()
+    """
 
     def __init__(self, tracer=None):
         self.tracer = tracer or ValidationTracer()
@@ -991,27 +996,52 @@ class ProblemValidator:
     def validate(self, node):
         self.tracer.log(f"Validating ProblemValidator: {node}")
 
-        problem = node.problem.upper()
-        function_str = node.function
-
-        # 🔥 conversion string → Enum
-        try:
-            function = EnumFunction[function_str]
-        except KeyError:
-            raise IncompatibleFunctionError(f"Unknown function '{function_str}'")
+        problem = self._normalize_problem(node.problem)
+        function = self._normalize_function(node.function, problem)
 
         allowed = PROBLEM_FUNCTION_COMPATIBILITY.get(problem)
 
-        if not allowed:
-            raise IncompatibleFunctionError(f"Unknown problem '{problem}'")
+        if allowed is None:
+            raise IncompatibleFunctionError(f"Unknown problem '{problem.value}'")
 
         if function not in allowed:
-            raise IncompatibleFunctionError(f"{function_str} not allowed for {problem}")
+            raise IncompatibleFunctionError(
+                f"{function.value} not allowed for {problem.value}"
+            )
 
+        return True
+
+    def _normalize_problem(self, problem) -> EnumProblem:
+        if isinstance(problem, EnumProblem):
+            return problem
+
+        try:
+            return EnumProblem.from_str(str(problem))
+        except ValueError as e:
+            raise IncompatibleFunctionError(f"Unknown problem '{problem}'") from e
+
+    def _normalize_function(
+        self,
+        function,
+        problem: EnumProblem,
+    ) -> EnumFunction:
+        if function is None:
+            raise IncompatibleFunctionError(
+                f"Missing function for problem '{problem.value}'"
+            )
+
+        if isinstance(function, EnumFunction):
+            return function
+
+        try:
+            return EnumFunction.from_str(str(function))
+        except ValueError as e:
+            raise IncompatibleFunctionError(f"Unknown function '{function}'") from e
 
 ===== dsl\semantic\core\property.py =====
 
 from dsl.language.vocabulary.properties import EnumProperty
+from dsl.semantic.rules.backend import validate_backend_for_property
 from dsl.semantic.rules.compatibility import PROPERTY_SCOPE_COMPATIBILITY
 from dsl.semantic.runtime.annotations import SemanticAnnotations
 
@@ -1162,12 +1192,14 @@ class PropertyValidator:
             # PROPERTY ↔ SCOPE COMPATIBILITY
             # ==================================================
 
-            try:
-                property_type = EnumProperty[prop.type.upper()]
-            except KeyError:
-                raise InvalidPropertyError(f"Unknown property type '{prop.type}'")
+            property_type = self._normalize_property_type(prop.type)
 
-            allowed_scopes = PROPERTY_SCOPE_COMPATIBILITY.get(property_type, set())
+            allowed_scopes = PROPERTY_SCOPE_COMPATIBILITY.get(property_type)
+
+            if allowed_scopes is None:
+                raise InvalidPropertyError(
+                    f"No scope compatibility rule defined for property '{property_type.value}'"
+                )
 
             if context.type not in allowed_scopes:
 
@@ -1178,7 +1210,12 @@ class PropertyValidator:
                     f"scope '{context.type.value}'. "
                     f"Allowed scopes: {allowed}"
                 )
-
+            
+            validate_backend_for_property(
+                property_type=property_type,
+                backend=prop.backend.name if prop.backend else None,
+            )
+            
             # ==================================================
             # 4. CACHE SEMANTIC ROOT
             # ==================================================
@@ -1208,6 +1245,18 @@ class PropertyValidator:
         self.tracer.log(f"✔ Property '{prop.type}' validated")
 
         return True
+    
+
+    def _normalize_property_type(self, property_type) -> EnumProperty:
+        if isinstance(property_type, EnumProperty):
+            return property_type
+
+        try:
+            return EnumProperty.from_str(str(property_type))
+        except ValueError as e:
+            raise InvalidPropertyError(
+                f"Unknown property type '{property_type}'"
+            ) from e
 
 
 ===== dsl\semantic\core\validator.py =====
@@ -1218,7 +1267,6 @@ from dsl.parser.parser import parse_forml_code
 from dsl.semantic.runtime.tracer import ValidationTracer
 
 from dsl.semantic.core.property import PropertyValidator
-from test.fixtures.properties_samples import VALID_MINIMAL_AT
 
 
 class FORMLValidator:
@@ -1247,7 +1295,16 @@ class FORMLValidator:
 
 if __name__ == "__main__":
     """This script is for quick testing of the validator. It parses a sample property and prints the resulting AST than validates it"""
-    CST = parse_forml_code(VALID_MINIMAL_AT)
+    
+    sample = """
+    model := "model.onnx"
+    target := MyTarget
+
+    [ROBUSTNESS]:
+    at x0 => CLASSIFICATION.EQUAL()
+    """
+
+    CST = parse_forml_code(sample)
     print(CST.pretty())
 
     AST = parse_program(CST)
@@ -1297,13 +1354,75 @@ class IncompatibleFunctionError(SemanticError):
     pass
 
 
+===== dsl\semantic\rules\__pycache__\backend.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xdd in position 9: invalid continuation byte]
+
 ===== dsl\semantic\rules\__pycache__\compatibility.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xda in position 8: invalid continuation byte]
 
 ===== dsl\semantic\rules\__pycache__\type_system.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xab in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== dsl\semantic\rules\backend.py =====
+
+from dsl.language.vocabulary.backends import EnumBackend
+from dsl.language.vocabulary.properties import EnumProperty
+from dsl.semantic.errors.errors import InvalidPropertyError
+
+
+V1_SUPPORTED_BACKENDS = {
+    EnumBackend.Z3,
+}
+
+
+PROPERTY_BACKEND_COMPATIBILITY = {
+    EnumProperty.ROBUSTNESS: {EnumBackend.Z3},
+    EnumProperty.BOUND: {EnumBackend.Z3},
+    EnumProperty.LOGIC: {EnumBackend.Z3},
+    EnumProperty.MONOTONICITY: {EnumBackend.Z3},
+    EnumProperty.STABILITY: {EnumBackend.Z3},
+    EnumProperty.FAIRNESS: {EnumBackend.Z3},
+}
+
+
+def validate_backend_for_property(property_type, backend):
+    """
+    Validate backend compatibility for the current V1.
+
+    V1 policy:
+        - Z3 is the only active verification backend.
+        - Other backends may remain in grammar as reserved/future values,
+          but should not be accepted as executable backends yet.
+    """
+
+    if backend is None:
+        return True
+
+    if backend not in V1_SUPPORTED_BACKENDS:
+        raise InvalidPropertyError(
+            f"Backend '{backend.value}' is declared but not supported in V1. "
+            "Only Z3 is currently supported."
+        )
+
+    allowed = PROPERTY_BACKEND_COMPATIBILITY.get(property_type)
+
+    if allowed is None:
+        raise InvalidPropertyError(
+            f"No backend compatibility rule defined for property '{property_type.value}'"
+        )
+
+    if backend not in allowed:
+        allowed_names = ", ".join(b.value for b in allowed)
+
+        raise InvalidPropertyError(
+            f"Backend '{backend.value}' is not compatible with property "
+            f"'{property_type.value}'. Allowed backends: {allowed_names}"
+        )
+
+    return True
 
 ===== dsl\semantic\rules\compatibility.py =====
 
@@ -1355,6 +1474,12 @@ PROPERTY_SCOPE_COMPATIBILITY = {
     },
     EnumProperty.BOUND: {
         SemanticScope.POINTWISE,
+        SemanticScope.QUANTIFIER,
+    },
+    EnumProperty.LOGIC: {
+        SemanticScope.POINTWISE,
+        SemanticScope.LOCAL,
+        SemanticScope.PAIRWISE,
         SemanticScope.QUANTIFIER,
     },
 }

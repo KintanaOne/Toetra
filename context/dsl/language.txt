@@ -32,14 +32,8 @@ args = arg , { "," , arg } ;
 (* === NEWLINES === *)
 NEWLINE_SEQUENCE = NEWLINE , { NEWLINE } ;
 
-(* === COMMENTS === *)
-simple_comment     = "#" , ? any_character_except_newline ? ;
-multiline_comment  = ? any_character_except_triple_quotes ? ;
-comment            = simple_comment | multiline_comment ;
-comments           = comment , { comment } ;
-
 (* === PADDING === *)
-padding = { NEWLINE_SEQUENCE | comments } ;
+padding = { NEWLINE_SEQUENCE } ;
 
 (* ========================================================= *)
 (* === LOGIC (NON-ROBUSTNESS) ============================== *)
@@ -55,7 +49,8 @@ function_expr   = function , "(" , [ args ] , ")" ;
 problem_expr    = ( ? official_problems ? ) , "." , function_expr ;
 
 (* === ATTRIBUTES === *)
-attribute = identifier , { "." , identifier } ;
+attribute_identifier = identifier | TARGET ;
+attribute = identifier , { "." , attribute_identifier } ;
 logic_expr = attribute , logic_operation , value ;
 comparison_expr = attribute , comparison_operation , value ;
 
@@ -78,7 +73,7 @@ comparison_expr = attribute , comparison_operation , value ;
 (* ========================================================= *)
 
 (* === NEIGHBORHOOD (CRITICAL ABSTRACTION) === *)
-neighborhood = "in" , "neighborhood" , "(" , [ "metric" , "=" ] , ( ? official_metrics ? ) , "," , [ args ] , ")" ;
+neighborhood = IN , NEIGHBORHOOD , "(" , [ "metric" , "=" ] , ( ? official_metrics ? ) , "," , [ args ] , ")" ;
 
 (* ========================================================= *)
 (* === PROPERTY EXPRESSIONS ================================ *)
@@ -99,7 +94,7 @@ quantifier_expr = quantifier , [ domain ] ;
 (* === AT (POINTWISE) ====================================== *)
 (* ========================================================= *)
 
-at_expr = "at" , identifier , [ neighborhood ] , [ domain ] ;
+at_expr = AT , identifier , [ neighborhood ] , [ domain ] ;
 
 (* Exemple : at x0 in hyperball(x0, L2, 0.01) *)
 
@@ -107,7 +102,7 @@ at_expr = "at" , identifier , [ neighborhood ] , [ domain ] ;
 (* === CHECK AT (POINTWISE) ================================ *)
 (* ========================================================= *)
 
-check_expr = "check_at" , identifier ;
+check_expr = CHECK_AT , identifier ;
 
 (* ========================================================= *)
 (* === PAIRWISE (ROBUSTNESS) =============================== *)
@@ -122,7 +117,7 @@ pairwise_expr = pairwise_token , neighborhood , [ domain ] ;
 (* === DOMAIN / CONTEXT ==================================== *)
 (* ========================================================= *)
 
-domain = "with" , identifier , "(" , value , { "," , value } , ")" ;
+domain = WITH , identifier , "(" , value , { "," , value } , ")" ;
 
 (* ========================================================= *)
 (* === PROPERTY DEFINITION ================================= *)
@@ -132,29 +127,28 @@ property_imply = PROPERTY_IMPLY ;
 
 property_type = ? official_properties ? | ? uppercase_string ? ;
 
-property = "[" , property_type , "]" , ":" , property_expr , property_imply , assertion ;
-
-property_section = property , [ backend ] ;
+property = "[" , property_type , "]" , ":" , padding , property_expr , padding , property_imply , padding , assertion , [ backend ] ;
+property_section = property ;
 
 (* ========================================================= *)
 (* === BACKEND ============================================= *)
 (* ========================================================= *)
 
-backend = "using" , ( ? official_backends ? ) , [ "(" , args , ")" ] ;
+backend = USING , ( ? official_backends ? ) , [ "(" , args , ")" ] ;
 
 (* ========================================================= *)
 (* === DECLARATIONS ======================================== *)
 (* ========================================================= *)
 
-target_declaration = "target" , ":=" , identifier ;
+target_declaration = TARGET , ":=" , identifier ;
 
 model = quoted_identifier ;
 
-model_declaration = "model" , ":=" , model ;
+model_declaration = MODEL , ":=" , model ;
 
 dataset = quoted_identifier ;
 
-dataset_declaration = "dataset" , ":=" , dataset ;
+dataset_declaration = DATASET , ":=" , dataset ;
 
 variable_declaration = identifier , ":=" , value ;
 
@@ -189,6 +183,19 @@ COMMENT_BLOCK : /'''(.|\n)*?'''/
 %ignore COMMENT_LINE
 %ignore COMMENT_BLOCK
 %ignore NEWLINE
+
+
+# === PROTECTED_WORDS ===
+
+IN.10 : "in"
+WITH.10 : "with"
+AT.10 : "at"
+CHECK_AT.10 : "check_at"
+USING.10 : "using"
+MODEL.10 : "model"
+TARGET.10 : "target"
+NEIGHBORHOOD.10 : "neighborhood"
+DATASET.10 : "dataset"
 
 
 # === PROBLEMS ===
@@ -230,14 +237,14 @@ DECREASING : "DECREASING"
 
 # === BACKENDS ===
 
+z3 : "z3"
+Z3 : "Z3"
 eran : "eran"
 ERAN : "ERAN"
 zonotope : "zonotope"
 ZONOTOPE : "ZONOTOPE"
 box : "box"
 BOX : "BOX"
-z3 : "z3"
-Z3 : "Z3"
 
 
 # === METRICS ===
@@ -316,18 +323,9 @@ args : arg ("," arg)*
 
 NEWLINE_SEQUENCE : NEWLINE (NEWLINE)*
 
-# === COMMENTS ===
-
-simple_comment : "#" /[^\n]+/
-multiline_comment : /'''(.|\n)*?'''/
-comment : simple_comment
-    | multiline_comment
-comments : comment (comment)*
-
 # === PADDING ===
 
-padding : (NEWLINE_SEQUENCE
-    | comments)*
+padding : (NEWLINE_SEQUENCE)*
 
 # =========================================================
 # === LOGIC (NON-ROBUSTNESS) ==============================
@@ -363,7 +361,9 @@ problem_expr : (CLASSIFICATION
 
 # === ATTRIBUTES ===
 
-attribute : identifier ("." identifier)*
+attribute_identifier : identifier
+    | TARGET
+attribute : identifier ("." attribute_identifier)*
 logic_expr : attribute logic_operation value
 comparison_expr : attribute comparison_operation value
 
@@ -388,7 +388,7 @@ comparison_expr : attribute comparison_operation value
 # =========================================================
 # === NEIGHBORHOOD (CRITICAL ABSTRACTION) ===
 
-neighborhood : "in" "neighborhood" "(" ("metric" "=")? (L1
+neighborhood : IN NEIGHBORHOOD "(" ("metric" "=")? (L1
     | L2
     | LINF) "," (args)? ")"
 
@@ -415,14 +415,14 @@ quantifier_expr : quantifier (domain)?
 # === AT (POINTWISE) ======================================
 # =========================================================
 
-at_expr : "at" identifier (neighborhood)? (domain)?
+at_expr : AT identifier (neighborhood)? (domain)?
 
 # Exemple : at x0 in hyperball(x0, L2, 0.01)
 # =========================================================
 # === CHECK AT (POINTWISE) ================================
 # =========================================================
 
-check_expr : "check_at" identifier
+check_expr : CHECK_AT identifier
 
 # =========================================================
 # === PAIRWISE (ROBUSTNESS) ===============================
@@ -436,7 +436,7 @@ pairwise_expr : pairwise_token neighborhood (domain)?
 # === DOMAIN / CONTEXT ====================================
 # =========================================================
 
-domain : "with" identifier "(" value ("," value)* ")"
+domain : WITH identifier "(" value ("," value)* ")"
 
 # =========================================================
 # === PROPERTY DEFINITION =================================
@@ -450,31 +450,31 @@ property_type : ROBUSTNESS
     | BOUND
     | LOGIC
     | /[A-Z]+/
-property : "[" property_type "]" ":" property_expr property_imply assertion
-property_section : property (backend)?
+property : "[" property_type "]" ":" padding property_expr padding property_imply padding assertion (backend)?
+property_section : property
 
 # =========================================================
 # === BACKEND =============================================
 # =========================================================
 
-backend : "using" (eran
+backend : USING (z3
+    | Z3
+    | eran
     | ERAN
     | zonotope
     | ZONOTOPE
     | box
-    | BOX
-    | z3
-    | Z3) ("(" args ")")?
+    | BOX) ("(" args ")")?
 
 # =========================================================
 # === DECLARATIONS ========================================
 # =========================================================
 
-target_declaration : "target" ":=" identifier
+target_declaration : TARGET ":=" identifier
 model : quoted_identifier
-model_declaration : "model" ":=" model
+model_declaration : MODEL ":=" model
 dataset : quoted_identifier
-dataset_declaration : "dataset" ":=" dataset
+dataset_declaration : DATASET ":=" dataset
 variable_declaration : identifier ":=" value
 variables_declaration : variable_declaration (";" variable_declaration)*
 
@@ -488,19 +488,23 @@ program : header body
 
 ===== dsl\language\tools\__pycache__\constants.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0x91 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0x9b in position 8: invalid start byte]
 
 ===== dsl\language\tools\__pycache__\formatter.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xee in position 10: invalid continuation byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== dsl\language\tools\__pycache__\generator.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
 ===== dsl\language\tools\__pycache__\registry.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0x98 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
 ===== dsl\language\tools\__pycache__\transforms.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xeb in position 8: invalid continuation byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
 ===== dsl\language\tools\constants.py =====
 
@@ -517,16 +521,19 @@ from dsl.language.vocabulary.quantifiers import official_quantifiers
 from dsl.language.vocabulary.functions import official_functions
 from dsl.language.vocabulary.backends import official_backends
 from dsl.language.vocabulary.metrics import official_metrics
+from dsl.language.vocabulary.protected_words import protected_words
 from dsl.language.vocabulary.operators import (
     official_logic_operators,
     official_comparaison_operations,
 )
+
 
 # =========================
 # RAW DICTIONARIES
 # =========================
 
 OFFICIAL_MAPS = {
+    "protected_words": protected_words,
     "problems": official_problems,
     "properties": official_properties,
     "quantifiers": official_quantifiers,
@@ -1096,7 +1103,11 @@ def fix_neighborhood_precedence(line: str) -> str:
 
 ===== dsl\language\vocabulary\__pycache__\backends.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa6 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xdb in position 9: invalid continuation byte]
+
+===== dsl\language\vocabulary\__pycache__\distances.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
 ===== dsl\language\vocabulary\__pycache__\functions.cpython-314.pyc =====
 
@@ -1108,7 +1119,7 @@ def fix_neighborhood_precedence(line: str) -> str:
 
 ===== dsl\language\vocabulary\__pycache__\metrics.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa6 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
 ===== dsl\language\vocabulary\__pycache__\operators.cpython-314.pyc =====
 
@@ -1124,11 +1135,11 @@ def fix_neighborhood_precedence(line: str) -> str:
 
 ===== dsl\language\vocabulary\__pycache__\protected_words.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa6 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xb5 in position 12: invalid start byte]
 
 ===== dsl\language\vocabulary\__pycache__\quantifiers.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0x93 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
 ===== dsl\language\vocabulary\__pycache__\utils.cpython-314.pyc =====
 
@@ -1136,32 +1147,44 @@ def fix_neighborhood_precedence(line: str) -> str:
 
 ===== dsl\language\vocabulary\backends.py =====
 
-# /forml/grammar/official_contents/backends.py
-
 from enum import Enum
+
 from dsl.language.vocabulary.utils import EnumMixin
 
+
 official_backends = {
+    "z3": '"z3"',
+    "Z3": '"Z3"',
     "eran": '"eran"',
     "ERAN": '"ERAN"',
     "zonotope": '"zonotope"',
     "ZONOTOPE": '"ZONOTOPE"',
     "box": '"box"',
     "BOX": '"BOX"',
-    "z3": '"z3"',
-    "Z3": '"Z3"',
 }
 
 
 class EnumBackend(EnumMixin, Enum):
-    ERAN = "ERAN"
-    zonotope = "zonotope"
-    ZONOTOPE = "ZONOTOPE"
-    box = "box"
-    BOX = "BOX"
-    z3 = "z3"
     Z3 = "Z3"
+    ERAN = "ERAN"
+    ZONOTOPE = "ZONOTOPE"
+    BOX = "BOX"
 
+    @classmethod
+    def from_str(cls, value: str) -> "EnumBackend":
+        normalized = value.strip().strip('"').upper()
+
+        aliases = {
+            "Z3": cls.Z3,
+            "ERAN": cls.ERAN,
+            "ZONOTOPE": cls.ZONOTOPE,
+            "BOX": cls.BOX,
+        }
+
+        try:
+            return aliases[normalized]
+        except KeyError as e:
+            raise ValueError(f"Unknown backend: {value}") from e
 
 ===== dsl\language\vocabulary\distances.py =====
 
@@ -1324,14 +1347,15 @@ from enum import Enum
 from dsl.language.vocabulary.utils import EnumMixin
 
 protected_words = {
-    "IN": '"in"',
-    "WITH": '''"with"''',
-    "AT": '"at"',
-    "CHECK_AT": '"check_at"',
-    "USING": '"using"',
-    "MODEL": '"model"',
-    "TARGET": '"target"',
-    "NEIGHBORHOOD": '"neighborhood"',
+    "IN.10": '"in"',
+    "WITH.10": '"with"',
+    "AT.10": '"at"',
+    "CHECK_AT.10": '"check_at"',
+    "USING.10": '"using"',
+    "MODEL.10": '"model"',
+    "TARGET.10": '"target"',
+    "NEIGHBORHOOD.10": '"neighborhood"',
+    "DATASET.10": '"dataset"',
 }
 
 
@@ -1344,6 +1368,7 @@ class EnumProtectedWord(EnumMixin, Enum):
     MODEL = '"model"'
     TARGET = '"target"'
     NEIGHBORHOOD = '"neighborhood"'
+    DATASET = '"dataset"'
 
 
 ===== dsl\language\vocabulary\quantifiers.py =====

@@ -13,7 +13,7 @@
 
 ===== dsl\ast\nodes\__pycache__\backends.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0x9f in position 8: invalid start byte]
 
 ===== dsl\ast\nodes\__pycache__\base.cpython-314.pyc =====
 
@@ -25,7 +25,7 @@
 
 ===== dsl\ast\nodes\__pycache__\expressions.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf4 in position 9: invalid continuation byte]
 
 ===== dsl\ast\nodes\__pycache__\header.cpython-314.pyc =====
 
@@ -144,7 +144,7 @@ from dataclasses import dataclass
 
 from dsl.ast.nodes.base import ASTNode
 from dsl.ast.nodes.primitives import ArgNode
-
+from dsl.language.vocabulary.backends import EnumBackend
 
 @dataclass
 class BackendNode(ASTNode):
@@ -152,7 +152,7 @@ class BackendNode(ASTNode):
     Defines WHICH engine is used to verify the property.
     """
 
-    name: str
+    name: EnumBackend
     args: list[ArgNode]
 
 
@@ -223,9 +223,19 @@ class AtExprNode(ExpressionNode):
 
 @dataclass
 class PairwiseExprNode(ExpressionNode):
-    pair: str
+    left: str
+    right: str
     neighborhood: NeighborhoodNode
     domain: DomainNode | None = None
+
+    @property
+    def pair(self) -> str:
+        """
+        Backward-compatible textual representation.
+
+        Internal code should prefer `left` and `right`.
+        """
+        return f"{self.left} ~ {self.right}"
 
 
 @dataclass
@@ -370,7 +380,11 @@ class PropertyRuleNode:
 
 ===== dsl\builder\__pycache__\backends.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0x9d in position 8: invalid start byte]
+
+===== dsl\builder\__pycache__\builder.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0x9e in position 8: invalid start byte]
 
 ===== dsl\builder\__pycache__\domain.cpython-314.pyc =====
 
@@ -378,15 +392,15 @@ class PropertyRuleNode:
 
 ===== dsl\builder\__pycache__\expressions.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xdc in position 8: invalid continuation byte]
 
 ===== dsl\builder\__pycache__\header.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa1 in position 8: invalid start byte]
 
 ===== dsl\builder\__pycache__\neighborhood.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0x9a in position 9: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xbd in position 8: invalid start byte]
 
 ===== dsl\builder\__pycache__\program.cpython-314.pyc =====
 
@@ -394,7 +408,7 @@ class PropertyRuleNode:
 
 ===== dsl\builder\__pycache__\property.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xfe in position 8: invalid start byte]
 
 ===== dsl\builder\assertion.py =====
 
@@ -544,7 +558,10 @@ def parse_assertion(node: Tree | Token | None) -> LogicalNode:
 
 ===== dsl\builder\backends.py =====
 
-from lark import Tree
+from lark import Tree, Token
+
+from dsl.ast.nodes.backends import BackendNode
+from dsl.ast.nodes.primitives import ArgNode
 from dsl.builder.core.utils import (
     find_child,
     find_all_nodes,
@@ -552,32 +569,56 @@ from dsl.builder.core.utils import (
     get_node_name_or_value,
 )
 from dsl.builder.core.ast_utils import node_value, clean_string
+from dsl.language.vocabulary.backends import EnumBackend
 
-from dsl.ast.nodes.backends import BackendNode
-from dsl.ast.nodes.primitives import ArgNode
 
-# ============================================================================
-# backend
-# ============================================================================
+def _extract_backend_name(node: Tree) -> str:
+    """
+    Extract backend name from a backend node.
+
+    Expected CST shape after protected words:
+        backend
+          USING
+          Z3
+
+    The USING token must be ignored.
+    """
+
+    for child in node.children:
+        if isinstance(child, Token):
+            if child.type == "USING":
+                continue
+
+            return child.value
+
+        if isinstance(child, Tree):
+            value = get_node_name_or_value(child)
+
+            if value is not None:
+                return value
+
+    raise ValueError("Backend name missing")
 
 
 def parse_backend(node: Tree | None):
     if node is None:
         return None
 
-    n = find_node(node, "backend")
-    if n is None:
+    backend_node = find_node(node, "backend")
+
+    if backend_node is None:
         return None
 
-    name_node = n.children[0]
-    name = get_node_name_or_value(name_node)
+    raw_name = _extract_backend_name(backend_node)
 
-    if name is None:
-        raise ValueError("Backend name missing")
+    try:
+        name = EnumBackend.from_str(raw_name)
+    except ValueError as e:
+        raise ValueError(f"Unsupported backend '{raw_name}'") from e
 
     args: list[ArgNode] = []
 
-    args_node = find_child(n, "args")
+    args_node = find_child(backend_node, "args")
 
     if args_node:
         for arg in find_all_nodes(args_node, "arg"):
@@ -594,19 +635,26 @@ def parse_backend(node: Tree | None):
 
     return BackendNode(name=name, args=args)
 
-
 ===== dsl\builder\builder.py =====
 
 from dsl.builder.core.pretty_ast import pretty
 
 from dsl.builder.program import parse_program
 from dsl.parser.parser import parse_forml_code
-from test.fixtures.program_samples import VALID_PROGRAM_WITH_BACKEND
 
 if __name__ == "__main__":
     """This script is for quick testing of the builder. It parses a sample property and prints the resulting AST"""
+    
+    sample = """
+    model := "model.onnx"
+    target := MyTargetColumn
+
+    [ROBUSTNESS]:
+    x ~ x' in neighborhood(L2, eps=0.01) => CLASSIFICATION.EQUAL() using eran(param1="a")
+    """
+    
     # LARK
-    CST = parse_forml_code(VALID_PROGRAM_WITH_BACKEND)
+    CST = parse_forml_code(sample)
     print(CST.pretty())
 
     # BUILDER
@@ -624,23 +672,31 @@ if __name__ == "__main__":
 
 ===== dsl\builder\core\__pycache__\ast_utils.cpython-314.pyc =====
 
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe7 in position 9: invalid continuation byte]
+
+===== dsl\builder\core\__pycache__\lark_types.cpython-314.pyc =====
+
 [ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
 ===== dsl\builder\core\__pycache__\pretty.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xb2 in position 9: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
 ===== dsl\builder\core\__pycache__\pretty_ast.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf8 in position 9: invalid start byte]
 
 ===== dsl\builder\core\__pycache__\pretty_tree.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xb2 in position 9: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
 ===== dsl\builder\core\__pycache__\strict.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== dsl\builder\core\__pycache__\to_delete.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xbc in position 8: invalid start byte]
 
 ===== dsl\builder\core\__pycache__\types.cpython-314.pyc =====
 
@@ -648,7 +704,7 @@ if __name__ == "__main__":
 
 ===== dsl\builder\core\__pycache__\utils.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0x90 in position 12: invalid start byte]
 
 ===== dsl\builder\core\ast_utils.py =====
 
@@ -657,8 +713,8 @@ from __future__ import annotations
 from lark import Tree, Token
 
 from dsl.ast.nodes.primitives import AttributeNode, ConstantNode, EnumDataType
-from dsl.builder.core.types import LarkNode
-from dsl.builder.core.utils import get_token_value
+from dsl.builder.core.lark_types import LarkNode
+from dsl.builder.core.utils import get_node_name_or_value, get_token_value
 
 # ============================================================================
 # GENERIC NODE VALUE EXTRACTION
@@ -723,42 +779,42 @@ def clean_string(value: str | None) -> str | None:
 
 def parse_attribute(node: Tree) -> AttributeNode:
     """
-    Parse an attribute expression into an AttributeNode.
+    Parse:
+        x.a
+        x.target
+        x.a.b
 
-    Supported forms:
-    - age
-    - x0.age
-    - user.profile.age
-    - a.b.c.d
-
-    Design rules:
-    - Last identifier = feature
-    - First identifier (if multiple) = entity
-    - Full chain stored in `path`
+    First segment must be a normal identifier.
+    Following segments may be soft identifiers, including protected words
+    such as target.
     """
 
-    def require_str(value: str | None) -> str:
-        if value is None:
-            raise ValueError("Expected string, got None")
-        return value
+    parts: list[str] = []
 
-    identifiers = [
-        require_str(get_token_value(child))
-        for child in node.children
-        if isinstance(child, Tree) and child.data == "identifier"
-    ]
+    for child in node.children:
+        if not isinstance(child, Tree):
+            continue
 
-    identifiers = [i for i in identifiers if i is not None]
+        if child.data in {"identifier", "attribute_identifier"}:
+            value = get_node_name_or_value(child)
+            if value is not None:
+                parts.append(value)
 
-    if not identifiers:
-        raise ValueError("Invalid attribute: no identifiers found")
+    if not parts:
+        raise ValueError("Invalid attribute")
+
+    if len(parts) == 1:
+        return AttributeNode(
+            entity=None,
+            feature=parts[0],
+            path=parts,
+        )
 
     return AttributeNode(
-        entity=identifiers[0] if len(identifiers) > 1 else None,
-        feature=identifiers[-1],
-        path=identifiers,
+        entity=parts[0],
+        feature=".".join(parts[1:]),
+        path=parts,
     )
-
 
 # ============================================================================
 # CONSTANT PARSING
@@ -834,6 +890,23 @@ def unwrap_single_child(node: Tree) -> Tree:
         node = node.children[0]
 
     return node
+
+
+===== dsl\builder\core\lark_types.py =====
+
+from __future__ import annotations
+
+from lark import Tree, Token
+from typing import Union
+
+# ============================================================================
+# LARK TYPE ALIASES
+# ============================================================================
+# These aliases centralize Lark typing across the builder.
+# This avoids repetition and improves readability + maintainability.
+
+LarkNode = Union[Tree, Token]
+LarkTree = Tree
 
 
 ===== dsl\builder\core\pretty.py =====
@@ -1109,7 +1182,7 @@ def _pretty_check(node: CheckAtExprNode, indent: int):
 def _pretty_pairwise(node: PairwiseExprNode, indent: int):
     pad = _pad(indent)
 
-    lines = [f"{pad}pairwise {node.pair}"]
+    lines = [f"{pad}pairwise {node.left} ~ {node.right}"]
 
     if node.domain:
         lines.append(f"{pad}  in {pretty(node.domain, 0).strip()}")
@@ -1377,22 +1450,26 @@ def safe_find_node(tree: Tree, name: str) -> Tree:
     return require_tree(node, f"Expected node '{name}' not found")
 
 
-===== dsl\builder\core\types.py =====
+===== dsl\builder\core\to_delete.py =====
 
-from __future__ import annotations
+from dsl.parser.parser import parse_forml_code
+from dsl.builder.program import parse_program
+from dsl.language.vocabulary.backends import EnumBackend
 
-from lark import Tree, Token
-from typing import Union
+sample = """
+model := "model.onnx"
+target := MyTarget
 
-# ============================================================================
-# LARK TYPE ALIASES
-# ============================================================================
-# These aliases centralize Lark typing across the builder.
-# This avoids repetition and improves readability + maintainability.
+[ROBUSTNESS]:
+at x0 in neighborhood(L2, eps=0.01) => CLASSIFICATION.EQUAL() using Z3
+"""
 
-LarkNode = Union[Tree, Token]
-LarkTree = Tree
+tree = parse_forml_code(sample)
+ast = parse_program(tree)
 
+print(ast.body[0].backend)
+assert ast.body[0].backend is not None
+assert ast.body[0].backend.name is EnumBackend.Z3
 
 ===== dsl\builder\core\utils.py =====
 
@@ -1400,7 +1477,7 @@ from __future__ import annotations
 
 from lark import Tree, Token
 
-from dsl.builder.core.types import LarkNode, LarkTree
+from dsl.builder.core.lark_types import LarkNode, LarkTree
 
 # ============================================================================
 # TREE NAVIGATION HELPERS
@@ -1672,6 +1749,36 @@ def parse_at(prop: Tree) -> AtExprNode:
 # EXPRESSIONS PARSERS (STRICT VERSION)
 # ============================================================================
 
+def parse_pairwise_token(pair: str) -> tuple[str, str]:
+    """
+    Parse a raw pairwise token like:
+        x ~ x'
+
+    Returns:
+        (left, right)
+    """
+
+    parts = [p.strip() for p in pair.split("~")]
+
+    if len(parts) != 2:
+        raise ValueError(f"Invalid pairwise token '{pair}', expected 'x ~ x\\''")
+
+    left, right = parts
+
+    if not left or not right:
+        raise ValueError("Pairwise expression requires two variables")
+
+    if not right.endswith("'"):
+        raise ValueError(
+            f"Right variable '{right}' must be a primed version of '{left}'"
+        )
+
+    if right[:-1] != left:
+        raise ValueError(
+            f"Invalid pairwise token '{pair}', expected '{left} ~ {left}\\''"
+        )
+
+    return left, right
 
 def parse_pairwise(prop: Tree) -> PairwiseExprNode:
     """
@@ -1690,14 +1797,21 @@ def parse_pairwise(prop: Tree) -> PairwiseExprNode:
 
     pair = require_value(node_value(pair_node), "pairwise_token is missing or invalid")
 
-    # --- 3. Neighborhood (depends on your grammar: required here) ---
+    left, right = parse_pairwise_token(pair)
+
+    # --- 3. Neighborhood ---
     neighborhood = parse_neighborhood(node)
 
     # --- 4. Domain (OPTIONAL) ---
     domain = optional(node, "domain", parse_domain)
 
     # --- 5. Build AST ---
-    return PairwiseExprNode(pair=pair, neighborhood=neighborhood, domain=domain)
+    return PairwiseExprNode(
+        left=left,
+        right=right,
+        neighborhood=neighborhood,
+        domain=domain,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -1774,15 +1888,25 @@ def get_header(tree: Tree) -> Tree:
 
 def parse_model(tree: Tree) -> str:
     """
-    model := "path"
+    Parse:
+        model := "path"
     """
 
     header = get_header(tree)
 
-    model_node = find_child(header, "model_declaration")
+    model_declaration = require_node(
+        find_child(header, "model_declaration"),
+        "Model declaration not found",
+    )
+
+    model_node = require_node(
+        find_child(model_declaration, "model"),
+        "Model node not found",
+    )
 
     return require_value(
-        clean_string(node_value(model_node)), "Model declaration is missing or invalid"
+        clean_string(node_value(model_node)),
+        "Model declaration is missing or invalid",
     )
 
 
@@ -1791,18 +1915,26 @@ def parse_model(tree: Tree) -> str:
 
 def parse_target(tree: Tree) -> str:
     """
-    target := Column
+    Parse:
+        target := Column
     """
 
     header = get_header(tree)
 
-    target_node = find_child(header, "target_declaration")
-
-    return require_value(
-        clean_string(node_value(target_node)),
-        "Target declaration is missing or invalid",
+    target_declaration = require_node(
+        find_child(header, "target_declaration"),
+        "Target declaration not found",
     )
 
+    identifier_node = require_node(
+        find_child(target_declaration, "identifier"),
+        "Target identifier not found",
+    )
+
+    return require_value(
+        clean_string(node_value(identifier_node)),
+        "Target declaration is missing or invalid",
+    )
 
 # ---------------------------------------------------------------------------
 
@@ -1812,10 +1944,8 @@ def parse_header(tree: Tree) -> HeaderNode:
     Parse header node into a strict HeaderNode AST.
     """
 
-    header_tree = get_header(tree)
-
-    model = parse_model(header_tree)
-    target = parse_target(header_tree)
+    model = parse_model(tree)
+    target = parse_target(tree)
 
     return HeaderNode(model=model, target=target)
 
@@ -1919,13 +2049,19 @@ def _parse_args(args_node: Tree | None) -> List[ArgNode]:
 def _extract_metric(node: Tree) -> str:
     """
     Extract metric token from a neighborhood node.
+
+    Expected shape after protected words:
+        neighborhood
+          IN
+          NEIGHBORHOOD
+          L2
+          args?
     """
 
-    if not node.children:
-        raise ValueError("Neighborhood node is empty")
+    metric_tokens = {"L1", "L2", "LINF"}
 
     for child in node.children:
-        if isinstance(child, Token):
+        if isinstance(child, Token) and child.type in metric_tokens:
             return child.value
 
     raise ValueError("No metric token found in neighborhood")
@@ -2041,31 +2177,47 @@ def extract_rhs(prop: Tree) -> Tree:
     """
     Extract RHS expression from property.
 
-    IMPORTANT:
-    Lark inline-expands 'assertion', so RHS is directly a logic_* node
-    (e.g. logic_or, logic_and), not an 'assertion' node.
+    The grammar may now contain explicit padding nodes around:
+        - property_expr
+        - property_imply
+        - assertion
+
+    Therefore padding must be treated as syntactic noise.
     """
 
     found_imply = False
 
-    property = prop.children[0]
+    # prop is usually property_section, whose first child is property.
+    property_node = prop.children[0]
 
-    for child in property.children:
+    for child in property_node.children:
 
-        # skip metadata nodes
-        if isinstance(child, Tree) and child.data in (
-            "property_type",
-            "property_expr",
-        ):
+        # Ignore non-tree tokens here.
+        if not isinstance(child, Tree):
             continue
 
-        # detect implication separator
-        if isinstance(child, Tree) and child.data == "property_imply":
+        # Skip syntactic noise before and after implication.
+        if child.data == "padding":
+            continue
+
+        # Skip metadata / LHS nodes.
+        if child.data in {
+            "property_type",
+            "property_expr",
+        }:
+            continue
+
+        # Detect implication separator.
+        if child.data == "property_imply":
             found_imply = True
             continue
 
-        # RHS = first real logic subtree AFTER implication
-        if found_imply and isinstance(child, Tree):
+        # Backend is not part of RHS.
+        if child.data == "backend":
+            continue
+
+        # RHS = first real logical subtree AFTER implication.
+        if found_imply:
             return child
 
     raise ValueError("Missing RHS in property")
@@ -2147,15 +2299,27 @@ def parse_property(prop: Tree) -> PropertyNode:
 
 ===== dsl\ir\ir1\__pycache__\nodes.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xcb in position 8: invalid continuation byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
 ===== dsl\ir\ir1\__pycache__\pretty.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xdc in position 8: invalid continuation byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 8: invalid continuation byte]
+
+===== dsl\ir\ir1\__pycache__\query_translator.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
+
+===== dsl\ir\ir1\__pycache__\run_ir1.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0x91 in position 8: invalid start byte]
+
+===== dsl\ir\ir1\__pycache__\scope_translator.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xd9 in position 8: invalid continuation byte]
 
 ===== dsl\ir\ir1\__pycache__\translator.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0x93 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xdd in position 9: invalid continuation byte]
 
 ===== dsl\ir\ir1\__pycache__\utils.cpython-314.pyc =====
 
@@ -2486,7 +2650,9 @@ def _pretty_logical(node: LogicalIR, indent=0) -> list[str]:
     # Comparison
     # -----------------------------
     if isinstance(node, ComparisonIR):
-        lines.append(f"{space}- {node.entity}.{node.feature} == {node.value}")
+        lines.append(
+            f"{space}- {node.entity}.{node.feature} {node.op.value} {node.value}"
+        )
         return lines
 
     # -----------------------------
@@ -2542,82 +2708,9 @@ def _pretty_logical(node: LogicalIR, indent=0) -> list[str]:
     return lines
 
 
-===== dsl\ir\ir1\run_ir1.py =====
-
-# /dsl/ir/run_ir.py
-
-from dsl.ir.ir1.pretty import pretty_print_tasks
-from dsl.parser.parser import parse_forml_code
-from dsl.builder.program import parse_program
-from dsl.semantic.runtime.tracer import ValidationTracer
-from dsl.semantic.core.validator import FORMLValidator
-
-from dsl.ir.ir1.translator import IRTranslator
-from test.fixtures.logic_samples import PARENTHESES_PRECEDENCE_PROPERTY
-
-
-def run_ir(source: str):
-    """
-    Full pipeline until IR generation.
-
-    Steps:
-        1. Parse (CST)
-        2. Build AST
-        3. Semantic validation
-        4. Translate to IR
-    """
-
-    # ---------------------------
-    # 1. Parse → CST
-    # ---------------------------
-    cst = parse_forml_code(source)
-
-    # ---------------------------
-    # 2. CST → AST
-    # ---------------------------
-    ast = parse_program(cst)
-
-    # ---------------------------
-    # 3. Semantic validation
-    # ---------------------------
-    FORMLValidator().validate(ast, tracer=ValidationTracer(enabled=True))
-
-    # ---------------------------
-    # 4. AST → IR
-    # ---------------------------
-    translator = IRTranslator()
-    tasks = translator.translate(ast)
-
-    return tasks
-
-
-# -----------------------------------------------------------------------------
-# QUICK TEST
-# -----------------------------------------------------------------------------
-
-if __name__ == "__main__":
-
-    SAMPLE = PARENTHESES_PRECEDENCE_PROPERTY
-
-    tasks = run_ir(SAMPLE)
-
-    print("\n=== IR OUTPUT ===\n")
-
-    pretty_print_tasks(tasks)
-
-
-===== dsl\ir\ir1\translator.py =====
+===== dsl\ir\ir1\query_translator.py =====
 
 from __future__ import annotations
-
-from dsl.ast.nodes.expressions import (
-    AtExprNode,
-    CheckAtExprNode,
-    PairwiseExprNode,
-    QuantifierExprNode,
-)
-from dsl.ast.nodes.program import ProgramNode
-from dsl.ast.nodes.property import PropertyNode
 
 from dsl.ast.nodes.assertion import (
     LogicalNode,
@@ -2629,10 +2722,8 @@ from dsl.ast.nodes.assertion import (
     ProblemNode,
 )
 
-
+from dsl.ast.nodes.primitives import AttributeNode
 from dsl.ir.ir1.nodes import (
-    VerificationTask,
-    ScopeIR,
     QueryIR,
     LogicalIR,
     ComparisonIR,
@@ -2641,251 +2732,449 @@ from dsl.ir.ir1.nodes import (
     NotIR,
     ImplyIR,
     ProblemIR,
-    NeighborhoodIR,
-    DomainIR,
 )
 
 from dsl.language.vocabulary.problems import EnumProblem
 from dsl.language.vocabulary.functions import EnumFunction
-from dsl.language.vocabulary.backends import EnumBackend
 
 
-class IRTranslator:
+class QueryTranslator:
     """
-    AST (semantic validated) → IR executable layer
+    Translate AST logical assertions into IR query representation.
+
+    Responsibility:
+        AssertionNode.root / LogicalNode -> QueryIR / LogicalIR
+
+    This class does not translate scopes or properties.
     """
 
-    # --------------------------------------------------------------------------
+    # ------------------------------------------------------------------
     # ENTRY POINT
-    # --------------------------------------------------------------------------
+    # ------------------------------------------------------------------
 
-    def translate(self, program: ProgramNode) -> list[VerificationTask]:
-        return [self._translate_property(p) for p in program.body]
-
-    # --------------------------------------------------------------------------
-    # PROPERTY
-    # --------------------------------------------------------------------------
-
-    def _translate_property(self, prop: PropertyNode) -> VerificationTask:
-
-        scope_ir = self._translate_scope(prop.rule.scope)
-        query_ir = self._translate_assertion(prop.rule.assertion.root)
-
-        backend = prop.backend.name if prop.backend else None
-
-        return VerificationTask(
-            property_type=prop.type,
-            scope=scope_ir,
-            query=query_ir,
-            backend=EnumBackend[backend] if backend else None,
-        )
-
-    # --------------------------------------------------------------------------
-    # SCOPE
-    # --------------------------------------------------------------------------
-
-    def _translate_scope(self, scope) -> ScopeIR:
-
-        variables = {}
-        neighborhood_ir = None
-        domain_ir = None
-        kind = "unknown"
-
-        # ------------------------------------------------------------------
-        # AT
-        # ------------------------------------------------------------------
-
-        if isinstance(scope, AtExprNode):
-
-            kind = "local"
-
-            variables = {scope.variable: "anchor", f"{scope.variable}'": "perturbation"}
-
-            # --------------------------
-            # neighborhood
-            # --------------------------
-
-            if scope.neighborhood is not None:
-
-                args_dict = {arg.key: arg.value for arg in scope.neighborhood.args}
-
-                eps = args_dict.get("eps")
-                assert eps is not None, "Neighborhood must specify 'eps' parameter"
-                eps = float(eps)
-
-                neighborhood_ir = NeighborhoodIR(
-                    metric=scope.neighborhood.metric, eps=eps, args=args_dict
-                )
-
-            # --------------------------
-            # domain
-            # --------------------------
-
-            if scope.domain is not None:
-
-                domain_ir = DomainIR(
-                    name=scope.domain.name, args={"values": scope.domain.values}
-                )
-
-        # ------------------------------------------------------------------
-        # PAIRWISE
-        # ------------------------------------------------------------------
-
-        elif isinstance(scope, PairwiseExprNode):
-
-            kind = "pairwise"
-
-            left, right = [x.strip() for x in scope.pair.split(",")]
-
-            variables = {left: "left", right: "right"}
-
-        # ------------------------------------------------------------------
-        # CHECK AT
-        # ------------------------------------------------------------------
-
-        elif isinstance(scope, CheckAtExprNode):
-
-            kind = "pointwise"
-
-            variables = {scope.variable: "point"}
-
-        # ------------------------------------------------------------------
-        # QUANTIFIER
-        # ------------------------------------------------------------------
-
-        elif isinstance(scope, QuantifierExprNode):
-
-            kind = "quantifier"
-
-            if scope.domain is not None:
-
-                domain_ir = DomainIR(name=scope.domain.name, args={})
-
-        # ------------------------------------------------------------------
-        # FINAL
-        # ------------------------------------------------------------------
-
-        return ScopeIR(
-            kind=kind,
-            variables=variables,
-            neighborhood=neighborhood_ir,
-            domain=domain_ir,
-        )
-
-    # --------------------------------------------------------------------------
-    # ASSERTION → QUERY
-    # --------------------------------------------------------------------------
-
-    def _flatten_and(self, node: AndNode) -> list[LogicalNode]:
-        result = []
-
-        for n in node.operands:
-            if isinstance(n, AndNode):
-                result.extend(self._flatten_and(n))
-            else:
-                result.append(n)
-
-        return result
-
-    def _flatten_or(self, node: OrNode) -> list[LogicalNode]:
-        result = []
-
-        for n in node.operands:
-            if isinstance(n, OrNode):
-                result.extend(self._flatten_or(n))
-            else:
-                result.append(n)
-
-        return result
-
-    def _translate_assertion(self, node: LogicalNode) -> QueryIR:
-
+    def translate(self, node: LogicalNode) -> QueryIR:
         if isinstance(node, AndNode):
-
-            operands = [self._translate_logical(n) for n in self._flatten_and(node)]
+            operands = [
+                self._translate_logical(n)
+                for n in self._flatten_and(node)
+            ]
 
             return QueryIR(expression=AndIR(operands=operands))
 
         if isinstance(node, OrNode):
-
-            operands = [self._translate_logical(n) for n in self._flatten_or(node)]
+            operands = [
+                self._translate_logical(n)
+                for n in self._flatten_or(node)
+            ]
 
             return QueryIR(expression=OrIR(operands=operands))
+
         return QueryIR(expression=self._translate_logical(node))
 
+    # ------------------------------------------------------------------
+    # FLATTENING
+    # ------------------------------------------------------------------
+
+    def _flatten_and(self, node: AndNode) -> list[LogicalNode]:
+        result: list[LogicalNode] = []
+
+        for child in node.operands:
+            if isinstance(child, AndNode):
+                result.extend(self._flatten_and(child))
+            else:
+                result.append(child)
+
+        return result
+
+    def _flatten_or(self, node: OrNode) -> list[LogicalNode]:
+        result: list[LogicalNode] = []
+
+        for child in node.operands:
+            if isinstance(child, OrNode):
+                result.extend(self._flatten_or(child))
+            else:
+                result.append(child)
+
+        return result
+
+    # ------------------------------------------------------------------
+    # LOGICAL TRANSLATION
+    # ------------------------------------------------------------------
+
     def _translate_logical(self, node: LogicalNode) -> LogicalIR:
-        """
-        Recursively converts AST LogicalNode → IR LogicalIR.
-
-        This function produces a PURE logical tree:
-            - ComparisonIR (leaf)
-            - AndIR / OrIR / NotIR / ImplyIR (structure)
-            - ProblemIR (semantic leaf)
-
-        No QueryIR wrapping here.
-        """
-
-        # -----------------------------
-        # COMPARISON
-        # -----------------------------
         if isinstance(node, ComparisonNode):
+            return self._translate_comparison(node)
 
-            assert node.left.entity is not None, "Left entity cannot be None"
-            assert node.left.feature is not None, "Left feature cannot be None"
-
-            return ComparisonIR(
-                entity=node.left.entity,
-                feature=node.left.feature,
-                op=node.op,  # 🔥 important
-                value=node.right.value,
+        if isinstance(node, AndNode):
+            return AndIR(
+                operands=[
+                    self._translate_logical(child)
+                    for child in node.operands
+                ]
             )
 
-        # -----------------------------
-        # AND
-        # -----------------------------
-        if isinstance(node, AndNode):
-
-            return AndIR(operands=[self._translate_logical(n) for n in node.operands])
-
-        # -----------------------------
-        # OR
-        # -----------------------------
         if isinstance(node, OrNode):
+            return OrIR(
+                operands=[
+                    self._translate_logical(child)
+                    for child in node.operands
+                ]
+            )
 
-            return OrIR(operands=[self._translate_logical(n) for n in node.operands])
-
-        # -----------------------------
-        # NOT
-        # -----------------------------
         if isinstance(node, NotNode):
+            return NotIR(
+                operand=self._translate_logical(node.operand)
+            )
 
-            return NotIR(operand=self._translate_logical(node.operand))
-
-        # -----------------------------
-        # IMPLICATION
-        # -----------------------------
         if isinstance(node, ImplicationNode):
-
             return ImplyIR(
                 left=self._translate_logical(node.left),
                 right=self._translate_logical(node.right),
             )
 
-        # -----------------------------
-        # PROBLEM NODE
-        # -----------------------------
         if isinstance(node, ProblemNode):
+            return self._translate_problem(node)
 
-            problem = EnumProblem(node.problem)
-            function = EnumFunction(node.function) if node.function else None
-
-            return ProblemIR(problem=problem, function=function, args={})
-
-        # -----------------------------
-        # FAIL SAFE
-        # -----------------------------
         raise ValueError(f"Unsupported LogicalNode type: {type(node)}")
 
+    # ------------------------------------------------------------------
+    # LEAVES
+    # ------------------------------------------------------------------
+
+    def _translate_comparison(self, node: ComparisonNode) -> ComparisonIR:
+        """
+        Translate a semantically resolved comparison into IR.
+
+        IMPORTANT:
+        This must use semantic annotations, not raw parsed attributes.
+        """
+
+        entity, feature = self._resolve_ir_attribute(node.left)
+
+        return ComparisonIR(
+            entity=entity,
+            feature=feature,
+            op=node.op,
+            value=node.right.value,
+        )
+    
+    def _translate_problem(self, node: ProblemNode) -> ProblemIR:
+        problem = (
+            node.problem
+            if isinstance(node.problem, EnumProblem)
+            else EnumProblem(node.problem)
+        )
+
+        function = None
+
+        if node.function is not None:
+            function = (
+                node.function
+                if isinstance(node.function, EnumFunction)
+                else EnumFunction(node.function)
+            )
+
+        return ProblemIR(
+            problem=problem,
+            function=function,
+            args={},
+        )
+    
+    def _resolve_ir_attribute(self, attr: AttributeNode) -> tuple[str, str]:
+        """
+        Convert a semantically resolved AttributeNode into IR coordinates.
+
+        The IR layer must rely on semantic annotations, not on raw parsed fields.
+
+        Examples:
+            age      -> x'.age   depending on semantic scope
+            x.age    -> x.age
+            x'.age   -> x'.age
+            _x.age   -> _x.age
+        """
+
+        semantic = getattr(attr, "semantic", None)
+
+        if semantic is None:
+            raise ValueError(
+                f"Attribute '{attr.feature}' has no semantic annotations. "
+                "Run semantic validation before IR translation."
+            )
+
+        if not semantic.resolved_entity:
+            raise ValueError(
+                f"Attribute '{attr.feature}' has no resolved entity. "
+                "Binding validation probably did not run."
+            )
+
+        entity = semantic.resolved_entity
+
+        if semantic.resolved_path and len(semantic.resolved_path) >= 2:
+            feature = ".".join(semantic.resolved_path[1:])
+        else:
+            feature = attr.feature
+
+        return entity, feature
+
+===== dsl\ir\ir1\run_ir1.py =====
+
+from dsl.ir.ir1.pretty import pretty_print_tasks
+from dsl.parser.parser import parse_forml_code
+from dsl.builder.program import parse_program
+from dsl.semantic.runtime.tracer import ValidationTracer
+from dsl.semantic.core.validator import FORMLValidator
+from dsl.ir.ir1.translator import IRTranslator
+
+
+DEFAULT_SAMPLE = """
+model := "model.onnx"
+target := MyTarget
+
+[ROBUSTNESS]:
+check_at x0 => (x0.a <= 1 OR x0.b <= 2) AND x0.c <= 3
+"""
+
+
+def run_ir(source: str):
+    """
+    Full pipeline until IR generation.
+
+    Steps:
+        1. Parse CST
+        2. Build AST
+        3. Semantic validation
+        4. Translate to IR1
+    """
+
+    cst = parse_forml_code(source)
+    ast = parse_program(cst)
+
+    FORMLValidator().validate(
+        ast,
+        tracer=ValidationTracer(enabled=True),
+    )
+
+    translator = IRTranslator()
+    return translator.translate(ast)
+
+
+if __name__ == "__main__":
+    tasks = run_ir(DEFAULT_SAMPLE)
+
+    print("\n=== IR OUTPUT ===\n")
+    pretty_print_tasks(tasks)
+
+===== dsl\ir\ir1\scope_translator.py =====
+
+from __future__ import annotations
+
+from typing import Any
+
+from dsl.ast.nodes.expressions import (
+    AtExprNode,
+    CheckAtExprNode,
+    PairwiseExprNode,
+    QuantifierExprNode,
+)
+
+from dsl.ir.ir1.nodes import (
+    ScopeIR,
+    NeighborhoodIR,
+    DomainIR,
+)
+
+
+class ScopeTranslator:
+    """
+    Translate AST scope expressions into IR scope representation.
+
+    Responsibility:
+        ExpressionNode -> ScopeIR
+
+    This class does not translate logical assertions.
+    """
+
+    def translate(self, scope) -> ScopeIR:
+        if isinstance(scope, AtExprNode):
+            return self._translate_at(scope)
+
+        if isinstance(scope, PairwiseExprNode):
+            return self._translate_pairwise(scope)
+
+        if isinstance(scope, CheckAtExprNode):
+            return self._translate_check_at(scope)
+
+        if isinstance(scope, QuantifierExprNode):
+            return self._translate_quantifier(scope)
+
+        raise ValueError(f"Unsupported scope node type: {type(scope)}")
+
+    # ------------------------------------------------------------------
+    # AT
+    # ------------------------------------------------------------------
+
+    def _translate_at(self, scope: AtExprNode) -> ScopeIR:
+        return ScopeIR(
+            kind="local",
+            variables={
+                scope.variable: "anchor",
+                f"{scope.variable}'": "perturbation",
+            },
+            neighborhood=self._translate_neighborhood(scope.neighborhood),
+            domain=self._translate_domain(scope.domain),
+        )
+
+    # ------------------------------------------------------------------
+    # PAIRWISE
+    # ------------------------------------------------------------------
+
+    def _translate_pairwise(self, scope: PairwiseExprNode) -> ScopeIR:
+        return ScopeIR(
+            kind="pairwise",
+            variables={
+                scope.left: "anchor",
+                scope.right: "perturbation",
+            },
+            neighborhood=self._translate_neighborhood(scope.neighborhood),
+            domain=self._translate_domain(scope.domain),
+        )
+
+    # ------------------------------------------------------------------
+    # CHECK_AT
+    # ------------------------------------------------------------------
+
+    def _translate_check_at(self, scope: CheckAtExprNode) -> ScopeIR:
+        return ScopeIR(
+            kind="pointwise",
+            variables={
+                scope.variable: "anchor",
+            },
+            neighborhood=None,
+            domain=None,
+        )
+
+    # ------------------------------------------------------------------
+    # QUANTIFIER
+    # ------------------------------------------------------------------
+
+    def _translate_quantifier(self, scope: QuantifierExprNode) -> ScopeIR:
+        return ScopeIR(
+            kind="quantifier",
+            variables={},
+            neighborhood=None,
+            domain=self._translate_domain(scope.domain),
+        )
+
+    # ------------------------------------------------------------------
+    # HELPERS
+    # ------------------------------------------------------------------
+
+    def _translate_neighborhood(self, neighborhood) -> NeighborhoodIR | None:
+        if neighborhood is None:
+            return None
+
+        args_dict: dict[str, Any] = {arg.key: arg.value for arg in neighborhood.args}
+
+        eps = args_dict.get("eps")
+
+        if eps is None:
+            raise ValueError("Neighborhood must specify 'eps' parameter")
+
+        try:
+            eps = float(eps)
+        except (TypeError, ValueError) as e:
+            raise ValueError(f"Invalid neighborhood eps value: {eps}") from e
+
+        return NeighborhoodIR(
+            metric=neighborhood.metric,
+            eps=eps,
+            args=args_dict,
+        )
+
+    def _translate_domain(self, domain) -> DomainIR | None:
+        if domain is None:
+            return None
+
+        return DomainIR(
+            name=domain.name,
+            args={"values": domain.values},
+        )
+
+===== dsl\ir\ir1\translator.py =====
+
+from __future__ import annotations
+
+from dsl.ast.nodes.program import ProgramNode
+from dsl.ast.nodes.property import PropertyNode
+
+from dsl.ir.ir1.nodes import VerificationTask
+from dsl.ir.ir1.scope_translator import ScopeTranslator
+from dsl.ir.ir1.query_translator import QueryTranslator
+
+from dsl.language.vocabulary.backends import EnumBackend
+
+
+class IRTranslator:
+    """
+    AST validated by semantic layer -> IR1 verification tasks.
+
+    Responsibility:
+        ProgramNode / PropertyNode -> VerificationTask
+
+    Detailed translation is delegated to:
+        - ScopeTranslator
+        - QueryTranslator
+    """
+
+    def __init__(
+        self,
+        scope_translator: ScopeTranslator | None = None,
+        query_translator: QueryTranslator | None = None,
+    ):
+        self.scope_translator = scope_translator or ScopeTranslator()
+        self.query_translator = query_translator or QueryTranslator()
+
+    # ------------------------------------------------------------------
+    # PROGRAM
+    # ------------------------------------------------------------------
+
+    def translate(self, program: ProgramNode) -> list[VerificationTask]:
+        return [
+            self._translate_property(prop)
+            for prop in program.body
+        ]
+
+    # ------------------------------------------------------------------
+    # PROPERTY
+    # ------------------------------------------------------------------
+
+    def _translate_property(self, prop: PropertyNode) -> VerificationTask:
+        scope_ir = self.scope_translator.translate(prop.rule.scope)
+        query_ir = self.query_translator.translate(prop.rule.assertion.root)
+
+        backend = self._translate_backend(prop)
+
+        return VerificationTask(
+            property_type=prop.type,
+            scope=scope_ir,
+            query=query_ir,
+            backend=backend,
+        )
+
+    # ------------------------------------------------------------------
+    # BACKEND
+    # ------------------------------------------------------------------
+
+    def _translate_backend(self, prop: PropertyNode) -> EnumBackend | None:
+        if prop.backend is None:
+            return None
+
+        backend = prop.backend.name
+
+        if isinstance(backend, EnumBackend):
+            return backend
+
+        return EnumBackend.from_str(str(backend))
 
 ===== dsl\language\grammar\forml_grammar.ebnf =====
 
@@ -2920,14 +3209,8 @@ args = arg , { "," , arg } ;
 (* === NEWLINES === *)
 NEWLINE_SEQUENCE = NEWLINE , { NEWLINE } ;
 
-(* === COMMENTS === *)
-simple_comment     = "#" , ? any_character_except_newline ? ;
-multiline_comment  = ? any_character_except_triple_quotes ? ;
-comment            = simple_comment | multiline_comment ;
-comments           = comment , { comment } ;
-
 (* === PADDING === *)
-padding = { NEWLINE_SEQUENCE | comments } ;
+padding = { NEWLINE_SEQUENCE } ;
 
 (* ========================================================= *)
 (* === LOGIC (NON-ROBUSTNESS) ============================== *)
@@ -2943,7 +3226,8 @@ function_expr   = function , "(" , [ args ] , ")" ;
 problem_expr    = ( ? official_problems ? ) , "." , function_expr ;
 
 (* === ATTRIBUTES === *)
-attribute = identifier , { "." , identifier } ;
+attribute_identifier = identifier | TARGET ;
+attribute = identifier , { "." , attribute_identifier } ;
 logic_expr = attribute , logic_operation , value ;
 comparison_expr = attribute , comparison_operation , value ;
 
@@ -2966,7 +3250,7 @@ comparison_expr = attribute , comparison_operation , value ;
 (* ========================================================= *)
 
 (* === NEIGHBORHOOD (CRITICAL ABSTRACTION) === *)
-neighborhood = "in" , "neighborhood" , "(" , [ "metric" , "=" ] , ( ? official_metrics ? ) , "," , [ args ] , ")" ;
+neighborhood = IN , NEIGHBORHOOD , "(" , [ "metric" , "=" ] , ( ? official_metrics ? ) , "," , [ args ] , ")" ;
 
 (* ========================================================= *)
 (* === PROPERTY EXPRESSIONS ================================ *)
@@ -2987,7 +3271,7 @@ quantifier_expr = quantifier , [ domain ] ;
 (* === AT (POINTWISE) ====================================== *)
 (* ========================================================= *)
 
-at_expr = "at" , identifier , [ neighborhood ] , [ domain ] ;
+at_expr = AT , identifier , [ neighborhood ] , [ domain ] ;
 
 (* Exemple : at x0 in hyperball(x0, L2, 0.01) *)
 
@@ -2995,7 +3279,7 @@ at_expr = "at" , identifier , [ neighborhood ] , [ domain ] ;
 (* === CHECK AT (POINTWISE) ================================ *)
 (* ========================================================= *)
 
-check_expr = "check_at" , identifier ;
+check_expr = CHECK_AT , identifier ;
 
 (* ========================================================= *)
 (* === PAIRWISE (ROBUSTNESS) =============================== *)
@@ -3010,7 +3294,7 @@ pairwise_expr = pairwise_token , neighborhood , [ domain ] ;
 (* === DOMAIN / CONTEXT ==================================== *)
 (* ========================================================= *)
 
-domain = "with" , identifier , "(" , value , { "," , value } , ")" ;
+domain = WITH , identifier , "(" , value , { "," , value } , ")" ;
 
 (* ========================================================= *)
 (* === PROPERTY DEFINITION ================================= *)
@@ -3020,29 +3304,28 @@ property_imply = PROPERTY_IMPLY ;
 
 property_type = ? official_properties ? | ? uppercase_string ? ;
 
-property = "[" , property_type , "]" , ":" , property_expr , property_imply , assertion ;
-
-property_section = property , [ backend ] ;
+property = "[" , property_type , "]" , ":" , padding , property_expr , padding , property_imply , padding , assertion , [ backend ] ;
+property_section = property ;
 
 (* ========================================================= *)
 (* === BACKEND ============================================= *)
 (* ========================================================= *)
 
-backend = "using" , ( ? official_backends ? ) , [ "(" , args , ")" ] ;
+backend = USING , ( ? official_backends ? ) , [ "(" , args , ")" ] ;
 
 (* ========================================================= *)
 (* === DECLARATIONS ======================================== *)
 (* ========================================================= *)
 
-target_declaration = "target" , ":=" , identifier ;
+target_declaration = TARGET , ":=" , identifier ;
 
 model = quoted_identifier ;
 
-model_declaration = "model" , ":=" , model ;
+model_declaration = MODEL , ":=" , model ;
 
 dataset = quoted_identifier ;
 
-dataset_declaration = "dataset" , ":=" , dataset ;
+dataset_declaration = DATASET , ":=" , dataset ;
 
 variable_declaration = identifier , ":=" , value ;
 
@@ -3077,6 +3360,19 @@ COMMENT_BLOCK : /'''(.|\n)*?'''/
 %ignore COMMENT_LINE
 %ignore COMMENT_BLOCK
 %ignore NEWLINE
+
+
+# === PROTECTED_WORDS ===
+
+IN.10 : "in"
+WITH.10 : "with"
+AT.10 : "at"
+CHECK_AT.10 : "check_at"
+USING.10 : "using"
+MODEL.10 : "model"
+TARGET.10 : "target"
+NEIGHBORHOOD.10 : "neighborhood"
+DATASET.10 : "dataset"
 
 
 # === PROBLEMS ===
@@ -3118,14 +3414,14 @@ DECREASING : "DECREASING"
 
 # === BACKENDS ===
 
+z3 : "z3"
+Z3 : "Z3"
 eran : "eran"
 ERAN : "ERAN"
 zonotope : "zonotope"
 ZONOTOPE : "ZONOTOPE"
 box : "box"
 BOX : "BOX"
-z3 : "z3"
-Z3 : "Z3"
 
 
 # === METRICS ===
@@ -3204,18 +3500,9 @@ args : arg ("," arg)*
 
 NEWLINE_SEQUENCE : NEWLINE (NEWLINE)*
 
-# === COMMENTS ===
-
-simple_comment : "#" /[^\n]+/
-multiline_comment : /'''(.|\n)*?'''/
-comment : simple_comment
-    | multiline_comment
-comments : comment (comment)*
-
 # === PADDING ===
 
-padding : (NEWLINE_SEQUENCE
-    | comments)*
+padding : (NEWLINE_SEQUENCE)*
 
 # =========================================================
 # === LOGIC (NON-ROBUSTNESS) ==============================
@@ -3251,7 +3538,9 @@ problem_expr : (CLASSIFICATION
 
 # === ATTRIBUTES ===
 
-attribute : identifier ("." identifier)*
+attribute_identifier : identifier
+    | TARGET
+attribute : identifier ("." attribute_identifier)*
 logic_expr : attribute logic_operation value
 comparison_expr : attribute comparison_operation value
 
@@ -3276,7 +3565,7 @@ comparison_expr : attribute comparison_operation value
 # =========================================================
 # === NEIGHBORHOOD (CRITICAL ABSTRACTION) ===
 
-neighborhood : "in" "neighborhood" "(" ("metric" "=")? (L1
+neighborhood : IN NEIGHBORHOOD "(" ("metric" "=")? (L1
     | L2
     | LINF) "," (args)? ")"
 
@@ -3303,14 +3592,14 @@ quantifier_expr : quantifier (domain)?
 # === AT (POINTWISE) ======================================
 # =========================================================
 
-at_expr : "at" identifier (neighborhood)? (domain)?
+at_expr : AT identifier (neighborhood)? (domain)?
 
 # Exemple : at x0 in hyperball(x0, L2, 0.01)
 # =========================================================
 # === CHECK AT (POINTWISE) ================================
 # =========================================================
 
-check_expr : "check_at" identifier
+check_expr : CHECK_AT identifier
 
 # =========================================================
 # === PAIRWISE (ROBUSTNESS) ===============================
@@ -3324,7 +3613,7 @@ pairwise_expr : pairwise_token neighborhood (domain)?
 # === DOMAIN / CONTEXT ====================================
 # =========================================================
 
-domain : "with" identifier "(" value ("," value)* ")"
+domain : WITH identifier "(" value ("," value)* ")"
 
 # =========================================================
 # === PROPERTY DEFINITION =================================
@@ -3338,31 +3627,31 @@ property_type : ROBUSTNESS
     | BOUND
     | LOGIC
     | /[A-Z]+/
-property : "[" property_type "]" ":" property_expr property_imply assertion
-property_section : property (backend)?
+property : "[" property_type "]" ":" padding property_expr padding property_imply padding assertion (backend)?
+property_section : property
 
 # =========================================================
 # === BACKEND =============================================
 # =========================================================
 
-backend : "using" (eran
+backend : USING (z3
+    | Z3
+    | eran
     | ERAN
     | zonotope
     | ZONOTOPE
     | box
-    | BOX
-    | z3
-    | Z3) ("(" args ")")?
+    | BOX) ("(" args ")")?
 
 # =========================================================
 # === DECLARATIONS ========================================
 # =========================================================
 
-target_declaration : "target" ":=" identifier
+target_declaration : TARGET ":=" identifier
 model : quoted_identifier
-model_declaration : "model" ":=" model
+model_declaration : MODEL ":=" model
 dataset : quoted_identifier
-dataset_declaration : "dataset" ":=" dataset
+dataset_declaration : DATASET ":=" dataset
 variable_declaration : identifier ":=" value
 variables_declaration : variable_declaration (";" variable_declaration)*
 
@@ -3376,19 +3665,23 @@ program : header body
 
 ===== dsl\language\tools\__pycache__\constants.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0x91 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0x9b in position 8: invalid start byte]
 
 ===== dsl\language\tools\__pycache__\formatter.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xee in position 10: invalid continuation byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== dsl\language\tools\__pycache__\generator.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
 ===== dsl\language\tools\__pycache__\registry.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0x98 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
 ===== dsl\language\tools\__pycache__\transforms.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xeb in position 8: invalid continuation byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
 ===== dsl\language\tools\constants.py =====
 
@@ -3405,16 +3698,19 @@ from dsl.language.vocabulary.quantifiers import official_quantifiers
 from dsl.language.vocabulary.functions import official_functions
 from dsl.language.vocabulary.backends import official_backends
 from dsl.language.vocabulary.metrics import official_metrics
+from dsl.language.vocabulary.protected_words import protected_words
 from dsl.language.vocabulary.operators import (
     official_logic_operators,
     official_comparaison_operations,
 )
+
 
 # =========================
 # RAW DICTIONARIES
 # =========================
 
 OFFICIAL_MAPS = {
+    "protected_words": protected_words,
     "problems": official_problems,
     "properties": official_properties,
     "quantifiers": official_quantifiers,
@@ -3984,7 +4280,11 @@ def fix_neighborhood_precedence(line: str) -> str:
 
 ===== dsl\language\vocabulary\__pycache__\backends.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa6 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xdb in position 9: invalid continuation byte]
+
+===== dsl\language\vocabulary\__pycache__\distances.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
 ===== dsl\language\vocabulary\__pycache__\functions.cpython-314.pyc =====
 
@@ -3996,7 +4296,7 @@ def fix_neighborhood_precedence(line: str) -> str:
 
 ===== dsl\language\vocabulary\__pycache__\metrics.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa6 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
 ===== dsl\language\vocabulary\__pycache__\operators.cpython-314.pyc =====
 
@@ -4012,11 +4312,11 @@ def fix_neighborhood_precedence(line: str) -> str:
 
 ===== dsl\language\vocabulary\__pycache__\protected_words.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa6 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xb5 in position 12: invalid start byte]
 
 ===== dsl\language\vocabulary\__pycache__\quantifiers.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0x93 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
 ===== dsl\language\vocabulary\__pycache__\utils.cpython-314.pyc =====
 
@@ -4024,32 +4324,44 @@ def fix_neighborhood_precedence(line: str) -> str:
 
 ===== dsl\language\vocabulary\backends.py =====
 
-# /forml/grammar/official_contents/backends.py
-
 from enum import Enum
+
 from dsl.language.vocabulary.utils import EnumMixin
 
+
 official_backends = {
+    "z3": '"z3"',
+    "Z3": '"Z3"',
     "eran": '"eran"',
     "ERAN": '"ERAN"',
     "zonotope": '"zonotope"',
     "ZONOTOPE": '"ZONOTOPE"',
     "box": '"box"',
     "BOX": '"BOX"',
-    "z3": '"z3"',
-    "Z3": '"Z3"',
 }
 
 
 class EnumBackend(EnumMixin, Enum):
-    ERAN = "ERAN"
-    zonotope = "zonotope"
-    ZONOTOPE = "ZONOTOPE"
-    box = "box"
-    BOX = "BOX"
-    z3 = "z3"
     Z3 = "Z3"
+    ERAN = "ERAN"
+    ZONOTOPE = "ZONOTOPE"
+    BOX = "BOX"
 
+    @classmethod
+    def from_str(cls, value: str) -> "EnumBackend":
+        normalized = value.strip().strip('"').upper()
+
+        aliases = {
+            "Z3": cls.Z3,
+            "ERAN": cls.ERAN,
+            "ZONOTOPE": cls.ZONOTOPE,
+            "BOX": cls.BOX,
+        }
+
+        try:
+            return aliases[normalized]
+        except KeyError as e:
+            raise ValueError(f"Unknown backend: {value}") from e
 
 ===== dsl\language\vocabulary\distances.py =====
 
@@ -4212,14 +4524,15 @@ from enum import Enum
 from dsl.language.vocabulary.utils import EnumMixin
 
 protected_words = {
-    "IN": '"in"',
-    "WITH": '''"with"''',
-    "AT": '"at"',
-    "CHECK_AT": '"check_at"',
-    "USING": '"using"',
-    "MODEL": '"model"',
-    "TARGET": '"target"',
-    "NEIGHBORHOOD": '"neighborhood"',
+    "IN.10": '"in"',
+    "WITH.10": '"with"',
+    "AT.10": '"at"',
+    "CHECK_AT.10": '"check_at"',
+    "USING.10": '"using"',
+    "MODEL.10": '"model"',
+    "TARGET.10": '"target"',
+    "NEIGHBORHOOD.10": '"neighborhood"',
+    "DATASET.10": '"dataset"',
 }
 
 
@@ -4232,6 +4545,7 @@ class EnumProtectedWord(EnumMixin, Enum):
     MODEL = '"model"'
     TARGET = '"target"'
     NEIGHBORHOOD = '"neighborhood"'
+    DATASET = '"dataset"'
 
 
 ===== dsl\language\vocabulary\quantifiers.py =====
@@ -4278,7 +4592,7 @@ class EnumMixin:
 
 ===== dsl\parser\__pycache__\parser.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xde in position 8: invalid continuation byte]
 
 ===== dsl\parser\errors.py =====
 
@@ -4467,38 +4781,51 @@ class ParserImplicationError(ParserLogicError):
 
 ===== dsl\parser\parser.py =====
 
-from lark import Lark
+from pathlib import Path
 
-from test.fixtures.properties_samples import VALID_AT_WITH_NEIGHBORHOOD
+from lark import Lark, Tree
 
-# Load grammar file
-GRAMMAR_PATH = "dsl/language/grammar/forml_grammar.lark"
 
-with open(GRAMMAR_PATH, "r", encoding="utf-8") as f:
-    grammar = f.read()
+GRAMMAR_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "language"
+    / "grammar"
+    / "forml_grammar.lark"
+)
 
-# Instantiate the parser
+grammar = GRAMMAR_PATH.read_text(encoding="utf-8")
+
 forml_parser = Lark(
     grammar,
     start="program",
     parser="lalr",
+    lexer="basic",
     propagate_positions=True,
     maybe_placeholders=True,
     cache=False,
 )
 
 
-def parse_forml_code(code: str):
-    """Parses the raw DSL code into a Lark tree"""
+def parse_forml_code(code: str) -> Tree:
+    """Parse raw FORML DSL code into a Lark CST."""
     return forml_parser.parse(code)
 
 
 if __name__ == "__main__":
-    forml = VALID_AT_WITH_NEIGHBORHOOD
-    tree = parse_forml_code(forml)
-    print(tree.pretty())
-    print(tree)
+    sample = """
+    model := "model.onnx"
+    target := MyTarget
 
+    [ROBUSTNESS]:
+    at x0 in neighborhood(L2, eps=0.01) => CLASSIFICATION.EQUAL() using Z3
+    """
+
+    tree = parse_forml_code(sample)
+    print(tree.pretty())
+
+===== dsl\runtime\__pycache__\language_generator.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
 ===== dsl\runtime\language_generator.py =====
 
@@ -4574,6 +4901,10 @@ if __name__ == "__main__":
 [ERROR reading file: 'utf-8' codec can't decode byte 0xa6 in position 8: invalid start byte]
 
 ===== dsl\semantic\context\__pycache__\context.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== dsl\semantic\context\__pycache__\graph.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
@@ -4773,7 +5104,7 @@ def get_scope_from_property(prop):
 
 ===== dsl\semantic\core\__pycache__\lhs.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe2 in position 8: invalid continuation byte]
 
 ===== dsl\semantic\core\__pycache__\logic.cpython-314.pyc =====
 
@@ -4781,15 +5112,15 @@ def get_scope_from_property(prop):
 
 ===== dsl\semantic\core\__pycache__\problem.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
 
 ===== dsl\semantic\core\__pycache__\property.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe0 in position 9: invalid continuation byte]
 
 ===== dsl\semantic\core\__pycache__\validator.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xbf in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xde in position 8: invalid continuation byte]
 
 ===== dsl\semantic\core\binding.py =====
 
@@ -5205,15 +5536,8 @@ class LHSValidator:
 
         self.tracer.log(f"Validating PairwiseExprNode: {lhs}")
 
-        if not lhs.pair:
-            raise InvalidPropertyError("Pairwise requires a pair")
-
-        try:
-            left, right = [v.strip() for v in lhs.pair.split("~")]
-        except Exception:
-            raise InvalidPropertyError(
-                f"Invalid pair format '{lhs.pair}', expected 'x ~ x\\''"
-            )
+        left = lhs.left
+        right = lhs.right
 
         if not left or not right:
             raise InvalidPropertyError("Pairwise requires two variables")
@@ -5504,12 +5828,20 @@ class LogicValidator:
 ===== dsl\semantic\core\problem.py =====
 
 from dsl.language.vocabulary.functions import EnumFunction
+from dsl.language.vocabulary.problems import EnumProblem
 from dsl.semantic.rules.compatibility import PROBLEM_FUNCTION_COMPATIBILITY
 from dsl.semantic.errors.errors import IncompatibleFunctionError
 from dsl.semantic.runtime.tracer import ValidationTracer
 
 
 class ProblemValidator:
+    """
+    Validate compatibility between a problem family and a problem-level function.
+
+    Examples:
+        CLASSIFICATION.EQUAL()
+        REGRESSION.BETWEEN()
+    """
 
     def __init__(self, tracer=None):
         self.tracer = tracer or ValidationTracer()
@@ -5517,27 +5849,52 @@ class ProblemValidator:
     def validate(self, node):
         self.tracer.log(f"Validating ProblemValidator: {node}")
 
-        problem = node.problem.upper()
-        function_str = node.function
-
-        # 🔥 conversion string → Enum
-        try:
-            function = EnumFunction[function_str]
-        except KeyError:
-            raise IncompatibleFunctionError(f"Unknown function '{function_str}'")
+        problem = self._normalize_problem(node.problem)
+        function = self._normalize_function(node.function, problem)
 
         allowed = PROBLEM_FUNCTION_COMPATIBILITY.get(problem)
 
-        if not allowed:
-            raise IncompatibleFunctionError(f"Unknown problem '{problem}'")
+        if allowed is None:
+            raise IncompatibleFunctionError(f"Unknown problem '{problem.value}'")
 
         if function not in allowed:
-            raise IncompatibleFunctionError(f"{function_str} not allowed for {problem}")
+            raise IncompatibleFunctionError(
+                f"{function.value} not allowed for {problem.value}"
+            )
 
+        return True
+
+    def _normalize_problem(self, problem) -> EnumProblem:
+        if isinstance(problem, EnumProblem):
+            return problem
+
+        try:
+            return EnumProblem.from_str(str(problem))
+        except ValueError as e:
+            raise IncompatibleFunctionError(f"Unknown problem '{problem}'") from e
+
+    def _normalize_function(
+        self,
+        function,
+        problem: EnumProblem,
+    ) -> EnumFunction:
+        if function is None:
+            raise IncompatibleFunctionError(
+                f"Missing function for problem '{problem.value}'"
+            )
+
+        if isinstance(function, EnumFunction):
+            return function
+
+        try:
+            return EnumFunction.from_str(str(function))
+        except ValueError as e:
+            raise IncompatibleFunctionError(f"Unknown function '{function}'") from e
 
 ===== dsl\semantic\core\property.py =====
 
 from dsl.language.vocabulary.properties import EnumProperty
+from dsl.semantic.rules.backend import validate_backend_for_property
 from dsl.semantic.rules.compatibility import PROPERTY_SCOPE_COMPATIBILITY
 from dsl.semantic.runtime.annotations import SemanticAnnotations
 
@@ -5688,12 +6045,14 @@ class PropertyValidator:
             # PROPERTY ↔ SCOPE COMPATIBILITY
             # ==================================================
 
-            try:
-                property_type = EnumProperty[prop.type.upper()]
-            except KeyError:
-                raise InvalidPropertyError(f"Unknown property type '{prop.type}'")
+            property_type = self._normalize_property_type(prop.type)
 
-            allowed_scopes = PROPERTY_SCOPE_COMPATIBILITY.get(property_type, set())
+            allowed_scopes = PROPERTY_SCOPE_COMPATIBILITY.get(property_type)
+
+            if allowed_scopes is None:
+                raise InvalidPropertyError(
+                    f"No scope compatibility rule defined for property '{property_type.value}'"
+                )
 
             if context.type not in allowed_scopes:
 
@@ -5704,7 +6063,12 @@ class PropertyValidator:
                     f"scope '{context.type.value}'. "
                     f"Allowed scopes: {allowed}"
                 )
-
+            
+            validate_backend_for_property(
+                property_type=property_type,
+                backend=prop.backend.name if prop.backend else None,
+            )
+            
             # ==================================================
             # 4. CACHE SEMANTIC ROOT
             # ==================================================
@@ -5734,6 +6098,18 @@ class PropertyValidator:
         self.tracer.log(f"✔ Property '{prop.type}' validated")
 
         return True
+    
+
+    def _normalize_property_type(self, property_type) -> EnumProperty:
+        if isinstance(property_type, EnumProperty):
+            return property_type
+
+        try:
+            return EnumProperty.from_str(str(property_type))
+        except ValueError as e:
+            raise InvalidPropertyError(
+                f"Unknown property type '{property_type}'"
+            ) from e
 
 
 ===== dsl\semantic\core\validator.py =====
@@ -5744,7 +6120,6 @@ from dsl.parser.parser import parse_forml_code
 from dsl.semantic.runtime.tracer import ValidationTracer
 
 from dsl.semantic.core.property import PropertyValidator
-from test.fixtures.properties_samples import VALID_MINIMAL_AT
 
 
 class FORMLValidator:
@@ -5773,7 +6148,16 @@ class FORMLValidator:
 
 if __name__ == "__main__":
     """This script is for quick testing of the validator. It parses a sample property and prints the resulting AST than validates it"""
-    CST = parse_forml_code(VALID_MINIMAL_AT)
+    
+    sample = """
+    model := "model.onnx"
+    target := MyTarget
+
+    [ROBUSTNESS]:
+    at x0 => CLASSIFICATION.EQUAL()
+    """
+
+    CST = parse_forml_code(sample)
     print(CST.pretty())
 
     AST = parse_program(CST)
@@ -5823,13 +6207,75 @@ class IncompatibleFunctionError(SemanticError):
     pass
 
 
+===== dsl\semantic\rules\__pycache__\backend.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xdd in position 9: invalid continuation byte]
+
 ===== dsl\semantic\rules\__pycache__\compatibility.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xda in position 8: invalid continuation byte]
 
 ===== dsl\semantic\rules\__pycache__\type_system.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xab in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== dsl\semantic\rules\backend.py =====
+
+from dsl.language.vocabulary.backends import EnumBackend
+from dsl.language.vocabulary.properties import EnumProperty
+from dsl.semantic.errors.errors import InvalidPropertyError
+
+
+V1_SUPPORTED_BACKENDS = {
+    EnumBackend.Z3,
+}
+
+
+PROPERTY_BACKEND_COMPATIBILITY = {
+    EnumProperty.ROBUSTNESS: {EnumBackend.Z3},
+    EnumProperty.BOUND: {EnumBackend.Z3},
+    EnumProperty.LOGIC: {EnumBackend.Z3},
+    EnumProperty.MONOTONICITY: {EnumBackend.Z3},
+    EnumProperty.STABILITY: {EnumBackend.Z3},
+    EnumProperty.FAIRNESS: {EnumBackend.Z3},
+}
+
+
+def validate_backend_for_property(property_type, backend):
+    """
+    Validate backend compatibility for the current V1.
+
+    V1 policy:
+        - Z3 is the only active verification backend.
+        - Other backends may remain in grammar as reserved/future values,
+          but should not be accepted as executable backends yet.
+    """
+
+    if backend is None:
+        return True
+
+    if backend not in V1_SUPPORTED_BACKENDS:
+        raise InvalidPropertyError(
+            f"Backend '{backend.value}' is declared but not supported in V1. "
+            "Only Z3 is currently supported."
+        )
+
+    allowed = PROPERTY_BACKEND_COMPATIBILITY.get(property_type)
+
+    if allowed is None:
+        raise InvalidPropertyError(
+            f"No backend compatibility rule defined for property '{property_type.value}'"
+        )
+
+    if backend not in allowed:
+        allowed_names = ", ".join(b.value for b in allowed)
+
+        raise InvalidPropertyError(
+            f"Backend '{backend.value}' is not compatible with property "
+            f"'{property_type.value}'. Allowed backends: {allowed_names}"
+        )
+
+    return True
 
 ===== dsl\semantic\rules\compatibility.py =====
 
@@ -5881,6 +6327,12 @@ PROPERTY_SCOPE_COMPATIBILITY = {
     },
     EnumProperty.BOUND: {
         SemanticScope.POINTWISE,
+        SemanticScope.QUANTIFIER,
+    },
+    EnumProperty.LOGIC: {
+        SemanticScope.POINTWISE,
+        SemanticScope.LOCAL,
+        SemanticScope.PAIRWISE,
         SemanticScope.QUANTIFIER,
     },
 }

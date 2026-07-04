@@ -1,0 +1,17 @@
+{
+  "framework": "sklearn",
+  "model_type": "LogisticRegression",
+  "task": "classification",
+  "target": "MyTarget",
+  "features": {
+    "age": {"dtype": "int", "nullable": false},
+    "income": {"dtype": "int", "nullable": false},
+    "score": {"dtype": "float", "nullable": false}
+  },
+  "metadata": {
+    "serialization_format": ".joblib",
+    "model_class": "LogisticRegression",
+    "module": "sklearn.linear_model._logistic",
+    "n_features_in": 3
+  }
+}

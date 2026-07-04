@@ -25,6 +25,7 @@ class BaseIntrospector(ABC):
         source_path: str | Path | None = None,
         schema=None,
         serialization_format: str | None = None,
+        target_name: str | None = None,
     ):
 
         self.model = model
@@ -37,6 +38,8 @@ class BaseIntrospector(ABC):
 
         # Serialization metadata
         self.serialization_format = serialization_format
+
+        self.target_name = target_name
 
     # ======================================================
     # Public API

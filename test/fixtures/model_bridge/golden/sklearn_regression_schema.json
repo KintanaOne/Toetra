@@ -1,0 +1,17 @@
+{
+  "framework": "sklearn",
+  "model_type": "LinearRegression",
+  "task": "regression",
+  "target": "SalePrice",
+  "features": {
+    "size": {"dtype": "int", "nullable": false},
+    "rooms": {"dtype": "int", "nullable": false},
+    "distance": {"dtype": "float", "nullable": false}
+  },
+  "metadata": {
+    "serialization_format": ".pkl",
+    "model_class": "LinearRegression",
+    "module": "sklearn.linear_model._base",
+    "n_features_in": 3
+  }
+}

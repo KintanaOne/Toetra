@@ -13,7 +13,11 @@
 
 ===== dsl\builder\__pycache__\backends.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0x9d in position 8: invalid start byte]
+
+===== dsl\builder\__pycache__\builder.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0x9e in position 8: invalid start byte]
 
 ===== dsl\builder\__pycache__\domain.cpython-314.pyc =====
 
@@ -21,15 +25,15 @@
 
 ===== dsl\builder\__pycache__\expressions.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xdc in position 8: invalid continuation byte]
 
 ===== dsl\builder\__pycache__\header.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa1 in position 8: invalid start byte]
 
 ===== dsl\builder\__pycache__\neighborhood.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0x9a in position 9: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xbd in position 8: invalid start byte]
 
 ===== dsl\builder\__pycache__\program.cpython-314.pyc =====
 
@@ -37,7 +41,7 @@
 
 ===== dsl\builder\__pycache__\property.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xfe in position 8: invalid start byte]
 
 ===== dsl\builder\assertion.py =====
 
@@ -187,7 +191,10 @@ def parse_assertion(node: Tree | Token | None) -> LogicalNode:
 
 ===== dsl\builder\backends.py =====
 
-from lark import Tree
+from lark import Tree, Token
+
+from dsl.ast.nodes.backends import BackendNode
+from dsl.ast.nodes.primitives import ArgNode
 from dsl.builder.core.utils import (
     find_child,
     find_all_nodes,
@@ -195,32 +202,56 @@ from dsl.builder.core.utils import (
     get_node_name_or_value,
 )
 from dsl.builder.core.ast_utils import node_value, clean_string
+from dsl.language.vocabulary.backends import EnumBackend
 
-from dsl.ast.nodes.backends import BackendNode
-from dsl.ast.nodes.primitives import ArgNode
 
-# ============================================================================
-# backend
-# ============================================================================
+def _extract_backend_name(node: Tree) -> str:
+    """
+    Extract backend name from a backend node.
+
+    Expected CST shape after protected words:
+        backend
+          USING
+          Z3
+
+    The USING token must be ignored.
+    """
+
+    for child in node.children:
+        if isinstance(child, Token):
+            if child.type == "USING":
+                continue
+
+            return child.value
+
+        if isinstance(child, Tree):
+            value = get_node_name_or_value(child)
+
+            if value is not None:
+                return value
+
+    raise ValueError("Backend name missing")
 
 
 def parse_backend(node: Tree | None):
     if node is None:
         return None
 
-    n = find_node(node, "backend")
-    if n is None:
+    backend_node = find_node(node, "backend")
+
+    if backend_node is None:
         return None
 
-    name_node = n.children[0]
-    name = get_node_name_or_value(name_node)
+    raw_name = _extract_backend_name(backend_node)
 
-    if name is None:
-        raise ValueError("Backend name missing")
+    try:
+        name = EnumBackend.from_str(raw_name)
+    except ValueError as e:
+        raise ValueError(f"Unsupported backend '{raw_name}'") from e
 
     args: list[ArgNode] = []
 
-    args_node = find_child(n, "args")
+    args_node = find_child(backend_node, "args")
 
     if args_node:
         for arg in find_all_nodes(args_node, "arg"):
@@ -237,19 +268,26 @@ def parse_backend(node: Tree | None):
 
     return BackendNode(name=name, args=args)
 
-
 ===== dsl\builder\builder.py =====
 
 from dsl.builder.core.pretty_ast import pretty
 
 from dsl.builder.program import parse_program
 from dsl.parser.parser import parse_forml_code
-from test.fixtures.program_samples import VALID_PROGRAM_WITH_BACKEND
 
 if __name__ == "__main__":
     """This script is for quick testing of the builder. It parses a sample property and prints the resulting AST"""
+    
+    sample = """
+    model := "model.onnx"
+    target := MyTargetColumn
+
+    [ROBUSTNESS]:
+    x ~ x' in neighborhood(L2, eps=0.01) => CLASSIFICATION.EQUAL() using eran(param1="a")
+    """
+    
     # LARK
-    CST = parse_forml_code(VALID_PROGRAM_WITH_BACKEND)
+    CST = parse_forml_code(sample)
     print(CST.pretty())
 
     # BUILDER
@@ -267,23 +305,31 @@ if __name__ == "__main__":
 
 ===== dsl\builder\core\__pycache__\ast_utils.cpython-314.pyc =====
 
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe7 in position 9: invalid continuation byte]
+
+===== dsl\builder\core\__pycache__\lark_types.cpython-314.pyc =====
+
 [ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
 ===== dsl\builder\core\__pycache__\pretty.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xb2 in position 9: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
 ===== dsl\builder\core\__pycache__\pretty_ast.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf8 in position 9: invalid start byte]
 
 ===== dsl\builder\core\__pycache__\pretty_tree.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xb2 in position 9: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
 ===== dsl\builder\core\__pycache__\strict.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== dsl\builder\core\__pycache__\to_delete.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xbc in position 8: invalid start byte]
 
 ===== dsl\builder\core\__pycache__\types.cpython-314.pyc =====
 
@@ -291,7 +337,7 @@ if __name__ == "__main__":
 
 ===== dsl\builder\core\__pycache__\utils.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0x90 in position 12: invalid start byte]
 
 ===== dsl\builder\core\ast_utils.py =====
 
@@ -300,8 +346,8 @@ from __future__ import annotations
 from lark import Tree, Token
 
 from dsl.ast.nodes.primitives import AttributeNode, ConstantNode, EnumDataType
-from dsl.builder.core.types import LarkNode
-from dsl.builder.core.utils import get_token_value
+from dsl.builder.core.lark_types import LarkNode
+from dsl.builder.core.utils import get_node_name_or_value, get_token_value
 
 # ============================================================================
 # GENERIC NODE VALUE EXTRACTION
@@ -366,42 +412,42 @@ def clean_string(value: str | None) -> str | None:
 
 def parse_attribute(node: Tree) -> AttributeNode:
     """
-    Parse an attribute expression into an AttributeNode.
+    Parse:
+        x.a
+        x.target
+        x.a.b
 
-    Supported forms:
-    - age
-    - x0.age
-    - user.profile.age
-    - a.b.c.d
-
-    Design rules:
-    - Last identifier = feature
-    - First identifier (if multiple) = entity
-    - Full chain stored in `path`
+    First segment must be a normal identifier.
+    Following segments may be soft identifiers, including protected words
+    such as target.
     """
 
-    def require_str(value: str | None) -> str:
-        if value is None:
-            raise ValueError("Expected string, got None")
-        return value
+    parts: list[str] = []
 
-    identifiers = [
-        require_str(get_token_value(child))
-        for child in node.children
-        if isinstance(child, Tree) and child.data == "identifier"
-    ]
+    for child in node.children:
+        if not isinstance(child, Tree):
+            continue
 
-    identifiers = [i for i in identifiers if i is not None]
+        if child.data in {"identifier", "attribute_identifier"}:
+            value = get_node_name_or_value(child)
+            if value is not None:
+                parts.append(value)
 
-    if not identifiers:
-        raise ValueError("Invalid attribute: no identifiers found")
+    if not parts:
+        raise ValueError("Invalid attribute")
+
+    if len(parts) == 1:
+        return AttributeNode(
+            entity=None,
+            feature=parts[0],
+            path=parts,
+        )
 
     return AttributeNode(
-        entity=identifiers[0] if len(identifiers) > 1 else None,
-        feature=identifiers[-1],
-        path=identifiers,
+        entity=parts[0],
+        feature=".".join(parts[1:]),
+        path=parts,
     )
-
 
 # ============================================================================
 # CONSTANT PARSING
@@ -477,6 +523,23 @@ def unwrap_single_child(node: Tree) -> Tree:
         node = node.children[0]
 
     return node
+
+
+===== dsl\builder\core\lark_types.py =====
+
+from __future__ import annotations
+
+from lark import Tree, Token
+from typing import Union
+
+# ============================================================================
+# LARK TYPE ALIASES
+# ============================================================================
+# These aliases centralize Lark typing across the builder.
+# This avoids repetition and improves readability + maintainability.
+
+LarkNode = Union[Tree, Token]
+LarkTree = Tree
 
 
 ===== dsl\builder\core\pretty.py =====
@@ -752,7 +815,7 @@ def _pretty_check(node: CheckAtExprNode, indent: int):
 def _pretty_pairwise(node: PairwiseExprNode, indent: int):
     pad = _pad(indent)
 
-    lines = [f"{pad}pairwise {node.pair}"]
+    lines = [f"{pad}pairwise {node.left} ~ {node.right}"]
 
     if node.domain:
         lines.append(f"{pad}  in {pretty(node.domain, 0).strip()}")
@@ -1020,22 +1083,26 @@ def safe_find_node(tree: Tree, name: str) -> Tree:
     return require_tree(node, f"Expected node '{name}' not found")
 
 
-===== dsl\builder\core\types.py =====
+===== dsl\builder\core\to_delete.py =====
 
-from __future__ import annotations
+from dsl.parser.parser import parse_forml_code
+from dsl.builder.program import parse_program
+from dsl.language.vocabulary.backends import EnumBackend
 
-from lark import Tree, Token
-from typing import Union
+sample = """
+model := "model.onnx"
+target := MyTarget
 
-# ============================================================================
-# LARK TYPE ALIASES
-# ============================================================================
-# These aliases centralize Lark typing across the builder.
-# This avoids repetition and improves readability + maintainability.
+[ROBUSTNESS]:
+at x0 in neighborhood(L2, eps=0.01) => CLASSIFICATION.EQUAL() using Z3
+"""
 
-LarkNode = Union[Tree, Token]
-LarkTree = Tree
+tree = parse_forml_code(sample)
+ast = parse_program(tree)
 
+print(ast.body[0].backend)
+assert ast.body[0].backend is not None
+assert ast.body[0].backend.name is EnumBackend.Z3
 
 ===== dsl\builder\core\utils.py =====
 
@@ -1043,7 +1110,7 @@ from __future__ import annotations
 
 from lark import Tree, Token
 
-from dsl.builder.core.types import LarkNode, LarkTree
+from dsl.builder.core.lark_types import LarkNode, LarkTree
 
 # ============================================================================
 # TREE NAVIGATION HELPERS
@@ -1315,6 +1382,36 @@ def parse_at(prop: Tree) -> AtExprNode:
 # EXPRESSIONS PARSERS (STRICT VERSION)
 # ============================================================================
 
+def parse_pairwise_token(pair: str) -> tuple[str, str]:
+    """
+    Parse a raw pairwise token like:
+        x ~ x'
+
+    Returns:
+        (left, right)
+    """
+
+    parts = [p.strip() for p in pair.split("~")]
+
+    if len(parts) != 2:
+        raise ValueError(f"Invalid pairwise token '{pair}', expected 'x ~ x\\''")
+
+    left, right = parts
+
+    if not left or not right:
+        raise ValueError("Pairwise expression requires two variables")
+
+    if not right.endswith("'"):
+        raise ValueError(
+            f"Right variable '{right}' must be a primed version of '{left}'"
+        )
+
+    if right[:-1] != left:
+        raise ValueError(
+            f"Invalid pairwise token '{pair}', expected '{left} ~ {left}\\''"
+        )
+
+    return left, right
 
 def parse_pairwise(prop: Tree) -> PairwiseExprNode:
     """
@@ -1333,14 +1430,21 @@ def parse_pairwise(prop: Tree) -> PairwiseExprNode:
 
     pair = require_value(node_value(pair_node), "pairwise_token is missing or invalid")
 
-    # --- 3. Neighborhood (depends on your grammar: required here) ---
+    left, right = parse_pairwise_token(pair)
+
+    # --- 3. Neighborhood ---
     neighborhood = parse_neighborhood(node)
 
     # --- 4. Domain (OPTIONAL) ---
     domain = optional(node, "domain", parse_domain)
 
     # --- 5. Build AST ---
-    return PairwiseExprNode(pair=pair, neighborhood=neighborhood, domain=domain)
+    return PairwiseExprNode(
+        left=left,
+        right=right,
+        neighborhood=neighborhood,
+        domain=domain,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -1417,15 +1521,25 @@ def get_header(tree: Tree) -> Tree:
 
 def parse_model(tree: Tree) -> str:
     """
-    model := "path"
+    Parse:
+        model := "path"
     """
 
     header = get_header(tree)
 
-    model_node = find_child(header, "model_declaration")
+    model_declaration = require_node(
+        find_child(header, "model_declaration"),
+        "Model declaration not found",
+    )
+
+    model_node = require_node(
+        find_child(model_declaration, "model"),
+        "Model node not found",
+    )
 
     return require_value(
-        clean_string(node_value(model_node)), "Model declaration is missing or invalid"
+        clean_string(node_value(model_node)),
+        "Model declaration is missing or invalid",
     )
 
 
@@ -1434,18 +1548,26 @@ def parse_model(tree: Tree) -> str:
 
 def parse_target(tree: Tree) -> str:
     """
-    target := Column
+    Parse:
+        target := Column
     """
 
     header = get_header(tree)
 
-    target_node = find_child(header, "target_declaration")
-
-    return require_value(
-        clean_string(node_value(target_node)),
-        "Target declaration is missing or invalid",
+    target_declaration = require_node(
+        find_child(header, "target_declaration"),
+        "Target declaration not found",
     )
 
+    identifier_node = require_node(
+        find_child(target_declaration, "identifier"),
+        "Target identifier not found",
+    )
+
+    return require_value(
+        clean_string(node_value(identifier_node)),
+        "Target declaration is missing or invalid",
+    )
 
 # ---------------------------------------------------------------------------
 
@@ -1455,10 +1577,8 @@ def parse_header(tree: Tree) -> HeaderNode:
     Parse header node into a strict HeaderNode AST.
     """
 
-    header_tree = get_header(tree)
-
-    model = parse_model(header_tree)
-    target = parse_target(header_tree)
+    model = parse_model(tree)
+    target = parse_target(tree)
 
     return HeaderNode(model=model, target=target)
 
@@ -1562,13 +1682,19 @@ def _parse_args(args_node: Tree | None) -> List[ArgNode]:
 def _extract_metric(node: Tree) -> str:
     """
     Extract metric token from a neighborhood node.
+
+    Expected shape after protected words:
+        neighborhood
+          IN
+          NEIGHBORHOOD
+          L2
+          args?
     """
 
-    if not node.children:
-        raise ValueError("Neighborhood node is empty")
+    metric_tokens = {"L1", "L2", "LINF"}
 
     for child in node.children:
-        if isinstance(child, Token):
+        if isinstance(child, Token) and child.type in metric_tokens:
             return child.value
 
     raise ValueError("No metric token found in neighborhood")
@@ -1684,31 +1810,47 @@ def extract_rhs(prop: Tree) -> Tree:
     """
     Extract RHS expression from property.
 
-    IMPORTANT:
-    Lark inline-expands 'assertion', so RHS is directly a logic_* node
-    (e.g. logic_or, logic_and), not an 'assertion' node.
+    The grammar may now contain explicit padding nodes around:
+        - property_expr
+        - property_imply
+        - assertion
+
+    Therefore padding must be treated as syntactic noise.
     """
 
     found_imply = False
 
-    property = prop.children[0]
+    # prop is usually property_section, whose first child is property.
+    property_node = prop.children[0]
 
-    for child in property.children:
+    for child in property_node.children:
 
-        # skip metadata nodes
-        if isinstance(child, Tree) and child.data in (
-            "property_type",
-            "property_expr",
-        ):
+        # Ignore non-tree tokens here.
+        if not isinstance(child, Tree):
             continue
 
-        # detect implication separator
-        if isinstance(child, Tree) and child.data == "property_imply":
+        # Skip syntactic noise before and after implication.
+        if child.data == "padding":
+            continue
+
+        # Skip metadata / LHS nodes.
+        if child.data in {
+            "property_type",
+            "property_expr",
+        }:
+            continue
+
+        # Detect implication separator.
+        if child.data == "property_imply":
             found_imply = True
             continue
 
-        # RHS = first real logic subtree AFTER implication
-        if found_imply and isinstance(child, Tree):
+        # Backend is not part of RHS.
+        if child.data == "backend":
+            continue
+
+        # RHS = first real logical subtree AFTER implication.
+        if found_imply:
             return child
 
     raise ValueError("Missing RHS in property")
