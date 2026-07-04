@@ -28,6 +28,7 @@ class XGBoostIntrospector(BaseIntrospector):
             source_path=self.source_path,
             schema=self.input_schema,
             serialization_format=self.serialization_format,
+            target_name=self.target_name,
         ).introspect()
 
         # --------------------------------------------------

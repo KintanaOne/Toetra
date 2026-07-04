@@ -35,6 +35,7 @@ class IntrospectorFactory:
         dataset_path,
         schema=None,
         serialization_format=None,
+        target_name: str | None = None,
     ) -> BaseIntrospector:
         """
         Create the appropriate introspector instance.
@@ -53,4 +54,5 @@ class IntrospectorFactory:
             source_path=dataset_path,
             schema=schema,
             serialization_format=serialization_format,
+            target_name=target_name
         )

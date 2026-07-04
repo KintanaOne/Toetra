@@ -12,6 +12,7 @@ from model.introspector.base_introspector import BaseIntrospector
 from model.schema.feature_schema import FeatureSchema
 from model.schema.model_schema import ModelSchema
 
+from model.errors.introspection import MissingFeatureMetadataError
 
 class SklearnIntrospector(BaseIntrospector):
 
@@ -47,21 +48,32 @@ class SklearnIntrospector(BaseIntrospector):
     def _detect_features(self) -> dict[str, FeatureSchema]:
         """
         Infer feature schema from the dataset.
+
+        The target column is excluded from features when known.
         """
 
         if self.source_path is None:
-            raise ValueError("Feature detection requires a dataset source path.")
+            raise MissingFeatureMetadataError(
+                "Feature detection requires a dataset source path "
+                "or an explicit input schema."
+            )
 
         data = pd.read_csv(self.source_path)
 
-        features = {}
+        target = self._detect_target()
+
+        features: dict[str, FeatureSchema] = {}
 
         for column, dtype in data.dtypes.items():
+            column_name = str(column)
+
+            if column_name == target:
+                continue
 
             enum_dtype = self._map_dtype(dtype)
 
-            features[str(column)] = FeatureSchema(
-                name=str(column),
+            features[column_name] = FeatureSchema(
+                name=column_name,
                 dtype=enum_dtype,
                 nullable=bool(data[column].isnull().any()),
             )
@@ -114,10 +126,18 @@ class SklearnIntrospector(BaseIntrospector):
     def _detect_target(self) -> str:
         """
         Detect prediction target.
+
+        Priority:
+            1. external schema target
+            2. explicit FORML target_name
+            3. conventional default: "target"
         """
 
         if self.input_schema is not None and self.input_schema.target is not None:
             return self.input_schema.target
+
+        if self.target_name is not None:
+            return self.target_name
 
         return "target"
 

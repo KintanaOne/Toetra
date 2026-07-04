@@ -29,6 +29,7 @@ class ModelManager:
         model_path: str | Path,
         dataset_path: str | Path | None = None,
         schema=None,
+        target_name: str | None = None,
     ):
 
         # --------------------------------------------------
@@ -40,6 +41,8 @@ class ModelManager:
         self.dataset_path = Path(dataset_path) if dataset_path is not None else None
 
         self.schema = schema
+
+        self.target_name = target_name
 
         # --------------------------------------------------
         # Runtime artifacts
@@ -86,6 +89,7 @@ class ModelManager:
             dataset_path=self.dataset_path,
             schema=self.schema,
             serialization_format=self.model_path.suffix,
+            target_name=self.target_name
         )
 
         # --------------------------------------------------

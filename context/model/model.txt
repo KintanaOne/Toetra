@@ -1,4 +1,12 @@
 
+===== model\detector\__pycache__\detector.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== model\detector\__pycache__\model_framework.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
 ===== model\detector\detector.py =====
 
 from model.detector.model_framework import (
@@ -77,6 +85,22 @@ class EnumModelFramework(Enum):
     XGBOOST = "xgboost"
 
 
+===== model\errors\__pycache__\base.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== model\errors\__pycache__\detection.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== model\errors\__pycache__\introspection.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== model\errors\__pycache__\loading.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
 ===== model\errors\base.py =====
 
 class ModelError(Exception):
@@ -139,6 +163,22 @@ class ModelFileNotFoundError(ModelLoadingError):
 class ModelDeserializationError(ModelLoadingError):
     """Raised when model deserialization fails."""
 
+
+===== model\introspector\__pycache__\base_introspector.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== model\introspector\__pycache__\introspector_factory.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== model\introspector\__pycache__\sklearn_introspector.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== model\introspector\__pycache__\xgboost_introspector.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
 ===== model\introspector\base_introspector.py =====
 
@@ -502,6 +542,26 @@ class XGBoostIntrospector(BaseIntrospector):
         return metadata
 
 
+===== model\loader\__pycache__\base_loader.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== model\loader\__pycache__\joblib_loader.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== model\loader\__pycache__\json_loader.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== model\loader\__pycache__\loader_factory.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== model\loader\__pycache__\pkl_loader.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
 ===== model\loader\base_loader.py =====
 
 from pathlib import Path
@@ -547,27 +607,39 @@ class JoblibModelLoader(BaseModelLoader):
 
 import json
 
-from model.errors.loading import ModelLoadError
+from model.errors.loading import (
+    ModelDeserializationError,
+    ModelFileNotFoundError,
+)
 from model.loader.base_loader import BaseModelLoader
 
 
 class JsonModelLoader(BaseModelLoader):
+    """
+    Load a JSON artifact.
+
+    Note:
+        This loader only deserializes JSON.
+        It does not imply that the loaded object is a supported ML model.
+    """
 
     def load(self):
-        """Load the model from a JSON file."""
-
         try:
+            with open(self.path, "r", encoding="utf-8") as f:
+                return json.load(f)
 
-            with open(self.path, "r") as f:
-                model_data = json.load(f)
-            return model_data
+        except FileNotFoundError as e:
+            raise ModelFileNotFoundError(str(self.path)) from e
 
-        except Exception as e:
-
-            raise ModelLoadError(
-                f"Failed to load JSON model " f"'{self.path}': {e}"
+        except json.JSONDecodeError as e:
+            raise ModelDeserializationError(
+                f"Failed to decode JSON model artifact: {self.path}"
             ) from e
 
+        except OSError as e:
+            raise ModelDeserializationError(
+                f"Failed to read JSON model artifact: {self.path}"
+            ) from e
 
 ===== model\loader\loader_factory.py =====
 
@@ -632,6 +704,10 @@ class PklModelLoader(BaseModelLoader):
                 f"Failed to deserialize pickle model: {self.path}"
             ) from e
 
+
+===== model\runtime\__pycache__\manager.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
 ===== model\runtime\manager.py =====
 
@@ -733,6 +809,14 @@ class ModelManager:
         assert self.model_schema is not None
         return self.model_schema
 
+
+===== model\schema\__pycache__\feature_schema.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== model\schema\__pycache__\model_schema.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
 ===== model\schema\feature_schema.py =====
 
