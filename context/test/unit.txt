@@ -1,4 +1,441 @@
 
+===== test\unit\ast\__pycache__\test_primitives_semantic_annotations.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0x87 in position 9: invalid start byte]
+
+===== test\unit\ast\test_primitives_semantic_annotations.py =====
+
+from dsl.ast.nodes.base import ASTNode
+from dsl.ast.nodes.primitives import ArgNode, AttributeNode, ConstantNode
+from dsl.semantic.runtime.annotations import SemanticAnnotations
+from dsl.semantic.types.enums import EnumDataType
+
+
+def test_attribute_node_is_semantic_ast_node():
+    node = AttributeNode(
+        entity="x0",
+        feature="age",
+        path=["x0", "age"],
+    )
+
+    assert isinstance(node, ASTNode)
+    assert hasattr(node, "semantic")
+    assert node.semantic is None
+
+
+def test_attribute_node_accepts_semantic_annotations():
+    node = AttributeNode(
+        entity="x0",
+        feature="age",
+        path=["x0", "age"],
+    )
+
+    node.semantic = SemanticAnnotations()
+    node.semantic.resolved_entity = "x0"
+    node.semantic.resolved_path = ["x0", "age"]
+    node.semantic.resolved_type = "float"
+
+    assert node.semantic is not None
+    assert node.semantic.resolved_entity == "x0"
+    assert node.semantic.resolved_path == ["x0", "age"]
+    assert node.semantic.resolved_type == "float"
+
+
+def test_constant_node_is_semantic_ast_node():
+    node = ConstantNode(
+        value=42,
+        dtype=EnumDataType.INT,
+    )
+
+    assert isinstance(node, ASTNode)
+    assert hasattr(node, "semantic")
+    assert node.semantic is None
+
+
+def test_arg_node_is_semantic_ast_node():
+    node = ArgNode(
+        key="eps",
+        value=0.01,
+    )
+
+    assert isinstance(node, ASTNode)
+    assert hasattr(node, "semantic")
+    assert node.semantic is None
+
+
+def test_primitive_constructors_are_not_polluted_by_semantic_field():
+    attr = AttributeNode(
+        entity="x0",
+        feature="age",
+        path=["x0", "age"],
+    )
+
+    const = ConstantNode(
+        value=1,
+        dtype=EnumDataType.INT,
+    )
+
+    arg = ArgNode(
+        key="eps",
+        value=0.01,
+    )
+
+    assert attr.entity == "x0"
+    assert attr.feature == "age"
+    assert attr.path == ["x0", "age"]
+
+    assert const.value == 1
+    assert const.dtype is EnumDataType.INT
+
+    assert arg.key == "eps"
+    assert arg.value == 0.01
+
+===== test\unit\model\__pycache__\test_detector.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf3 in position 37: invalid continuation byte]
+
+===== test\unit\model\__pycache__\test_introspector_factory.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0x8f in position 12: invalid start byte]
+
+===== test\unit\model\__pycache__\test_loader_factory.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xb9 in position 12: invalid start byte]
+
+===== test\unit\model\__pycache__\test_loaders.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode bytes in position 37-38: invalid continuation byte]
+
+===== test\unit\model\__pycache__\test_schema_dataclasses.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf3 in position 37: invalid continuation byte]
+
+===== test\unit\model\__pycache__\test_sklearn_introspector.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode bytes in position 37-38: invalid continuation byte]
+
+===== test\unit\model\__pycache__\test_xgboost_introspector_optional.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf3 in position 37: invalid continuation byte]
+
+===== test\unit\model\test_detector.py =====
+
+import pytest
+
+from model.detector.detector import ModelDetector
+from model.detector.model_framework import EnumModelFramework
+from model.errors.detection import UnsupportedModelError
+from test.fixtures.model_bridge.factories import train_classification_model
+
+
+def test_detector_detects_sklearn_estimator():
+    model = train_classification_model()
+
+    framework = ModelDetector().detect(model)
+
+    assert framework is EnumModelFramework.SKLEARN
+
+
+def test_detector_rejects_plain_dict():
+    with pytest.raises(UnsupportedModelError):
+        ModelDetector().detect({"not": "a model"})
+
+
+===== test\unit\model\test_introspector_factory.py =====
+
+import pytest
+
+from model.detector.model_framework import EnumModelFramework
+from model.errors.introspection import UnsupportedIntrospectorError
+from model.introspector.introspector_factory import IntrospectorFactory
+from model.introspector.sklearn_introspector import SklearnIntrospector
+from test.fixtures.model_bridge.factories import dataset_path, train_classification_model
+
+
+def test_introspector_factory_creates_sklearn_introspector_with_target_name():
+    model = train_classification_model()
+
+    introspector = IntrospectorFactory.create(
+        framework=EnumModelFramework.SKLEARN,
+        model=model,
+        dataset_path=dataset_path("classification.csv"),
+        target_name="MyTarget",
+        serialization_format=".joblib",
+    )
+
+    assert isinstance(introspector, SklearnIntrospector)
+    assert introspector.target_name == "MyTarget"
+
+
+def test_introspector_factory_rejects_unsupported_framework():
+    class UnknownFramework:
+        pass
+
+    with pytest.raises(UnsupportedIntrospectorError):
+        IntrospectorFactory.create(
+            framework=UnknownFramework(),
+            model=object(),
+            dataset_path=None,
+        )
+
+
+===== test\unit\model\test_loader_factory.py =====
+
+from pathlib import Path
+
+import pytest
+
+from model.errors.loading import UnsupportedModelFormatError
+from model.loader.joblib_loader import JoblibModelLoader
+from model.loader.json_loader import JsonModelLoader
+from model.loader.loader_factory import LoaderFactory
+from model.loader.pkl_loader import PklModelLoader
+
+
+def test_loader_factory_selects_joblib_loader():
+    loader = LoaderFactory.get_loader(Path("model.joblib"))
+
+    assert isinstance(loader, JoblibModelLoader)
+
+
+def test_loader_factory_selects_pickle_loader():
+    loader = LoaderFactory.get_loader(Path("model.pkl"))
+
+    assert isinstance(loader, PklModelLoader)
+
+
+def test_loader_factory_selects_json_loader():
+    loader = LoaderFactory.get_loader(Path("model.json"))
+
+    assert isinstance(loader, JsonModelLoader)
+
+
+def test_loader_factory_rejects_unsupported_extension():
+    with pytest.raises(UnsupportedModelFormatError):
+        LoaderFactory.get_loader(Path("model.onnx"))
+
+
+===== test\unit\model\test_loaders.py =====
+
+import json
+
+import pytest
+
+from model.errors.loading import ModelDeserializationError, ModelFileNotFoundError
+from model.loader.joblib_loader import JoblibModelLoader
+from model.loader.json_loader import JsonModelLoader
+from model.loader.pkl_loader import PklModelLoader
+from test.fixtures.model_bridge.factories import (
+    make_classification_joblib,
+    make_classification_pkl,
+)
+
+
+def test_joblib_loader_loads_sklearn_model(tmp_path):
+    path = make_classification_joblib(tmp_path)
+
+    model = JoblibModelLoader(path).load()
+
+    assert type(model).__name__ == "LogisticRegression"
+    assert hasattr(model, "predict")
+
+
+def test_pickle_loader_loads_sklearn_model(tmp_path):
+    path = make_classification_pkl(tmp_path)
+
+    model = PklModelLoader(path).load()
+
+    assert type(model).__name__ == "LogisticRegression"
+    assert hasattr(model, "predict")
+
+
+def test_json_loader_loads_json_artifact(tmp_path):
+    path = tmp_path / "artifact.json"
+    path.write_text(json.dumps({"kind": "schema", "version": 1}), encoding="utf-8")
+
+    artifact = JsonModelLoader(path).load()
+
+    assert artifact == {"kind": "schema", "version": 1}
+
+
+def test_json_loader_raises_on_missing_file(tmp_path):
+    with pytest.raises(ModelFileNotFoundError):
+        JsonModelLoader(tmp_path / "missing.json").load()
+
+
+def test_json_loader_raises_on_invalid_json(tmp_path):
+    path = tmp_path / "invalid.json"
+    path.write_text("{invalid json", encoding="utf-8")
+
+    with pytest.raises(ModelDeserializationError):
+        JsonModelLoader(path).load()
+
+
+===== test\unit\model\test_schema_dataclasses.py =====
+
+from dsl.semantic.types.enums import EnumDataType
+from model.detector.model_framework import EnumModelFramework
+from model.schema.feature_schema import FeatureSchema
+from model.schema.model_schema import ModelSchema
+
+
+def test_feature_schema_stores_name_dtype_and_nullable():
+    schema = FeatureSchema(name="age", dtype=EnumDataType.INT, nullable=True)
+
+    assert schema.name == "age"
+    assert schema.dtype is EnumDataType.INT
+    assert schema.nullable is True
+
+
+def test_model_schema_stores_core_contract():
+    features = {
+        "age": FeatureSchema(name="age", dtype=EnumDataType.INT),
+    }
+
+    schema = ModelSchema(
+        framework=EnumModelFramework.SKLEARN,
+        model_type="LogisticRegression",
+        features=features,
+        target="MyTarget",
+        task="classification",
+        metadata={"model_class": "LogisticRegression"},
+    )
+
+    assert schema.framework is EnumModelFramework.SKLEARN
+    assert schema.target == "MyTarget"
+    assert schema.features == features
+    assert schema.metadata["model_class"] == "LogisticRegression"
+
+
+===== test\unit\model\test_sklearn_introspector.py =====
+
+import pytest
+
+from dsl.semantic.types.enums import EnumDataType
+from model.detector.model_framework import EnumModelFramework
+from model.errors.introspection import MissingFeatureMetadataError
+from model.introspector.sklearn_introspector import SklearnIntrospector
+from model.schema.feature_schema import FeatureSchema
+from model.schema.model_schema import ModelSchema
+from test.fixtures.model_bridge.factories import (
+    dataset_path,
+    train_classification_model,
+)
+
+
+def test_sklearn_introspector_builds_classification_schema_with_explicit_target():
+    model = train_classification_model()
+
+    schema = SklearnIntrospector(
+        model=model,
+        source_path=dataset_path("classification.csv"),
+        target_name="MyTarget",
+        serialization_format=".joblib",
+    ).introspect()
+
+    assert schema.framework is EnumModelFramework.SKLEARN
+    assert schema.model_type == "LogisticRegression"
+    assert schema.task == "classification"
+    assert schema.target == "MyTarget"
+    assert "MyTarget" not in schema.features
+    assert set(schema.features) == {"age", "income", "score"}
+    assert schema.features["age"].dtype is EnumDataType.INT
+    assert schema.features["score"].dtype is EnumDataType.FLOAT
+    assert schema.metadata["serialization_format"] == ".joblib"
+    assert schema.metadata["model_class"] == "LogisticRegression"
+    assert schema.metadata["n_features_in"] == 3
+
+
+def test_sklearn_introspector_detects_nullable_columns():
+    model = train_classification_model()
+
+    schema = SklearnIntrospector(
+        model=model,
+        source_path=dataset_path("nullable.csv"),
+        target_name="MyTarget",
+    ).introspect()
+
+    assert schema.features["income"].nullable is True
+    assert schema.features["score"].nullable is True
+    assert schema.features["age"].nullable is False
+
+
+def test_sklearn_introspector_uses_external_schema_before_target_name():
+    model = train_classification_model()
+    external_schema = ModelSchema(
+        framework=EnumModelFramework.SKLEARN,
+        model_type="ExternalSchema",
+        features={
+            "external_feature": FeatureSchema(
+                name="external_feature",
+                dtype=EnumDataType.FLOAT,
+            )
+        },
+        target="ExternalTarget",
+        task="classification",
+    )
+
+    schema = SklearnIntrospector(
+        model=model,
+        schema=external_schema,
+        target_name="MyTarget",
+    ).introspect()
+
+    assert schema.target == "ExternalTarget"
+    assert set(schema.features) == {"external_feature"}
+
+
+def test_sklearn_introspector_raises_when_no_dataset_or_schema_is_available():
+    model = train_classification_model()
+
+    with pytest.raises(MissingFeatureMetadataError):
+        SklearnIntrospector(
+            model=model,
+            source_path=None,
+            schema=None,
+            target_name="MyTarget",
+        ).introspect()
+
+
+===== test\unit\model\test_xgboost_introspector_optional.py =====
+
+import pytest
+
+xgboost = pytest.importorskip("xgboost")
+
+from model.detector.model_framework import EnumModelFramework
+from model.introspector.xgboost_introspector import XGBoostIntrospector
+from test.fixtures.model_bridge.factories import dataset_path
+
+
+def test_xgboost_introspector_reuses_sklearn_contract_and_preserves_target():
+    import pandas as pd
+
+    data = pd.read_csv(dataset_path("classification.csv"))
+    x = data.drop(columns=["MyTarget"])
+    y = data["MyTarget"]
+
+    model = xgboost.XGBClassifier(
+        n_estimators=2,
+        max_depth=1,
+        eval_metric="logloss",
+        random_state=0,
+    )
+    model.fit(x, y)
+
+    schema = XGBoostIntrospector(
+        model=model,
+        source_path=dataset_path("classification.csv"),
+        target_name="MyTarget",
+        serialization_format=".joblib",
+    ).introspect()
+
+    assert schema.framework is EnumModelFramework.XGBOOST
+    assert schema.target == "MyTarget"
+    assert "MyTarget" not in schema.features
+    assert "xgboost" in schema.metadata
+
+
 ===== test\unit\parsing\__pycache__\helper.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xe0 in position 9: invalid continuation byte]
@@ -1332,3 +1769,264 @@ def test_invalid_missing_expr():
 
     with pytest.raises(Exception):
         parse(INVALID_BODY_MISSING_EXPRESSION)
+
+
+===== test\unit\semantic\__pycache__\test_attribute_semantic_binding.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0x88 in position 9: invalid start byte]
+
+===== test\unit\semantic\__pycache__\test_schema_aware_validation.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0x88 in position 9: invalid start byte]
+
+===== test\unit\semantic\test_attribute_semantic_binding.py =====
+
+from dsl.builder.program import parse_program
+from dsl.parser.parser import parse_forml_code
+from dsl.semantic.core.validator import FORMLValidator
+from dsl.semantic.runtime.tracer import ValidationTracer
+from dsl.ast.nodes.assertion import ComparisonNode, AndNode, OrNode
+
+
+def _build_and_validate(source: str):
+    cst = parse_forml_code(source)
+    ast = parse_program(cst)
+
+    FORMLValidator().validate(
+        ast,
+        tracer=ValidationTracer(enabled=False),
+    )
+
+    return ast
+
+
+def _collect_comparisons(node):
+    if isinstance(node, ComparisonNode):
+        return [node]
+
+    if isinstance(node, AndNode):
+        result = []
+        for child in node.operands:
+            result.extend(_collect_comparisons(child))
+        return result
+
+    if isinstance(node, OrNode):
+        result = []
+        for child in node.operands:
+            result.extend(_collect_comparisons(child))
+        return result
+
+    return []
+
+
+def test_check_at_attribute_receives_semantic_annotations():
+    source = """
+    model := "model.onnx"
+    target := MyTarget
+
+    [ROBUSTNESS]:
+    check_at x0 => x0.age <= 30
+    """
+
+    ast = _build_and_validate(source)
+
+    root = ast.body[0].rule.assertion.root
+    comparison = _collect_comparisons(root)[0]
+    attr = comparison.left
+
+    assert attr.semantic is not None
+    assert attr.semantic.resolved_entity == "x0"
+    assert attr.semantic.resolved_path == ["x0", "age"]
+
+
+def test_check_at_implicit_attribute_receives_default_entity():
+    source = """
+    model := "model.onnx"
+    target := MyTarget
+
+    [ROBUSTNESS]:
+    check_at x0 => age <= 30
+    """
+
+    ast = _build_and_validate(source)
+
+    root = ast.body[0].rule.assertion.root
+    comparison = _collect_comparisons(root)[0]
+    attr = comparison.left
+
+    assert attr.entity is None
+    assert attr.feature == "age"
+    assert attr.semantic is not None
+    assert attr.semantic.resolved_entity == "x0"
+    assert attr.semantic.resolved_path == ["x0", "age"]
+
+
+def test_quantifier_attribute_receives_symbolic_entity():
+    source = """
+    model := "model.onnx"
+    target := MyTarget
+
+    [ROBUSTNESS]:
+    forall => age <= 30
+    """
+
+    ast = _build_and_validate(source)
+
+    root = ast.body[0].rule.assertion.root
+    comparison = _collect_comparisons(root)[0]
+    attr = comparison.left
+
+    assert attr.semantic is not None
+    assert attr.semantic.resolved_entity == "_x"
+    assert attr.semantic.resolved_path == ["_x", "age"]
+
+
+def test_nested_logic_attributes_receive_semantic_annotations():
+    source = """
+    model := "model.onnx"
+    target := MyTarget
+
+    [ROBUSTNESS]:
+    check_at x0 => (x0.age <= 30 OR x0.income >= 1000) AND x0.score <= 1
+    """
+
+    ast = _build_and_validate(source)
+
+    root = ast.body[0].rule.assertion.root
+    comparisons = _collect_comparisons(root)
+
+    resolved = {
+        cmp.left.feature: cmp.left.semantic.resolved_entity
+        for cmp in comparisons
+    }
+
+    assert resolved == {
+        "age": "x0",
+        "income": "x0",
+        "score": "x0",
+    }
+
+===== test\unit\semantic\test_schema_aware_validation.py =====
+
+import pytest
+
+from dsl.builder.program import parse_program
+from dsl.parser.parser import parse_forml_code
+from dsl.semantic.core.validator import FORMLValidator
+from dsl.semantic.runtime.tracer import ValidationTracer
+from dsl.semantic.types.enums import EnumDataType
+
+from model.detector.model_framework import EnumModelFramework
+from model.schema.feature_schema import FeatureSchema
+from model.schema.model_schema import ModelSchema
+
+
+def _schema() -> ModelSchema:
+    return ModelSchema(
+        framework=EnumModelFramework.SKLEARN,
+        model_type="LogisticRegression",
+        task="classification",
+        target="MyTarget",
+        features={
+            "age": FeatureSchema(
+                name="age",
+                dtype=EnumDataType.INT,
+                nullable=False,
+            ),
+            "income": FeatureSchema(
+                name="income",
+                dtype=EnumDataType.FLOAT,
+                nullable=False,
+            ),
+            "score": FeatureSchema(
+                name="score",
+                dtype=EnumDataType.FLOAT,
+                nullable=False,
+            ),
+        },
+        metadata={},
+    )
+
+
+def _build(source: str):
+    return parse_program(parse_forml_code(source))
+
+
+def test_schema_aware_validation_accepts_known_feature():
+    source = """
+    model := "model.onnx"
+    target := MyTarget
+
+    [ROBUSTNESS]:
+    check_at x0 => x0.age <= 30
+    """
+
+    ast = _build(source)
+
+    assert FORMLValidator().validate(
+        ast,
+        tracer=ValidationTracer(enabled=False),
+        model_schema=_schema(),
+    )
+
+
+def test_schema_aware_validation_rejects_unknown_feature():
+    source = """
+    model := "model.onnx"
+    target := MyTarget
+
+    [ROBUSTNESS]:
+    check_at x0 => x0.unknown <= 30
+    """
+
+    ast = _build(source)
+
+    with pytest.raises(Exception, match="Unknown feature 'unknown'"):
+        FORMLValidator().validate(
+            ast,
+            tracer=ValidationTracer(enabled=False),
+            model_schema=_schema(),
+        )
+
+
+def test_schema_aware_validation_sets_resolved_type_on_attribute():
+    source = """
+    model := "model.onnx"
+    target := MyTarget
+
+    [ROBUSTNESS]:
+    check_at x0 => x0.income <= 1000
+    """
+
+    ast = _build(source)
+
+    FORMLValidator().validate(
+        ast,
+        tracer=ValidationTracer(enabled=False),
+        model_schema=_schema(),
+    )
+
+    comparison = ast.body[0].rule.assertion.root
+    attr = comparison.left
+
+    assert attr.semantic is not None
+    assert attr.semantic.resolved_entity == "x0"
+    assert attr.semantic.resolved_path == ["x0", "income"]
+    assert attr.semantic.resolved_type == "float"
+
+
+def test_schema_aware_validation_is_optional_without_model_schema():
+    source = """
+    model := "model.onnx"
+    target := MyTarget
+
+    [ROBUSTNESS]:
+    check_at x0 => x0.unknown <= 30
+    """
+
+    ast = _build(source)
+
+    assert FORMLValidator().validate(
+        ast,
+        tracer=ValidationTracer(enabled=False),
+    )

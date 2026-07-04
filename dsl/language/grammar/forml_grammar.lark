@@ -19,15 +19,15 @@ COMMENT_BLOCK : /'''(.|\n)*?'''/
 
 # === PROTECTED_WORDS ===
 
-IN.10 : "in"
-WITH.10 : "with"
-AT.10 : "at"
-CHECK_AT.10 : "check_at"
-USING.10 : "using"
-MODEL.10 : "model"
-TARGET.10 : "target"
-NEIGHBORHOOD.10 : "neighborhood"
-DATASET.10 : "dataset"
+IN.10 : /in(?![A-Za-z0-9_])/
+WITH.10 : /with(?![A-Za-z0-9_])/
+AT.10 : /at(?![A-Za-z0-9_])/
+CHECK_AT.10 : /check_at(?![A-Za-z0-9_])/
+USING.10 : /using(?![A-Za-z0-9_])/
+MODEL.10 : /model(?![A-Za-z0-9_])/
+TARGET.10 : /target(?![A-Za-z0-9_])/
+NEIGHBORHOOD.10 : /neighborhood(?![A-Za-z0-9_])/
+DATASET.10 : /dataset(?![A-Za-z0-9_])/
 
 
 # === PROBLEMS ===
