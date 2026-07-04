@@ -1,22 +1,35 @@
 import json
 
-from model.errors.loading import ModelLoadError
+from model.errors.loading import (
+    ModelDeserializationError,
+    ModelFileNotFoundError,
+)
 from model.loader.base_loader import BaseModelLoader
 
 
 class JsonModelLoader(BaseModelLoader):
+    """
+    Load a JSON artifact.
+
+    Note:
+        This loader only deserializes JSON.
+        It does not imply that the loaded object is a supported ML model.
+    """
 
     def load(self):
-        """Load the model from a JSON file."""
-
         try:
+            with open(self.path, "r", encoding="utf-8") as f:
+                return json.load(f)
 
-            with open(self.path, "r") as f:
-                model_data = json.load(f)
-            return model_data
+        except FileNotFoundError as e:
+            raise ModelFileNotFoundError(str(self.path)) from e
 
-        except Exception as e:
+        except json.JSONDecodeError as e:
+            raise ModelDeserializationError(
+                f"Failed to decode JSON model artifact: {self.path}"
+            ) from e
 
-            raise ModelLoadError(
-                f"Failed to load JSON model " f"'{self.path}': {e}"
+        except OSError as e:
+            raise ModelDeserializationError(
+                f"Failed to read JSON model artifact: {self.path}"
             ) from e
