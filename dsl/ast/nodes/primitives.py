@@ -3,25 +3,27 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Union
 
+from dsl.ast.nodes.base import ASTNode
 from dsl.semantic.types.enums import EnumDataType
+
 
 PrimitiveValue = Union[str, int, float, bool, None]
 
 
 @dataclass
-class ArgNode:
+class ArgNode(ASTNode):
     key: str
     value: PrimitiveValue
 
 
 @dataclass
-class ConstantNode:
+class ConstantNode(ASTNode):
     value: PrimitiveValue
     dtype: EnumDataType
 
 
 @dataclass
-class AttributeNode:
+class AttributeNode(ASTNode):
     """
     Semantic attribute access node.
 
@@ -31,8 +33,10 @@ class AttributeNode:
         a            (implicit entity)
 
     During semantic binding:
-        - entity may be rewritten
-        - resolved_* fields are populated
+        - semantic.resolved_entity is populated
+        - semantic.resolved_path is populated
+        - semantic.resolved_symbol may be populated
+        - semantic.resolved_type may be populated later by schema-aware validation
     """
 
     # Raw parsed entity

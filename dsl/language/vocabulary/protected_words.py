@@ -4,25 +4,25 @@ from enum import Enum
 from dsl.language.vocabulary.utils import EnumMixin
 
 protected_words = {
-    "IN.10": '"in"',
-    "WITH.10": '"with"',
-    "AT.10": '"at"',
-    "CHECK_AT.10": '"check_at"',
-    "USING.10": '"using"',
-    "MODEL.10": '"model"',
-    "TARGET.10": '"target"',
-    "NEIGHBORHOOD.10": '"neighborhood"',
-    "DATASET.10": '"dataset"',
+    "IN.10": r"/in(?![A-Za-z0-9_])/",
+    "WITH.10": r"/with(?![A-Za-z0-9_])/",
+    "AT.10": r"/at(?![A-Za-z0-9_])/",
+    "CHECK_AT.10": r"/check_at(?![A-Za-z0-9_])/",
+    "USING.10": r"/using(?![A-Za-z0-9_])/",
+    "MODEL.10": r"/model(?![A-Za-z0-9_])/",
+    "TARGET.10": r"/target(?![A-Za-z0-9_])/",
+    "NEIGHBORHOOD.10": r"/neighborhood(?![A-Za-z0-9_])/",
+    "DATASET.10": r"/dataset(?![A-Za-z0-9_])/",
 }
 
 
 class EnumProtectedWord(EnumMixin, Enum):
-    IN = '"in"'
-    WITH = '''"with"'''
-    AT = '"at"'
-    CHECK_AT = '"check_at"'
-    USING = '"using"'
-    MODEL = '"model"'
-    TARGET = '"target"'
-    NEIGHBORHOOD = '"neighborhood"'
-    DATASET = '"dataset"'
+    IN = "in"
+    WITH = "with"
+    AT = "at"
+    CHECK_AT = "check_at"
+    USING = "using"
+    MODEL = "model"
+    TARGET = "target"
+    NEIGHBORHOOD = "neighborhood"
+    DATASET = "dataset"

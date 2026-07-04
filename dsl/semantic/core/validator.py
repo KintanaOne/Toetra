@@ -11,7 +11,7 @@ class FORMLValidator:
     def __init__(self):
         self.tracer = ValidationTracer(enabled=True)
 
-    def validate(self, program, tracer=None):
+    def validate(self, program, tracer=None, model_schema=None):
         if tracer:
             self.tracer = tracer
 
@@ -19,7 +19,10 @@ class FORMLValidator:
 
         try:
             for prop in program.body:
-                PropertyValidator(tracer=self.tracer).validate(prop)
+                PropertyValidator(tracer=self.tracer).validate(
+                    prop,
+                    model_schema=model_schema,
+                )
 
         except ParserError:
             raise

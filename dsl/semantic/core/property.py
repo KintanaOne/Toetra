@@ -56,7 +56,7 @@ class PropertyValidator:
     # ENTRY POINT
     # ─────────────────────────────────────────────
 
-    def validate(self, prop):
+    def validate(self, prop, model_schema=None):
 
         self.tracer.log(f"Validating Property: {prop.type}")
 
@@ -144,7 +144,10 @@ class PropertyValidator:
             #
             # ==================================================
 
-            LogicValidator(tracer=self.tracer).validate(root, context)
+            LogicValidator(
+                tracer=self.tracer,
+                model_schema=model_schema,
+            ).validate(root, context)
 
             # ==================================================
             # PROPERTY ↔ SCOPE COMPATIBILITY

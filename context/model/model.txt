@@ -166,19 +166,19 @@ class ModelDeserializationError(ModelLoadingError):
 
 ===== model\introspector\__pycache__\base_introspector.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf6 in position 12: invalid start byte]
 
 ===== model\introspector\__pycache__\introspector_factory.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
 
 ===== model\introspector\__pycache__\sklearn_introspector.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xb6 in position 8: invalid start byte]
 
 ===== model\introspector\__pycache__\xgboost_introspector.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xc8 in position 8: invalid continuation byte]
 
 ===== model\introspector\base_introspector.py =====
 
@@ -209,6 +209,7 @@ class BaseIntrospector(ABC):
         source_path: str | Path | None = None,
         schema=None,
         serialization_format: str | None = None,
+        target_name: str | None = None,
     ):
 
         self.model = model
@@ -221,6 +222,8 @@ class BaseIntrospector(ABC):
 
         # Serialization metadata
         self.serialization_format = serialization_format
+
+        self.target_name = target_name
 
     # ======================================================
     # Public API
@@ -304,6 +307,7 @@ class IntrospectorFactory:
         dataset_path,
         schema=None,
         serialization_format=None,
+        target_name: str | None = None,
     ) -> BaseIntrospector:
         """
         Create the appropriate introspector instance.
@@ -322,6 +326,7 @@ class IntrospectorFactory:
             source_path=dataset_path,
             schema=schema,
             serialization_format=serialization_format,
+            target_name=target_name
         )
 
 
@@ -341,6 +346,7 @@ from model.introspector.base_introspector import BaseIntrospector
 from model.schema.feature_schema import FeatureSchema
 from model.schema.model_schema import ModelSchema
 
+from model.errors.introspection import MissingFeatureMetadataError
 
 class SklearnIntrospector(BaseIntrospector):
 
@@ -376,21 +382,32 @@ class SklearnIntrospector(BaseIntrospector):
     def _detect_features(self) -> dict[str, FeatureSchema]:
         """
         Infer feature schema from the dataset.
+
+        The target column is excluded from features when known.
         """
 
         if self.source_path is None:
-            raise ValueError("Feature detection requires a dataset source path.")
+            raise MissingFeatureMetadataError(
+                "Feature detection requires a dataset source path "
+                "or an explicit input schema."
+            )
 
         data = pd.read_csv(self.source_path)
 
-        features = {}
+        target = self._detect_target()
+
+        features: dict[str, FeatureSchema] = {}
 
         for column, dtype in data.dtypes.items():
+            column_name = str(column)
+
+            if column_name == target:
+                continue
 
             enum_dtype = self._map_dtype(dtype)
 
-            features[str(column)] = FeatureSchema(
-                name=str(column),
+            features[column_name] = FeatureSchema(
+                name=column_name,
                 dtype=enum_dtype,
                 nullable=bool(data[column].isnull().any()),
             )
@@ -443,10 +460,18 @@ class SklearnIntrospector(BaseIntrospector):
     def _detect_target(self) -> str:
         """
         Detect prediction target.
+
+        Priority:
+            1. external schema target
+            2. explicit FORML target_name
+            3. conventional default: "target"
         """
 
         if self.input_schema is not None and self.input_schema.target is not None:
             return self.input_schema.target
+
+        if self.target_name is not None:
+            return self.target_name
 
         return "target"
 
@@ -504,6 +529,7 @@ class XGBoostIntrospector(BaseIntrospector):
             source_path=self.source_path,
             schema=self.input_schema,
             serialization_format=self.serialization_format,
+            target_name=self.target_name,
         ).introspect()
 
         # --------------------------------------------------
@@ -552,7 +578,7 @@ class XGBoostIntrospector(BaseIntrospector):
 
 ===== model\loader\__pycache__\json_loader.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xd9 in position 12: invalid continuation byte]
 
 ===== model\loader\__pycache__\loader_factory.cpython-314.pyc =====
 
@@ -707,7 +733,7 @@ class PklModelLoader(BaseModelLoader):
 
 ===== model\runtime\__pycache__\manager.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
 
 ===== model\runtime\manager.py =====
 
@@ -742,6 +768,7 @@ class ModelManager:
         model_path: str | Path,
         dataset_path: str | Path | None = None,
         schema=None,
+        target_name: str | None = None,
     ):
 
         # --------------------------------------------------
@@ -753,6 +780,8 @@ class ModelManager:
         self.dataset_path = Path(dataset_path) if dataset_path is not None else None
 
         self.schema = schema
+
+        self.target_name = target_name
 
         # --------------------------------------------------
         # Runtime artifacts
@@ -799,6 +828,7 @@ class ModelManager:
             dataset_path=self.dataset_path,
             schema=self.schema,
             serialization_format=self.model_path.suffix,
+            target_name=self.target_name
         )
 
         # --------------------------------------------------

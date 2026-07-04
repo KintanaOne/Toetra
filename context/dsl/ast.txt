@@ -41,7 +41,7 @@
 
 ===== dsl\ast\nodes\__pycache__\primitives.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xbc in position 8: invalid start byte]
 
 ===== dsl\ast\nodes\__pycache__\program.cpython-314.pyc =====
 
@@ -283,25 +283,27 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Union
 
+from dsl.ast.nodes.base import ASTNode
 from dsl.semantic.types.enums import EnumDataType
+
 
 PrimitiveValue = Union[str, int, float, bool, None]
 
 
 @dataclass
-class ArgNode:
+class ArgNode(ASTNode):
     key: str
     value: PrimitiveValue
 
 
 @dataclass
-class ConstantNode:
+class ConstantNode(ASTNode):
     value: PrimitiveValue
     dtype: EnumDataType
 
 
 @dataclass
-class AttributeNode:
+class AttributeNode(ASTNode):
     """
     Semantic attribute access node.
 
@@ -311,8 +313,10 @@ class AttributeNode:
         a            (implicit entity)
 
     During semantic binding:
-        - entity may be rewritten
-        - resolved_* fields are populated
+        - semantic.resolved_entity is populated
+        - semantic.resolved_path is populated
+        - semantic.resolved_symbol may be populated
+        - semantic.resolved_type may be populated later by schema-aware validation
     """
 
     # Raw parsed entity
@@ -323,7 +327,6 @@ class AttributeNode:
 
     # Full parsed path
     path: list[str]
-
 
 ===== dsl\ast\nodes\program.py =====
 

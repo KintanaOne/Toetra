@@ -29,8 +29,9 @@ class LogicValidator:
         - leaf validation
     """
 
-    def __init__(self, tracer=None):
+    def __init__(self, tracer=None, model_schema=None):
         self.tracer = tracer or ValidationTracer()
+        self.model_schema = model_schema
 
     # ─────────────────────────────
     # ENTRY POINT
@@ -168,7 +169,6 @@ class LogicValidator:
     # ─────────────────────────────
 
     def _validate_attribute(self, node, context):
-
         self.tracer.log(f"Validating AttributeNode: {node}")
 
         if not node.feature:
@@ -185,3 +185,33 @@ class LogicValidator:
             raise InvalidPropertyError(
                 f"Unresolved attribute '{node.feature}' (binding failed)"
             )
+
+        self._validate_attribute_against_schema(node)
+            
+
+
+    def _validate_attribute_against_schema(self, node: AttributeNode):
+        """
+        Validate that an attribute references a known model feature.
+
+        This validation is optional and only runs when a ModelSchema
+        is provided by the caller.
+        """
+
+        if self.model_schema is None:
+            return
+
+        feature_name = node.feature
+
+        if feature_name not in self.model_schema.features:
+            available = ", ".join(sorted(self.model_schema.features.keys()))
+
+            raise InvalidPropertyError(
+                f"Unknown feature '{feature_name}'. "
+                f"Available features: {available}"
+            )
+
+        feature_schema = self.model_schema.features[feature_name]
+
+        if node.semantic is not None:
+            node.semantic.resolved_type = feature_schema.dtype.value
