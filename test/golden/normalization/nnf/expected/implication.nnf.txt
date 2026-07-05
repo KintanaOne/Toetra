@@ -1,0 +1,5 @@
+TASK 0
+PROPERTY LOGIC
+BACKEND Z3
+SCOPE pointwise variables=x0:anchor
+QUERY OR(NOT(CMP(x0.a <= 1)), CMP(x0.b <= 2))

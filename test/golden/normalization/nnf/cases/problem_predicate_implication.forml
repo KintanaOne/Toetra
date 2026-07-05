@@ -1,0 +1,5 @@
+model := "model.onnx"
+target := MyTarget
+
+[ROBUSTNESS]:
+at x in neighborhood(L2, eps=0.01) => a <= 1 -> CLASSIFICATION.EQUAL() using Z3

@@ -176,4 +176,4 @@ A minimal runtime is acceptable when:
 - a normalized `VerificationResult` is returned,
 - failures are layer-specific,
 - at least one counterexample path is supported,
-- the flow is covered by golden end-to-end tests.
+- the flow is covered by golden end-to-end test.

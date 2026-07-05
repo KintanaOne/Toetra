@@ -28,7 +28,7 @@ IR1 is responsible for:
 
 ## Implementation note
 
-This ADR defines the target responsibility of IR1. In the current implementation snapshot, the IR1 translator should be considered structural: it creates `VerificationTask`, `ScopeIR`, `QueryIR`, and logical IR nodes, but the full De Morgan / NNF rewrite pass still needs to be implemented and covered by golden tests.
+This ADR defines the target responsibility of IR1. In the current implementation snapshot, the IR1 translator should be considered structural: it creates `VerificationTask`, `ScopeIR`, `QueryIR`, and logical IR nodes, but the full De Morgan / NNF rewrite pass still needs to be implemented and covered by golden test.
 
 ## Rationale
 

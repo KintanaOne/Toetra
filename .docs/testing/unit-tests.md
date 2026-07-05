@@ -168,4 +168,4 @@ Unit tests should not attempt to prove:
 - backend completeness;
 - large-scale runtime behavior.
 
-Those are covered by higher-level tests.
+Those are covered by higher-level test.

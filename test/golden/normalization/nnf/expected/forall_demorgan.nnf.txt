@@ -1,0 +1,5 @@
+TASK 0
+PROPERTY LOGIC
+BACKEND Z3
+SCOPE quantifier variables=_x:symbolic
+QUERY OR(NOT(CMP(_x.a <= 1)), NOT(CMP(_x.b <= 2)))

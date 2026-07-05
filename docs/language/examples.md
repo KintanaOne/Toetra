@@ -13,7 +13,7 @@ Examples serve three roles:
 
 1. Help users understand the DSL.
 2. Provide documentation samples.
-3. Become future golden samples for parser, builder, semantic, IR, and end-to-end tests.
+3. Become future golden samples for parser, builder, semantic, IR, and end-to-end test.
 
 Each example should eventually define expected outputs at several layers:
 

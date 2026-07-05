@@ -52,7 +52,7 @@ They are also necessary for Miova expected-failure classification.
 ### Positive
 
 - Clearer diagnostics.
-- Better tests.
+- Better test.
 - Expected failures can be asserted by layer.
 - Mutation campaigns can distinguish accepted, rejected, skipped, and failed artifacts.
 

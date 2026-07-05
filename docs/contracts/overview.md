@@ -96,7 +96,7 @@ FORML contracts intentionally distinguish:
 | Label | Meaning |
 |---|---|
 | Implemented | Present in the current codebase. |
-| Stabilizing | Present but requiring cleanup, normalization, or stricter tests. |
+| Stabilizing | Present but requiring cleanup, normalization, or stricter test. |
 | Planned / Critical | Not implemented yet, but required for end-to-end verification. |
 | Research Direction | Future exploration beyond the first stable end-to-end path. |
 

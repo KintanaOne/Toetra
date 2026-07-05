@@ -8,7 +8,7 @@
 
 Miova campaigns challenge FORML by mutating artifacts across the pipeline.
 
-The purpose is not to replace unit tests or contract tests. Miova is used to explore
+The purpose is not to replace unit tests or contract test. Miova is used to explore
 whether FORML remains robust when artifacts are modified, corrupted, simplified, or
 semantically challenged.
 

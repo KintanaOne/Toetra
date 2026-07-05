@@ -125,7 +125,7 @@ import pytest
 from model.detector.detector import ModelDetector
 from model.detector.model_framework import EnumModelFramework
 from model.errors.detection import UnsupportedModelError
-from test.fixtures.model_bridge.factories import train_classification_model
+test.s.model_bridge.factories import train_classification_model
 
 
 def test_detector_detects_sklearn_estimator():
@@ -149,7 +149,7 @@ from model.detector.model_framework import EnumModelFramework
 from model.errors.introspection import UnsupportedIntrospectorError
 from model.introspector.introspector_factory import IntrospectorFactory
 from model.introspector.sklearn_introspector import SklearnIntrospector
-from test.fixtures.model_bridge.factories import dataset_path, train_classification_model
+test.s.model_bridge.factories import dataset_path, train_classification_model
 
 
 def test_introspector_factory_creates_sklearn_introspector_with_target_name():
@@ -225,7 +225,7 @@ from model.errors.loading import ModelDeserializationError, ModelFileNotFoundErr
 from model.loader.joblib_loader import JoblibModelLoader
 from model.loader.json_loader import JsonModelLoader
 from model.loader.pkl_loader import PklModelLoader
-from test.fixtures.model_bridge.factories import (
+test.s.model_bridge.factories import (
     make_classification_joblib,
     make_classification_pkl,
 )
@@ -317,7 +317,7 @@ from model.errors.introspection import MissingFeatureMetadataError
 from model.introspector.sklearn_introspector import SklearnIntrospector
 from model.schema.feature_schema import FeatureSchema
 from model.schema.model_schema import ModelSchema
-from test.fixtures.model_bridge.factories import (
+test.s.model_bridge.factories import (
     dataset_path,
     train_classification_model,
 )
@@ -405,7 +405,7 @@ xgboost = pytest.importorskip("xgboost")
 
 from model.detector.model_framework import EnumModelFramework
 from model.introspector.xgboost_introspector import XGBoostIntrospector
-from test.fixtures.model_bridge.factories import dataset_path
+test.s.model_bridge.factories import dataset_path
 
 
 def test_xgboost_introspector_reuses_sklearn_contract_and_preserves_target():
@@ -720,7 +720,7 @@ def assert_quantifier_scope(prop) -> QuantifierExprNode:
 import pytest
 
 
-from test.fixtures.properties_samples import (
+test.s.properties_samples import (
     # VALID
     VALID_AT_WITH_DOMAIN,
     VALID_AT_WITH_NEIGHBORHOOD,
@@ -851,7 +851,7 @@ def test_at_invalid(code):
 
 import pytest
 
-from test.fixtures.program_samples import (
+test.s.program_samples import (
     INVALID_BODY_EMPTY,
     INVALID_BODY_INVALID_ASSERTION,
     INVALID_BODY_SYNTAX_ERROR,
@@ -935,7 +935,7 @@ def test_body_invalid(code):
 
 import pytest
 
-from test.fixtures.properties_samples import (
+test.s.properties_samples import (
     # VALID
     VALID_CHECK_AT_WITH_COMPLEX_ASSERTION,
     VALID_MINIMAL_CHECK_AT,
@@ -1006,7 +1006,7 @@ def test_check_at_invalid(code):
 # test/unit/parsing/test_exists.py
 
 
-from test.fixtures.properties_samples import (
+test.s.properties_samples import (
     # VALID
     VALID_EXISTS_WITH_DOMAIN,
     VALID_MINIMAL_EXISTS,
@@ -1109,7 +1109,7 @@ def test_footer_with_simple_comment():
 
 # test/unit/parsing/test_forall.py
 
-from test.fixtures.properties_samples import (
+test.s.properties_samples import (
     # VALID
     VALID_FORALL_WITH_DOMAIN,
     VALID_MINIMAL_FORALL,
@@ -1167,7 +1167,7 @@ def test_forall_with_domain():
 
 import pytest
 
-from test.fixtures.program_samples import (
+test.s.program_samples import (
     INVALID_HEADER_MISSING_BOTH,
     INVALID_HEADER_MISSING_MODEL,
     INVALID_HEADER_MISSING_TARGET,
@@ -1176,7 +1176,7 @@ from test.fixtures.program_samples import (
     VALID_PROGRAM_WITH_HEADER_COMMENTS,
 )
 
-from test.fixtures.properties_samples import (
+test.s.properties_samples import (
     VALID_MINIMAL_PAIRWISE,
 )
 
@@ -1251,7 +1251,7 @@ from dsl.builder.program import parse_program
 from dsl.language.vocabulary.problems import EnumProblem
 from dsl.parser.parser import parse_forml_code
 
-from test.fixtures.logic_samples import (
+test.s.logic_samples import (
     INVALID_LOGIC_SYNTAX,
     INVALID_PARENTHESES,
     NESTED_IMPLICATION_PROPERTY,
@@ -1441,7 +1441,7 @@ def test_invalid_parentheses():
 
 import pytest
 
-from test.fixtures.properties_samples import (
+test.s.properties_samples import (
     INVALID_PAIRWISE_MALFORMED_ABSTRACTOR,
     INVALID_PAIRWISE_MALFORMED_NEIGHBORHOOD,
     INVALID_PAIRWISE_MISSING_ASSERTION,
@@ -1562,13 +1562,13 @@ from dsl.language.vocabulary.backends import EnumBackend
 from dsl.language.vocabulary.properties import EnumProperty
 from dsl.parser.parser import parse_forml_code
 
-from test.fixtures.program_samples import (
+test.s.program_samples import (
     INVALID_BODY_MISSING_EXPRESSION,
     INVALID_BODY_MULTIPLE_EXPRESSION,
     VALID_PROGRAM_WITH_BODY_MULTIPLE_PROPERTIES,
 )
 
-from test.fixtures.properties_samples import (
+test.s.properties_samples import (
     VALID_AT_WITH_NEIGHBORHOOD,
     VALID_AT_WITH_NEIGHBORHOOD_AND_DOMAIN,
     VALID_FORALL_WITH_DOMAIN,

@@ -158,8 +158,15 @@ class LHSValidator:
 
         self.tracer.log(f"Validating PairwiseExprNode: {lhs}")
 
-        left = lhs.left
-        right = lhs.right
+        if not lhs.pair:
+            raise InvalidPropertyError("Pairwise requires a pair")
+
+        try:
+            left, right = [v.strip() for v in lhs.pair.split("~")]
+        except Exception:
+            raise InvalidPropertyError(
+                f"Invalid pair format '{lhs.pair}', expected 'x ~ x\\''"
+            )
 
         if not left or not right:
             raise InvalidPropertyError("Pairwise requires two variables")
@@ -228,6 +235,13 @@ class LHSValidator:
             raise InvalidPropertyError("Missing quantifier")
 
         quantifier = lhs.quantifier.strip()
+
+        # Accept both textual and mathematical quantifier tokens.
+        # The grammar exposes `forall` / `exists` as well as `∀` / `∃`.
+        quantifier = {
+            "∀": "forall",
+            "∃": "exists",
+        }.get(quantifier, quantifier)
 
         if quantifier not in {"forall", "exists"}:
             raise InvalidPropertyError(f"Unknown quantifier '{quantifier}'")
