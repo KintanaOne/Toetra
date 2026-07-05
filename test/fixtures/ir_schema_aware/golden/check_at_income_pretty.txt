@@ -1,0 +1,14 @@
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🧠 Verification Task
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Property : EnumProperty.ROBUSTNESS
+Backend  : None
+
+📍 Scope
+  Type        : pointwise
+  Variables   :
+    - x0   → anchor
+
+🔍 Query
+  - x0.income : float <= 1000
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

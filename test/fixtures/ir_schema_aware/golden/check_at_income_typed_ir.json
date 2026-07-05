@@ -1,0 +1,21 @@
+{
+  "property_type": "ROBUSTNESS",
+  "backend": null,
+  "scope": {
+    "kind": "pointwise",
+    "variables": {
+      "x0": "anchor"
+    },
+    "neighborhood": null,
+    "domain": null
+  },
+  "query": {
+    "type": "comparison",
+    "entity": "x0",
+    "feature": "income",
+    "op": "<=",
+    "value": 1000,
+    "feature_dtype": "float",
+    "value_dtype": "int"
+  }
+}

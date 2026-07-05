@@ -24,6 +24,7 @@ from dsl.ir.ir1.nodes import (
 
 from dsl.language.vocabulary.problems import EnumProblem
 from dsl.language.vocabulary.functions import EnumFunction
+from dsl.semantic.types.enums import EnumDataType
 
 
 class QueryTranslator:
@@ -137,13 +138,15 @@ class QueryTranslator:
         This must use semantic annotations, not raw parsed attributes.
         """
 
-        entity, feature = self._resolve_ir_attribute(node.left)
+        entity, feature, feature_dtype = self._resolve_ir_attribute(node.left)
 
         return ComparisonIR(
             entity=entity,
             feature=feature,
             op=node.op,
             value=node.right.value,
+            feature_dtype=feature_dtype,
+            value_dtype=node.right.dtype,
         )
     
     def _translate_problem(self, node: ProblemNode) -> ProblemIR:
@@ -168,7 +171,10 @@ class QueryTranslator:
             args={},
         )
     
-    def _resolve_ir_attribute(self, attr: AttributeNode) -> tuple[str, str]:
+    def _resolve_ir_attribute(
+        self,
+        attr: AttributeNode,
+    ) -> tuple[str, str, EnumDataType | None]:
         """
         Convert a semantically resolved AttributeNode into IR coordinates.
 
@@ -179,6 +185,9 @@ class QueryTranslator:
             x.age    -> x.age
             x'.age   -> x'.age
             _x.age   -> _x.age
+
+        If schema-aware validation was enabled, the feature dtype is also
+        propagated into IR.
         """
 
         semantic = getattr(attr, "semantic", None)
@@ -202,4 +211,15 @@ class QueryTranslator:
         else:
             feature = attr.feature
 
-        return entity, feature
+        feature_dtype = None
+
+        if semantic.resolved_type is not None:
+            try:
+                feature_dtype = EnumDataType(semantic.resolved_type)
+            except ValueError as e:
+                raise ValueError(
+                    f"Unsupported resolved dtype '{semantic.resolved_type}' "
+                    f"for attribute '{feature}'"
+                ) from e
+
+        return entity, feature, feature_dtype
