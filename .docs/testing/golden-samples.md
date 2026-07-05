@@ -8,7 +8,7 @@
 
 Golden samples are canonical FORML examples used to freeze expected compiler behavior.
 
-They are not random tests. They are reference cases that define what FORML is expected to
+They are not random test. They are reference cases that define what FORML is expected to
 accept, reject, transform, and preserve.
 
 ## Why Golden Samples Matter

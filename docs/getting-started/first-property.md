@@ -116,4 +116,4 @@ source
 
 This page should be updated alongside the grammar and golden samples.
 
-The examples should eventually be executable as integration tests.
+The examples should eventually be executable as integration test.

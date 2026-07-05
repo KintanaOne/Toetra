@@ -220,11 +220,11 @@ P0 documentation must also explain how Miova challenges FORML artifacts without 
 | Priority | Document | Location | Status | Purpose | Why it exists | Audience |
 |---:|---|---|---|---|---|---|
 | P0 | Testing Strategy | `docs/testing/strategy.md` | planned / critical | Define test layers and priorities. | Required before large refactors. | Developers. |
-| P1 | Unit Tests | `docs/testing/unit-tests.md` | planned | Explain unit test expectations. | Helps maintain local correctness. | Developers. |
-| P0 | Compiler Contract Tests | `docs/testing/compiler-contract-tests.md` | planned / critical | Test layer boundaries. | Contracts must be executable. | Developers. |
+| P1 | Unit Tests | `docs/testing/unit-test.md` | planned | Explain unit test expectations. | Helps maintain local correctness. | Developers. |
+| P0 | Compiler Contract Tests | `docs/testing/compiler-contract-test.md` | planned / critical | Test layer boundaries. | Contracts must be executable. | Developers. |
 | P0 | Golden Samples | `docs/testing/golden-samples.md` | planned / critical | Define stable DSL examples and expected outputs. | Required for end-to-end confidence. | Developers. |
-| P0 | End-to-End Tests | `docs/testing/end-to-end-tests.md` | planned / critical | Define `.forml + model → result` tests. | Final proof of pipeline functionality. | Developers. |
-| P0 | Miova Campaigns | `docs/testing/miova-campaigns.md` | planned / critical | Define mutation campaign tests. | Validates robustness, expected failures, and boundaries. | Developers. |
+| P0 | End-to-End Tests | `docs/testing/end-to-end-test.md` | planned / critical | Define `.forml + model → result` test. | Final proof of pipeline functionality. | Developers. |
+| P0 | Miova Campaigns | `docs/testing/miova-campaigns.md` | planned / critical | Define mutation campaign test. | Validates robustness, expected failures, and boundaries. | Developers. |
 
 ---
 
@@ -339,7 +339,7 @@ docs/miova/mutation-campaigns.md
 docs/miova/contract-testing.md
 docs/testing/strategy.md
 docs/testing/golden-samples.md
-docs/testing/end-to-end-tests.md
+docs/testing/end-to-end-test.md
 docs/testing/miova-campaigns.md
 ```
 

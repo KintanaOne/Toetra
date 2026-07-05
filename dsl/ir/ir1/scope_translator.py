@@ -92,7 +92,10 @@ class ScopeTranslator:
     def _translate_quantifier(self, scope: QuantifierExprNode) -> ScopeIR:
         return ScopeIR(
             kind="quantifier",
-            variables={},
+            # Keep the semantic binding introduced by LHSValidator.
+            # Quantified formulas bind implicit feature access such as `a <= 1`
+            # to `_x.a`, so IR must declare the `_x` symbolic variable.
+            variables={"_x": "symbolic"},
             neighborhood=None,
             domain=self._translate_domain(scope.domain),
         )

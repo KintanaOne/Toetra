@@ -181,10 +181,10 @@ nav:
 
   - Testing:
       - Strategy: testing/strategy.md
-      - Unit Tests: testing/unit-tests.md
-      - Compiler Contract Tests: testing/compiler-contract-tests.md
+      - Unit Tests: testing/unit-test.md
+      - Compiler Contract Tests: testing/compiler-contract-test.md
       - Golden Samples: testing/golden-samples.md
-      - End-to-End Tests: testing/end-to-end-tests.md
+      - End-to-End Tests: testing/end-to-end-test.md
       - Property-Based Testing: testing/property-based-testing.md
       - Intelligent Fuzzing: testing/intelligent-fuzzing.md
       - Miova Campaigns: testing/miova-campaigns.md

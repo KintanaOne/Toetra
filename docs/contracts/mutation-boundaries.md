@@ -113,7 +113,7 @@ Miova integration must not:
 
 ## Relationship with FORML End-to-End Testing
 
-Miova complements traditional tests.
+Miova complements traditional test.
 
 | Test Type | Purpose |
 |---|---|

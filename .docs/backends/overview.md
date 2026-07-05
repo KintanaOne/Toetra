@@ -156,5 +156,5 @@ The backend layer is not responsible for:
 - inferring model schemas;
 - deciding semantic validity of properties;
 - performing IR1 or IR2 normalization;
-- mutating artifacts for tests.
+- mutating artifacts for test.
 

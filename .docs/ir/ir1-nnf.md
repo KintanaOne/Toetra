@@ -177,7 +177,7 @@ That comparison inversion can be implemented either in IR1 normalization or in a
 
 ## Relationship with Testing
 
-IR1-NNF requires golden tests.
+IR1-NNF requires golden test.
 
 Examples should cover:
 

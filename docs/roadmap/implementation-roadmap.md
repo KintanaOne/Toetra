@@ -129,7 +129,7 @@ Tasks:
 - track assertion provenance,
 - detect contradictions,
 - preserve traceability,
-- add aggregation contract tests.
+- add aggregation contract test.
 
 ## Phase 6 — Lowering and minimization
 

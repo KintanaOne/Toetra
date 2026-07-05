@@ -55,7 +55,7 @@ FORML has several risk zones:
 - aggregation of DSL assertions and model constraints;
 - backend capability mismatch.
 
-These risks are not always discovered by hand-written tests.
+These risks are not always discovered by hand-written test.
 
 Intelligent fuzzing helps find cases such as:
 
