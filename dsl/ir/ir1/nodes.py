@@ -8,6 +8,7 @@ from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.problems import EnumProblem
 from dsl.language.vocabulary.properties import EnumProperty
+from dsl.semantic.types.enums import EnumDataType
 
 # =============================================================================
 # ROOT EXECUTION UNIT
@@ -132,12 +133,19 @@ class ComparisonIR(LogicalIR):
         x'.age <= 30
 
     Represents a leaf condition in the logical tree.
+
+    The dtype fields are optional because IR1 can still exist without
+    ModelSchema-aware validation, but when schema validation is enabled,
+    they become the bridge toward backend typing.
     """
 
     entity: str
     feature: str
     op: EnumComparisonOperator
     value: Any
+
+    feature_dtype: EnumDataType | None = None
+    value_dtype: EnumDataType | None = None
 
 
 # =============================================================================

@@ -124,6 +124,9 @@ def parse_value(node: Tree) -> ConstantNode:
     raw = get_token_value(node)
 
     if raw is None:
+        raw = get_node_name_or_value(node)
+
+    if raw is None:
         raise ValueError("Invalid value node")
 
     cleaned = clean_string(raw)

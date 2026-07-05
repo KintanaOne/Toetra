@@ -114,8 +114,14 @@ def _pretty_logical(node: LogicalIR, indent=0) -> list[str]:
     # Comparison
     # -----------------------------
     if isinstance(node, ComparisonIR):
+        dtype = ""
+
+        if node.feature_dtype is not None:
+            dtype = f" : {node.feature_dtype.value}"
+
         lines.append(
-            f"{space}- {node.entity}.{node.feature} {node.op.value} {node.value}"
+            f"{space}- {node.entity}.{node.feature}{dtype} "
+            f"{node.op.value} {node.value}"
         )
         return lines
 
