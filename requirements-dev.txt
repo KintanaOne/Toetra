@@ -3,12 +3,12 @@ pytest==9.0.1
 # property-based testing / fuzzing / génération
 hypothesis==6.151.10
 
-# CI / lint / format 
+# CI / lint / format
 ruff
 black
 pyright
 
-# intern dependencies pytest runner
+# internal dependencies pytest runner
 pluggy==1.6.0
 iniconfig==2.3.0
 sortedcontainers==2.4.0
