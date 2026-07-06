@@ -1,0 +1,5 @@
+model := "model.onnx"
+target := MyTarget
+
+[LOGIC]:
+forall => a <= 1 -> b <= 2 using Z3
