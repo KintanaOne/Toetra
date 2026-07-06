@@ -31,7 +31,7 @@ def run_ir(source: str):
 
     FORMLValidator().validate(
         ast,
-        tracer=ValidationTracer(enabled=True),
+        tracer=ValidationTracer(enabled=False),
     )
 
     translator = IRTranslator()

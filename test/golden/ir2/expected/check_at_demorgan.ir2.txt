@@ -1,0 +1,20 @@
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🧠 Verification Task IR2
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Property      : LOGIC
+Backend       : Z3
+Scope         : pointwise
+Semantics     : refutation
+Normal form   : dnf
+Requirements  : boolean_logic, numeric_comparisons
+Assumptions   : 0
+Spec formula  :
+  NNF
+    OR
+      LITERAL[negative](x0.a <= 1)
+      LITERAL[negative](x0.b <= 2)
+Verification condition:
+  DNF
+    AND
+      LITERAL[positive](x0.a <= 1)
+      LITERAL[positive](x0.b <= 2)
