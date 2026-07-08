@@ -1,6 +1,11 @@
 from dsl.ir.ir2.builder import IR2Builder
 from dsl.ir.ir2.context import IR2BuildContext
-from dsl.ir.ir2.enums import AssumptionSource, NormalFormKind, Polarity, VerificationSemantics
+from dsl.ir.ir2.enums import (
+    AssumptionSource,
+    NormalFormKind,
+    Polarity,
+    VerificationSemantics,
+)
 from dsl.ir.ir2.nodes import (
     AssumptionIR2,
     ClauseIR2,

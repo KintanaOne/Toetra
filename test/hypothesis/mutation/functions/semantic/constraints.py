@@ -20,10 +20,19 @@ from copy import deepcopy
 
 from test.hypothesis.mutation.decorators.mutation import mutation
 
-from test.hypothesis.mutation.functions.semantic.helper.engine import SemanticConstraintEngine
-from test.hypothesis.mutation.functions.semantic.helper.extractor import SemanticConstraintExtractor
-from test.hypothesis.mutation.functions.semantic.helper.rebuilder import SemanticASTRebuilder
-from test.hypothesis.mutation.metadata.contract import MutationContract, PreservationLevel
+from test.hypothesis.mutation.functions.semantic.helper.engine import (
+    SemanticConstraintEngine,
+)
+from test.hypothesis.mutation.functions.semantic.helper.extractor import (
+    SemanticConstraintExtractor,
+)
+from test.hypothesis.mutation.functions.semantic.helper.rebuilder import (
+    SemanticASTRebuilder,
+)
+from test.hypothesis.mutation.metadata.contract import (
+    MutationContract,
+    PreservationLevel,
+)
 from test.hypothesis.mutation.metadata.enums import (
     Domain,
     Layer,
@@ -31,10 +40,10 @@ from test.hypothesis.mutation.metadata.enums import (
     Strategy,
 )
 
-
 # =========================================================
 # MUTATION 1 : domain constraint contradiction
 # =========================================================
+
 
 @mutation(
     name="semantic.inject_impossible_constraint",
@@ -57,7 +66,7 @@ def inject_impossible_constraint(ast):
     extractor = SemanticConstraintExtractor()
     engine = SemanticConstraintEngine()
     rebuilder = SemanticASTRebuilder()
-    
+
     for property_node in mutated.body:
 
         # =====================================================
@@ -82,6 +91,7 @@ def inject_impossible_constraint(ast):
 # =========================================================
 # DOMAIN VIOLATION GENERATOR (placeholder abstraction)
 # =========================================================
+
 
 def create_fake_domain_violation(node):
     """

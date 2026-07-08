@@ -10,7 +10,9 @@ from dsl.ir.ir2.nodes import ClauseIR2, CNFFormulaIR2, LiteralIR2
 class CNFConverter:
     """Converts an NNF logical tree into typed CNFFormulaIR2."""
 
-    def convert(self, expr: LogicalIR, context: IR2BuildContext | None = None) -> CNFFormulaIR2:
+    def convert(
+        self, expr: LogicalIR, context: IR2BuildContext | None = None
+    ) -> CNFFormulaIR2:
         context = context or IR2BuildContext()
         cnf = self._to_cnf(expr, context)
         self._check_limit(len(cnf.clauses), context)
@@ -34,10 +36,14 @@ class CNFConverter:
 
             current = self._to_cnf(expr.operands[0], context)
             for operand in expr.operands[1:]:
-                current = self._distribute_or(current, self._to_cnf(operand, context), context)
+                current = self._distribute_or(
+                    current, self._to_cnf(operand, context), context
+                )
             return current
 
-        raise InvalidNormalFormError(f"Unsupported NNF node for CNF conversion: {type(expr).__name__}")
+        raise InvalidNormalFormError(
+            f"Unsupported NNF node for CNF conversion: {type(expr).__name__}"
+        )
 
     def _distribute_or(
         self,
@@ -61,7 +67,9 @@ class CNFConverter:
         if isinstance(expr, NotIR):
             if isinstance(expr.operand, (ComparisonIR, ProblemIR)):
                 return LiteralIR2(atom=expr.operand, polarity=Polarity.NEGATIVE)
-            raise InvalidNormalFormError("CNF conversion expects NNF input; NotIR must wrap an atom.")
+            raise InvalidNormalFormError(
+                "CNF conversion expects NNF input; NotIR must wrap an atom."
+            )
 
         return None
 

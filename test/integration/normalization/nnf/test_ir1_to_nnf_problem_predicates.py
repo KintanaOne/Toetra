@@ -12,13 +12,13 @@ def _run_ir1_then_nnf(source: str):
 
 
 def test_pipeline_problem_predicate_is_atomic_under_negation():
-    source = '''
+    source = """
 model := "model.onnx"
 target := MyTarget
 
 [ROBUSTNESS]:
 at x in neighborhood(L2, eps=0.01) => NOT CLASSIFICATION.EQUAL() using Z3
-'''
+"""
 
     tasks = _run_ir1_then_nnf(source)
 
@@ -32,13 +32,13 @@ at x in neighborhood(L2, eps=0.01) => NOT CLASSIFICATION.EQUAL() using Z3
 
 
 def test_pipeline_problem_predicate_inside_implication_is_normalized():
-    source = '''
+    source = """
 model := "model.onnx"
 target := MyTarget
 
 [ROBUSTNESS]:
 at x in neighborhood(L2, eps=0.01) => a <= 1 -> CLASSIFICATION.EQUAL() using Z3
-'''
+"""
 
     tasks = _run_ir1_then_nnf(source)
 

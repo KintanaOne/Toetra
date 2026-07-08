@@ -89,7 +89,7 @@ class ModelManager:
             dataset_path=self.dataset_path,
             schema=self.schema,
             serialization_format=self.model_path.suffix,
-            target_name=self.target_name
+            target_name=self.target_name,
         )
 
         # --------------------------------------------------

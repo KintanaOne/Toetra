@@ -23,7 +23,9 @@ def pretty_ir2_task(task: VerificationTaskIR2) -> str:
     lines.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     lines.append("🧠 Verification Task IR2")
     lines.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-    lines.append(f"Property      : {getattr(task.property_type, 'value', task.property_type)}")
+    lines.append(
+        f"Property      : {getattr(task.property_type, 'value', task.property_type)}"
+    )
     lines.append(f"Backend       : {getattr(task.backend, 'value', task.backend)}")
     lines.append(f"Scope         : {task.scope.kind}")
     lines.append(f"Semantics     : {task.semantics.value}")
@@ -127,7 +129,9 @@ def _pretty_logical_tree(node: LogicalIR) -> str:
 
     if isinstance(node, NotIR):
         if isinstance(node.operand, (ComparisonIR, ProblemIR)):
-            return _pretty_literal(LiteralIR2(atom=node.operand, polarity=Polarity.NEGATIVE))
+            return _pretty_literal(
+                LiteralIR2(atom=node.operand, polarity=Polarity.NEGATIVE)
+            )
         return "NOT\n" + _indent(_pretty_logical_tree(node.operand), spaces=2)
 
     if isinstance(node, AndIR):

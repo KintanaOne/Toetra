@@ -35,7 +35,7 @@ class FORMLValidator:
 
 if __name__ == "__main__":
     """This script is for quick testing of the validator. It parses a sample property and prints the resulting AST than validates it"""
-    
+
     sample = """
     model := "model.onnx"
     target := MyTarget

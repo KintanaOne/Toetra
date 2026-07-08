@@ -37,7 +37,6 @@ from test.hypothesis.mutation.functions.base import (
     PipelineStage,
 )
 
-
 # =========================================================
 # MUTATION 1 : invalidate property semantics
 # =========================================================
@@ -73,16 +72,10 @@ def invalidate_property_semantic(
 
         current = property_node.type
 
-        candidates = [
-            p
-            for p in properties
-            if p != current
-        ]
+        candidates = [p for p in properties if p != current]
 
         if candidates:
-            property_node.type = random.choice(
-                candidates
-            )
+            property_node.type = random.choice(candidates)
 
     return mutated
 

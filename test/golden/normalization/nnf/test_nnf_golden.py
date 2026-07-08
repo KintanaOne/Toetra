@@ -4,8 +4,11 @@ from pathlib import Path
 
 import pytest
 
-from test.fixtures.normalization.nnf.helpers import assert_is_nnf, import_run_nnf, tasks_to_golden
-
+from test.fixtures.normalization.nnf.helpers import (
+    assert_is_nnf,
+    import_run_nnf,
+    tasks_to_golden,
+)
 
 CASES_DIR = Path(__file__).parent / "cases"
 EXPECTED_DIR = Path(__file__).parent / "expected"

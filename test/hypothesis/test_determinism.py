@@ -1,6 +1,6 @@
 from hypothesis import given
 import pytest
-from test.hypothesis.strategies.valid.program_string import  valid_string_program
+from test.hypothesis.strategies.valid.program_string import valid_string_program
 
 from dsl.parser.parser import parse_forml_code
 

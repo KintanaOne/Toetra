@@ -2,7 +2,7 @@ import random
 from copy import deepcopy
 
 from dsl.builder.program import ProgramNode
-from dsl.builder.assertion import NotNode, OrNode, AndNode
+from dsl.builder.assertion import NotNode, AndNode
 
 from test.hypothesis.mutation.functions.base import (
     mutation,
@@ -98,12 +98,10 @@ def violate_constraints(ast: ProgramNode) -> ProgramNode:
         root = p.rule.assertion.root
 
         # wrap in impossible constraint
-        p.rule.assertion.root = AndNode([
-            root,
-            NotNode(root)
-        ])
+        p.rule.assertion.root = AndNode([root, NotNode(root)])
 
     return mutated
+
 
 CONTRADICTION_MUTATIONS = [
     corrupt_semantic_context,

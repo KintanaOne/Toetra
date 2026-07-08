@@ -34,11 +34,41 @@ exclude = ["test*", "tests*", "docs*"]
 [tool.black]
 line-length = 88
 target-version = ["py311"]
+force-exclude = '''
+test/hypothesis/
+'''
 
 [tool.ruff]
 line-length = 88
 target-version = "py311"
+extend-exclude = [
+    "test/hypothesis",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"test/unit/model/test_xgboost_introspector_optional.py" = ["E402"]
 
 [tool.pytest.ini_options]
 testpaths = ["test"]
 python_files = ["test_*.py"]
+norecursedirs = [
+    "test/hypothesis",
+]
+
+[tool.pyright]
+pythonVersion = "3.11"
+include = [
+    "dsl",
+    "model",
+    "test/unit",
+]
+exclude = [
+    "**/node_modules",
+    "**/__pycache__",
+    "**/.*",
+    ".env",
+    "**/*.env",
+    "build",
+    "dist",
+    "test/hypothesis",
+]

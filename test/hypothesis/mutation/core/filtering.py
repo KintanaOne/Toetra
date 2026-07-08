@@ -28,7 +28,7 @@ class MutationFilterEngine:
         min_semantic_preservation: Optional[PreservationLevel] = None,
         nature: Optional[Nature] = None,
         min_severity: Optional[float] = None,
-        max_severity: Optional[float] = None
+        max_severity: Optional[float] = None,
     ) -> List[MutationDescriptor]:
 
         result = items
@@ -37,28 +37,19 @@ class MutationFilterEngine:
         # layer filter
         # -----------------------------------------------------
         if layer is not None:
-            result = [
-                d for d in result
-                if d.layer == layer
-            ]
+            result = [d for d in result if d.layer == layer]
 
         # -----------------------------------------------------
         # domain filter
         # -----------------------------------------------------
         if domain is not None:
-            result = [
-                d for d in result
-                if d.domain == domain
-            ]
+            result = [d for d in result if d.domain == domain]
 
         # -----------------------------------------------------
         # strategy filter
         # -----------------------------------------------------
         if strategy is not None:
-            result = [
-                d for d in result
-                if d.strategy == strategy
-            ]
+            result = [d for d in result if d.strategy == strategy]
 
         # -----------------------------------------------------
         # contract filter (semantic constraint)
@@ -74,17 +65,17 @@ class MutationFilterEngine:
         # nature filter
         # -----------------------------------------------------
         if nature is not None:
-            result = [
-                d for d in result
-                if d.nature == nature
-            ]
+            result = [d for d in result if d.nature == nature]
 
         # -----------------------------------------------------
         # severity filter
         # -----------------------------------------------------
         if min_severity is not None or max_severity is not None:
+
             def ok(d: MutationDescriptor) -> bool:
-                assert d.severity is not None, "Descriptor severity must be set for severity-based filtering"
+                assert (
+                    d.severity is not None
+                ), "Descriptor severity must be set for severity-based filtering"
                 if min_severity is not None and d.severity < min_severity:
                     return False
                 if max_severity is not None and d.severity > max_severity:

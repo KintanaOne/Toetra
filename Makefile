@@ -38,10 +38,10 @@ type:
 
 # Full local CI
 ci:
-	ruff check .
-	black --check .
-	pytest -q -m "not wip"
-	pyright dsl/
+	python -m ruff check .
+	python -m black --check .
+	python -m pyright
+	python -m pytest -q
 
 # Clean caches
 clean:

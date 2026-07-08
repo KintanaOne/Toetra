@@ -5,7 +5,6 @@ from dsl.semantic.runtime.tracer import ValidationTracer
 from dsl.semantic.core.validator import FORMLValidator
 from dsl.ir.ir1.translator import IRTranslator
 
-
 DEFAULT_SAMPLE = """
 model := "model.onnx"
 target := MyTarget

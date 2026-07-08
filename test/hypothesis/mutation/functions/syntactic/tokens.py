@@ -16,7 +16,6 @@ from test.hypothesis.mutation.functions.base import (
     PipelineStage,
 )
 
-
 INVALID_TOKEN_TYPES = [
     "INVALID",
     "CORRUPTED",

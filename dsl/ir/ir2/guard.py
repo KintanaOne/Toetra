@@ -28,7 +28,9 @@ class NNFGuard:
     @classmethod
     def assert_expr_is_nnf(cls, node: LogicalIR) -> None:
         if isinstance(node, ImplyIR):
-            raise InvalidIR2InputError("IR2 input must not contain ImplyIR; run NNF first.")
+            raise InvalidIR2InputError(
+                "IR2 input must not contain ImplyIR; run NNF first."
+            )
 
         if isinstance(node, (ComparisonIR, ProblemIR)):
             return
@@ -45,4 +47,6 @@ class NNFGuard:
                 cls.assert_expr_is_nnf(operand)
             return
 
-        raise InvalidIR2InputError(f"Unsupported IR1 logical node for IR2: {type(node).__name__}")
+        raise InvalidIR2InputError(
+            f"Unsupported IR1 logical node for IR2: {type(node).__name__}"
+        )

@@ -5,7 +5,12 @@ import pytest
 from dsl.ir.ir1.nodes import NotIR
 from dsl.language.vocabulary.operators import EnumComparisonOperator
 
-from test.fixtures.normalization.nnf.helpers import assert_is_nnf, cmp, normalizer, sexpr
+from test.fixtures.normalization.nnf.helpers import (
+    assert_is_nnf,
+    cmp,
+    normalizer,
+    sexpr,
+)
 
 
 @pytest.mark.parametrize(
@@ -19,7 +24,9 @@ from test.fixtures.normalization.nnf.helpers import assert_is_nnf, cmp, normaliz
         (EnumComparisonOperator.GTE, ">="),
     ],
 )
-def test_comparison_operator_is_preserved_under_leaf_negation(operator, expected_symbol):
+def test_comparison_operator_is_preserved_under_leaf_negation(
+    operator, expected_symbol
+):
     expr = NotIR(cmp("a", 1, op=operator))
 
     got = normalizer().normalize_expr(expr)

@@ -2,8 +2,13 @@ from __future__ import annotations
 
 from dsl.ir.ir1.nodes import AndIR, ImplyIR, NotIR, OrIR, QueryIR
 
-from test.fixtures.normalization.nnf.helpers import assert_is_nnf, cmp, normalizer, sexpr, task_with_expr
-
+from test.fixtures.normalization.nnf.helpers import (
+    assert_is_nnf,
+    cmp,
+    normalizer,
+    sexpr,
+    task_with_expr,
+)
 
 
 def test_normalize_query_normalizes_query_expression():
@@ -24,7 +29,6 @@ def test_normalize_query_normalizes_query_expression():
     assert_is_nnf(got.expression)
 
 
-
 def test_normalize_task_preserves_non_query_metadata():
     expr = ImplyIR(left=cmp("a", 1), right=cmp("b", 2))
     task = task_with_expr(expr)
@@ -38,7 +42,6 @@ def test_normalize_task_preserves_non_query_metadata():
     assert_is_nnf(got.query.expression)
 
 
-
 def test_normalize_tasks_normalizes_all_tasks():
     tasks = [
         task_with_expr(ImplyIR(left=cmp("a", 1), right=cmp("b", 2))),
@@ -49,11 +52,13 @@ def test_normalize_tasks_normalizes_all_tasks():
 
     assert len(got) == 2
     assert sexpr(got[0].query.expression) == "OR(NOT(CMP(x0.a <= 1)), CMP(x0.b <= 2))"
-    assert sexpr(got[1].query.expression) == "AND(NOT(CMP(x0.c <= 3)), NOT(CMP(x0.d <= 4)))"
+    assert (
+        sexpr(got[1].query.expression)
+        == "AND(NOT(CMP(x0.c <= 3)), NOT(CMP(x0.d <= 4)))"
+    )
 
     for task in got:
         assert_is_nnf(task.query.expression)
-
 
 
 def test_normalization_is_idempotent():

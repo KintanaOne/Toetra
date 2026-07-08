@@ -17,6 +17,7 @@ CHARACTERISTICS:
     ✔ typing preserved
     ❌ semantic causality corrupted
 """
+
 from copy import deepcopy
 
 from dsl.ast.nodes.assertion import ImplicationNode
@@ -34,6 +35,7 @@ from test.hypothesis.mutation.metadata.enums import (
     Nature,
     Strategy,
 )
+
 
 @mutation(
     name="reverse_causality",

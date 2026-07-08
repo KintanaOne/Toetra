@@ -50,9 +50,7 @@ def remove_random_token(
             continue
 
         token_indices = [
-            i
-            for i, child in enumerate(current.children)
-            if isinstance(child, Token)
+            i for i, child in enumerate(current.children) if isinstance(child, Token)
         ]
 
         if token_indices and random.random() < 0.3:

@@ -17,7 +17,6 @@ from dsl.language.vocabulary.operators import (
     official_comparaison_operations,
 )
 
-
 # =========================
 # RAW DICTIONARIES
 # =========================

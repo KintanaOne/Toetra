@@ -71,14 +71,10 @@ def serialize_logical(node: LogicalIR):
             "op": node.op.value,
             "value": node.value,
             "feature_dtype": (
-                node.feature_dtype.value
-                if node.feature_dtype is not None
-                else None
+                node.feature_dtype.value if node.feature_dtype is not None else None
             ),
             "value_dtype": (
-                node.value_dtype.value
-                if node.value_dtype is not None
-                else None
+                node.value_dtype.value if node.value_dtype is not None else None
             ),
         }
 

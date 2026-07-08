@@ -2,7 +2,6 @@ from enum import Enum
 
 from dsl.language.vocabulary.utils import EnumMixin
 
-
 official_backends = {
     "z3": '"z3"',
     "Z3": '"Z3"',
@@ -20,19 +19,3 @@ class EnumBackend(EnumMixin, Enum):
     ERAN = "ERAN"
     ZONOTOPE = "ZONOTOPE"
     BOX = "BOX"
-
-    @classmethod
-    def from_str(cls, value: str) -> "EnumBackend":
-        normalized = value.strip().strip('"').upper()
-
-        aliases = {
-            "Z3": cls.Z3,
-            "ERAN": cls.ERAN,
-            "ZONOTOPE": cls.ZONOTOPE,
-            "BOX": cls.BOX,
-        }
-
-        try:
-            return aliases[normalized]
-        except KeyError as e:
-            raise ValueError(f"Unknown backend: {value}") from e

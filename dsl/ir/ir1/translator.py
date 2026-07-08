@@ -35,10 +35,7 @@ class IRTranslator:
     # ------------------------------------------------------------------
 
     def translate(self, program: ProgramNode) -> list[VerificationTask]:
-        return [
-            self._translate_property(prop)
-            for prop in program.body
-        ]
+        return [self._translate_property(prop) for prop in program.body]
 
     # ------------------------------------------------------------------
     # PROPERTY

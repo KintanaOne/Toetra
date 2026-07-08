@@ -1,8 +1,6 @@
 from dsl.ast.nodes.assertion import (
     AndNode,
     LogicalNode,
-    OrNode,
-    NotNode,
     ComparisonNode,
 )
 
@@ -13,6 +11,7 @@ from test.hypothesis.mutation.functions.semantic.helper.constraint import (
     SemanticConstraint,
     SemanticConstraintSet,
 )
+
 
 class SemanticASTRebuilder:
     """
@@ -35,17 +34,13 @@ class SemanticASTRebuilder:
         if not constraints.constraints:
             return None
 
-        ast_nodes = [
-            self._build_comparison(c)
-            for c in constraints.constraints
-        ]
+        ast_nodes = [self._build_comparison(c) for c in constraints.constraints]
 
         # if only one constraint
         if len(ast_nodes) == 1:
             return ast_nodes[0]
 
         return AndNode(operands=ast_nodes)
-    
 
     def _build_comparison(self, c: SemanticConstraint) -> LogicalNode:
 
@@ -69,15 +64,13 @@ class SemanticASTRebuilder:
             op=EnumComparisonOperator(c.operator),
             right=const,
         )
-    
-    
+
     def _normalize_operator(self, op: str):
         """
         Ensure AST-compatible operator format.
         """
 
         return op  # assume EnumComparisonOperator handled upstream
-    
 
     def _infer_dtype(self, value):
 

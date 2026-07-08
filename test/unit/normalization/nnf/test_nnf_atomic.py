@@ -2,8 +2,13 @@ from __future__ import annotations
 
 from dsl.ir.ir1.nodes import NotIR, ProblemIR
 
-from test.fixtures.normalization.nnf.helpers import assert_is_nnf, cmp, normalizer, problem, sexpr
-
+from test.fixtures.normalization.nnf.helpers import (
+    assert_is_nnf,
+    cmp,
+    normalizer,
+    problem,
+    sexpr,
+)
 
 
 def test_atomic_comparison_is_preserved():
@@ -16,7 +21,6 @@ def test_atomic_comparison_is_preserved():
     assert_is_nnf(got)
 
 
-
 def test_not_comparison_is_valid_nnf_leaf_negation():
     expr = NotIR(cmp("a", 1))
 
@@ -24,7 +28,6 @@ def test_not_comparison_is_valid_nnf_leaf_negation():
 
     assert sexpr(got) == "NOT(CMP(x0.a <= 1))"
     assert_is_nnf(got)
-
 
 
 def test_problem_ir_is_preserved_as_atomic_predicate():
@@ -35,7 +38,6 @@ def test_problem_ir_is_preserved_as_atomic_predicate():
     assert isinstance(got, ProblemIR)
     assert sexpr(got) == "PROBLEM(CLASSIFICATION.EQUAL)"
     assert_is_nnf(got)
-
 
 
 def test_not_problem_ir_is_valid_nnf_leaf_negation():

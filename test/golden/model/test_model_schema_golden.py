@@ -17,7 +17,9 @@ def test_sklearn_classification_schema_matches_golden_contract(tmp_path):
         target_name="MyTarget",
     ).build_schema()
 
-    assert schema_to_contract(schema) == load_golden("sklearn_classification_schema.json")
+    assert schema_to_contract(schema) == load_golden(
+        "sklearn_classification_schema.json"
+    )
 
 
 def test_sklearn_regression_schema_matches_golden_contract(tmp_path):

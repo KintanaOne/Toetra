@@ -8,7 +8,6 @@ Goal:
 
 from __future__ import annotations
 
-import random
 
 from test.hypothesis.mutation.decorators.mutation import mutation
 
@@ -28,6 +27,7 @@ from .base_helpers import (
     inject_noise,
     random_char_noise,
 )
+
 
 @mutation(
     name="encoding_corruption",
@@ -49,6 +49,7 @@ def encoding_corruption(text: str) -> str:
     """
     return inject_noise(text, "\udcff")
 
+
 @mutation(
     name="binary_noise",
     layer=Layer.STRING,
@@ -68,10 +69,7 @@ def binary_noise(text: str) -> str:
     Inject random binary-like control characters.
     """
 
-    noise = "".join(
-        random_char_noise()
-        for _ in range(3)
-    )
+    noise = "".join(random_char_noise() for _ in range(3))
 
     return inject_noise(
         text,

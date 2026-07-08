@@ -74,6 +74,7 @@ def parse_target(tree: Tree) -> str:
         "Target declaration is missing or invalid",
     )
 
+
 # ---------------------------------------------------------------------------
 
 

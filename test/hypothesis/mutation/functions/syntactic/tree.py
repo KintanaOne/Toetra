@@ -40,17 +40,11 @@ def duplicate_random_subtree(
 
     mutated = deepcopy(tree)
 
-    candidates = [
-        child
-        for child in mutated.children
-        if isinstance(child, Tree)
-    ]
+    candidates = [child for child in mutated.children if isinstance(child, Tree)]
 
     if candidates:
 
-        subtree = deepcopy(
-            random.choice(candidates)
-        )
+        subtree = deepcopy(random.choice(candidates))
 
         mutated.children.append(subtree)
 

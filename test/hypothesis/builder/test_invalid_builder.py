@@ -12,7 +12,7 @@ pytestmark = pytest.mark.wip
 
 
 @given(invalid_string_program(valid_string_program()))
-def test_builder_rejects_invalid_structure(program): 
+def test_builder_rejects_invalid_structure(program):
 
     mutated = deepcopy(program)
 

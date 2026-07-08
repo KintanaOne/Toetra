@@ -66,7 +66,9 @@ class IR2Builder:
         )
 
         selected_form = self.selector.select(vc_nnf, context=context)
-        verification_condition, actual_form = self._convert(vc_nnf, selected_form, context)
+        verification_condition, actual_form = self._convert(
+            vc_nnf, selected_form, context
+        )
 
         requirements = self.requirements_analyzer.analyze(
             scope=task_nnf.scope,
@@ -101,7 +103,10 @@ class IR2Builder:
         assumptions: tuple[AssumptionIR2, ...] | list[AssumptionIR2] | None = None,
         context: IR2BuildContext | None = None,
     ) -> list[VerificationTaskIR2]:
-        return [self.build(task, assumptions=assumptions, context=context) for task in tasks_nnf]
+        return [
+            self.build(task, assumptions=assumptions, context=context)
+            for task in tasks_nnf
+        ]
 
     def _convert(
         self,
@@ -114,10 +119,16 @@ class IR2Builder:
 
         try:
             if selected_form == NormalFormKind.CNF:
-                return self.cnf_converter.convert(vc_nnf.expression, context=context), NormalFormKind.CNF
+                return (
+                    self.cnf_converter.convert(vc_nnf.expression, context=context),
+                    NormalFormKind.CNF,
+                )
 
             if selected_form == NormalFormKind.DNF:
-                return self.dnf_converter.convert(vc_nnf.expression, context=context), NormalFormKind.DNF
+                return (
+                    self.dnf_converter.convert(vc_nnf.expression, context=context),
+                    NormalFormKind.DNF,
+                )
 
         except NormalFormExplosionError:
             if context.allow_nnf_fallback:

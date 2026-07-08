@@ -7,7 +7,7 @@ from dsl.builder.core.strict import require_node, require_value
 
 from typing import List, Any
 
-from dsl.parser.errors import ParserDeclarationError, ParserPropertyError
+from dsl.parser.errors import ParserPropertyError
 
 # ============================================================================
 # NEIGHBORHOOD PARSER

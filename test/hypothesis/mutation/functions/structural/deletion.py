@@ -32,6 +32,7 @@ from test.hypothesis.mutation.functions.base import (
 # Delete header parts
 # ----------------------------
 
+
 @mutation(
     layer=MutationLayer.STRUCTURAL,
     nature=MutationNature.DELETION,

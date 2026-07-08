@@ -16,11 +16,13 @@ from copy import deepcopy
 
 from test.hypothesis.mutation.decorators.mutation import mutation
 
-from test.hypothesis.mutation.metadata.contract import MutationContract, PreservationLevel
+from test.hypothesis.mutation.metadata.contract import (
+    MutationContract,
+    PreservationLevel,
+)
 from test.hypothesis.mutation.metadata.enums import Layer, Nature, Strategy, Domain
 
 from dsl.builder.assertion import AndNode, OrNode, NotNode
-
 
 # =========================================================
 # SHARED CONTRACTS
@@ -44,6 +46,7 @@ PARTIAL_SEMANTIC_BREAK = MutationContract(
 # =========================================================
 # 1. LOCAL CONTRADICTION
 # =========================================================
+
 
 @mutation(
     name="logical.inject_contradiction",
@@ -76,6 +79,7 @@ def inject_contradiction(ast):
 # 2. TAUTOLOGY INJECTION
 # =========================================================
 
+
 @mutation(
     name="logical.inject_tautology",
     layer=Layer.AST,
@@ -106,6 +110,7 @@ def inject_logical_tautology(ast):
 # =========================================================
 # 3. GLOBAL CONTRADICTION (semantic-level injection)
 # =========================================================
+
 
 @mutation(
     name="logical.inject_global_contradiction",

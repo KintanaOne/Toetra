@@ -12,7 +12,14 @@ ROLE IN FORML:
 import random
 from copy import deepcopy
 
-from test.hypothesis.mutation.functions.base import PipelineStage, mutation, MutationLayer, MutationNature, MutationSeverity, MutationImpact
+from test.hypothesis.mutation.functions.base import (
+    PipelineStage,
+    mutation,
+    MutationLayer,
+    MutationNature,
+    MutationSeverity,
+    MutationImpact,
+)
 
 
 @mutation(

@@ -2,8 +2,13 @@ from __future__ import annotations
 
 from dsl.ir.ir1.nodes import ImplyIR, NotIR
 
-from test.fixtures.normalization.nnf.helpers import assert_is_nnf, assert_no_implication, cmp, normalizer, sexpr
-
+from test.fixtures.normalization.nnf.helpers import (
+    assert_is_nnf,
+    assert_no_implication,
+    cmp,
+    normalizer,
+    sexpr,
+)
 
 
 def test_implication_is_lowered_to_or_not_left_right():
@@ -19,7 +24,6 @@ def test_implication_is_lowered_to_or_not_left_right():
     assert_is_nnf(got)
 
 
-
 def test_negated_implication_is_lowered_to_and_left_not_right():
     expr = NotIR(
         ImplyIR(
@@ -33,7 +37,6 @@ def test_negated_implication_is_lowered_to_and_left_not_right():
     assert sexpr(got) == "AND(CMP(x0.a <= 1), NOT(CMP(x0.b <= 2)))"
     assert_no_implication(got)
     assert_is_nnf(got)
-
 
 
 def test_nested_implication_is_removed_everywhere():
