@@ -121,13 +121,26 @@ class LogicalIR:
     pass
 
 
+@dataclass
+class AtomicIR(LogicalIR):
+    """
+    Base class for logical atoms.
+
+    Atomic nodes are leaves for NNF/CNF/DNF normalization.
+    They may be DSL atoms, problem predicates, or backend-neutral
+    model constraints introduced later by IR2.
+    """
+
+    pass
+
+
 # =============================================================================
 # LEAF COMPARISON NODE
 # =============================================================================
 
 
 @dataclass
-class ComparisonIR(LogicalIR):
+class ComparisonIR(AtomicIR):
     """
     Atomic predicate:
         x'.age <= 30
@@ -197,7 +210,7 @@ class ImplyIR(LogicalIR):
 
 
 @dataclass
-class ProblemIR(LogicalIR):
+class ProblemIR(AtomicIR):
     """
     High-level semantic operator coming from FORML DSL.
 

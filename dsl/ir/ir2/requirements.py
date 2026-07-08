@@ -19,6 +19,8 @@ from dsl.ir.ir2.nodes import (
     DNFFormulaIR2,
     FormulaIR2,
     LiteralIR2,
+    AffineOutputConstraintIR2,
+    ModelConstraintIR2,
     NNFFormulaIR2,
 )
 
@@ -58,14 +60,16 @@ class RequirementsAnalyzer:
         return IR2Requirements(
             requires_boolean_logic=True,
             requires_numeric_comparisons=any(
-                isinstance(item, ComparisonIR) for item in all_items
+                isinstance(item, (ComparisonIR, AffineOutputConstraintIR2))
+                for item in all_items
             ),
             requires_problem_predicates=any(
                 isinstance(item, ProblemIR) for item in all_items
             ),
             requires_model_assertions=any(
                 a.source == AssumptionSource.MODEL for a in assumptions
-            ),
+            )
+            or any(isinstance(item, ModelConstraintIR2) for item in all_items),
             requires_quantifiers=scope.kind == "quantifier",
             requires_domains=scope.domain is not None
             or any(a.source == AssumptionSource.DOMAIN for a in assumptions),
@@ -75,7 +79,7 @@ class RequirementsAnalyzer:
 
     def _iter_literals_or_atoms(
         self, formula: FormulaIR2
-    ) -> Iterable[ComparisonIR | ProblemIR]:
+    ) -> Iterable[ComparisonIR | ProblemIR | ModelConstraintIR2]:
         if isinstance(formula, NNFFormulaIR2):
             yield from self._iter_atoms_from_logical(formula.expression)
             return
@@ -94,18 +98,21 @@ class RequirementsAnalyzer:
 
     def _iter_atom_from_literal(
         self, literal: LiteralIR2
-    ) -> Iterable[ComparisonIR | ProblemIR]:
+    ) -> Iterable[ComparisonIR | ProblemIR | ModelConstraintIR2]:
         yield literal.atom
 
     def _iter_atoms_from_logical(
         self, node: LogicalIR
-    ) -> Iterable[ComparisonIR | ProblemIR]:
-        if isinstance(node, (ComparisonIR, ProblemIR)):
+    ) -> Iterable[ComparisonIR | ProblemIR | ModelConstraintIR2]:
+        if isinstance(node, (ComparisonIR, ProblemIR, ModelConstraintIR2)):
             yield node
             return
 
         if isinstance(node, NotIR):
-            if isinstance(node.operand, (ComparisonIR, ProblemIR)):
+            if isinstance(
+                node.operand,
+                (ComparisonIR, ProblemIR, ModelConstraintIR2),
+            ):
                 yield node.operand
             return
 

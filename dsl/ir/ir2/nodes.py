@@ -4,12 +4,14 @@ from dataclasses import dataclass, field
 from typing import Any, TYPE_CHECKING, TypeAlias
 
 from dsl.ir.ir1.nodes import (
+    AtomicIR,
     ComparisonIR,
     LogicalIR,
     ProblemIR,
     ScopeIR,
 )
 from dsl.language.vocabulary.backends import EnumBackend
+from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.properties import EnumProperty
 from dsl.ir.ir2.enums import (
     AssumptionSource,
@@ -22,7 +24,55 @@ if TYPE_CHECKING:
     from dsl.ir.ir2.requirements import IR2Requirements
 
 
-AtomIR2: TypeAlias = ComparisonIR | ProblemIR
+@dataclass(frozen=True)
+class AffineTermIR2:
+    """One term of an affine model expression: coefficient * entity.feature."""
+
+    entity: str
+    feature: str
+    coefficient: float
+
+
+@dataclass
+class AffineExpressionIR2:
+    """Backend-neutral affine expression used by simple model encoders.
+
+    Example:
+        0.5 * x.a + -1.2 * x.b + 3.0
+    """
+
+    terms: tuple[AffineTermIR2, ...]
+    bias: float = 0.0
+
+
+class ModelConstraintIR2(AtomicIR):
+    """
+    Base class for backend-neutral model constraints.
+
+    Model constraints are logical atoms from the point of view
+    of NNF/CNF/DNF normalization.
+    """
+
+    pass
+
+
+@dataclass
+class AffineOutputConstraintIR2(ModelConstraintIR2):
+    """Atomic affine model assumption relating output to w·x + b.
+
+    This is intentionally backend-independent. It does not encode Z3 terms and
+    does not decide the final normal form. It only states a model-level fact that
+    can participate in Γ before IR2 builds Γ ∧ ¬P.
+    """
+
+    output_entity: str
+    output_feature: str
+    op: EnumComparisonOperator
+    expression: AffineExpressionIR2
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+AtomIR2: TypeAlias = ComparisonIR | ProblemIR | ModelConstraintIR2
 
 
 @dataclass(frozen=True)

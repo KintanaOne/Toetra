@@ -4,7 +4,12 @@ from dsl.ir.ir1.nodes import AndIR, ComparisonIR, LogicalIR, NotIR, OrIR, Proble
 from dsl.ir.ir2.context import IR2BuildContext
 from dsl.ir.ir2.enums import Polarity
 from dsl.ir.ir2.errors import InvalidNormalFormError, NormalFormExplosionError
-from dsl.ir.ir2.nodes import ClauseIR2, CNFFormulaIR2, LiteralIR2
+from dsl.ir.ir2.nodes import (
+    ClauseIR2,
+    CNFFormulaIR2,
+    LiteralIR2,
+    ModelConstraintIR2,
+)
 
 
 class CNFConverter:
@@ -61,11 +66,14 @@ class CNFConverter:
         return CNFFormulaIR2(clauses=tuple(clauses))
 
     def _literal_or_none(self, expr: LogicalIR) -> LiteralIR2 | None:
-        if isinstance(expr, (ComparisonIR, ProblemIR)):
+        if isinstance(expr, (ComparisonIR, ProblemIR, ModelConstraintIR2)):
             return LiteralIR2(atom=expr, polarity=Polarity.POSITIVE)
 
         if isinstance(expr, NotIR):
-            if isinstance(expr.operand, (ComparisonIR, ProblemIR)):
+            if isinstance(
+                expr.operand,
+                (ComparisonIR, ProblemIR, ModelConstraintIR2),
+            ):
                 return LiteralIR2(atom=expr.operand, polarity=Polarity.NEGATIVE)
             raise InvalidNormalFormError(
                 "CNF conversion expects NNF input; NotIR must wrap an atom."
@@ -76,5 +84,6 @@ class CNFConverter:
     def _check_limit(self, size: int, context: IR2BuildContext) -> None:
         if size > context.max_distribution_size:
             raise NormalFormExplosionError(
-                f"CNF conversion exceeded max_distribution_size={context.max_distribution_size}."
+                "CNF conversion exceeded "
+                f"max_distribution_size={context.max_distribution_size}."
             )

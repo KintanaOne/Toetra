@@ -1,3 +1,5 @@
+from typing import Any
+
 import pandas as pd
 
 from sklearn.base import (
@@ -153,12 +155,44 @@ class SklearnIntrospector(BaseIntrospector):
 
         metadata = self._build_base_metadata()
 
+        feature_names_in = self._safe_getattr("feature_names_in_")
+
         metadata.update(
             {
                 "n_features_in": self._safe_getattr("n_features_in_"),
                 "classes": self._safe_getattr("classes_"),
-                "feature_names_in": self._safe_getattr("feature_names_in_"),
+                "feature_names_in": feature_names_in,
             }
         )
 
+        linear_metadata = self._extract_linear_metadata(feature_names_in)
+
+        if linear_metadata is not None:
+            metadata["linear"] = linear_metadata
+
         return metadata
+
+    def _extract_linear_metadata(self, feature_names_in: Any) -> dict[str, Any] | None:
+        """Extract generic coef/intercept metadata for linear sklearn estimators."""
+
+        if not self._has_attr("coef_") or not self._has_attr("intercept_"):
+            return None
+
+        feature_names = None
+
+        if feature_names_in is not None:
+            feature_names = self._to_python(feature_names_in)
+
+        return {
+            "coef": self._to_python(self._safe_getattr("coef_")),
+            "intercept": self._to_python(self._safe_getattr("intercept_")),
+            "feature_names": feature_names,
+        }
+
+    def _to_python(self, value: Any) -> Any:
+        """Convert numpy/pandas values to plain Python structures when possible."""
+
+        if hasattr(value, "tolist"):
+            return value.tolist()
+
+        return value

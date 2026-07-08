@@ -3,10 +3,13 @@ from __future__ import annotations
 from dsl.ir.ir1.nodes import AndIR, ComparisonIR, LogicalIR, NotIR, OrIR, ProblemIR
 from dsl.ir.ir2.enums import Polarity
 from dsl.ir.ir2.nodes import (
+    AffineExpressionIR2,
+    AffineOutputConstraintIR2,
     CNFFormulaIR2,
     DNFFormulaIR2,
     FormulaIR2,
     LiteralIR2,
+    ModelConstraintIR2,
     NNFFormulaIR2,
     VerificationTaskIR2,
 )
@@ -42,6 +45,7 @@ def pretty_ir2_task(task: VerificationTaskIR2) -> str:
 def _pretty_requirements(task: VerificationTaskIR2) -> str:
     req = task.requirements
     active = []
+
     if req.requires_boolean_logic:
         active.append("boolean_logic")
     if req.requires_numeric_comparisons:
@@ -56,6 +60,7 @@ def _pretty_requirements(task: VerificationTaskIR2) -> str:
         active.append("domains")
     if req.requires_neighborhoods:
         active.append("neighborhoods")
+
     return ", ".join(active) if active else "none"
 
 
@@ -96,6 +101,7 @@ def _pretty_cnf(formula: CNFFormulaIR2) -> str:
         lines.append(f"  clause[{i}] OR")
         for literal in clause.literals:
             lines.append("    " + _pretty_literal(literal))
+
     return "\n".join(lines)
 
 
@@ -116,6 +122,7 @@ def _pretty_dnf(formula: DNFFormulaIR2) -> str:
         lines.append(f"  branch[{i}] AND")
         for literal in term.literals:
             lines.append("    " + _pretty_literal(literal))
+
     return "\n".join(lines)
 
 
@@ -124,14 +131,18 @@ def _pretty_literal(literal: LiteralIR2) -> str:
 
 
 def _pretty_logical_tree(node: LogicalIR) -> str:
-    if isinstance(node, (ComparisonIR, ProblemIR)):
+    if isinstance(node, (ComparisonIR, ProblemIR, ModelConstraintIR2)):
         return _pretty_literal(LiteralIR2(atom=node, polarity=Polarity.POSITIVE))
 
     if isinstance(node, NotIR):
-        if isinstance(node.operand, (ComparisonIR, ProblemIR)):
+        if isinstance(
+            node.operand,
+            (ComparisonIR, ProblemIR, ModelConstraintIR2),
+        ):
             return _pretty_literal(
                 LiteralIR2(atom=node.operand, polarity=Polarity.NEGATIVE)
             )
+
         return "NOT\n" + _indent(_pretty_logical_tree(node.operand), spaces=2)
 
     if isinstance(node, AndIR):
@@ -145,19 +156,62 @@ def _pretty_logical_tree(node: LogicalIR) -> str:
 
 def _pretty_variadic(name: str, operands: list[LogicalIR]) -> str:
     lines = [name]
+
     for operand in operands:
         lines.append(_indent(_pretty_logical_tree(operand), spaces=2))
+
     return "\n".join(lines)
 
 
-def _pretty_atom(atom: ComparisonIR | ProblemIR) -> str:
+def _pretty_atom(atom: ComparisonIR | ProblemIR | ModelConstraintIR2) -> str:
     if isinstance(atom, ComparisonIR):
-        op = getattr(atom.op, "value", atom.op)
-        return f"{atom.entity}.{atom.feature} {op} {atom.value}"
+        return _pretty_comparison(atom)
 
+    if isinstance(atom, ProblemIR):
+        return _pretty_problem(atom)
+
+    if isinstance(atom, ModelConstraintIR2):
+        return _pretty_model_constraint(atom)
+
+    raise TypeError(f"Unsupported IR2 atom: {type(atom).__name__}")
+
+
+def _pretty_comparison(atom: ComparisonIR) -> str:
+    op = getattr(atom.op, "value", atom.op)
+    return f"{atom.entity}.{atom.feature} {op} {atom.value}"
+
+
+def _pretty_problem(atom: ProblemIR) -> str:
     problem = getattr(atom.problem, "value", atom.problem)
     function = getattr(atom.function, "value", atom.function)
     return f"{problem}.{function}({atom.args or {}})"
+
+
+def _pretty_model_constraint(atom: ModelConstraintIR2) -> str:
+    if isinstance(atom, AffineOutputConstraintIR2):
+        return _pretty_affine_output_constraint(atom)
+
+    return f"<model-constraint:{type(atom).__name__}>"
+
+
+def _pretty_affine_output_constraint(atom: AffineOutputConstraintIR2) -> str:
+    op = getattr(atom.op, "value", atom.op)
+    return (
+        f"{atom.output_entity}.{atom.output_feature} "
+        f"{op} {_pretty_affine_expression(atom.expression)}"
+    )
+
+
+def _pretty_affine_expression(expression: AffineExpressionIR2) -> str:
+    parts: list[str] = []
+
+    for term in expression.terms:
+        parts.append(f"{term.coefficient}*{term.entity}.{term.feature}")
+
+    if expression.bias or not parts:
+        parts.append(str(expression.bias))
+
+    return " + ".join(parts)
 
 
 def _indent(text: str, spaces: int) -> str:

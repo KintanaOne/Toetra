@@ -9,6 +9,7 @@ from dsl.ir.ir2.nodes import (
     CNFFormulaIR2,
     DNFFormulaIR2,
     LiteralIR2,
+    ModelConstraintIR2,
     NNFFormulaIR2,
     VerificationTaskIR2,
 )
@@ -108,8 +109,12 @@ class IR2Validator:
                 f"{location} has invalid polarity: {literal.polarity!r}."
             )
 
-        if not isinstance(literal.atom, (ComparisonIR, ProblemIR)):
+        if not isinstance(
+            literal.atom,
+            (ComparisonIR, ProblemIR, ModelConstraintIR2),
+        ):
             raise IR2ValidationError(
-                f"{location} atom must be ComparisonIR or ProblemIR, "
+                f"{location} atom must be ComparisonIR, ProblemIR or "
+                "ModelConstraintIR2, "
                 f"got {type(literal.atom).__name__}."
             )
