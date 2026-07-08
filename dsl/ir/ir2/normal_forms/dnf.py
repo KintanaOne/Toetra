@@ -1,15 +1,10 @@
 from __future__ import annotations
 
-from dsl.ir.ir1.nodes import AndIR, ComparisonIR, LogicalIR, NotIR, OrIR, ProblemIR
+from dsl.ir.ir1.nodes import AndIR, AtomicIR, LogicalIR, NotIR, OrIR
 from dsl.ir.ir2.context import IR2BuildContext
+from dsl.ir.ir2.dsl.nodes import DNFFormulaIR2, LiteralIR2, TermIR2
 from dsl.ir.ir2.enums import Polarity
 from dsl.ir.ir2.errors import InvalidNormalFormError, NormalFormExplosionError
-from dsl.ir.ir2.nodes import (
-    DNFFormulaIR2,
-    LiteralIR2,
-    ModelConstraintIR2,
-    TermIR2,
-)
 
 
 class DNFConverter:
@@ -64,14 +59,11 @@ class DNFConverter:
         return DNFFormulaIR2(terms=tuple(terms))
 
     def _literal_or_none(self, expr: LogicalIR) -> LiteralIR2 | None:
-        if isinstance(expr, (ComparisonIR, ProblemIR, ModelConstraintIR2)):
+        if isinstance(expr, AtomicIR):
             return LiteralIR2(atom=expr, polarity=Polarity.POSITIVE)
 
         if isinstance(expr, NotIR):
-            if isinstance(
-                expr.operand,
-                (ComparisonIR, ProblemIR, ModelConstraintIR2),
-            ):
+            if isinstance(expr.operand, AtomicIR):
                 return LiteralIR2(atom=expr.operand, polarity=Polarity.NEGATIVE)
             raise InvalidNormalFormError(
                 "DNF conversion expects NNF input; NotIR must wrap an atom."

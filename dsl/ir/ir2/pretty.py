@@ -1,18 +1,25 @@
 from __future__ import annotations
 
-from dsl.ir.ir1.nodes import AndIR, ComparisonIR, LogicalIR, NotIR, OrIR, ProblemIR
-from dsl.ir.ir2.enums import Polarity
-from dsl.ir.ir2.nodes import (
-    AffineExpressionIR2,
-    AffineOutputConstraintIR2,
+from dsl.ir.ir1.nodes import (
+    AndIR,
+    AtomicIR,
+    ComparisonIR,
+    LogicalIR,
+    NotIR,
+    OrIR,
+    ProblemIR,
+)
+from dsl.ir.ir2.dsl.nodes import (
     CNFFormulaIR2,
     DNFFormulaIR2,
     FormulaIR2,
     LiteralIR2,
-    ModelConstraintIR2,
     NNFFormulaIR2,
     VerificationTaskIR2,
 )
+from dsl.ir.ir2.enums import Polarity
+from dsl.ir.ir2.model.affine import AffineExpressionIR2, AffineOutputConstraintIR2
+from dsl.ir.ir2.model.base import ModelConstraintIR2
 
 
 def pretty_print_ir2_tasks(tasks: list[VerificationTaskIR2]) -> None:
@@ -35,6 +42,16 @@ def pretty_ir2_task(task: VerificationTaskIR2) -> str:
     lines.append(f"Normal form   : {task.normal_form.value}")
     lines.append("Requirements  : " + _pretty_requirements(task))
     lines.append(f"Assumptions   : {len(task.assumptions)}")
+
+    if task.assumptions:
+        lines.append("Assumption formulas:")
+        for index, assumption in enumerate(task.assumptions):
+            source = getattr(assumption.source, "value", assumption.source)
+            lines.append(f"  Γ[{index}] source={source}")
+            if assumption.description:
+                lines.append(f"    description : {assumption.description}")
+            lines.append(_indent(pretty_formula(assumption.formula), spaces=4))
+
     lines.append("Spec formula  :")
     lines.append(_indent(pretty_formula(task.spec_formula), spaces=2))
     lines.append("Verification condition:")
@@ -131,14 +148,11 @@ def _pretty_literal(literal: LiteralIR2) -> str:
 
 
 def _pretty_logical_tree(node: LogicalIR) -> str:
-    if isinstance(node, (ComparisonIR, ProblemIR, ModelConstraintIR2)):
+    if isinstance(node, AtomicIR):
         return _pretty_literal(LiteralIR2(atom=node, polarity=Polarity.POSITIVE))
 
     if isinstance(node, NotIR):
-        if isinstance(
-            node.operand,
-            (ComparisonIR, ProblemIR, ModelConstraintIR2),
-        ):
+        if isinstance(node.operand, AtomicIR):
             return _pretty_literal(
                 LiteralIR2(atom=node.operand, polarity=Polarity.NEGATIVE)
             )
@@ -163,7 +177,7 @@ def _pretty_variadic(name: str, operands: list[LogicalIR]) -> str:
     return "\n".join(lines)
 
 
-def _pretty_atom(atom: ComparisonIR | ProblemIR | ModelConstraintIR2) -> str:
+def _pretty_atom(atom: AtomicIR) -> str:
     if isinstance(atom, ComparisonIR):
         return _pretty_comparison(atom)
 

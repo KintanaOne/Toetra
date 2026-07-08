@@ -5,6 +5,7 @@ from typing import Iterable
 
 from dsl.ir.ir1.nodes import (
     AndIR,
+    AtomicIR,
     ComparisonIR,
     LogicalIR,
     NotIR,
@@ -12,17 +13,17 @@ from dsl.ir.ir1.nodes import (
     ProblemIR,
     ScopeIR,
 )
-from dsl.ir.ir2.enums import AssumptionSource, NormalFormKind
-from dsl.ir.ir2.nodes import (
+from dsl.ir.ir2.dsl.nodes import (
     AssumptionIR2,
     CNFFormulaIR2,
     DNFFormulaIR2,
     FormulaIR2,
     LiteralIR2,
-    AffineOutputConstraintIR2,
-    ModelConstraintIR2,
     NNFFormulaIR2,
 )
+from dsl.ir.ir2.enums import AssumptionSource, NormalFormKind
+from dsl.ir.ir2.model.affine import AffineOutputConstraintIR2
+from dsl.ir.ir2.model.base import ModelConstraintIR2
 
 
 @dataclass(frozen=True)
@@ -77,9 +78,7 @@ class RequirementsAnalyzer:
             normal_form=normal_form,
         )
 
-    def _iter_literals_or_atoms(
-        self, formula: FormulaIR2
-    ) -> Iterable[ComparisonIR | ProblemIR | ModelConstraintIR2]:
+    def _iter_literals_or_atoms(self, formula: FormulaIR2) -> Iterable[AtomicIR]:
         if isinstance(formula, NNFFormulaIR2):
             yield from self._iter_atoms_from_logical(formula.expression)
             return
@@ -96,23 +95,16 @@ class RequirementsAnalyzer:
                     yield from self._iter_atom_from_literal(literal)
             return
 
-    def _iter_atom_from_literal(
-        self, literal: LiteralIR2
-    ) -> Iterable[ComparisonIR | ProblemIR | ModelConstraintIR2]:
+    def _iter_atom_from_literal(self, literal: LiteralIR2) -> Iterable[AtomicIR]:
         yield literal.atom
 
-    def _iter_atoms_from_logical(
-        self, node: LogicalIR
-    ) -> Iterable[ComparisonIR | ProblemIR | ModelConstraintIR2]:
-        if isinstance(node, (ComparisonIR, ProblemIR, ModelConstraintIR2)):
+    def _iter_atoms_from_logical(self, node: LogicalIR) -> Iterable[AtomicIR]:
+        if isinstance(node, AtomicIR):
             yield node
             return
 
         if isinstance(node, NotIR):
-            if isinstance(
-                node.operand,
-                (ComparisonIR, ProblemIR, ModelConstraintIR2),
-            ):
+            if isinstance(node.operand, AtomicIR):
                 yield node.operand
             return
 

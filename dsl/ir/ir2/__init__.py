@@ -6,20 +6,22 @@ from dsl.ir.ir2.enums import (
     Polarity,
     VerificationSemantics,
 )
-from dsl.ir.ir2.nodes import (
-    AffineExpressionIR2,
-    AffineTermIR2,
+from dsl.ir.ir2.dsl.nodes import (
     AssumptionIR2,
     ClauseIR2,
     CNFFormulaIR2,
     DNFFormulaIR2,
     FormulaIR2,
     LiteralIR2,
-    ModelConstraintIR2,
-    AffineOutputConstraintIR2,
     NNFFormulaIR2,
     TermIR2,
     VerificationTaskIR2,
+)
+from dsl.ir.ir2.model import (
+    AffineExpressionIR2,
+    AffineOutputConstraintIR2,
+    AffineTermIR2,
+    ModelConstraintIR2,
 )
 from dsl.ir.ir2.requirements import IR2Requirements
 
