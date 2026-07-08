@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -7,15 +8,14 @@ from pathlib import Path
 from test.fixtures.normalization.nnf.helpers import assert_is_nnf, import_run_nnf, sexpr
 
 
-
 def test_run_nnf_entrypoint_returns_normalized_tasks():
-    source = '''
+    source = """
 model := "model.onnx"
 target := MyTarget
 
 [LOGIC]:
 check_at x0 => NOT ((x0.a <= 1 AND x0.b <= 2) -> x0.c <= 3) using Z3
-'''
+"""
 
     run_nnf = import_run_nnf()
     tasks = run_nnf(source)
@@ -27,31 +27,41 @@ check_at x0 => NOT ((x0.a <= 1 AND x0.b <= 2) -> x0.c <= 3) using Z3
     assert_is_nnf(expr)
 
 
-
 def test_run_nnf_module_is_executable_from_repo_root():
-    repo_root = Path(__file__).resolve().parents[3]
+    repo_root = next(
+        parent
+        for parent in Path(__file__).resolve().parents
+        if (parent / "dsl").exists()
+    )
 
     completed = subprocess.run(
         [sys.executable, "-m", "dsl.ir.normalization.run_nnf"],
         cwd=repo_root,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         capture_output=True,
         check=False,
+        env={
+            **os.environ,
+            "PYTHONUTF8": "1",
+            "PYTHONIOENCODING": "utf-8",
+        },
     )
 
     assert completed.returncode == 0, completed.stderr
+    assert completed.stdout is not None
     assert completed.stdout.strip(), "run_nnf module should print a non-empty output"
 
 
-
 def test_run_nnf_entrypoint_handles_quantifier_scope():
-    source = '''
+    source = """
 model := "model.onnx"
 target := MyTarget
 
 [LOGIC]:
 forall => NOT (a <= 1 AND b <= 2) using Z3
-'''
+"""
 
     run_nnf = import_run_nnf()
     tasks = run_nnf(source)

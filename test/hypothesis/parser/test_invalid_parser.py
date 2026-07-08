@@ -2,7 +2,6 @@ import pytest
 from hypothesis import given
 from test.hypothesis.strategies.invalid.invalid_syntactic import invalid_cst_program
 
-from dsl.parser.parser import parse_forml_code
 from test.hypothesis.strategies.valid.valid_lexical import valid_lexical_program
 
 pytestmark = pytest.mark.wip

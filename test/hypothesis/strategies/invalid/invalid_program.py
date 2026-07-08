@@ -30,7 +30,6 @@ from test.hypothesis.strategies.invalid.generic import (
 
 from test.hypothesis.mutation.metadata.enums import (
     Layer,
-    Domain,
     Strategy,
 )
 
@@ -56,9 +55,7 @@ def invalid_program(
         - AST
     """
 
-    program = draw(
-        valid_lexical_program()
-    )
+    program = draw(valid_lexical_program())
 
     # ------------------------------------------
     # STRING

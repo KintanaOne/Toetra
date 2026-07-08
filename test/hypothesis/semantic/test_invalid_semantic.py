@@ -7,7 +7,6 @@ from dsl.parser.parser import parse_forml_code
 from dsl.semantic.core.validator import FORMLValidator
 from dsl.semantic.runtime.tracer import ValidationTracer
 from test.hypothesis.mutations.ast.semantic import apply_semantic_mutations
-from test.hypothesis.strategies.valid.program_string import valid_program
 
 
 @given(valid_string())

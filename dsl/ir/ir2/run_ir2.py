@@ -5,14 +5,13 @@ from dsl.ir.ir2.builder import IR2Builder
 from dsl.ir.ir2.pretty import pretty_print_ir2_tasks
 from dsl.ir.normalization.nnf import NNFNormalizer
 
-
-DEFAULT_SAMPLE = '''
+DEFAULT_SAMPLE = """
 model := "model.onnx"
 target := MyTarget
 
 [LOGIC]:
 forall => a <= 1 -> b <= 2 using Z3
-'''
+"""
 
 
 def run_ir2(source: str):

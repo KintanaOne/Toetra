@@ -2,12 +2,8 @@ from pathlib import Path
 
 from lark import Lark, Tree
 
-
 GRAMMAR_PATH = (
-    Path(__file__).resolve().parents[1]
-    / "language"
-    / "grammar"
-    / "forml_grammar.lark"
+    Path(__file__).resolve().parents[1] / "language" / "grammar" / "forml_grammar.lark"
 )
 
 grammar = GRAMMAR_PATH.read_text(encoding="utf-8")

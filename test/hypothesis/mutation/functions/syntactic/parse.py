@@ -51,11 +51,7 @@ def corrupt_tree_data(
             if random.random() < 0.3:
                 current.data = "corrupted_rule"
 
-            queue.extend(
-                child
-                for child in current.children
-                if isinstance(child, Tree)
-            )
+            queue.extend(child for child in current.children if isinstance(child, Tree))
 
     return mutated
 

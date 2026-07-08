@@ -72,9 +72,7 @@ def remove_random_subtree(
     mutated = deepcopy(tree)
 
     candidates = [
-        i
-        for i, child in enumerate(mutated.children)
-        if isinstance(child, Tree)
+        i for i, child in enumerate(mutated.children) if isinstance(child, Tree)
     ]
 
     if candidates:

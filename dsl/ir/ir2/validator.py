@@ -3,7 +3,12 @@ from __future__ import annotations
 from dsl.ir.ir2.enums import NormalFormKind
 from dsl.ir.ir2.errors import IR2ValidationError
 from dsl.ir.ir2.guard import NNFGuard
-from dsl.ir.ir2.nodes import CNFFormulaIR2, DNFFormulaIR2, NNFFormulaIR2, VerificationTaskIR2
+from dsl.ir.ir2.nodes import (
+    CNFFormulaIR2,
+    DNFFormulaIR2,
+    NNFFormulaIR2,
+    VerificationTaskIR2,
+)
 
 
 class IR2Validator:
@@ -32,4 +37,6 @@ class IR2Validator:
             raise IR2ValidationError(f"Unsupported normal form: {task.normal_form}")
 
         if task.requirements.normal_form != task.normal_form:
-            raise IR2ValidationError("requirements.normal_form must match task.normal_form.")
+            raise IR2ValidationError(
+                "requirements.normal_form must match task.normal_form."
+            )

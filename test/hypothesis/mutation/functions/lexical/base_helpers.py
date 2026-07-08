@@ -27,19 +27,29 @@ KEYWORDS = [
 ]
 
 UNICODE_POOL = [
-    "𝔄", "𝔅", "𝒜", "𝓐",
-    "Ω", "Σ", "Δ",
-    "∑", "∫", "∞",
-    "\u200b", "\u200d",  # zero-width
+    "𝔄",
+    "𝔅",
+    "𝒜",
+    "𝓐",
+    "Ω",
+    "Σ",
+    "Δ",
+    "∑",
+    "∫",
+    "∞",
+    "\u200b",
+    "\u200d",  # zero-width
     "�",
 ]
 # -------------------------------------------------
 # Core safe mutation helpers
 # -------------------------------------------------
 
+
 def replace_with_regex(text: str, regex, fn):
     def _repl(match):
         return fn(match.group(0))
+
     return regex.sub(_repl, text)
 
 
@@ -55,6 +65,7 @@ def random_char_noise():
 def random_ascii_garbage():
     return random.choice(["�", "\x00", "\x1f", "\uffff"])
 
+
 def find_identifiers(text: str):
     """
     Return all identifiers appearing on the LHS of assignments.
@@ -63,10 +74,7 @@ def find_identifiers(text: str):
 
 
 def replace_identifier(
-    text: str,
-    replacement: str,
-    *,
-    replace_all: bool = False
+    text: str, replacement: str, *, replace_all: bool = False
 ) -> str:
     """
     Replace identifiers defined as LHS of assignments:

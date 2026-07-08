@@ -87,19 +87,13 @@ def invalid_program_for(
             )
         )
 
-        mutations.append(
-            descriptor.mutation
-        )
+        mutations.append(descriptor.mutation)
 
-    pipeline = MutationPipeline(
-        mutations
-    )
+    pipeline = MutationPipeline(mutations)
 
     artifact = Artifact(
         value=value,
         layer=artifact_layer,
     )
 
-    return pipeline.run(
-        artifact
-    ).value
+    return pipeline.run(artifact).value

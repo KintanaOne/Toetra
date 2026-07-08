@@ -38,19 +38,17 @@ from test.hypothesis.mutation.functions.base import (
     PipelineStage,
 )
 
-from test.hypothesis.mutation.decorators.mutation import mutation
 
-from test.hypothesis.mutation.functions.semantic.helper.engine import SemanticConstraintEngine
-from test.hypothesis.mutation.functions.semantic.helper.extractor import SemanticConstraintExtractor
-from test.hypothesis.mutation.functions.semantic.helper.rebuilder import SemanticASTRebuilder
-from test.hypothesis.mutation.metadata.contract import MutationContract, PreservationLevel
+from test.hypothesis.mutation.metadata.contract import (
+    MutationContract,
+    PreservationLevel,
+)
 from test.hypothesis.mutation.metadata.enums import (
     Domain,
     Layer,
     Nature,
     Strategy,
 )
-
 
 # =========================================================
 # MUTATION 1 : tautological redundancy
@@ -71,21 +69,6 @@ from test.hypothesis.mutation.metadata.enums import (
     preserves_typing=True,
     preserves_semantic_equivalence=False,
 )
-
-@mutation(
-    name="semantic.inject_impossible_constraint",
-    layer=Layer.AST,
-    nature=Nature.CORRUPTION,
-    strategy=Strategy.CORRUPTED,
-    domain=Domain.LOGICAL,
-    severity=0.55,
-    contract=MutationContract(
-        cst=PreservationLevel.FULL,
-        ast=PreservationLevel.FULL,
-        typing=PreservationLevel.FULL,
-        semantics=PreservationLevel.NONE,
-    ),
-)
 def inject_tautological_redundancy(
     ast: ProgramNode,
 ) -> ProgramNode:
@@ -98,16 +81,12 @@ def inject_tautological_redundancy(
 
     for property_node in mutated.body:
 
-        root = deepcopy(
-            property_node.rule.assertion.root
-        )
+        root = deepcopy(property_node.rule.assertion.root)
 
         tautology = OrNode(
             operands=[
                 root,
-                NotNode(
-                    operand=deepcopy(root)
-                ),
+                NotNode(operand=deepcopy(root)),
             ]
         )
 

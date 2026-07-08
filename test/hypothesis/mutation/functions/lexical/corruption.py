@@ -30,7 +30,7 @@ RESERVED_KEYWORDS = {
     "using",
     "neighborhood",
     "in",
-    "with"
+    "with",
 }
 
 UNICODE_CONFUSABLES = {
@@ -54,6 +54,7 @@ ZERO_WIDTH_CHARS = [
 # IDENTIFIER MUTATIONS
 # =========================================================
 
+
 def find_valid_identifiers(program: str):
     """
     Find non-reserved identifiers in source code.
@@ -64,6 +65,7 @@ def find_valid_identifiers(program: str):
         for m in re.finditer(IDENTIFIER_PATTERN, program)
         if m.group(0) not in RESERVED_KEYWORDS
     ]
+
 
 @mutation(
     name="replace_random_identifier",
@@ -95,15 +97,13 @@ def replace_random_identifier(program: str) -> str:
 
     start, end = match.span()
 
-    return (
-        program[:start]
-        + replacement
-        + program[end:]
-    )
+    return program[:start] + replacement + program[end:]
+
 
 # =========================================================
 # INVALID CHARACTER MUTATIONS
 # =========================================================
+
 
 @mutation(
     name="inject_unicode_confusable",
@@ -121,10 +121,7 @@ def replace_random_identifier(program: str) -> str:
 )
 def inject_unicode_confusable(program: str) -> str:
 
-    candidates = [
-        c for c in UNICODE_CONFUSABLES
-        if c in program
-    ]
+    candidates = [c for c in UNICODE_CONFUSABLES if c in program]
 
     if not candidates:
         return program
@@ -136,6 +133,7 @@ def inject_unicode_confusable(program: str) -> str:
         UNICODE_CONFUSABLES[original],
         1,
     )
+
 
 @mutation(
     name="inject_zero_width",
@@ -157,11 +155,8 @@ def inject_zero_width(program: str) -> str:
 
     zw = random.choice(ZERO_WIDTH_CHARS)
 
-    return (
-        program[:pos]
-        + zw
-        + program[pos:]
-    )
+    return program[:pos] + zw + program[pos:]
+
 
 @mutation(
     name="remove_random_character",
@@ -289,4 +284,3 @@ def shuffle_lines(program: str) -> str:
     random.shuffle(lines)
 
     return "\n".join(lines)
-

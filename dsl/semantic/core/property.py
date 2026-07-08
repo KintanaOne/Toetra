@@ -171,12 +171,12 @@ class PropertyValidator:
                     f"scope '{context.type.value}'. "
                     f"Allowed scopes: {allowed}"
                 )
-            
+
             validate_backend_for_property(
                 property_type=property_type,
                 backend=prop.backend.name if prop.backend else None,
             )
-            
+
             # ==================================================
             # 4. CACHE SEMANTIC ROOT
             # ==================================================
@@ -206,7 +206,6 @@ class PropertyValidator:
         self.tracer.log(f"✔ Property '{prop.type}' validated")
 
         return True
-    
 
     def _normalize_property_type(self, property_type) -> EnumProperty:
         if isinstance(property_type, EnumProperty):

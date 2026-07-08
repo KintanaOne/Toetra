@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import asdict, is_dataclass
 from typing import Iterable
 
 from dsl.ir.ir1.nodes import (
@@ -21,7 +20,6 @@ from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.problems import EnumProblem
 from dsl.language.vocabulary.properties import EnumProperty
 
-
 # -----------------------------------------------------------------------------
 # Public API imports under test
 # -----------------------------------------------------------------------------
@@ -39,7 +37,6 @@ def import_nnf_normalizer_cls():
     from dsl.ir.normalization.nnf import NNFNormalizer
 
     return NNFNormalizer
-
 
 
 def import_run_nnf():
@@ -71,13 +68,11 @@ def cmp(
     return ComparisonIR(entity=entity, feature=feature, op=op, value=value)
 
 
-
 def problem(
     problem_type: EnumProblem = EnumProblem.CLASSIFICATION,
     function: EnumFunction = EnumFunction.EQUAL,
 ) -> ProblemIR:
     return ProblemIR(problem=problem_type, function=function, args={})
-
 
 
 def task_with_expr(expr: LogicalIR) -> VerificationTask:
@@ -92,7 +87,6 @@ def task_with_expr(expr: LogicalIR) -> VerificationTask:
         query=QueryIR(expression=expr),
         backend=EnumBackend.Z3,
     )
-
 
 
 def normalizer():
@@ -122,7 +116,6 @@ def iter_nodes(node: LogicalIR) -> Iterable[LogicalIR]:
         return
 
 
-
 def assert_is_nnf(node: LogicalIR) -> None:
     """
     Structural NNF invariant.
@@ -150,10 +143,8 @@ def assert_is_nnf(node: LogicalIR) -> None:
             ), f"NotIR must only wrap atomic predicates in NNF, got {type(current.operand)}"
 
 
-
 def assert_no_implication(node: LogicalIR) -> None:
     assert not any(isinstance(n, ImplyIR) for n in iter_nodes(node))
-
 
 
 def assert_quantifier_scope(task: VerificationTask) -> None:
@@ -169,8 +160,9 @@ def assert_quantifier_scope(task: VerificationTask) -> None:
     assert task.scope.variables == {"_x": "symbolic"}
 
 
-
-def assert_scope_domain_values(task: VerificationTask, name: str, values: list[str]) -> None:
+def assert_scope_domain_values(
+    task: VerificationTask, name: str, values: list[str]
+) -> None:
     assert task.scope.domain is not None
     assert task.scope.domain.name == name
     assert task.scope.domain.args == {"values": values}
@@ -185,17 +177,14 @@ def _enum_value(value: object) -> object:
     return getattr(value, "value", value)
 
 
-
 def _cmp_to_str(node: ComparisonIR) -> str:
     return f"CMP({node.entity}.{node.feature} {node.op.value} {node.value})"
-
 
 
 def _problem_to_str(node: ProblemIR) -> str:
     problem_value = _enum_value(node.problem)
     function_value = _enum_value(node.function) if node.function is not None else "None"
     return f"PROBLEM({problem_value}.{function_value})"
-
 
 
 def _flatten_same_operator(node: LogicalIR, cls: type[LogicalIR]) -> list[LogicalIR]:
@@ -206,7 +195,6 @@ def _flatten_same_operator(node: LogicalIR, cls: type[LogicalIR]) -> list[Logica
         return children
 
     return [node]
-
 
 
 def sexpr(node: LogicalIR) -> str:
@@ -241,7 +229,6 @@ def sexpr(node: LogicalIR) -> str:
     raise AssertionError(f"Unsupported node type for serialization: {type(node)}")
 
 
-
 def task_to_golden(task: VerificationTask, index: int = 0) -> str:
     backend = task.backend.value if task.backend is not None else "None"
     variables = ",".join(f"{k}:{v}" for k, v in task.scope.variables.items())
@@ -257,6 +244,8 @@ def task_to_golden(task: VerificationTask, index: int = 0) -> str:
     )
 
 
-
 def tasks_to_golden(tasks: list[VerificationTask]) -> str:
-    return "\n\n".join(task_to_golden(task, index=i) for i, task in enumerate(tasks)) + "\n"
+    return (
+        "\n\n".join(task_to_golden(task, index=i) for i, task in enumerate(tasks))
+        + "\n"
+    )

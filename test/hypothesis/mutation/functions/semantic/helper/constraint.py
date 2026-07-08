@@ -2,7 +2,6 @@ from dataclasses import dataclass, field
 from typing import Any, List, Optional
 
 
-
 @dataclass(frozen=True, slots=True)
 class SemanticConstraint:
     """
@@ -19,7 +18,7 @@ class SemanticConstraint:
     value: Any
     context: Optional[str] = None  # optional domain grouping
 
-    
+
 @dataclass
 class SemanticConstraintSet:
     """

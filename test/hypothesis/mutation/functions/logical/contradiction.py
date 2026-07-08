@@ -10,14 +10,13 @@ from dsl.builder.program import ProgramNode
 
 from test.hypothesis.mutation.functions.base import (
     MutationLayer,
-    MutationLayer,
     mutation,
     MutationImpact,
     MutationNature,
     MutationSeverity,
     PipelineStage,
 )
-from test.hypothesis.mutation.functions.semantic.contradiction import CONTRADICTION_MUTATIONS
+
 
 @mutation(
     layer=MutationLayer.LOGICAL,
@@ -32,7 +31,7 @@ from test.hypothesis.mutation.functions.semantic.contradiction import CONTRADICT
     preserves_valid_ast=True,
     preserves_typing=True,
     preserves_semantic_equivalence=False,
-    preserves_valid_cst=True
+    preserves_valid_cst=True,
 )
 def inject_contradiction(ast: ProgramNode) -> ProgramNode:
     """
@@ -70,7 +69,7 @@ def inject_contradiction(ast: ProgramNode) -> ProgramNode:
     preserves_valid_ast=True,
     preserves_typing=True,
     preserves_semantic_equivalence=False,
-    preserves_valid_cst=True
+    preserves_valid_cst=True,
 )
 def inject_logical_tautology(ast: ProgramNode) -> ProgramNode:
     """
@@ -119,10 +118,7 @@ def inject_global_contradiction(ast: ProgramNode) -> ProgramNode:
     for p in mutated.body:
         root = deepcopy(p.rule.assertion.root)
 
-        contradiction = AndNode(operands=[
-            root,
-            NotNode(operand=deepcopy(root))
-        ])
+        contradiction = AndNode(operands=[root, NotNode(operand=deepcopy(root))])
 
         p.rule.assertion.root = contradiction
 

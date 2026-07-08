@@ -4,7 +4,10 @@ from model.detector.model_framework import EnumModelFramework
 from model.errors.introspection import UnsupportedIntrospectorError
 from model.introspector.introspector_factory import IntrospectorFactory
 from model.introspector.sklearn_introspector import SklearnIntrospector
-from test.fixtures.model_bridge.factories import dataset_path, train_classification_model
+from test.fixtures.model_bridge.factories import (
+    dataset_path,
+    train_classification_model,
+)
 
 
 def test_introspector_factory_creates_sklearn_introspector_with_target_name():

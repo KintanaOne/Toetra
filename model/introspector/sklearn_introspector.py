@@ -14,6 +14,7 @@ from model.schema.model_schema import ModelSchema
 
 from model.errors.introspection import MissingFeatureMetadataError
 
+
 class SklearnIntrospector(BaseIntrospector):
 
     # ======================================================

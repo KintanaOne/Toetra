@@ -2,8 +2,12 @@ from __future__ import annotations
 
 from dsl.ir.ir1.nodes import AndIR, NotIR, OrIR
 
-from test.fixtures.normalization.nnf.helpers import assert_is_nnf, cmp, normalizer, sexpr
-
+from test.fixtures.normalization.nnf.helpers import (
+    assert_is_nnf,
+    cmp,
+    normalizer,
+    sexpr,
+)
 
 
 def test_demorgan_not_and_becomes_or_of_negated_operands():
@@ -22,7 +26,6 @@ def test_demorgan_not_and_becomes_or_of_negated_operands():
     assert_is_nnf(got)
 
 
-
 def test_demorgan_not_or_becomes_and_of_negated_operands():
     expr = NotIR(
         OrIR(
@@ -39,7 +42,6 @@ def test_demorgan_not_or_becomes_and_of_negated_operands():
     assert_is_nnf(got)
 
 
-
 def test_double_negation_is_eliminated():
     expr = NotIR(NotIR(cmp("a", 1)))
 
@@ -47,7 +49,6 @@ def test_double_negation_is_eliminated():
 
     assert sexpr(got) == "CMP(x0.a <= 1)"
     assert_is_nnf(got)
-
 
 
 def test_complex_demorgan_expression_is_nnf():

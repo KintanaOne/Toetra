@@ -28,11 +28,20 @@ class BackendCapabilities:
     def supports(self, requirements: IR2Requirements) -> bool:
         if requirements.requires_boolean_logic and not self.supports_boolean_logic:
             return False
-        if requirements.requires_numeric_comparisons and not self.supports_numeric_comparisons:
+        if (
+            requirements.requires_numeric_comparisons
+            and not self.supports_numeric_comparisons
+        ):
             return False
-        if requirements.requires_problem_predicates and not self.supports_problem_predicates:
+        if (
+            requirements.requires_problem_predicates
+            and not self.supports_problem_predicates
+        ):
             return False
-        if requirements.requires_model_assertions and not self.supports_model_assertions:
+        if (
+            requirements.requires_model_assertions
+            and not self.supports_model_assertions
+        ):
             return False
         if requirements.requires_quantifiers and not self.supports_quantifiers:
             return False

@@ -6,7 +6,6 @@ from typing import Union
 from dsl.ast.nodes.base import ASTNode
 from dsl.semantic.types.enums import EnumDataType
 
-
 PrimitiveValue = Union[str, int, float, bool, None]
 
 

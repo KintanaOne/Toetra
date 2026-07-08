@@ -16,11 +16,13 @@ from copy import deepcopy
 
 from test.hypothesis.mutation.decorators.mutation import mutation
 
-from test.hypothesis.mutation.metadata.contract import MutationContract, PreservationLevel
+from test.hypothesis.mutation.metadata.contract import (
+    MutationContract,
+    PreservationLevel,
+)
 from test.hypothesis.mutation.metadata.enums import Layer, Nature, Strategy, Domain
 
 from dsl.builder.assertion import NotNode
-
 
 # =========================================================
 # CONTRACTS
@@ -52,6 +54,7 @@ FULL_SEMANTIC_BREAK = MutationContract(
 # 1. NEGATE ASSERTION
 # =========================================================
 
+
 @mutation(
     name="negate_assertion",
     layer=Layer.AST,
@@ -77,6 +80,7 @@ def negate_assertion(ast):
 # =========================================================
 # 2. REMOVE NEGATION (NORMALIZATION STEP)
 # =========================================================
+
 
 @mutation(
     name="remove_negation",
@@ -106,6 +110,7 @@ def remove_negation(ast):
 # 3. DOUBLE NEGATION (SEMANTIC NO-OP)
 # =========================================================
 
+
 @mutation(
     name="inject_double_negation",
     layer=Layer.AST,
@@ -123,8 +128,6 @@ def inject_double_negation(ast):
 
         root = deepcopy(p.rule.assertion.root)
 
-        p.rule.assertion.root = NotNode(
-            operand=NotNode(operand=root)
-        )
+        p.rule.assertion.root = NotNode(operand=NotNode(operand=root))
 
     return mutated

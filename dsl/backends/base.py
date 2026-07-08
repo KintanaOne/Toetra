@@ -18,5 +18,4 @@ class BackendTranslator(Protocol):
     backend: EnumBackend
     capabilities: BackendCapabilities
 
-    def translate(self, task: VerificationTaskIR2) -> Any:
-        ...
+    def translate(self, task: VerificationTaskIR2) -> Any: ...

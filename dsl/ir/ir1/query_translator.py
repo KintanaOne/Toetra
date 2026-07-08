@@ -43,18 +43,12 @@ class QueryTranslator:
 
     def translate(self, node: LogicalNode) -> QueryIR:
         if isinstance(node, AndNode):
-            operands = [
-                self._translate_logical(n)
-                for n in self._flatten_and(node)
-            ]
+            operands = [self._translate_logical(n) for n in self._flatten_and(node)]
 
             return QueryIR(expression=AndIR(operands=operands))
 
         if isinstance(node, OrNode):
-            operands = [
-                self._translate_logical(n)
-                for n in self._flatten_or(node)
-            ]
+            operands = [self._translate_logical(n) for n in self._flatten_or(node)]
 
             return QueryIR(expression=OrIR(operands=operands))
 
@@ -96,24 +90,16 @@ class QueryTranslator:
 
         if isinstance(node, AndNode):
             return AndIR(
-                operands=[
-                    self._translate_logical(child)
-                    for child in node.operands
-                ]
+                operands=[self._translate_logical(child) for child in node.operands]
             )
 
         if isinstance(node, OrNode):
             return OrIR(
-                operands=[
-                    self._translate_logical(child)
-                    for child in node.operands
-                ]
+                operands=[self._translate_logical(child) for child in node.operands]
             )
 
         if isinstance(node, NotNode):
-            return NotIR(
-                operand=self._translate_logical(node.operand)
-            )
+            return NotIR(operand=self._translate_logical(node.operand))
 
         if isinstance(node, ImplicationNode):
             return ImplyIR(
@@ -148,7 +134,7 @@ class QueryTranslator:
             feature_dtype=feature_dtype,
             value_dtype=node.right.dtype,
         )
-    
+
     def _translate_problem(self, node: ProblemNode) -> ProblemIR:
         problem = (
             node.problem
@@ -170,7 +156,7 @@ class QueryTranslator:
             function=function,
             args={},
         )
-    
+
     def _resolve_ir_attribute(
         self,
         attr: AttributeNode,

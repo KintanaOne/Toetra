@@ -121,8 +121,7 @@ def test_nested_logic_attributes_receive_semantic_annotations():
     comparisons = _collect_comparisons(root)
 
     resolved = {
-        cmp.left.feature: _semantic(cmp.left).resolved_entity
-        for cmp in comparisons
+        cmp.left.feature: _semantic(cmp.left).resolved_entity for cmp in comparisons
     }
 
     assert resolved == {

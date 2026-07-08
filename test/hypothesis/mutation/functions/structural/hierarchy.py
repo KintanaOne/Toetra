@@ -13,7 +13,14 @@ ROLE IN FORML:
 import random
 from copy import deepcopy
 
-from test.hypothesis.mutation.functions.base import mutation, MutationLayer, MutationNature, MutationSeverity, MutationImpact, PipelineStage
+from test.hypothesis.mutation.functions.base import (
+    mutation,
+    MutationLayer,
+    MutationNature,
+    MutationSeverity,
+    MutationImpact,
+    PipelineStage,
+)
 
 
 @mutation(
@@ -22,8 +29,7 @@ from test.hypothesis.mutation.functions.base import mutation, MutationLayer, Mut
     severity=MutationSeverity.HIGH,
     severity_score=0.85,
     impact={MutationImpact.AST_INVALID},
-    expected_failures={PipelineStage.AST_BUILDING, 
-                       PipelineStage.SEMANTIC_ANALYSIS},
+    expected_failures={PipelineStage.AST_BUILDING, PipelineStage.SEMANTIC_ANALYSIS},
     preserves_valid_ast=False,
     preserves_valid_cst=False,
     preserves_typing=False,
@@ -43,8 +49,7 @@ def flatten_ast(ast):
     severity=MutationSeverity.CRITICAL,
     severity_score=1.0,
     impact={MutationImpact.AST_INVALID},
-    expected_failures={PipelineStage.AST_BUILDING,
-                       PipelineStage.SEMANTIC_ANALYSIS},
+    expected_failures={PipelineStage.AST_BUILDING, PipelineStage.SEMANTIC_ANALYSIS},
     preserves_valid_ast=False,
     preserves_valid_cst=False,
     preserves_typing=False,

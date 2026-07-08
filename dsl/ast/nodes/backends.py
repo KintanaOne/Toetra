@@ -6,6 +6,7 @@ from dsl.ast.nodes.base import ASTNode
 from dsl.ast.nodes.primitives import ArgNode
 from dsl.language.vocabulary.backends import EnumBackend
 
+
 @dataclass
 class BackendNode(ASTNode):
     """

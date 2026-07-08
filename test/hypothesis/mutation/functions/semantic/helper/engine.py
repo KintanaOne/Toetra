@@ -1,10 +1,12 @@
 import random
 from copy import deepcopy
-from typing import List
 
-from test.hypothesis.mutation.functions.semantic.helper.constraint import SemanticConstraint
-from test.hypothesis.mutation.functions.semantic.helper.constraint import SemanticConstraintSet
-
+from test.hypothesis.mutation.functions.semantic.helper.constraint import (
+    SemanticConstraint,
+)
+from test.hypothesis.mutation.functions.semantic.helper.constraint import (
+    SemanticConstraintSet,
+)
 
 
 class SemanticConstraintEngine:
@@ -88,7 +90,7 @@ class SemanticConstraintEngine:
 
         # fallback corruption
         return None
-    
+
     def _mutate_constraint(self, c, *, operator=None, value=None):
         """
         Create a new SemanticConstraint instead of modifying in-place.

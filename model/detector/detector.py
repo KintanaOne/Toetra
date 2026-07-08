@@ -11,7 +11,7 @@ from model.errors.detection import (
 # ==================================================
 
 try:
-    from xgboost import XGBModel
+    from xgboost import XGBModel  # pyright: ignore[reportMissingImports]
 except ImportError:
     XGBModel = None
 

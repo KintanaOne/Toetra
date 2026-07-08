@@ -41,7 +41,9 @@ def train_regression_model() -> LinearRegression:
     return model
 
 
-def save_joblib_model(model: Any, tmp_path: Path, filename: str = "model.joblib") -> Path:
+def save_joblib_model(
+    model: Any, tmp_path: Path, filename: str = "model.joblib"
+) -> Path:
     path = tmp_path / filename
     joblib.dump(model, path)
     return path
@@ -55,11 +57,15 @@ def save_pickle_model(model: Any, tmp_path: Path, filename: str = "model.pkl") -
 
 
 def make_classification_joblib(tmp_path: Path) -> Path:
-    return save_joblib_model(train_classification_model(), tmp_path, "classification.joblib")
+    return save_joblib_model(
+        train_classification_model(), tmp_path, "classification.joblib"
+    )
 
 
 def make_classification_pkl(tmp_path: Path) -> Path:
-    return save_pickle_model(train_classification_model(), tmp_path, "classification.pkl")
+    return save_pickle_model(
+        train_classification_model(), tmp_path, "classification.pkl"
+    )
 
 
 def make_regression_joblib(tmp_path: Path) -> Path:

@@ -1,6 +1,11 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from model.schema.model_schema import ModelSchema
 
 class BaseIntrospector(ABC):
     """
@@ -25,36 +30,18 @@ class BaseIntrospector(ABC):
         source_path: str | Path | None = None,
         schema=None,
         serialization_format: str | None = None,
-        target_name: str | None = None,
     ):
-
         self.model = model
-
-        # Optional dataset path
         self.source_path = Path(source_path) if source_path is not None else None
-
-        # Optional external schema
         self.input_schema = schema
-
-        # Serialization metadata
         self.serialization_format = serialization_format
 
-        self.target_name = target_name
-
-    # ======================================================
-    # Public API
-    # ======================================================
-
     @abstractmethod
-    def introspect(self):
+    def introspect(self) -> ModelSchema:
         """
         Produce a normalized ModelSchema.
         """
-        pass
-
-    # ======================================================
-    # Shared helpers
-    # ======================================================
+        raise NotImplementedError
 
     def _safe_getattr(self, name, default=None):
         """
@@ -68,15 +55,10 @@ class BaseIntrospector(ABC):
         """
         return hasattr(self.model, name)
 
-    # ======================================================
-    # Metadata helpers
-    # ======================================================
-
     def _build_base_metadata(self) -> dict:
         """
         Common metadata shared across frameworks.
         """
-
         return {
             "serialization_format": self.serialization_format,
             "model_class": type(self.model).__name__,

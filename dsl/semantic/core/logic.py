@@ -187,8 +187,6 @@ class LogicValidator:
             )
 
         self._validate_attribute_against_schema(node)
-            
-
 
     def _validate_attribute_against_schema(self, node: AttributeNode):
         """
@@ -207,8 +205,7 @@ class LogicValidator:
             available = ", ".join(sorted(self.model_schema.features.keys()))
 
             raise InvalidPropertyError(
-                f"Unknown feature '{feature_name}'. "
-                f"Available features: {available}"
+                f"Unknown feature '{feature_name}'. " f"Available features: {available}"
             )
 
         feature_schema = self.model_schema.features[feature_name]

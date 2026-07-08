@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import List, Iterable
+from typing import List
 
 from metadata.descriptor import MutationDescriptor
-from metadata.enums import Layer, Domain, Strategy
-from metadata.contract import MutationContract
 from test.hypothesis.mutation.core.filtering import MutationFilterEngine
 
 
@@ -44,12 +42,15 @@ class MutationRegistry:
     # (delegates to filtering engine)
     # ---------------------------------------------------------
 
-    def filter(self, engine: MutationFilterEngine, **kwargs) -> List[MutationDescriptor]:
+    def filter(
+        self, engine: MutationFilterEngine, **kwargs
+    ) -> List[MutationDescriptor]:
         """
         Filter mutations using a filtering engine.
         """
         return engine.filter(self._items, **kwargs)
-    
+
+
 # =========================================================
 # GLOBAL SINGLETON (IMPORTANT)
 # =========================================================

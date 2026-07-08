@@ -16,7 +16,6 @@ CHARACTERISTICS:
     ❌ numeric meaning corrupted
 """
 
-import random
 from copy import deepcopy
 
 from dsl.ast.nodes.assertion import ComparisonNode
@@ -47,7 +46,7 @@ from test.hypothesis.mutation.functions.base import (
     preserves_valid_ast=True,
     preserves_typing=True,
     preserves_semantic_equivalence=False,
-    preserves_valid_cst=True
+    preserves_valid_cst=True,
 )
 def explode_constants(ast: ProgramNode) -> ProgramNode:
     """
@@ -83,7 +82,7 @@ def explode_constants(ast: ProgramNode) -> ProgramNode:
     preserves_valid_ast=True,
     preserves_typing=True,
     preserves_semantic_equivalence=False,
-    preserves_valid_cst=True
+    preserves_valid_cst=True,
 )
 def invert_numeric_sign(ast: ProgramNode) -> ProgramNode:
     """

@@ -3,7 +3,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterable
 
-from dsl.ir.ir1.nodes import AndIR, ComparisonIR, LogicalIR, NotIR, OrIR, ProblemIR, ScopeIR
+from dsl.ir.ir1.nodes import (
+    AndIR,
+    ComparisonIR,
+    LogicalIR,
+    NotIR,
+    OrIR,
+    ProblemIR,
+    ScopeIR,
+)
 from dsl.ir.ir2.enums import AssumptionSource, NormalFormKind
 from dsl.ir.ir2.nodes import (
     AssumptionIR2,
@@ -49,16 +57,25 @@ class RequirementsAnalyzer:
 
         return IR2Requirements(
             requires_boolean_logic=True,
-            requires_numeric_comparisons=any(isinstance(item, ComparisonIR) for item in all_items),
-            requires_problem_predicates=any(isinstance(item, ProblemIR) for item in all_items),
-            requires_model_assertions=any(a.source == AssumptionSource.MODEL for a in assumptions),
+            requires_numeric_comparisons=any(
+                isinstance(item, ComparisonIR) for item in all_items
+            ),
+            requires_problem_predicates=any(
+                isinstance(item, ProblemIR) for item in all_items
+            ),
+            requires_model_assertions=any(
+                a.source == AssumptionSource.MODEL for a in assumptions
+            ),
             requires_quantifiers=scope.kind == "quantifier",
-            requires_domains=scope.domain is not None or any(a.source == AssumptionSource.DOMAIN for a in assumptions),
+            requires_domains=scope.domain is not None
+            or any(a.source == AssumptionSource.DOMAIN for a in assumptions),
             requires_neighborhoods=scope.neighborhood is not None,
             normal_form=normal_form,
         )
 
-    def _iter_literals_or_atoms(self, formula: FormulaIR2) -> Iterable[ComparisonIR | ProblemIR]:
+    def _iter_literals_or_atoms(
+        self, formula: FormulaIR2
+    ) -> Iterable[ComparisonIR | ProblemIR]:
         if isinstance(formula, NNFFormulaIR2):
             yield from self._iter_atoms_from_logical(formula.expression)
             return
@@ -75,10 +92,14 @@ class RequirementsAnalyzer:
                     yield from self._iter_atom_from_literal(literal)
             return
 
-    def _iter_atom_from_literal(self, literal: LiteralIR2) -> Iterable[ComparisonIR | ProblemIR]:
+    def _iter_atom_from_literal(
+        self, literal: LiteralIR2
+    ) -> Iterable[ComparisonIR | ProblemIR]:
         yield literal.atom
 
-    def _iter_atoms_from_logical(self, node: LogicalIR) -> Iterable[ComparisonIR | ProblemIR]:
+    def _iter_atoms_from_logical(
+        self, node: LogicalIR
+    ) -> Iterable[ComparisonIR | ProblemIR]:
         if isinstance(node, (ComparisonIR, ProblemIR)):
             yield node
             return

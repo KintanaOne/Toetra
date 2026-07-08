@@ -19,13 +19,13 @@ def _run_ir1_then_nnf(source: str):
 
 
 def test_pipeline_forall_demorgan_keeps_symbolic_binding_after_nnf():
-    source = '''
+    source = """
 model := "model.onnx"
 target := MyTarget
 
 [LOGIC]:
 forall => NOT (a <= 1 AND b <= 2) using Z3
-'''
+"""
 
     tasks = _run_ir1_then_nnf(source)
 
@@ -40,13 +40,13 @@ forall => NOT (a <= 1 AND b <= 2) using Z3
 
 
 def test_pipeline_exists_implication_keeps_symbolic_binding_after_nnf():
-    source = '''
+    source = """
 model := "model.onnx"
 target := MyTarget
 
 [LOGIC]:
 exists => a <= 1 -> b <= 2 using Z3
-'''
+"""
 
     tasks = _run_ir1_then_nnf(source)
 
@@ -59,13 +59,13 @@ exists => a <= 1 -> b <= 2 using Z3
 
 
 def test_pipeline_forall_with_domain_preserves_domain_and_symbolic_binding():
-    source = '''
+    source = """
 model := "model.onnx"
 target := MyTarget
 
 [LOGIC]:
 forall with Segment("A", "B") => NOT (a <= 1 OR b <= 2) using Z3
-'''
+"""
 
     tasks = _run_ir1_then_nnf(source)
 
@@ -91,13 +91,13 @@ def test_pipeline_unicode_quantifiers_are_supported_if_grammar_exposes_them(
     token: str,
     expected_query: str,
 ):
-    source = f'''
+    source = f"""
 model := "model.onnx"
 target := MyTarget
 
 [LOGIC]:
 {token} => NOT (a <= 1 AND b <= 2) using Z3
-'''
+"""
 
     tasks = _run_ir1_then_nnf(source)
 

@@ -80,6 +80,7 @@ def duplicate_operator(text: str) -> str:
         text,
     )
 
+
 @mutation(
     name="operator_shuffle",
     layer=Layer.STRING,

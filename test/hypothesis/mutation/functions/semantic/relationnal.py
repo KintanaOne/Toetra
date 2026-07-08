@@ -34,7 +34,6 @@ from test.hypothesis.mutation.functions.base import (
     PipelineStage,
 )
 
-
 # =========================================================
 # MUTATION 1 : reverse property order
 # =========================================================

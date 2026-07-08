@@ -139,12 +139,13 @@ def reorder_sections(ast: ProgramNode) -> ProgramNode:
     return ast
 
 
-INVARIANTS_MUTATIONS= [
+INVARIANTS_MUTATIONS = [
     remove_model,
     remove_target,
     remove_body,
     reorder_sections,
 ]
+
 
 def apply_structural_mutations(ast: ProgramNode, n: int = 1):
     mutated = ast

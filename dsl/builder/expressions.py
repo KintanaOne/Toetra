@@ -53,6 +53,7 @@ def parse_at(prop: Tree) -> AtExprNode:
 # EXPRESSIONS PARSERS (STRICT VERSION)
 # ============================================================================
 
+
 def parse_pairwise_token(pair: str) -> tuple[str, str]:
     """
     Parse a raw pairwise token like:
@@ -83,6 +84,7 @@ def parse_pairwise_token(pair: str) -> tuple[str, str]:
         )
 
     return left, right
+
 
 def parse_pairwise(prop: Tree) -> PairwiseExprNode:
     """

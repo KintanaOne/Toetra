@@ -4,7 +4,6 @@ from dsl.ir.ir1.pretty import pretty_print_tasks
 from dsl.ir.ir1.run_ir1 import run_ir
 from dsl.ir.normalization.nnf import NNFNormalizer
 
-
 DEFAULT_SAMPLE = """
 model := "model.onnx"
 target := MyTarget

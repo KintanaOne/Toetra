@@ -1,5 +1,3 @@
-
-
 from __future__ import annotations
 
 import random
@@ -8,7 +6,10 @@ from copy import deepcopy
 
 from test.hypothesis.mutation.decorators.mutation import mutation
 
-from test.hypothesis.mutation.metadata.contract import MutationContract, PreservationLevel
+from test.hypothesis.mutation.metadata.contract import (
+    MutationContract,
+    PreservationLevel,
+)
 from test.hypothesis.mutation.metadata.enums import (
     Domain,
     Layer,
@@ -16,7 +17,7 @@ from test.hypothesis.mutation.metadata.enums import (
     Strategy,
 )
 
-from dsl.ast.nodes.assertion import AndNode, OrNode, NotNode
+from dsl.ast.nodes.assertion import AndNode, OrNode
 
 # =========================================================
 # CONTRACTS
@@ -48,6 +49,7 @@ NONE_SEMANTIC = MutationContract(
 # 1. SWAP AND / OR
 # =========================================================
 
+
 @mutation(
     name="swap_boolean_operators",
     layer=Layer.AST,
@@ -77,6 +79,7 @@ def swap_boolean_operators(ast):
 # =========================================================
 # 2. DUPLICATE OPERAND
 # =========================================================
+
 
 @mutation(
     name="duplicate_operand",
@@ -108,6 +111,7 @@ def duplicate_operand(ast):
 # 3. REMOVE OPERAND
 # =========================================================
 
+
 @mutation(
     name="remove_operand",
     layer=Layer.AST,
@@ -135,6 +139,7 @@ def remove_operand(ast):
 # 4. PERMUTE OPERANDS
 # =========================================================
 
+
 @mutation(
     name="permute_operands",
     layer=Layer.AST,
@@ -161,6 +166,7 @@ def permute_operands(ast):
 # =========================================================
 # 5. FLATTEN TREE
 # =========================================================
+
 
 @mutation(
     name="flatten_boolean_tree",

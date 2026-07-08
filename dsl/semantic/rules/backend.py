@@ -2,7 +2,6 @@ from dsl.language.vocabulary.backends import EnumBackend
 from dsl.language.vocabulary.properties import EnumProperty
 from dsl.semantic.errors.errors import InvalidPropertyError
 
-
 V1_SUPPORTED_BACKENDS = {
     EnumBackend.Z3,
 }

@@ -10,7 +10,9 @@ from dsl.ir.ir2.nodes import DNFFormulaIR2, LiteralIR2, TermIR2
 class DNFConverter:
     """Converts an NNF logical tree into typed DNFFormulaIR2."""
 
-    def convert(self, expr: LogicalIR, context: IR2BuildContext | None = None) -> DNFFormulaIR2:
+    def convert(
+        self, expr: LogicalIR, context: IR2BuildContext | None = None
+    ) -> DNFFormulaIR2:
         context = context or IR2BuildContext()
         dnf = self._to_dnf(expr, context)
         self._check_limit(len(dnf.terms), context)
@@ -34,10 +36,14 @@ class DNFConverter:
 
             current = self._to_dnf(expr.operands[0], context)
             for operand in expr.operands[1:]:
-                current = self._distribute_and(current, self._to_dnf(operand, context), context)
+                current = self._distribute_and(
+                    current, self._to_dnf(operand, context), context
+                )
             return current
 
-        raise InvalidNormalFormError(f"Unsupported NNF node for DNF conversion: {type(expr).__name__}")
+        raise InvalidNormalFormError(
+            f"Unsupported NNF node for DNF conversion: {type(expr).__name__}"
+        )
 
     def _distribute_and(
         self,
@@ -59,7 +65,9 @@ class DNFConverter:
         if isinstance(expr, NotIR):
             if isinstance(expr.operand, (ComparisonIR, ProblemIR)):
                 return LiteralIR2(atom=expr.operand, polarity=Polarity.NEGATIVE)
-            raise InvalidNormalFormError("DNF conversion expects NNF input; NotIR must wrap an atom.")
+            raise InvalidNormalFormError(
+                "DNF conversion expects NNF input; NotIR must wrap an atom."
+            )
 
         return None
 

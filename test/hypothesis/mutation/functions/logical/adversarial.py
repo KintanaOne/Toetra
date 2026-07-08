@@ -15,7 +15,10 @@ from copy import deepcopy
 
 from test.hypothesis.mutation.decorators.mutation import mutation
 
-from test.hypothesis.mutation.metadata.contract import MutationContract, PreservationLevel
+from test.hypothesis.mutation.metadata.contract import (
+    MutationContract,
+    PreservationLevel,
+)
 from test.hypothesis.mutation.metadata.enums import (
     Domain,
     Layer,
@@ -25,10 +28,10 @@ from test.hypothesis.mutation.metadata.enums import (
 
 from dsl.ast.nodes.assertion import AndNode, OrNode, NotNode
 
-
 # =========================================================
 # 1. TAUTOLOGY INJECTION
 # =========================================================
+
 
 @mutation(
     name="inject_tautology",
@@ -60,6 +63,7 @@ def inject_tautology(ast):
 # 2. NEGATION CHAOS
 # =========================================================
 
+
 @mutation(
     name="nest_negations",
     layer=Layer.AST,
@@ -88,6 +92,7 @@ def nest_negations(ast):
 # =========================================================
 # 3. CONTRADICTION INJECTION
 # =========================================================
+
 
 @mutation(
     name="inject_contradiction",

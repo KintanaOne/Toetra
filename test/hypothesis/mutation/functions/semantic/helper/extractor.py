@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Optional, List
+from typing import List
 
-from copy import deepcopy
 
 from dsl.ast.nodes.assertion import (
     AndNode,
@@ -14,15 +12,11 @@ from dsl.ast.nodes.assertion import (
     LogicalNode,
 )
 
-from dsl.ast.nodes.assertion import (
-    AndNode,
-    OrNode,
-    NotNode,
-    ImplicationNode,
-)
 from dsl.ast.nodes.primitives import AttributeNode
-from test.hypothesis.mutation.functions.semantic.helper.constraint import SemanticConstraint, SemanticConstraintSet
-
+from test.hypothesis.mutation.functions.semantic.helper.constraint import (
+    SemanticConstraint,
+    SemanticConstraintSet,
+)
 
 
 class SemanticConstraintExtractor:
@@ -69,7 +63,6 @@ class SemanticConstraintExtractor:
             return self._extract_comparison(node)
 
         return []
-    
 
     # =========================================================
     # LOGICAL NODES
@@ -90,10 +83,7 @@ class SemanticConstraintExtractor:
     def _extract_not(self, node: NotNode) -> List[SemanticConstraint]:
         inner = self._extract_node(node.operand)
 
-        return [
-            self._invert_constraint(c)
-            for c in inner
-        ]
+        return [self._invert_constraint(c) for c in inner]
 
     def _extract_implication(self, node: ImplicationNode) -> List[SemanticConstraint]:
         left = self._extract_node(node.left)
@@ -101,7 +91,6 @@ class SemanticConstraintExtractor:
 
         # semantic interpretation:
         return left + right
-    
 
     # =========================================================
     # LEAF EXTRACTION (IMPORTANT PLACEHOLDER)
@@ -115,14 +104,12 @@ class SemanticConstraintExtractor:
         return [
             SemanticConstraint(
                 field=self._extract_field(attr),
-                operator=node.op.value
-                if hasattr(node.op, "value")
-                else str(node.op),
+                operator=node.op.value if hasattr(node.op, "value") else str(node.op),
                 value=const.value,
                 context=None,
             )
         ]
-    
+
     def _extract_field(self, node: AttributeNode) -> str:
         """
         Convert AttributeNode → semantic field name.

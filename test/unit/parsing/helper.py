@@ -144,6 +144,7 @@ def assert_domain(domain, name: str, values: list[str]) -> None:
 # Backend helpers
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 def assert_backend(
     prop,
     expected_name: str | EnumBackend,
@@ -168,12 +169,10 @@ def assert_backend(
 
     assert backend.name == expected_backend
 
-    actual_args = {
-        arg.key: arg.value
-        for arg in backend.args
-    }
+    actual_args = {arg.key: arg.value for arg in backend.args}
 
     assert actual_args == expected_args
+
 
 def assert_no_backend(prop) -> None:
     """

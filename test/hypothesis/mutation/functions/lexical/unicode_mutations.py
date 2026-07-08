@@ -3,7 +3,6 @@ Unicode-based lexical corruption.
 Breaks tokenizer assumptions and normalization layers.
 """
 
-
 from __future__ import annotations
 
 import random
@@ -23,7 +22,6 @@ from test.hypothesis.mutation.metadata.enums import (
 )
 
 from .base_helpers import UNICODE_POOL, inject_noise, replace_identifier
-
 
 
 @mutation(
@@ -74,4 +72,3 @@ def unicode_identifier_break(text: str) -> str:
         text,
         replacement=random.choice(UNICODE_POOL),
     )
-

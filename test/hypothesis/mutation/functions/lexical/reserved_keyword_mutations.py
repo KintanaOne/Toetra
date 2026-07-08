@@ -8,7 +8,6 @@ Goal:
 
 from __future__ import annotations
 
-import re
 import random
 
 from test.hypothesis.mutation.decorators.mutation import mutation
@@ -24,7 +23,10 @@ from test.hypothesis.mutation.metadata.enums import (
     Nature,
     Strategy,
 )
-from test.hypothesis.mutation.functions.lexical.base_helpers import KEYWORDS, replace_identifier
+from test.hypothesis.mutation.functions.lexical.base_helpers import (
+    KEYWORDS,
+    replace_identifier,
+)
 
 
 @mutation(
@@ -58,6 +60,7 @@ def replace_random_identifier(program: str) -> str:
     replacement = random.choice(replacement_pool)
 
     return replace_identifier(program, replacement)
+
 
 @mutation(
     name="keyword_as_identifier",
@@ -104,6 +107,7 @@ def keyword_duplication(text: str) -> str:
         1,
     )
 
+
 @mutation(
     name="keyword_injection",
     layer=Layer.STRING,
@@ -121,9 +125,4 @@ def keyword_duplication(text: str) -> str:
 def keyword_injection(text: str) -> str:
     kw = random.choice(KEYWORDS)
     i = random.randint(0, len(text))
-    return (
-        text[:i] 
-        + f" {kw} " 
-        + text[i:]
-        )
-
+    return text[:i] + f" {kw} " + text[i:]

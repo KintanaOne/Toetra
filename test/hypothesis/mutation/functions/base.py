@@ -1,5 +1,12 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+from enum import Enum, auto
+from typing import Callable
+from typing import FrozenSet
+from typing import TypeAlias
+from typing import Any
+
 """
 Base mutation abstractions for FORML robustness testing.
 
@@ -26,12 +33,6 @@ This metadata system enables:
 - future analytics / dashboards
 """
 
-from dataclasses import dataclass
-from enum import Enum, auto
-from typing import Callable
-from typing import FrozenSet
-from typing import TypeAlias
-from typing import Any
 
 # ============================================================================
 # MUTATION LAYERS
@@ -280,9 +281,7 @@ def mutation(
     # ----------------------------------------------------------------------
 
     if not 0.0 <= severity_score <= 1.0:
-        raise ValueError(
-            "severity_score must be between 0.0 and 1.0"
-        )
+        raise ValueError("severity_score must be between 0.0 and 1.0")
 
     # ----------------------------------------------------------------------
     # Decorator
@@ -292,31 +291,17 @@ def mutation(
 
         func.metadata = MutationMetadata(
             name=func.__name__,
-
             layer=layer,
-
             nature=nature,
-
             severity=severity,
-
             severity_score=severity_score,
-
             impact=frozenset(impact),
-
             expected_failures=frozenset(expected_failures),
-
             preserves_valid_cst=preserves_valid_cst,
-
             preserves_valid_ast=preserves_valid_ast,
-
             preserves_typing=preserves_typing,
-
-            preserves_semantic_equivalence=(
-                preserves_semantic_equivalence
-            ),
-
+            preserves_semantic_equivalence=(preserves_semantic_equivalence),
             deterministic=deterministic,
-
             reversible=reversible,
         )
 
