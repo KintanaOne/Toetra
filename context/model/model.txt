@@ -1,7 +1,15 @@
 
+===== model\detector\__pycache__\detector.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== model\detector\__pycache__\detector.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== model\detector\__pycache__\model_framework.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== model\detector\__pycache__\model_framework.cpython-314.pyc =====
 
@@ -22,7 +30,7 @@ from model.errors.detection import (
 # ==================================================
 
 try:
-    from xgboost import XGBModel
+    from xgboost import XGBModel  # pyright: ignore[reportMissingImports]
 except ImportError:
     XGBModel = None
 
@@ -85,17 +93,33 @@ class EnumModelFramework(Enum):
     XGBOOST = "xgboost"
 
 
+===== model\errors\__pycache__\base.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== model\errors\__pycache__\base.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== model\errors\__pycache__\detection.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== model\errors\__pycache__\detection.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
+===== model\errors\__pycache__\introspection.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== model\errors\__pycache__\introspection.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== model\errors\__pycache__\loading.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== model\errors\__pycache__\loading.cpython-314.pyc =====
 
@@ -164,17 +188,33 @@ class ModelDeserializationError(ModelLoadingError):
     """Raised when model deserialization fails."""
 
 
+===== model\introspector\__pycache__\base_introspector.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== model\introspector\__pycache__\base_introspector.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xf6 in position 12: invalid start byte]
+
+===== model\introspector\__pycache__\introspector_factory.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== model\introspector\__pycache__\introspector_factory.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
 
+===== model\introspector\__pycache__\sklearn_introspector.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== model\introspector\__pycache__\sklearn_introspector.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xb6 in position 8: invalid start byte]
+
+===== model\introspector\__pycache__\xgboost_introspector.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== model\introspector\__pycache__\xgboost_introspector.cpython-314.pyc =====
 
@@ -182,8 +222,14 @@ class ModelDeserializationError(ModelLoadingError):
 
 ===== model\introspector\base_introspector.py =====
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from model.schema.model_schema import ModelSchema
 
 
 class BaseIntrospector(ABC):
@@ -211,34 +257,18 @@ class BaseIntrospector(ABC):
         serialization_format: str | None = None,
         target_name: str | None = None,
     ):
-
         self.model = model
-
-        # Optional dataset path
         self.source_path = Path(source_path) if source_path is not None else None
-
-        # Optional external schema
         self.input_schema = schema
-
-        # Serialization metadata
         self.serialization_format = serialization_format
-
-        self.target_name = target_name
-
-    # ======================================================
-    # Public API
-    # ======================================================
+        self.target_name = target_name if target_name is not None else None
 
     @abstractmethod
-    def introspect(self):
+    def introspect(self) -> ModelSchema:
         """
         Produce a normalized ModelSchema.
         """
-        pass
-
-    # ======================================================
-    # Shared helpers
-    # ======================================================
+        raise NotImplementedError
 
     def _safe_getattr(self, name, default=None):
         """
@@ -252,19 +282,15 @@ class BaseIntrospector(ABC):
         """
         return hasattr(self.model, name)
 
-    # ======================================================
-    # Metadata helpers
-    # ======================================================
-
     def _build_base_metadata(self) -> dict:
         """
         Common metadata shared across frameworks.
         """
-
         return {
             "serialization_format": self.serialization_format,
             "model_class": type(self.model).__name__,
             "module": type(self.model).__module__,
+            "target_name": self.target_name,
         }
 
 
@@ -326,7 +352,7 @@ class IntrospectorFactory:
             source_path=dataset_path,
             schema=schema,
             serialization_format=serialization_format,
-            target_name=target_name
+            target_name=target_name,
         )
 
 
@@ -347,6 +373,7 @@ from model.schema.feature_schema import FeatureSchema
 from model.schema.model_schema import ModelSchema
 
 from model.errors.introspection import MissingFeatureMetadataError
+
 
 class SklearnIntrospector(BaseIntrospector):
 
@@ -568,21 +595,41 @@ class XGBoostIntrospector(BaseIntrospector):
         return metadata
 
 
+===== model\loader\__pycache__\base_loader.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== model\loader\__pycache__\base_loader.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== model\loader\__pycache__\joblib_loader.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== model\loader\__pycache__\joblib_loader.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
+===== model\loader\__pycache__\json_loader.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== model\loader\__pycache__\json_loader.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xd9 in position 12: invalid continuation byte]
 
+===== model\loader\__pycache__\loader_factory.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== model\loader\__pycache__\loader_factory.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== model\loader\__pycache__\pkl_loader.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== model\loader\__pycache__\pkl_loader.cpython-314.pyc =====
 
@@ -667,6 +714,7 @@ class JsonModelLoader(BaseModelLoader):
                 f"Failed to read JSON model artifact: {self.path}"
             ) from e
 
+
 ===== model\loader\loader_factory.py =====
 
 from pathlib import Path
@@ -730,6 +778,10 @@ class PklModelLoader(BaseModelLoader):
                 f"Failed to deserialize pickle model: {self.path}"
             ) from e
 
+
+===== model\runtime\__pycache__\manager.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== model\runtime\__pycache__\manager.cpython-314.pyc =====
 
@@ -828,7 +880,7 @@ class ModelManager:
             dataset_path=self.dataset_path,
             schema=self.schema,
             serialization_format=self.model_path.suffix,
-            target_name=self.target_name
+            target_name=self.target_name,
         )
 
         # --------------------------------------------------
@@ -840,9 +892,17 @@ class ModelManager:
         return self.model_schema
 
 
+===== model\schema\__pycache__\feature_schema.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== model\schema\__pycache__\feature_schema.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== model\schema\__pycache__\model_schema.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== model\schema\__pycache__\model_schema.cpython-314.pyc =====
 

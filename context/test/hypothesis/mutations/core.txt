@@ -1,7 +1,15 @@
 
+===== test\hypothesis\mutation\core\__pycache__\artifact.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== test\hypothesis\mutation\core\__pycache__\artifact.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0x8e in position 9: invalid start byte]
+
+===== test\hypothesis\mutation\core\__pycache__\pipeline.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== test\hypothesis\mutation\core\__pycache__\pipeline.cpython-314.pyc =====
 
@@ -30,6 +38,7 @@ class Artifact(Generic[T]):
     value: T
     layer: Layer  # STRING | CST | AST | IR
 
+
 ===== test\hypothesis\mutation\core\decorator.py =====
 
 from core.mutation import Mutation
@@ -49,6 +58,7 @@ def mutation(name: str):
         )
 
     return wrapper
+
 
 ===== test\hypothesis\mutation\core\executor.py =====
 
@@ -84,6 +94,7 @@ class MutationExecutor:
             layer=artifact.layer,
         )
 
+
 ===== test\hypothesis\mutation\core\filtering.py =====
 
 from __future__ import annotations
@@ -116,7 +127,7 @@ class MutationFilterEngine:
         min_semantic_preservation: Optional[PreservationLevel] = None,
         nature: Optional[Nature] = None,
         min_severity: Optional[float] = None,
-        max_severity: Optional[float] = None
+        max_severity: Optional[float] = None,
     ) -> List[MutationDescriptor]:
 
         result = items
@@ -125,28 +136,19 @@ class MutationFilterEngine:
         # layer filter
         # -----------------------------------------------------
         if layer is not None:
-            result = [
-                d for d in result
-                if d.layer == layer
-            ]
+            result = [d for d in result if d.layer == layer]
 
         # -----------------------------------------------------
         # domain filter
         # -----------------------------------------------------
         if domain is not None:
-            result = [
-                d for d in result
-                if d.domain == domain
-            ]
+            result = [d for d in result if d.domain == domain]
 
         # -----------------------------------------------------
         # strategy filter
         # -----------------------------------------------------
         if strategy is not None:
-            result = [
-                d for d in result
-                if d.strategy == strategy
-            ]
+            result = [d for d in result if d.strategy == strategy]
 
         # -----------------------------------------------------
         # contract filter (semantic constraint)
@@ -162,17 +164,17 @@ class MutationFilterEngine:
         # nature filter
         # -----------------------------------------------------
         if nature is not None:
-            result = [
-                d for d in result
-                if d.nature == nature
-            ]
+            result = [d for d in result if d.nature == nature]
 
         # -----------------------------------------------------
         # severity filter
         # -----------------------------------------------------
         if min_severity is not None or max_severity is not None:
+
             def ok(d: MutationDescriptor) -> bool:
-                assert d.severity is not None, "Descriptor severity must be set for severity-based filtering"
+                assert (
+                    d.severity is not None
+                ), "Descriptor severity must be set for severity-based filtering"
                 if min_severity is not None and d.severity < min_severity:
                     return False
                 if max_severity is not None and d.severity > max_severity:
@@ -182,6 +184,7 @@ class MutationFilterEngine:
             result = [d for d in result if ok(d)]
 
         return result
+
 
 ===== test\hypothesis\mutation\core\hypothesis_strategy.py =====
 
@@ -209,12 +212,13 @@ def mutation_strategy(
 
     return st.sampled_from(descriptors)
 
+
 ===== test\hypothesis\mutation\core\mutation.py =====
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable, Generic, TypeVar, Any
+from typing import Callable, TypeVar, Any
 
 T = TypeVar("T")
 
@@ -231,6 +235,7 @@ class Mutation:
 
     name: str
     fn: MutationFn[Any]
+
 
 ===== test\hypothesis\mutation\core\pipeline.py =====
 
@@ -268,16 +273,15 @@ class MutationPipeline:
 
         return artifact
 
+
 ===== test\hypothesis\mutation\core\registry.py =====
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import List, Iterable
+from typing import List
 
 from metadata.descriptor import MutationDescriptor
-from metadata.enums import Layer, Domain, Strategy
-from metadata.contract import MutationContract
 from test.hypothesis.mutation.core.filtering import MutationFilterEngine
 
 
@@ -316,17 +320,21 @@ class MutationRegistry:
     # (delegates to filtering engine)
     # ---------------------------------------------------------
 
-    def filter(self, engine: MutationFilterEngine, **kwargs) -> List[MutationDescriptor]:
+    def filter(
+        self, engine: MutationFilterEngine, **kwargs
+    ) -> List[MutationDescriptor]:
         """
         Filter mutations using a filtering engine.
         """
         return engine.filter(self._items, **kwargs)
-    
+
+
 # =========================================================
 # GLOBAL SINGLETON (IMPORTANT)
 # =========================================================
 
 GLOBAL_MUTATION_REGISTRY = MutationRegistry()
+
 
 ===== test\hypothesis\mutation\core\selection.py =====
 

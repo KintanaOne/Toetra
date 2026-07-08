@@ -3,29 +3,57 @@
 
 
 
+===== dsl\ir\ir1\__pycache__\__init__.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== dsl\ir\ir1\__pycache__\__init__.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xc8 in position 9: invalid continuation byte]
 
+===== dsl\ir\ir1\__pycache__\nodes.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== dsl\ir\ir1\__pycache__\nodes.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0x92 in position 9: invalid start byte]
+
+===== dsl\ir\ir1\__pycache__\pretty.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== dsl\ir\ir1\__pycache__\pretty.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 8: invalid continuation byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0x95 in position 9: invalid start byte]
+
+===== dsl\ir\ir1\__pycache__\query_translator.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== dsl\ir\ir1\__pycache__\query_translator.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
+[ERROR reading file: 'utf-8' codec can't decode bytes in position 8-9: invalid continuation byte]
+
+===== dsl\ir\ir1\__pycache__\run_ir1.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== dsl\ir\ir1\__pycache__\run_ir1.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0x91 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xc0 in position 9: invalid start byte]
+
+===== dsl\ir\ir1\__pycache__\scope_translator.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== dsl\ir\ir1\__pycache__\scope_translator.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xd9 in position 8: invalid continuation byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
+
+===== dsl\ir\ir1\__pycache__\translator.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== dsl\ir\ir1\__pycache__\translator.cpython-314.pyc =====
 
@@ -47,6 +75,7 @@ from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.problems import EnumProblem
 from dsl.language.vocabulary.properties import EnumProperty
+from dsl.semantic.types.enums import EnumDataType
 
 # =============================================================================
 # ROOT EXECUTION UNIT
@@ -171,12 +200,19 @@ class ComparisonIR(LogicalIR):
         x'.age <= 30
 
     Represents a leaf condition in the logical tree.
+
+    The dtype fields are optional because IR1 can still exist without
+    ModelSchema-aware validation, but when schema validation is enabled,
+    they become the bridge toward backend typing.
     """
 
     entity: str
     feature: str
     op: EnumComparisonOperator
     value: Any
+
+    feature_dtype: EnumDataType | None = None
+    value_dtype: EnumDataType | None = None
 
 
 # =============================================================================
@@ -360,8 +396,14 @@ def _pretty_logical(node: LogicalIR, indent=0) -> list[str]:
     # Comparison
     # -----------------------------
     if isinstance(node, ComparisonIR):
+        dtype = ""
+
+        if node.feature_dtype is not None:
+            dtype = f" : {node.feature_dtype.value}"
+
         lines.append(
-            f"{space}- {node.entity}.{node.feature} {node.op.value} {node.value}"
+            f"{space}- {node.entity}.{node.feature}{dtype} "
+            f"{node.op.value} {node.value}"
         )
         return lines
 
@@ -446,6 +488,7 @@ from dsl.ir.ir1.nodes import (
 
 from dsl.language.vocabulary.problems import EnumProblem
 from dsl.language.vocabulary.functions import EnumFunction
+from dsl.semantic.types.enums import EnumDataType
 
 
 class QueryTranslator:
@@ -464,18 +507,12 @@ class QueryTranslator:
 
     def translate(self, node: LogicalNode) -> QueryIR:
         if isinstance(node, AndNode):
-            operands = [
-                self._translate_logical(n)
-                for n in self._flatten_and(node)
-            ]
+            operands = [self._translate_logical(n) for n in self._flatten_and(node)]
 
             return QueryIR(expression=AndIR(operands=operands))
 
         if isinstance(node, OrNode):
-            operands = [
-                self._translate_logical(n)
-                for n in self._flatten_or(node)
-            ]
+            operands = [self._translate_logical(n) for n in self._flatten_or(node)]
 
             return QueryIR(expression=OrIR(operands=operands))
 
@@ -517,24 +554,16 @@ class QueryTranslator:
 
         if isinstance(node, AndNode):
             return AndIR(
-                operands=[
-                    self._translate_logical(child)
-                    for child in node.operands
-                ]
+                operands=[self._translate_logical(child) for child in node.operands]
             )
 
         if isinstance(node, OrNode):
             return OrIR(
-                operands=[
-                    self._translate_logical(child)
-                    for child in node.operands
-                ]
+                operands=[self._translate_logical(child) for child in node.operands]
             )
 
         if isinstance(node, NotNode):
-            return NotIR(
-                operand=self._translate_logical(node.operand)
-            )
+            return NotIR(operand=self._translate_logical(node.operand))
 
         if isinstance(node, ImplicationNode):
             return ImplyIR(
@@ -559,15 +588,17 @@ class QueryTranslator:
         This must use semantic annotations, not raw parsed attributes.
         """
 
-        entity, feature = self._resolve_ir_attribute(node.left)
+        entity, feature, feature_dtype = self._resolve_ir_attribute(node.left)
 
         return ComparisonIR(
             entity=entity,
             feature=feature,
             op=node.op,
             value=node.right.value,
+            feature_dtype=feature_dtype,
+            value_dtype=node.right.dtype,
         )
-    
+
     def _translate_problem(self, node: ProblemNode) -> ProblemIR:
         problem = (
             node.problem
@@ -589,8 +620,11 @@ class QueryTranslator:
             function=function,
             args={},
         )
-    
-    def _resolve_ir_attribute(self, attr: AttributeNode) -> tuple[str, str]:
+
+    def _resolve_ir_attribute(
+        self,
+        attr: AttributeNode,
+    ) -> tuple[str, str, EnumDataType | None]:
         """
         Convert a semantically resolved AttributeNode into IR coordinates.
 
@@ -601,6 +635,9 @@ class QueryTranslator:
             x.age    -> x.age
             x'.age   -> x'.age
             _x.age   -> _x.age
+
+        If schema-aware validation was enabled, the feature dtype is also
+        propagated into IR.
         """
 
         semantic = getattr(attr, "semantic", None)
@@ -624,7 +661,19 @@ class QueryTranslator:
         else:
             feature = attr.feature
 
-        return entity, feature
+        feature_dtype = None
+
+        if semantic.resolved_type is not None:
+            try:
+                feature_dtype = EnumDataType(semantic.resolved_type)
+            except ValueError as e:
+                raise ValueError(
+                    f"Unsupported resolved dtype '{semantic.resolved_type}' "
+                    f"for attribute '{feature}'"
+                ) from e
+
+        return entity, feature, feature_dtype
+
 
 ===== dsl\ir\ir1\run_ir1.py =====
 
@@ -634,7 +683,6 @@ from dsl.builder.program import parse_program
 from dsl.semantic.runtime.tracer import ValidationTracer
 from dsl.semantic.core.validator import FORMLValidator
 from dsl.ir.ir1.translator import IRTranslator
-
 
 DEFAULT_SAMPLE = """
 model := "model.onnx"
@@ -661,7 +709,7 @@ def run_ir(source: str):
 
     FORMLValidator().validate(
         ast,
-        tracer=ValidationTracer(enabled=True),
+        tracer=ValidationTracer(enabled=False),
     )
 
     translator = IRTranslator()
@@ -673,6 +721,7 @@ if __name__ == "__main__":
 
     print("\n=== IR OUTPUT ===\n")
     pretty_print_tasks(tasks)
+
 
 ===== dsl\ir\ir1\scope_translator.py =====
 
@@ -770,7 +819,10 @@ class ScopeTranslator:
     def _translate_quantifier(self, scope: QuantifierExprNode) -> ScopeIR:
         return ScopeIR(
             kind="quantifier",
-            variables={},
+            # Keep the semantic binding introduced by LHSValidator.
+            # Quantified formulas bind implicit feature access such as `a <= 1`
+            # to `_x.a`, so IR must declare the `_x` symbolic variable.
+            variables={"_x": "symbolic"},
             neighborhood=None,
             domain=self._translate_domain(scope.domain),
         )
@@ -809,6 +861,7 @@ class ScopeTranslator:
             name=domain.name,
             args={"values": domain.values},
         )
+
 
 ===== dsl\ir\ir1\translator.py =====
 
@@ -849,10 +902,7 @@ class IRTranslator:
     # ------------------------------------------------------------------
 
     def translate(self, program: ProgramNode) -> list[VerificationTask]:
-        return [
-            self._translate_property(prop)
-            for prop in program.body
-        ]
+        return [self._translate_property(prop) for prop in program.body]
 
     # ------------------------------------------------------------------
     # PROPERTY
@@ -885,3 +935,1470 @@ class IRTranslator:
             return backend
 
         return EnumBackend.from_str(str(backend))
+
+
+===== dsl\ir\ir2\__init__.py =====
+
+from dsl.ir.ir2.builder import IR2Builder
+from dsl.ir.ir2.context import IR2BuildContext
+from dsl.ir.ir2.enums import (
+    AssumptionSource,
+    NormalFormKind,
+    Polarity,
+    VerificationSemantics,
+)
+from dsl.ir.ir2.nodes import (
+    AssumptionIR2,
+    ClauseIR2,
+    CNFFormulaIR2,
+    DNFFormulaIR2,
+    FormulaIR2,
+    LiteralIR2,
+    NNFFormulaIR2,
+    TermIR2,
+    VerificationTaskIR2,
+)
+from dsl.ir.ir2.requirements import IR2Requirements
+
+__all__ = [
+    "AssumptionIR2",
+    "AssumptionSource",
+    "ClauseIR2",
+    "CNFFormulaIR2",
+    "DNFFormulaIR2",
+    "FormulaIR2",
+    "IR2BuildContext",
+    "IR2Builder",
+    "IR2Requirements",
+    "LiteralIR2",
+    "NNFFormulaIR2",
+    "NormalFormKind",
+    "Polarity",
+    "TermIR2",
+    "VerificationSemantics",
+    "VerificationTaskIR2",
+]
+
+
+===== dsl\ir\ir2\__pycache__\__init__.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== dsl\ir\ir2\__pycache__\__init__.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
+
+===== dsl\ir\ir2\__pycache__\assumptions.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== dsl\ir\ir2\__pycache__\assumptions.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0x81 in position 12: invalid start byte]
+
+===== dsl\ir\ir2\__pycache__\builder.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== dsl\ir\ir2\__pycache__\builder.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xbe in position 12: invalid start byte]
+
+===== dsl\ir\ir2\__pycache__\condition.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== dsl\ir\ir2\__pycache__\condition.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
+
+===== dsl\ir\ir2\__pycache__\context.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== dsl\ir\ir2\__pycache__\context.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0x94 in position 12: invalid start byte]
+
+===== dsl\ir\ir2\__pycache__\enums.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== dsl\ir\ir2\__pycache__\enums.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe9 in position 12: invalid continuation byte]
+
+===== dsl\ir\ir2\__pycache__\errors.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== dsl\ir\ir2\__pycache__\errors.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xb7 in position 12: invalid start byte]
+
+===== dsl\ir\ir2\__pycache__\guard.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== dsl\ir\ir2\__pycache__\guard.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
+
+===== dsl\ir\ir2\__pycache__\nodes.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== dsl\ir\ir2\__pycache__\nodes.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
+
+===== dsl\ir\ir2\__pycache__\pretty.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== dsl\ir\ir2\__pycache__\pretty.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0x98 in position 8: invalid start byte]
+
+===== dsl\ir\ir2\__pycache__\requirements.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== dsl\ir\ir2\__pycache__\requirements.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
+
+===== dsl\ir\ir2\__pycache__\run_ir2.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== dsl\ir\ir2\__pycache__\run_ir2.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
+
+===== dsl\ir\ir2\__pycache__\selector.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== dsl\ir\ir2\__pycache__\selector.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xae in position 12: invalid start byte]
+
+===== dsl\ir\ir2\__pycache__\validator.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== dsl\ir\ir2\__pycache__\validator.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
+
+===== dsl\ir\ir2\assumptions.py =====
+
+from __future__ import annotations
+
+from dsl.ir.ir2.nodes import AssumptionIR2
+
+
+class AssumptionCollector:
+    """Collects assumptions already produced by upstream components.
+
+    IR2 deliberately does not encode ML models itself. Future ModelEncoder
+    components can pass MODEL assumptions into IR2Builder. This collector simply
+    normalizes the optional input into an immutable tuple.
+    """
+
+    def collect(
+        self,
+        assumptions: tuple[AssumptionIR2, ...] | list[AssumptionIR2] | None = None,
+    ) -> tuple[AssumptionIR2, ...]:
+        if assumptions is None:
+            return ()
+        return tuple(assumptions)
+
+
+===== dsl\ir\ir2\builder.py =====
+
+from __future__ import annotations
+
+from dsl.ir.ir1.nodes import VerificationTask
+from dsl.ir.ir2.assumptions import AssumptionCollector
+from dsl.ir.ir2.condition import VerificationConditionBuilder
+from dsl.ir.ir2.context import IR2BuildContext
+from dsl.ir.ir2.enums import NormalFormKind, VerificationSemantics
+from dsl.ir.ir2.errors import NormalFormExplosionError
+from dsl.ir.ir2.guard import NNFGuard
+from dsl.ir.ir2.nodes import (
+    AssumptionIR2,
+    FormulaIR2,
+    NNFFormulaIR2,
+    VerificationTaskIR2,
+)
+from dsl.ir.ir2.normal_forms.cnf import CNFConverter
+from dsl.ir.ir2.normal_forms.dnf import DNFConverter
+from dsl.ir.ir2.requirements import RequirementsAnalyzer
+from dsl.ir.ir2.selector import NormalFormSelector
+from dsl.ir.ir2.validator import IR2Validator
+
+
+class IR2Builder:
+    """Public IR2 construction entrypoint.
+
+    This class orchestrates specialized components. It does not encode models,
+    translate to a concrete backend, or own the normal-form algorithms.
+    """
+
+    def __init__(
+        self,
+        *,
+        assumption_collector: AssumptionCollector | None = None,
+        vc_builder: VerificationConditionBuilder | None = None,
+        selector: NormalFormSelector | None = None,
+        cnf_converter: CNFConverter | None = None,
+        dnf_converter: DNFConverter | None = None,
+        requirements_analyzer: RequirementsAnalyzer | None = None,
+        validator: IR2Validator | None = None,
+    ):
+        self.assumption_collector = assumption_collector or AssumptionCollector()
+        self.vc_builder = vc_builder or VerificationConditionBuilder()
+        self.selector = selector or NormalFormSelector()
+        self.cnf_converter = cnf_converter or CNFConverter()
+        self.dnf_converter = dnf_converter or DNFConverter()
+        self.requirements_analyzer = requirements_analyzer or RequirementsAnalyzer()
+        self.validator = validator or IR2Validator()
+
+    def build(
+        self,
+        task_nnf: VerificationTask,
+        *,
+        assumptions: tuple[AssumptionIR2, ...] | list[AssumptionIR2] | None = None,
+        context: IR2BuildContext | None = None,
+    ) -> VerificationTaskIR2:
+        context = context or IR2BuildContext(backend_hint=task_nnf.backend)
+
+        NNFGuard.assert_task_is_nnf(task_nnf)
+
+        collected_assumptions = self.assumption_collector.collect(assumptions)
+        spec_formula = NNFFormulaIR2(expression=task_nnf.query.expression)
+
+        vc_nnf = self.vc_builder.build_refutation_condition(
+            spec_formula=spec_formula,
+            assumptions=collected_assumptions,
+        )
+
+        selected_form = self.selector.select(vc_nnf, context=context)
+        verification_condition, actual_form = self._convert(
+            vc_nnf, selected_form, context
+        )
+
+        requirements = self.requirements_analyzer.analyze(
+            scope=task_nnf.scope,
+            verification_condition=verification_condition,
+            assumptions=collected_assumptions,
+            normal_form=actual_form,
+        )
+
+        task_ir2 = VerificationTaskIR2(
+            property_type=task_nnf.property_type,
+            scope=task_nnf.scope,
+            backend=task_nnf.backend,
+            assumptions=collected_assumptions,
+            spec_formula=spec_formula,
+            verification_condition=verification_condition,
+            semantics=VerificationSemantics.REFUTATION,
+            normal_form=actual_form,
+            requirements=requirements,
+            metadata={
+                "source_ir": "ir1_nnf",
+                "builder": "IR2Builder",
+            },
+        )
+
+        self.validator.validate(task_ir2)
+        return task_ir2
+
+    def build_tasks(
+        self,
+        tasks_nnf: list[VerificationTask],
+        *,
+        assumptions: tuple[AssumptionIR2, ...] | list[AssumptionIR2] | None = None,
+        context: IR2BuildContext | None = None,
+    ) -> list[VerificationTaskIR2]:
+        return [
+            self.build(task, assumptions=assumptions, context=context)
+            for task in tasks_nnf
+        ]
+
+    def _convert(
+        self,
+        vc_nnf: NNFFormulaIR2,
+        selected_form: NormalFormKind,
+        context: IR2BuildContext,
+    ) -> tuple[FormulaIR2, NormalFormKind]:
+        if selected_form == NormalFormKind.NNF:
+            return vc_nnf, NormalFormKind.NNF
+
+        try:
+            if selected_form == NormalFormKind.CNF:
+                return (
+                    self.cnf_converter.convert(vc_nnf.expression, context=context),
+                    NormalFormKind.CNF,
+                )
+
+            if selected_form == NormalFormKind.DNF:
+                return (
+                    self.dnf_converter.convert(vc_nnf.expression, context=context),
+                    NormalFormKind.DNF,
+                )
+
+        except NormalFormExplosionError:
+            if context.allow_nnf_fallback:
+                return vc_nnf, NormalFormKind.NNF
+            raise
+
+        return vc_nnf, NormalFormKind.NNF
+
+
+===== dsl\ir\ir2\condition.py =====
+
+from __future__ import annotations
+
+from dsl.ir.ir1.nodes import AndIR, NotIR, QueryIR
+from dsl.ir.ir2.nodes import AssumptionIR2, NNFFormulaIR2
+from dsl.ir.normalization.nnf import NNFNormalizer
+
+
+class VerificationConditionBuilder:
+    """Builds the backend-neutral verification condition Γ ∧ ¬P.
+
+    The DSL property P remains the spec formula. The verification condition is
+    derived internally using refutation semantics.
+    """
+
+    def __init__(self, normalizer: NNFNormalizer | None = None):
+        self.normalizer = normalizer or NNFNormalizer()
+
+    def build_refutation_condition(
+        self,
+        spec_formula: NNFFormulaIR2,
+        assumptions: tuple[AssumptionIR2, ...] = (),
+    ) -> NNFFormulaIR2:
+        pieces = [assumption.formula.expression for assumption in assumptions]
+        pieces.append(NotIR(spec_formula.expression))
+
+        if len(pieces) == 1:
+            raw_expr = pieces[0]
+        else:
+            raw_expr = AndIR(operands=pieces)
+
+        normalized = self.normalizer.normalize_query(QueryIR(expression=raw_expr))
+        return NNFFormulaIR2(expression=normalized.expression)
+
+
+===== dsl\ir\ir2\context.py =====
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from dsl.ir.ir2.enums import NormalFormKind
+from dsl.language.vocabulary.backends import EnumBackend
+
+
+@dataclass(frozen=True)
+class IR2BuildContext:
+    """Internal construction options for IR2.
+
+    These options are compiler concerns. They must not leak into the FORML DSL.
+    """
+
+    preferred_normal_form: NormalFormKind | None = None
+    max_distribution_size: int = 128
+    allow_nnf_fallback: bool = True
+    backend_hint: EnumBackend | None = None
+    strict: bool = True
+
+    def with_preferred_form(self, form: NormalFormKind | None) -> "IR2BuildContext":
+        return IR2BuildContext(
+            preferred_normal_form=form,
+            max_distribution_size=self.max_distribution_size,
+            allow_nnf_fallback=self.allow_nnf_fallback,
+            backend_hint=self.backend_hint,
+            strict=self.strict,
+        )
+
+
+===== dsl\ir\ir2\enums.py =====
+
+from __future__ import annotations
+
+from enum import Enum
+
+
+class NormalFormKind(str, Enum):
+    """Supported logical forms at IR2 level.
+
+    NNF is the safe fallback form. CNF and DNF are optional optimized forms
+    selected when they are useful and reasonably small.
+    """
+
+    NNF = "nnf"
+    CNF = "cnf"
+    DNF = "dnf"
+
+
+class VerificationSemantics(str, Enum):
+    """How the verification condition must be interpreted.
+
+    REFUTATION means FORML proves a property P by checking whether Γ ∧ ¬P is
+    satisfiable. If it is impossible, then P holds under assumptions Γ.
+    """
+
+    REFUTATION = "refutation"
+    DIRECT = "direct"
+
+
+class Polarity(str, Enum):
+    """Polarity of a literal inside CNF/DNF formulas."""
+
+    POSITIVE = "positive"
+    NEGATIVE = "negative"
+
+
+class AssumptionSource(str, Enum):
+    """Origin of an assumption used by an IR2 verification condition."""
+
+    MODEL = "model"
+    SCOPE = "scope"
+    DOMAIN = "domain"
+    USER = "user"
+    INTERNAL = "internal"
+
+
+===== dsl\ir\ir2\errors.py =====
+
+from __future__ import annotations
+
+
+class IR2Error(Exception):
+    """Base error for IR2 construction and validation."""
+
+
+class InvalidIR2InputError(IR2Error):
+    """Raised when IR2 receives an invalid upstream artifact."""
+
+
+class InvalidNormalFormError(IR2Error):
+    """Raised when a formula does not satisfy its declared normal form."""
+
+
+class NormalFormExplosionError(IR2Error):
+    """Raised when CNF/DNF distribution would exceed the configured limit."""
+
+
+class IR2ValidationError(IR2Error):
+    """Raised when a VerificationTaskIR2 violates its invariants."""
+
+
+class UnsupportedIR2FormError(IR2Error):
+    """Raised when a form is unsupported by the current IR2 implementation."""
+
+
+===== dsl\ir\ir2\guard.py =====
+
+from __future__ import annotations
+
+from dsl.ir.ir1.nodes import (
+    AndIR,
+    ComparisonIR,
+    ImplyIR,
+    LogicalIR,
+    NotIR,
+    OrIR,
+    ProblemIR,
+    QueryIR,
+    VerificationTask,
+)
+from dsl.ir.ir2.errors import InvalidIR2InputError
+
+
+class NNFGuard:
+    """Guards the IR2 input contract: IR2 receives IR1 already in NNF."""
+
+    @classmethod
+    def assert_task_is_nnf(cls, task: VerificationTask) -> None:
+        cls.assert_query_is_nnf(task.query)
+
+    @classmethod
+    def assert_query_is_nnf(cls, query: QueryIR) -> None:
+        cls.assert_expr_is_nnf(query.expression)
+
+    @classmethod
+    def assert_expr_is_nnf(cls, node: LogicalIR) -> None:
+        if isinstance(node, ImplyIR):
+            raise InvalidIR2InputError(
+                "IR2 input must not contain ImplyIR; run NNF first."
+            )
+
+        if isinstance(node, (ComparisonIR, ProblemIR)):
+            return
+
+        if isinstance(node, NotIR):
+            if not isinstance(node.operand, (ComparisonIR, ProblemIR)):
+                raise InvalidIR2InputError(
+                    "IR2 input must be NNF: NotIR may only wrap atomic predicates."
+                )
+            return
+
+        if isinstance(node, (AndIR, OrIR)):
+            for operand in node.operands:
+                cls.assert_expr_is_nnf(operand)
+            return
+
+        raise InvalidIR2InputError(
+            f"Unsupported IR1 logical node for IR2: {type(node).__name__}"
+        )
+
+
+===== dsl\ir\ir2\nodes.py =====
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Any, TYPE_CHECKING, TypeAlias
+
+from dsl.ir.ir1.nodes import (
+    ComparisonIR,
+    LogicalIR,
+    ProblemIR,
+    ScopeIR,
+)
+from dsl.language.vocabulary.backends import EnumBackend
+from dsl.language.vocabulary.properties import EnumProperty
+from dsl.ir.ir2.enums import (
+    AssumptionSource,
+    NormalFormKind,
+    Polarity,
+    VerificationSemantics,
+)
+
+if TYPE_CHECKING:
+    from dsl.ir.ir2.requirements import IR2Requirements
+
+
+AtomIR2: TypeAlias = ComparisonIR | ProblemIR
+
+
+@dataclass(frozen=True)
+class LiteralIR2:
+    """A signed atomic predicate.
+
+    IR2 absorbs leaf negation into literal polarity instead of keeping NotIR
+    around comparisons/problem predicates in CNF/DNF forms.
+    """
+
+    atom: AtomIR2
+    polarity: Polarity = Polarity.POSITIVE
+
+
+@dataclass(frozen=True)
+class ClauseIR2:
+    """A disjunction of literals used in CNF."""
+
+    literals: tuple[LiteralIR2, ...]
+
+
+@dataclass(frozen=True)
+class TermIR2:
+    """A conjunction of literals used in DNF."""
+
+    literals: tuple[LiteralIR2, ...]
+
+
+@dataclass(frozen=True)
+class NNFFormulaIR2:
+    """Backend-neutral formula kept as an NNF logical tree."""
+
+    expression: LogicalIR
+
+
+@dataclass(frozen=True)
+class CNFFormulaIR2:
+    """Conjunctive normal form: AND of OR-clauses."""
+
+    clauses: tuple[ClauseIR2, ...]
+
+
+@dataclass(frozen=True)
+class DNFFormulaIR2:
+    """Disjunctive normal form: OR of AND-terms."""
+
+    terms: tuple[TermIR2, ...]
+
+
+FormulaIR2: TypeAlias = NNFFormulaIR2 | CNFFormulaIR2 | DNFFormulaIR2
+
+
+@dataclass(frozen=True)
+class AssumptionIR2:
+    """A typed assumption used to build Γ ∧ ¬P.
+
+    ModelEncoder will later produce MODEL assumptions. IR2 only carries them;
+    it does not inspect sklearn/xgboost/ONNX objects directly.
+    """
+
+    source: AssumptionSource
+    formula: NNFFormulaIR2
+    description: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class VerificationTaskIR2:
+    """Backend-neutral verification task.
+
+    spec_formula is the property P expressed by the DSL and normalized to NNF.
+    verification_condition is the internal condition Γ ∧ ¬P, optionally
+    converted to CNF or DNF when useful and safe.
+    """
+
+    property_type: EnumProperty
+    scope: ScopeIR
+    backend: EnumBackend | None
+
+    assumptions: tuple[AssumptionIR2, ...]
+    spec_formula: NNFFormulaIR2
+    verification_condition: FormulaIR2
+
+    semantics: VerificationSemantics
+    normal_form: NormalFormKind
+    requirements: IR2Requirements
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+===== dsl\ir\ir2\normal_forms\__init__.py =====
+
+from dsl.ir.ir2.normal_forms.cnf import CNFConverter
+from dsl.ir.ir2.normal_forms.dnf import DNFConverter
+from dsl.ir.ir2.normal_forms.cost import NormalFormCostEstimator
+
+__all__ = ["CNFConverter", "DNFConverter", "NormalFormCostEstimator"]
+
+
+===== dsl\ir\ir2\normal_forms\__pycache__\__init__.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== dsl\ir\ir2\normal_forms\__pycache__\__init__.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf2 in position 12: invalid continuation byte]
+
+===== dsl\ir\ir2\normal_forms\__pycache__\cnf.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== dsl\ir\ir2\normal_forms\__pycache__\cnf.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe1 in position 12: invalid continuation byte]
+
+===== dsl\ir\ir2\normal_forms\__pycache__\cost.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== dsl\ir\ir2\normal_forms\__pycache__\cost.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xab in position 12: invalid start byte]
+
+===== dsl\ir\ir2\normal_forms\__pycache__\dnf.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== dsl\ir\ir2\normal_forms\__pycache__\dnf.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0x8e in position 12: invalid start byte]
+
+===== dsl\ir\ir2\normal_forms\cnf.py =====
+
+from __future__ import annotations
+
+from dsl.ir.ir1.nodes import AndIR, ComparisonIR, LogicalIR, NotIR, OrIR, ProblemIR
+from dsl.ir.ir2.context import IR2BuildContext
+from dsl.ir.ir2.enums import Polarity
+from dsl.ir.ir2.errors import InvalidNormalFormError, NormalFormExplosionError
+from dsl.ir.ir2.nodes import ClauseIR2, CNFFormulaIR2, LiteralIR2
+
+
+class CNFConverter:
+    """Converts an NNF logical tree into typed CNFFormulaIR2."""
+
+    def convert(
+        self, expr: LogicalIR, context: IR2BuildContext | None = None
+    ) -> CNFFormulaIR2:
+        context = context or IR2BuildContext()
+        cnf = self._to_cnf(expr, context)
+        self._check_limit(len(cnf.clauses), context)
+        return cnf
+
+    def _to_cnf(self, expr: LogicalIR, context: IR2BuildContext) -> CNFFormulaIR2:
+        literal = self._literal_or_none(expr)
+        if literal is not None:
+            return CNFFormulaIR2(clauses=(ClauseIR2(literals=(literal,)),))
+
+        if isinstance(expr, AndIR):
+            clauses: list[ClauseIR2] = []
+            for operand in expr.operands:
+                clauses.extend(self._to_cnf(operand, context).clauses)
+                self._check_limit(len(clauses), context)
+            return CNFFormulaIR2(clauses=tuple(clauses))
+
+        if isinstance(expr, OrIR):
+            if not expr.operands:
+                raise InvalidNormalFormError("Cannot convert empty OrIR to CNF.")
+
+            current = self._to_cnf(expr.operands[0], context)
+            for operand in expr.operands[1:]:
+                current = self._distribute_or(
+                    current, self._to_cnf(operand, context), context
+                )
+            return current
+
+        raise InvalidNormalFormError(
+            f"Unsupported NNF node for CNF conversion: {type(expr).__name__}"
+        )
+
+    def _distribute_or(
+        self,
+        left: CNFFormulaIR2,
+        right: CNFFormulaIR2,
+        context: IR2BuildContext,
+    ) -> CNFFormulaIR2:
+        clauses: list[ClauseIR2] = []
+        for left_clause in left.clauses:
+            for right_clause in right.clauses:
+                clauses.append(
+                    ClauseIR2(literals=left_clause.literals + right_clause.literals)
+                )
+                self._check_limit(len(clauses), context)
+        return CNFFormulaIR2(clauses=tuple(clauses))
+
+    def _literal_or_none(self, expr: LogicalIR) -> LiteralIR2 | None:
+        if isinstance(expr, (ComparisonIR, ProblemIR)):
+            return LiteralIR2(atom=expr, polarity=Polarity.POSITIVE)
+
+        if isinstance(expr, NotIR):
+            if isinstance(expr.operand, (ComparisonIR, ProblemIR)):
+                return LiteralIR2(atom=expr.operand, polarity=Polarity.NEGATIVE)
+            raise InvalidNormalFormError(
+                "CNF conversion expects NNF input; NotIR must wrap an atom."
+            )
+
+        return None
+
+    def _check_limit(self, size: int, context: IR2BuildContext) -> None:
+        if size > context.max_distribution_size:
+            raise NormalFormExplosionError(
+                f"CNF conversion exceeded max_distribution_size={context.max_distribution_size}."
+            )
+
+
+===== dsl\ir\ir2\normal_forms\cost.py =====
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from dsl.ir.ir1.nodes import AndIR, ComparisonIR, LogicalIR, NotIR, OrIR, ProblemIR
+
+
+@dataclass(frozen=True)
+class NormalFormCost:
+    cnf_units: int
+    dnf_units: int
+
+
+class NormalFormCostEstimator:
+    """Cheap structural estimates for CNF/DNF distribution size.
+
+    The estimates are intentionally conservative and backend-neutral. They are
+    used by the selector to avoid exponential blowups before conversion.
+    """
+
+    def estimate(self, expr: LogicalIR) -> NormalFormCost:
+        return NormalFormCost(
+            cnf_units=self.estimate_cnf_units(expr),
+            dnf_units=self.estimate_dnf_units(expr),
+        )
+
+    def estimate_cnf_units(self, expr: LogicalIR) -> int:
+        if isinstance(expr, (ComparisonIR, ProblemIR)):
+            return 1
+        if isinstance(expr, NotIR):
+            return 1
+        if isinstance(expr, AndIR):
+            return sum(self.estimate_cnf_units(op) for op in expr.operands)
+        if isinstance(expr, OrIR):
+            product = 1
+            for op in expr.operands:
+                product *= self.estimate_cnf_units(op)
+            return product
+        return 1
+
+    def estimate_dnf_units(self, expr: LogicalIR) -> int:
+        if isinstance(expr, (ComparisonIR, ProblemIR)):
+            return 1
+        if isinstance(expr, NotIR):
+            return 1
+        if isinstance(expr, OrIR):
+            return sum(self.estimate_dnf_units(op) for op in expr.operands)
+        if isinstance(expr, AndIR):
+            product = 1
+            for op in expr.operands:
+                product *= self.estimate_dnf_units(op)
+            return product
+        return 1
+
+
+===== dsl\ir\ir2\normal_forms\dnf.py =====
+
+from __future__ import annotations
+
+from dsl.ir.ir1.nodes import AndIR, ComparisonIR, LogicalIR, NotIR, OrIR, ProblemIR
+from dsl.ir.ir2.context import IR2BuildContext
+from dsl.ir.ir2.enums import Polarity
+from dsl.ir.ir2.errors import InvalidNormalFormError, NormalFormExplosionError
+from dsl.ir.ir2.nodes import DNFFormulaIR2, LiteralIR2, TermIR2
+
+
+class DNFConverter:
+    """Converts an NNF logical tree into typed DNFFormulaIR2."""
+
+    def convert(
+        self, expr: LogicalIR, context: IR2BuildContext | None = None
+    ) -> DNFFormulaIR2:
+        context = context or IR2BuildContext()
+        dnf = self._to_dnf(expr, context)
+        self._check_limit(len(dnf.terms), context)
+        return dnf
+
+    def _to_dnf(self, expr: LogicalIR, context: IR2BuildContext) -> DNFFormulaIR2:
+        literal = self._literal_or_none(expr)
+        if literal is not None:
+            return DNFFormulaIR2(terms=(TermIR2(literals=(literal,)),))
+
+        if isinstance(expr, OrIR):
+            terms: list[TermIR2] = []
+            for operand in expr.operands:
+                terms.extend(self._to_dnf(operand, context).terms)
+                self._check_limit(len(terms), context)
+            return DNFFormulaIR2(terms=tuple(terms))
+
+        if isinstance(expr, AndIR):
+            if not expr.operands:
+                raise InvalidNormalFormError("Cannot convert empty AndIR to DNF.")
+
+            current = self._to_dnf(expr.operands[0], context)
+            for operand in expr.operands[1:]:
+                current = self._distribute_and(
+                    current, self._to_dnf(operand, context), context
+                )
+            return current
+
+        raise InvalidNormalFormError(
+            f"Unsupported NNF node for DNF conversion: {type(expr).__name__}"
+        )
+
+    def _distribute_and(
+        self,
+        left: DNFFormulaIR2,
+        right: DNFFormulaIR2,
+        context: IR2BuildContext,
+    ) -> DNFFormulaIR2:
+        terms: list[TermIR2] = []
+        for left_term in left.terms:
+            for right_term in right.terms:
+                terms.append(TermIR2(literals=left_term.literals + right_term.literals))
+                self._check_limit(len(terms), context)
+        return DNFFormulaIR2(terms=tuple(terms))
+
+    def _literal_or_none(self, expr: LogicalIR) -> LiteralIR2 | None:
+        if isinstance(expr, (ComparisonIR, ProblemIR)):
+            return LiteralIR2(atom=expr, polarity=Polarity.POSITIVE)
+
+        if isinstance(expr, NotIR):
+            if isinstance(expr.operand, (ComparisonIR, ProblemIR)):
+                return LiteralIR2(atom=expr.operand, polarity=Polarity.NEGATIVE)
+            raise InvalidNormalFormError(
+                "DNF conversion expects NNF input; NotIR must wrap an atom."
+            )
+
+        return None
+
+    def _check_limit(self, size: int, context: IR2BuildContext) -> None:
+        if size > context.max_distribution_size:
+            raise NormalFormExplosionError(
+                f"DNF conversion exceeded max_distribution_size={context.max_distribution_size}."
+            )
+
+
+===== dsl\ir\ir2\pretty.py =====
+
+from __future__ import annotations
+
+from dsl.ir.ir1.nodes import AndIR, ComparisonIR, LogicalIR, NotIR, OrIR, ProblemIR
+from dsl.ir.ir2.enums import Polarity
+from dsl.ir.ir2.nodes import (
+    CNFFormulaIR2,
+    DNFFormulaIR2,
+    FormulaIR2,
+    LiteralIR2,
+    NNFFormulaIR2,
+    VerificationTaskIR2,
+)
+
+
+def pretty_print_ir2_tasks(tasks: list[VerificationTaskIR2]) -> None:
+    for i, task in enumerate(tasks):
+        print(f"\n=== IR2 TASK {i} ===")
+        print(pretty_ir2_task(task))
+
+
+def pretty_ir2_task(task: VerificationTaskIR2) -> str:
+    lines = []
+    lines.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    lines.append("🧠 Verification Task IR2")
+    lines.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    lines.append(
+        f"Property      : {getattr(task.property_type, 'value', task.property_type)}"
+    )
+    lines.append(f"Backend       : {getattr(task.backend, 'value', task.backend)}")
+    lines.append(f"Scope         : {task.scope.kind}")
+    lines.append(f"Semantics     : {task.semantics.value}")
+    lines.append(f"Normal form   : {task.normal_form.value}")
+    lines.append("Requirements  : " + _pretty_requirements(task))
+    lines.append(f"Assumptions   : {len(task.assumptions)}")
+    lines.append("Spec formula  :")
+    lines.append(_indent(pretty_formula(task.spec_formula), spaces=2))
+    lines.append("Verification condition:")
+    lines.append(_indent(pretty_formula(task.verification_condition), spaces=2))
+    return "\n".join(lines)
+
+
+def _pretty_requirements(task: VerificationTaskIR2) -> str:
+    req = task.requirements
+    active = []
+    if req.requires_boolean_logic:
+        active.append("boolean_logic")
+    if req.requires_numeric_comparisons:
+        active.append("numeric_comparisons")
+    if req.requires_problem_predicates:
+        active.append("problem_predicates")
+    if req.requires_model_assertions:
+        active.append("model_assertions")
+    if req.requires_quantifiers:
+        active.append("quantifiers")
+    if req.requires_domains:
+        active.append("domains")
+    if req.requires_neighborhoods:
+        active.append("neighborhoods")
+    return ", ".join(active) if active else "none"
+
+
+def pretty_formula(formula: FormulaIR2) -> str:
+    """Pretty-print an IR2 formula with explicit literal polarity.
+
+    The pretty representation intentionally avoids inline syntax such as
+    ``NOT _x.b <= 2`` because it can be misread. In CNF/DNF, every leaf is
+    shown as ``LITERAL[positive](...)`` or ``LITERAL[negative](...)``.
+    """
+
+    if isinstance(formula, NNFFormulaIR2):
+        return "NNF\n" + _indent(_pretty_logical_tree(formula.expression), spaces=2)
+
+    if isinstance(formula, CNFFormulaIR2):
+        return _pretty_cnf(formula)
+
+    if isinstance(formula, DNFFormulaIR2):
+        return _pretty_dnf(formula)
+
+    return repr(formula)
+
+
+def _pretty_cnf(formula: CNFFormulaIR2) -> str:
+    lines = ["CNF"]
+
+    if len(formula.clauses) == 0:
+        lines.append("  <empty>")
+        return "\n".join(lines)
+
+    if len(formula.clauses) == 1:
+        lines.append("  OR")
+        for literal in formula.clauses[0].literals:
+            lines.append("    " + _pretty_literal(literal))
+        return "\n".join(lines)
+
+    for i, clause in enumerate(formula.clauses):
+        lines.append(f"  clause[{i}] OR")
+        for literal in clause.literals:
+            lines.append("    " + _pretty_literal(literal))
+    return "\n".join(lines)
+
+
+def _pretty_dnf(formula: DNFFormulaIR2) -> str:
+    lines = ["DNF"]
+
+    if len(formula.terms) == 0:
+        lines.append("  <empty>")
+        return "\n".join(lines)
+
+    if len(formula.terms) == 1:
+        lines.append("  AND")
+        for literal in formula.terms[0].literals:
+            lines.append("    " + _pretty_literal(literal))
+        return "\n".join(lines)
+
+    for i, term in enumerate(formula.terms):
+        lines.append(f"  branch[{i}] AND")
+        for literal in term.literals:
+            lines.append("    " + _pretty_literal(literal))
+    return "\n".join(lines)
+
+
+def _pretty_literal(literal: LiteralIR2) -> str:
+    return f"LITERAL[{literal.polarity.value}]({_pretty_atom(literal.atom)})"
+
+
+def _pretty_logical_tree(node: LogicalIR) -> str:
+    if isinstance(node, (ComparisonIR, ProblemIR)):
+        return _pretty_literal(LiteralIR2(atom=node, polarity=Polarity.POSITIVE))
+
+    if isinstance(node, NotIR):
+        if isinstance(node.operand, (ComparisonIR, ProblemIR)):
+            return _pretty_literal(
+                LiteralIR2(atom=node.operand, polarity=Polarity.NEGATIVE)
+            )
+        return "NOT\n" + _indent(_pretty_logical_tree(node.operand), spaces=2)
+
+    if isinstance(node, AndIR):
+        return _pretty_variadic("AND", node.operands)
+
+    if isinstance(node, OrIR):
+        return _pretty_variadic("OR", node.operands)
+
+    return repr(node)
+
+
+def _pretty_variadic(name: str, operands: list[LogicalIR]) -> str:
+    lines = [name]
+    for operand in operands:
+        lines.append(_indent(_pretty_logical_tree(operand), spaces=2))
+    return "\n".join(lines)
+
+
+def _pretty_atom(atom: ComparisonIR | ProblemIR) -> str:
+    if isinstance(atom, ComparisonIR):
+        op = getattr(atom.op, "value", atom.op)
+        return f"{atom.entity}.{atom.feature} {op} {atom.value}"
+
+    problem = getattr(atom.problem, "value", atom.problem)
+    function = getattr(atom.function, "value", atom.function)
+    return f"{problem}.{function}({atom.args or {}})"
+
+
+def _indent(text: str, spaces: int) -> str:
+    prefix = " " * spaces
+    return "\n".join(prefix + line if line else line for line in text.splitlines())
+
+
+===== dsl\ir\ir2\requirements.py =====
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Iterable
+
+from dsl.ir.ir1.nodes import (
+    AndIR,
+    ComparisonIR,
+    LogicalIR,
+    NotIR,
+    OrIR,
+    ProblemIR,
+    ScopeIR,
+)
+from dsl.ir.ir2.enums import AssumptionSource, NormalFormKind
+from dsl.ir.ir2.nodes import (
+    AssumptionIR2,
+    CNFFormulaIR2,
+    DNFFormulaIR2,
+    FormulaIR2,
+    LiteralIR2,
+    NNFFormulaIR2,
+)
+
+
+@dataclass(frozen=True)
+class IR2Requirements:
+    """Backend-neutral capabilities required by a VerificationTaskIR2."""
+
+    requires_boolean_logic: bool
+    requires_numeric_comparisons: bool
+    requires_problem_predicates: bool
+    requires_model_assertions: bool
+    requires_quantifiers: bool
+    requires_domains: bool
+    requires_neighborhoods: bool
+    normal_form: NormalFormKind
+
+
+class RequirementsAnalyzer:
+    """Computes IR2 requirements for future backend routing."""
+
+    def analyze(
+        self,
+        *,
+        scope: ScopeIR,
+        verification_condition: FormulaIR2,
+        assumptions: tuple[AssumptionIR2, ...],
+        normal_form: NormalFormKind,
+    ) -> IR2Requirements:
+        literals = list(self._iter_literals_or_atoms(verification_condition))
+        assumption_literals = []
+        for assumption in assumptions:
+            assumption_literals.extend(self._iter_literals_or_atoms(assumption.formula))
+
+        all_items = literals + assumption_literals
+
+        return IR2Requirements(
+            requires_boolean_logic=True,
+            requires_numeric_comparisons=any(
+                isinstance(item, ComparisonIR) for item in all_items
+            ),
+            requires_problem_predicates=any(
+                isinstance(item, ProblemIR) for item in all_items
+            ),
+            requires_model_assertions=any(
+                a.source == AssumptionSource.MODEL for a in assumptions
+            ),
+            requires_quantifiers=scope.kind == "quantifier",
+            requires_domains=scope.domain is not None
+            or any(a.source == AssumptionSource.DOMAIN for a in assumptions),
+            requires_neighborhoods=scope.neighborhood is not None,
+            normal_form=normal_form,
+        )
+
+    def _iter_literals_or_atoms(
+        self, formula: FormulaIR2
+    ) -> Iterable[ComparisonIR | ProblemIR]:
+        if isinstance(formula, NNFFormulaIR2):
+            yield from self._iter_atoms_from_logical(formula.expression)
+            return
+
+        if isinstance(formula, CNFFormulaIR2):
+            for clause in formula.clauses:
+                for literal in clause.literals:
+                    yield from self._iter_atom_from_literal(literal)
+            return
+
+        if isinstance(formula, DNFFormulaIR2):
+            for term in formula.terms:
+                for literal in term.literals:
+                    yield from self._iter_atom_from_literal(literal)
+            return
+
+    def _iter_atom_from_literal(
+        self, literal: LiteralIR2
+    ) -> Iterable[ComparisonIR | ProblemIR]:
+        yield literal.atom
+
+    def _iter_atoms_from_logical(
+        self, node: LogicalIR
+    ) -> Iterable[ComparisonIR | ProblemIR]:
+        if isinstance(node, (ComparisonIR, ProblemIR)):
+            yield node
+            return
+
+        if isinstance(node, NotIR):
+            if isinstance(node.operand, (ComparisonIR, ProblemIR)):
+                yield node.operand
+            return
+
+        if isinstance(node, (AndIR, OrIR)):
+            for operand in node.operands:
+                yield from self._iter_atoms_from_logical(operand)
+
+
+===== dsl\ir\ir2\run_ir2.py =====
+
+from __future__ import annotations
+
+from dsl.ir.ir1.run_ir1 import run_ir
+from dsl.ir.ir2.builder import IR2Builder
+from dsl.ir.ir2.pretty import pretty_print_ir2_tasks
+from dsl.ir.normalization.nnf import NNFNormalizer
+
+DEFAULT_SAMPLE = """
+model := "model.onnx"
+target := MyTarget
+
+[LOGIC]:
+forall => a <= 1 -> b <= 2 using Z3
+"""
+
+
+def run_ir2(source: str):
+    ir1_tasks = run_ir(source)
+    nnf_tasks = NNFNormalizer().normalize_tasks(ir1_tasks)
+    return IR2Builder().build_tasks(nnf_tasks)
+
+
+if __name__ == "__main__":
+    tasks = run_ir2(DEFAULT_SAMPLE)
+    pretty_print_ir2_tasks(tasks)
+
+
+===== dsl\ir\ir2\selector.py =====
+
+from __future__ import annotations
+
+from dsl.ir.ir2.context import IR2BuildContext
+from dsl.ir.ir2.enums import NormalFormKind
+from dsl.ir.ir2.nodes import NNFFormulaIR2
+from dsl.ir.ir2.normal_forms.cost import NormalFormCostEstimator
+
+
+class NormalFormSelector:
+    """Selects the IR2 verification-condition form.
+
+    CNF/DNF are optimizations. NNF is the guaranteed fallback.
+    """
+
+    def __init__(self, cost_estimator: NormalFormCostEstimator | None = None):
+        self.cost_estimator = cost_estimator or NormalFormCostEstimator()
+
+    def select(
+        self,
+        verification_condition: NNFFormulaIR2,
+        context: IR2BuildContext | None = None,
+    ) -> NormalFormKind:
+        context = context or IR2BuildContext()
+        cost = self.cost_estimator.estimate(verification_condition.expression)
+
+        if context.preferred_normal_form is not None:
+            if self._is_reasonable(context.preferred_normal_form, cost, context):
+                return context.preferred_normal_form
+            if not context.allow_nnf_fallback:
+                return context.preferred_normal_form
+            return NormalFormKind.NNF
+
+        # Refutation conditions often describe a candidate counterexample, so DNF
+        # is useful for branch/scenario exploration when it is small enough.
+        if cost.dnf_units <= context.max_distribution_size:
+            return NormalFormKind.DNF
+
+        if cost.cnf_units <= context.max_distribution_size:
+            return NormalFormKind.CNF
+
+        return NormalFormKind.NNF
+
+    def _is_reasonable(
+        self,
+        form: NormalFormKind,
+        cost,
+        context: IR2BuildContext,
+    ) -> bool:
+        if form == NormalFormKind.NNF:
+            return True
+        if form == NormalFormKind.CNF:
+            return cost.cnf_units <= context.max_distribution_size
+        if form == NormalFormKind.DNF:
+            return cost.dnf_units <= context.max_distribution_size
+        return False
+
+
+===== dsl\ir\ir2\validator.py =====
+
+from __future__ import annotations
+
+from dsl.ir.ir2.enums import NormalFormKind
+from dsl.ir.ir2.errors import IR2ValidationError
+from dsl.ir.ir2.guard import NNFGuard
+from dsl.ir.ir2.nodes import (
+    CNFFormulaIR2,
+    DNFFormulaIR2,
+    NNFFormulaIR2,
+    VerificationTaskIR2,
+)
+
+
+class IR2Validator:
+    """Validates VerificationTaskIR2 invariants."""
+
+    def validate(self, task: VerificationTaskIR2) -> None:
+        if not isinstance(task.spec_formula, NNFFormulaIR2):
+            raise IR2ValidationError("spec_formula must be NNFFormulaIR2.")
+
+        NNFGuard.assert_expr_is_nnf(task.spec_formula.expression)
+
+        if task.normal_form == NormalFormKind.NNF:
+            if not isinstance(task.verification_condition, NNFFormulaIR2):
+                raise IR2ValidationError("normal_form=NNF requires NNFFormulaIR2.")
+            NNFGuard.assert_expr_is_nnf(task.verification_condition.expression)
+
+        elif task.normal_form == NormalFormKind.CNF:
+            if not isinstance(task.verification_condition, CNFFormulaIR2):
+                raise IR2ValidationError("normal_form=CNF requires CNFFormulaIR2.")
+
+        elif task.normal_form == NormalFormKind.DNF:
+            if not isinstance(task.verification_condition, DNFFormulaIR2):
+                raise IR2ValidationError("normal_form=DNF requires DNFFormulaIR2.")
+
+        else:
+            raise IR2ValidationError(f"Unsupported normal form: {task.normal_form}")
+
+        if task.requirements.normal_form != task.normal_form:
+            raise IR2ValidationError(
+                "requirements.normal_form must match task.normal_form."
+            )
+
+
+===== dsl\ir\normalization\__init__.py =====
+
+
+
+===== dsl\ir\normalization\__pycache__\__init__.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== dsl\ir\normalization\__pycache__\__init__.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
+
+===== dsl\ir\normalization\__pycache__\nnf.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== dsl\ir\normalization\__pycache__\nnf.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xc6 in position 12: invalid continuation byte]
+
+===== dsl\ir\normalization\__pycache__\run_nnf.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== dsl\ir\normalization\__pycache__\run_nnf.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xd8 in position 12: invalid continuation byte]
+
+===== dsl\ir\normalization\nnf.py =====
+
+from __future__ import annotations
+
+from dataclasses import replace
+
+from dsl.ir.ir1.nodes import (
+    AndIR,
+    ComparisonIR,
+    ImplyIR,
+    LogicalIR,
+    NotIR,
+    OrIR,
+    ProblemIR,
+    QueryIR,
+    VerificationTask,
+)
+
+
+class NNFNormalizer:
+    """
+    Convert IR logical expressions into Negation Normal Form.
+
+    Guarantees:
+    - no ImplyIR remains
+    - NotIR only appears directly above atomic predicates
+    - AND/OR structure is preserved
+    """
+
+    def normalize_task(self, task: VerificationTask) -> VerificationTask:
+        return replace(task, query=self.normalize_query(task.query))
+
+    def normalize_tasks(self, tasks: list[VerificationTask]) -> list[VerificationTask]:
+        return [self.normalize_task(task) for task in tasks]
+
+    def normalize_query(self, query: QueryIR) -> QueryIR:
+        return QueryIR(expression=self.normalize_expr(query.expression))
+
+    def normalize_expr(self, node: LogicalIR) -> LogicalIR:
+        return self._nnf(node, negated=False)
+
+    def _nnf(self, node: LogicalIR, negated: bool) -> LogicalIR:
+        if isinstance(node, (ComparisonIR, ProblemIR)):
+            return NotIR(node) if negated else node
+
+        if isinstance(node, NotIR):
+            return self._nnf(node.operand, not negated)
+
+        if isinstance(node, AndIR):
+            normalized = [self._nnf(child, negated) for child in node.operands]
+            return OrIR(normalized) if negated else AndIR(normalized)
+
+        if isinstance(node, OrIR):
+            normalized = [self._nnf(child, negated) for child in node.operands]
+            return AndIR(normalized) if negated else OrIR(normalized)
+
+        if isinstance(node, ImplyIR):
+            if negated:
+                # NOT(A -> B) === A AND NOT B
+                return AndIR(
+                    operands=[
+                        self._nnf(node.left, False),
+                        self._nnf(node.right, True),
+                    ]
+                )
+
+            # A -> B === NOT A OR B
+            return OrIR(
+                operands=[
+                    self._nnf(node.left, True),
+                    self._nnf(node.right, False),
+                ]
+            )
+
+        raise TypeError(f"Unsupported IR node for NNF: {type(node)}")
+
+
+===== dsl\ir\normalization\run_nnf.py =====
+
+from __future__ import annotations
+
+from dsl.ir.ir1.pretty import pretty_print_tasks
+from dsl.ir.ir1.run_ir1 import run_ir
+from dsl.ir.normalization.nnf import NNFNormalizer
+
+DEFAULT_SAMPLE = """
+model := "model.onnx"
+target := MyTarget
+
+[LOGIC]:
+forall => NOT (a <= 1 AND b <= 2) using Z3
+"""
+
+
+def run_nnf(source: str):
+    """
+    Full pipeline until NNF.
+
+    Steps:
+        1. Parse CST
+        2. Build AST
+        3. Semantic validation
+        4. Translate to IR1
+        5. Normalize IR1 query to NNF
+    """
+
+    tasks = run_ir(source)
+    return NNFNormalizer().normalize_tasks(tasks)
+
+
+if __name__ == "__main__":
+    tasks = run_nnf(DEFAULT_SAMPLE)
+    print("\n=== NNF OUTPUT ===\n")
+    pretty_print_tasks(tasks)

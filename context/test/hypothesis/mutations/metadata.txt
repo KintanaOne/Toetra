@@ -3,6 +3,10 @@
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xba in position 8: invalid start byte]
 
+===== test\hypothesis\mutation\metadata\__pycache__\enums.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== test\hypothesis\mutation\metadata\__pycache__\enums.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xe9 in position 8: invalid continuation byte]
@@ -38,6 +42,7 @@ class MutationContract:
     typing: PreservationLevel
     semantics: PreservationLevel
 
+
 ===== test\hypothesis\mutation\metadata\descriptor.py =====
 
 from dataclasses import dataclass
@@ -56,6 +61,7 @@ class MutationDescriptor:
     domain: Domain
     contract: MutationContract
     severity: float | None = None
+
 
 ===== test\hypothesis\mutation\metadata\enums.py =====
 

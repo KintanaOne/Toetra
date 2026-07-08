@@ -5,7 +5,6 @@ from dataclasses import dataclass, field
 from typing import Any, List, Optional
 
 
-
 @dataclass(frozen=True, slots=True)
 class SemanticConstraint:
     """
@@ -22,7 +21,7 @@ class SemanticConstraint:
     value: Any
     context: Optional[str] = None  # optional domain grouping
 
-    
+
 @dataclass
 class SemanticConstraintSet:
     """
@@ -37,15 +36,18 @@ class SemanticConstraintSet:
     def extend(self, constraints: List[SemanticConstraint]) -> None:
         self.constraints.extend(constraints)
 
+
 ===== test\hypothesis\mutation\functions\semantic\helper\engine.py =====
 
 import random
 from copy import deepcopy
-from typing import List
 
-from test.hypothesis.mutation.functions.semantic.helper.constraint import SemanticConstraint
-from test.hypothesis.mutation.functions.semantic.helper.constraint import SemanticConstraintSet
-
+from test.hypothesis.mutation.functions.semantic.helper.constraint import (
+    SemanticConstraint,
+)
+from test.hypothesis.mutation.functions.semantic.helper.constraint import (
+    SemanticConstraintSet,
+)
 
 
 class SemanticConstraintEngine:
@@ -129,7 +131,7 @@ class SemanticConstraintEngine:
 
         # fallback corruption
         return None
-    
+
     def _mutate_constraint(self, c, *, operator=None, value=None):
         """
         Create a new SemanticConstraint instead of modifying in-place.
@@ -170,14 +172,13 @@ class SemanticConstraintEngine:
 
         return mutated
 
+
 ===== test\hypothesis\mutation\functions\semantic\helper\extractor.py =====
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Optional, List
+from typing import List
 
-from copy import deepcopy
 
 from dsl.ast.nodes.assertion import (
     AndNode,
@@ -188,15 +189,11 @@ from dsl.ast.nodes.assertion import (
     LogicalNode,
 )
 
-from dsl.ast.nodes.assertion import (
-    AndNode,
-    OrNode,
-    NotNode,
-    ImplicationNode,
-)
 from dsl.ast.nodes.primitives import AttributeNode
-from test.hypothesis.mutation.functions.semantic.helper.constraint import SemanticConstraint, SemanticConstraintSet
-
+from test.hypothesis.mutation.functions.semantic.helper.constraint import (
+    SemanticConstraint,
+    SemanticConstraintSet,
+)
 
 
 class SemanticConstraintExtractor:
@@ -243,7 +240,6 @@ class SemanticConstraintExtractor:
             return self._extract_comparison(node)
 
         return []
-    
 
     # =========================================================
     # LOGICAL NODES
@@ -264,10 +260,7 @@ class SemanticConstraintExtractor:
     def _extract_not(self, node: NotNode) -> List[SemanticConstraint]:
         inner = self._extract_node(node.operand)
 
-        return [
-            self._invert_constraint(c)
-            for c in inner
-        ]
+        return [self._invert_constraint(c) for c in inner]
 
     def _extract_implication(self, node: ImplicationNode) -> List[SemanticConstraint]:
         left = self._extract_node(node.left)
@@ -275,7 +268,6 @@ class SemanticConstraintExtractor:
 
         # semantic interpretation:
         return left + right
-    
 
     # =========================================================
     # LEAF EXTRACTION (IMPORTANT PLACEHOLDER)
@@ -289,14 +281,12 @@ class SemanticConstraintExtractor:
         return [
             SemanticConstraint(
                 field=self._extract_field(attr),
-                operator=node.op.value
-                if hasattr(node.op, "value")
-                else str(node.op),
+                operator=node.op.value if hasattr(node.op, "value") else str(node.op),
                 value=const.value,
                 context=None,
             )
         ]
-    
+
     def _extract_field(self, node: AttributeNode) -> str:
         """
         Convert AttributeNode → semantic field name.
@@ -335,13 +325,12 @@ class SemanticConstraintExtractor:
             context=c.context,
         )
 
+
 ===== test\hypothesis\mutation\functions\semantic\helper\rebuilder.py =====
 
 from dsl.ast.nodes.assertion import (
     AndNode,
     LogicalNode,
-    OrNode,
-    NotNode,
     ComparisonNode,
 )
 
@@ -352,6 +341,7 @@ from test.hypothesis.mutation.functions.semantic.helper.constraint import (
     SemanticConstraint,
     SemanticConstraintSet,
 )
+
 
 class SemanticASTRebuilder:
     """
@@ -374,17 +364,13 @@ class SemanticASTRebuilder:
         if not constraints.constraints:
             return None
 
-        ast_nodes = [
-            self._build_comparison(c)
-            for c in constraints.constraints
-        ]
+        ast_nodes = [self._build_comparison(c) for c in constraints.constraints]
 
         # if only one constraint
         if len(ast_nodes) == 1:
             return ast_nodes[0]
 
         return AndNode(operands=ast_nodes)
-    
 
     def _build_comparison(self, c: SemanticConstraint) -> LogicalNode:
 
@@ -408,15 +394,13 @@ class SemanticASTRebuilder:
             op=EnumComparisonOperator(c.operator),
             right=const,
         )
-    
-    
+
     def _normalize_operator(self, op: str):
         """
         Ensure AST-compatible operator format.
         """
 
         return op  # assume EnumComparisonOperator handled upstream
-    
 
     def _infer_dtype(self, value):
 
