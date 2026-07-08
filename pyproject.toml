@@ -52,6 +52,12 @@ extend-exclude = [
 testpaths = ["test"]
 python_files = ["test_*.py"]
 norecursedirs = [
+    ".git",
+    ".venv",
+    "venv",
+    "build",
+    "dist",
+    ".hypothesis",
     "test/hypothesis",
 ]
 

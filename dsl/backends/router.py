@@ -6,8 +6,8 @@ from dsl.backends.capabilities import BackendCapabilities
 from dsl.backends.errors import BackendNotRegisteredError, NoCompatibleBackendError
 from dsl.backends.registry import BackendRegistry
 from dsl.ir.ir2.nodes import VerificationTaskIR2
-from dsl.ir.ir2.requirements import IR2Requirements
 from dsl.language.vocabulary.backends import EnumBackend
+
 
 @dataclass(frozen=True)
 class BackendRoute:

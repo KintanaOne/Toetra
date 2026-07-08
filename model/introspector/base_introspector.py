@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from model.schema.model_schema import ModelSchema
 
+
 class BaseIntrospector(ABC):
     """
     Base class for model introspection.
@@ -30,11 +31,13 @@ class BaseIntrospector(ABC):
         source_path: str | Path | None = None,
         schema=None,
         serialization_format: str | None = None,
+        target_name: str | None = None,
     ):
         self.model = model
         self.source_path = Path(source_path) if source_path is not None else None
         self.input_schema = schema
         self.serialization_format = serialization_format
+        self.target_name = target_name if target_name is not None else None
 
     @abstractmethod
     def introspect(self) -> ModelSchema:
@@ -63,4 +66,5 @@ class BaseIntrospector(ABC):
             "serialization_format": self.serialization_format,
             "model_class": type(self.model).__name__,
             "module": type(self.model).__module__,
+            "target_name": self.target_name,
         }
