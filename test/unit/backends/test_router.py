@@ -1,4 +1,3 @@
-
 import pytest
 
 from dsl.backends.capabilities import BackendCapabilities
@@ -114,9 +113,9 @@ def _capabilities(
     *,
     quantifiers: bool = True,
     forms: tuple[NormalFormKind, ...] = (
-    NormalFormKind.NNF,
-    NormalFormKind.CNF,
-    NormalFormKind.DNF,
+        NormalFormKind.NNF,
+        NormalFormKind.CNF,
+        NormalFormKind.DNF,
     ),
 ) -> BackendCapabilities:
     return BackendCapabilities(
