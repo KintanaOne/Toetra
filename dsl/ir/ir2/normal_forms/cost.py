@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from dsl.ir.ir1.nodes import AndIR, ComparisonIR, LogicalIR, NotIR, OrIR, ProblemIR
+from dsl.ir.ir2.nodes import ModelConstraintIR2
 
 
 @dataclass(frozen=True)
@@ -25,7 +26,7 @@ class NormalFormCostEstimator:
         )
 
     def estimate_cnf_units(self, expr: LogicalIR) -> int:
-        if isinstance(expr, (ComparisonIR, ProblemIR)):
+        if isinstance(expr, (ComparisonIR, ProblemIR, ModelConstraintIR2)):
             return 1
         if isinstance(expr, NotIR):
             return 1
@@ -39,7 +40,7 @@ class NormalFormCostEstimator:
         return 1
 
     def estimate_dnf_units(self, expr: LogicalIR) -> int:
-        if isinstance(expr, (ComparisonIR, ProblemIR)):
+        if isinstance(expr, (ComparisonIR, ProblemIR, ModelConstraintIR2)):
             return 1
         if isinstance(expr, NotIR):
             return 1

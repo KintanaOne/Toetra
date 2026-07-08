@@ -3,15 +3,14 @@ from __future__ import annotations
 from dataclasses import replace
 
 from dsl.ir.ir1.nodes import (
-    AndIR,
-    ComparisonIR,
-    ImplyIR,
-    LogicalIR,
-    NotIR,
-    OrIR,
-    ProblemIR,
-    QueryIR,
     VerificationTask,
+    QueryIR,
+    LogicalIR,
+    AtomicIR,
+    AndIR,
+    OrIR,
+    NotIR,
+    ImplyIR,
 )
 
 
@@ -38,7 +37,7 @@ class NNFNormalizer:
         return self._nnf(node, negated=False)
 
     def _nnf(self, node: LogicalIR, negated: bool) -> LogicalIR:
-        if isinstance(node, (ComparisonIR, ProblemIR)):
+        if isinstance(node, AtomicIR):
             return NotIR(node) if negated else node
 
         if isinstance(node, NotIR):

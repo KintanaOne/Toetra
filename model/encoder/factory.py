@@ -4,6 +4,7 @@ from dsl.ir.ir1.nodes import ScopeIR
 from dsl.ir.ir2.nodes import AssumptionIR2
 from model.encoder.base import ModelEncoder, validate_model_assumptions
 from model.encoder.context import ModelEncodingContext
+from model.encoder.defaults import create_default_model_encoder_registry
 from model.encoder.registry import ModelEncoderRegistry
 from model.schema.model_schema import ModelSchema
 
@@ -12,7 +13,7 @@ class ModelEncoderFactory:
     """Select and execute a ModelEncoder for a ModelSchema."""
 
     def __init__(self, registry: ModelEncoderRegistry | None = None):
-        self.registry = registry or ModelEncoderRegistry()
+        self.registry = registry or create_default_model_encoder_registry()
 
     def create(self, schema: ModelSchema) -> ModelEncoder:
         """Return the encoder matching a schema framework/model_type."""

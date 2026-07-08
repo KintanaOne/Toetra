@@ -11,3 +11,11 @@ class UnsupportedModelEncoderError(ModelEncoderError):
 
 class InvalidModelAssumptionError(ModelEncoderError):
     """Raised when an encoder emits invalid IR2 assumptions."""
+
+
+class MissingModelParameterError(ModelEncoderError):
+    """Raised when a schema does not expose parameters required by an encoder."""
+
+
+class UnsupportedModelParameterError(ModelEncoderError):
+    """Raised when model parameters are present but outside the encoder scope."""

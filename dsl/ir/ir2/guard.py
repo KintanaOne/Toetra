@@ -12,10 +12,11 @@ from dsl.ir.ir1.nodes import (
     VerificationTask,
 )
 from dsl.ir.ir2.errors import InvalidIR2InputError
+from dsl.ir.ir2.nodes import ModelConstraintIR2
 
 
 class NNFGuard:
-    """Guards the IR2 input contract: IR2 receives IR1 already in NNF."""
+    """Guards the IR2 input contract: IR2 receives logical input already in NNF."""
 
     @classmethod
     def assert_task_is_nnf(cls, task: VerificationTask) -> None:
@@ -32,11 +33,11 @@ class NNFGuard:
                 "IR2 input must not contain ImplyIR; run NNF first."
             )
 
-        if isinstance(node, (ComparisonIR, ProblemIR)):
+        if cls.is_atomic(node):
             return
 
         if isinstance(node, NotIR):
-            if not isinstance(node.operand, (ComparisonIR, ProblemIR)):
+            if not cls.is_atomic(node.operand):
                 raise InvalidIR2InputError(
                     "IR2 input must be NNF: NotIR may only wrap atomic predicates."
                 )
@@ -48,5 +49,9 @@ class NNFGuard:
             return
 
         raise InvalidIR2InputError(
-            f"Unsupported IR1 logical node for IR2: {type(node).__name__}"
+            f"Unsupported logical node for IR2: {type(node).__name__}"
         )
+
+    @staticmethod
+    def is_atomic(node: LogicalIR) -> bool:
+        return isinstance(node, (ComparisonIR, ProblemIR, ModelConstraintIR2))
