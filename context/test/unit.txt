@@ -1,4 +1,20 @@
 
+===== test\unit\__init__.py =====
+
+
+
+===== test\unit\__pycache__\__init__.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== test\unit\__pycache__\__init__.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
+
+===== test\unit\ast\__pycache__\test_primitives_semantic_annotations.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== test\unit\ast\__pycache__\test_primitives_semantic_annotations.cpython-314-pytest-9.0.1.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0x87 in position 9: invalid start byte]
@@ -90,29 +106,551 @@ def test_primitive_constructors_are_not_polluted_by_semantic_field():
     assert arg.key == "eps"
     assert arg.value == 0.01
 
+
+===== test\unit\backends\__pycache__\test_router.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== test\unit\backends\__pycache__\test_router.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0x8b in position 8: invalid start byte]
+
+===== test\unit\backends\test_router.py =====
+
+import pytest
+
+from dsl.backends.capabilities import BackendCapabilities
+from dsl.backends.errors import BackendNotRegisteredError, NoCompatibleBackendError
+from dsl.backends.registry import BackendRegistry
+from dsl.backends.router import BackendRouter
+from dsl.ir.ir1.nodes import ComparisonIR, ScopeIR
+from dsl.ir.ir2.enums import NormalFormKind, VerificationSemantics
+from dsl.ir.ir2.nodes import (
+    CNFFormulaIR2,
+    ClauseIR2,
+    DNFFormulaIR2,
+    FormulaIR2,
+    LiteralIR2,
+    NNFFormulaIR2,
+    TermIR2,
+    VerificationTaskIR2,
+)
+from dsl.ir.ir2.requirements import IR2Requirements
+from dsl.language.vocabulary.backends import EnumBackend
+from dsl.language.vocabulary.operators import EnumComparisonOperator
+from dsl.language.vocabulary.properties import EnumProperty
+
+
+def _requirements(
+    *,
+    quantifiers: bool = False,
+    form: NormalFormKind = NormalFormKind.DNF,
+) -> IR2Requirements:
+    return IR2Requirements(
+        requires_boolean_logic=True,
+        requires_numeric_comparisons=True,
+        requires_problem_predicates=False,
+        requires_model_assertions=False,
+        requires_quantifiers=quantifiers,
+        requires_domains=False,
+        requires_neighborhoods=False,
+        normal_form=form,
+    )
+
+
+def _scope() -> ScopeIR:
+    return ScopeIR(
+        kind="pointwise",
+        variables={"x0": "point"},
+        neighborhood=None,
+        domain=None,
+    )
+
+
+def _atom() -> ComparisonIR:
+    return ComparisonIR(
+        entity="x0",
+        feature="a",
+        op=EnumComparisonOperator.LTE,
+        value=1,
+    )
+
+
+def _formula(atom: ComparisonIR, form: NormalFormKind) -> FormulaIR2:
+    literal = LiteralIR2(atom=atom)
+
+    if form is NormalFormKind.NNF:
+        return NNFFormulaIR2(expression=atom)
+
+    if form is NormalFormKind.CNF:
+        return CNFFormulaIR2(
+            clauses=(
+                ClauseIR2(
+                    literals=(literal,),
+                ),
+            ),
+        )
+
+    if form is NormalFormKind.DNF:
+        return DNFFormulaIR2(
+            terms=(
+                TermIR2(
+                    literals=(literal,),
+                ),
+            ),
+        )
+
+    raise ValueError(f"Unsupported normal form in test fixture: {form}")
+
+
+def _semantics() -> VerificationSemantics:
+    return next(iter(VerificationSemantics))
+
+
+def _task(
+    *,
+    backend: EnumBackend | None = EnumBackend.Z3,
+    requirements: IR2Requirements,
+) -> VerificationTaskIR2:
+    atom = _atom()
+
+    return VerificationTaskIR2(
+        property_type=EnumProperty.LOGIC,
+        scope=_scope(),
+        backend=backend,
+        assumptions=(),
+        spec_formula=NNFFormulaIR2(expression=atom),
+        verification_condition=_formula(atom, requirements.normal_form),
+        semantics=_semantics(),
+        normal_form=requirements.normal_form,
+        requirements=requirements,
+        metadata={},
+    )
+
+
+def _capabilities(
+    *,
+    quantifiers: bool = True,
+    forms: tuple[NormalFormKind, ...] = (
+        NormalFormKind.NNF,
+        NormalFormKind.CNF,
+        NormalFormKind.DNF,
+    ),
+) -> BackendCapabilities:
+    return BackendCapabilities(
+        backend=EnumBackend.Z3,
+        supports_boolean_logic=True,
+        supports_numeric_comparisons=True,
+        supports_problem_predicates=True,
+        supports_model_assertions=True,
+        supports_quantifiers=quantifiers,
+        supports_domains=True,
+        supports_neighborhoods=True,
+        supported_normal_forms=forms,
+    )
+
+
+def test_backend_router_routes_requested_backend_when_capabilities_match():
+    registry = BackendRegistry()
+    registry.register(_capabilities())
+
+    task = _task(
+        backend=EnumBackend.Z3,
+        requirements=_requirements(quantifiers=True),
+    )
+
+    route = BackendRouter(registry).route(task)
+
+    assert route.backend == EnumBackend.Z3
+    assert route.reason == "requested backend satisfies IR2 requirements"
+
+
+def test_backend_router_rejects_unregistered_requested_backend():
+    task = _task(
+        backend=EnumBackend.Z3,
+        requirements=_requirements(),
+    )
+
+    with pytest.raises(BackendNotRegisteredError):
+        BackendRouter(BackendRegistry()).route(task)
+
+
+def test_backend_router_rejects_backend_without_required_capability():
+    registry = BackendRegistry()
+    registry.register(_capabilities(quantifiers=False))
+
+    task = _task(
+        backend=EnumBackend.Z3,
+        requirements=_requirements(quantifiers=True),
+    )
+
+    with pytest.raises(NoCompatibleBackendError):
+        BackendRouter(registry).route(task)
+
+
+def test_backend_router_rejects_backend_without_required_normal_form():
+    registry = BackendRegistry()
+    registry.register(_capabilities(forms=(NormalFormKind.NNF,)))
+
+    task = _task(
+        backend=EnumBackend.Z3,
+        requirements=_requirements(form=NormalFormKind.DNF),
+    )
+
+    with pytest.raises(NoCompatibleBackendError):
+        BackendRouter(registry).route(task)
+
+
+===== test\unit\builder\__pycache__\test_parse_value_boolean.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== test\unit\builder\__pycache__\test_parse_value_boolean.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0x97 in position 9: invalid start byte]
+
+===== test\unit\builder\test_parse_value_boolean.py =====
+
+from dsl.builder.core.ast_utils import parse_value
+from dsl.builder.core.utils import find_node
+from dsl.parser.parser import parse_forml_code
+from dsl.semantic.types.enums import EnumDataType
+
+
+def _first_value_node(source: str):
+    cst = parse_forml_code(source)
+    value_node = find_node(cst, "value")
+
+    assert value_node is not None
+
+    return value_node
+
+
+def test_parse_value_true_boolean_literal():
+    source = """
+    model := "model.onnx"
+    target := MyTarget
+
+    [ROBUSTNESS]:
+    check_at x0 => x0.is_active == true
+    """
+
+    node = _first_value_node(source)
+    value = parse_value(node)
+
+    assert value.value is True
+    assert value.dtype is EnumDataType.BOOL
+
+
+def test_parse_value_false_boolean_literal():
+    source = """
+    model := "model.onnx"
+    target := MyTarget
+
+    [ROBUSTNESS]:
+    check_at x0 => x0.is_active == false
+    """
+
+    node = _first_value_node(source)
+    value = parse_value(node)
+
+    assert value.value is False
+    assert value.dtype is EnumDataType.BOOL
+
+
+===== test\unit\ir\__pycache__\test_comparison_ir_schema_types.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== test\unit\ir\__pycache__\test_comparison_ir_schema_types.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0x95 in position 9: invalid start byte]
+
+===== test\unit\ir\__pycache__\test_pretty_typed_ir.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== test\unit\ir\__pycache__\test_pretty_typed_ir.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0x95 in position 9: invalid start byte]
+
+===== test\unit\ir\test_comparison_ir_schema_types.py =====
+
+from dsl.ir.ir1.nodes import ComparisonIR
+from dsl.semantic.types.enums import EnumDataType
+from test.fixtures.ir_schema_aware.ir_helpers import translate_source
+from test.fixtures.ir_schema_aware.samples import (
+    CHECK_AT_BOOL_FEATURE,
+    CHECK_AT_IMPLICIT_AGE,
+    CHECK_AT_INCOME,
+    FORALL_IMPLICIT_AGE,
+)
+from test.fixtures.ir_schema_aware.schemas import make_schema
+
+
+def test_ir_comparison_contains_feature_dtype_when_schema_is_provided():
+    tasks = translate_source(CHECK_AT_INCOME, model_schema=make_schema())
+
+    comparison = tasks[0].query.expression
+
+    assert isinstance(comparison, ComparisonIR)
+    assert comparison.entity == "x0"
+    assert comparison.feature == "income"
+    assert comparison.feature_dtype is EnumDataType.FLOAT
+    assert comparison.value_dtype is EnumDataType.INT
+    assert comparison.value == 1000
+
+
+def test_ir_comparison_dtype_is_none_without_schema():
+    tasks = translate_source(CHECK_AT_INCOME)
+
+    comparison = tasks[0].query.expression
+
+    assert isinstance(comparison, ComparisonIR)
+    assert comparison.entity == "x0"
+    assert comparison.feature == "income"
+    assert comparison.feature_dtype is None
+    assert comparison.value_dtype is EnumDataType.INT
+
+
+def test_ir_uses_semantic_resolution_for_implicit_attribute_with_schema():
+    tasks = translate_source(CHECK_AT_IMPLICIT_AGE, model_schema=make_schema())
+
+    comparison = tasks[0].query.expression
+
+    assert isinstance(comparison, ComparisonIR)
+    assert comparison.entity == "x0"
+    assert comparison.feature == "age"
+    assert comparison.feature_dtype is EnumDataType.INT
+    assert comparison.value_dtype is EnumDataType.INT
+
+
+def test_ir_uses_symbolic_entity_for_quantifier_with_schema():
+    tasks = translate_source(FORALL_IMPLICIT_AGE, model_schema=make_schema())
+
+    comparison = tasks[0].query.expression
+
+    assert isinstance(comparison, ComparisonIR)
+    assert comparison.entity == "_x"
+    assert comparison.feature == "age"
+    assert comparison.feature_dtype is EnumDataType.INT
+    assert comparison.value_dtype is EnumDataType.INT
+
+
+def test_ir_preserves_bool_feature_and_bool_value_dtype():
+    tasks = translate_source(CHECK_AT_BOOL_FEATURE, model_schema=make_schema())
+
+    comparison = tasks[0].query.expression
+
+    assert isinstance(comparison, ComparisonIR)
+    assert comparison.entity == "x0"
+    assert comparison.feature == "is_active"
+    assert comparison.feature_dtype is EnumDataType.BOOL
+    assert comparison.value_dtype is EnumDataType.BOOL
+    assert comparison.value is True
+
+
+===== test\unit\ir\test_pretty_typed_ir.py =====
+
+from dsl.ir.ir1.nodes import ComparisonIR, QueryIR, ScopeIR, VerificationTask
+from dsl.ir.ir1.pretty import pretty_task
+from dsl.language.vocabulary.operators import EnumComparisonOperator
+from dsl.language.vocabulary.properties import EnumProperty
+from dsl.semantic.types.enums import EnumDataType
+
+
+def _task(comparison: ComparisonIR) -> VerificationTask:
+    return VerificationTask(
+        property_type=EnumProperty.ROBUSTNESS,
+        backend=None,
+        scope=ScopeIR(
+            kind="pointwise",
+            variables={"x0": "anchor"},
+            neighborhood=None,
+            domain=None,
+        ),
+        query=QueryIR(expression=comparison),
+    )
+
+
+def test_pretty_task_prints_feature_dtype_when_present():
+    comparison = ComparisonIR(
+        entity="x0",
+        feature="income",
+        op=EnumComparisonOperator.LTE,
+        value=1000,
+        feature_dtype=EnumDataType.FLOAT,
+        value_dtype=EnumDataType.INT,
+    )
+
+    output = pretty_task(_task(comparison))
+
+    assert "- x0.income : float <= 1000" in output
+
+
+def test_pretty_task_keeps_existing_format_when_feature_dtype_is_absent():
+    comparison = ComparisonIR(
+        entity="x0",
+        feature="income",
+        op=EnumComparisonOperator.LTE,
+        value=1000,
+        feature_dtype=None,
+        value_dtype=EnumDataType.INT,
+    )
+
+    output = pretty_task(_task(comparison))
+
+    assert "- x0.income <= 1000" in output
+    assert "- x0.income : " not in output
+
+
+===== test\unit\ir2\__pycache__\test_pretty.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== test\unit\ir2\__pycache__\test_pretty.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0x98 in position 8: invalid start byte]
+
+===== test\unit\ir2\test_pretty.py =====
+
+from dsl.ir.ir1.nodes import ComparisonIR
+from dsl.ir.ir2.enums import Polarity
+from dsl.ir.ir2.nodes import (
+    ClauseIR2,
+    CNFFormulaIR2,
+    DNFFormulaIR2,
+    LiteralIR2,
+    TermIR2,
+)
+from dsl.ir.ir2.pretty import pretty_formula
+from dsl.language.vocabulary.operators import EnumComparisonOperator
+
+
+def _cmp(name: str) -> ComparisonIR:
+    return ComparisonIR(
+        entity="_x", feature=name, op=EnumComparisonOperator.LTE, value=1
+    )
+
+
+def test_pretty_dnf_single_term_omits_branch_index_and_displays_polarity():
+    formula = DNFFormulaIR2(
+        terms=(
+            TermIR2(
+                literals=(
+                    LiteralIR2(atom=_cmp("a"), polarity=Polarity.POSITIVE),
+                    LiteralIR2(atom=_cmp("b"), polarity=Polarity.NEGATIVE),
+                )
+            ),
+        )
+    )
+
+    rendered = pretty_formula(formula)
+
+    assert rendered == "\n".join(
+        [
+            "DNF",
+            "  AND",
+            "    LITERAL[positive](_x.a <= 1)",
+            "    LITERAL[negative](_x.b <= 1)",
+        ]
+    )
+    assert "term[0]" not in rendered
+    assert "branch[0]" not in rendered
+    assert "NOT _x.b" not in rendered
+
+
+def test_pretty_dnf_multiple_terms_uses_human_readable_branches():
+    formula = DNFFormulaIR2(
+        terms=(
+            TermIR2(literals=(LiteralIR2(atom=_cmp("a"), polarity=Polarity.POSITIVE),)),
+            TermIR2(literals=(LiteralIR2(atom=_cmp("b"), polarity=Polarity.NEGATIVE),)),
+        )
+    )
+
+    rendered = pretty_formula(formula)
+
+    assert "branch[0] AND" in rendered
+    assert "branch[1] AND" in rendered
+    assert "term[0]" not in rendered
+
+
+def test_pretty_cnf_single_clause_omits_clause_index_and_displays_polarity():
+    formula = CNFFormulaIR2(
+        clauses=(
+            ClauseIR2(
+                literals=(
+                    LiteralIR2(atom=_cmp("a"), polarity=Polarity.POSITIVE),
+                    LiteralIR2(atom=_cmp("b"), polarity=Polarity.NEGATIVE),
+                )
+            ),
+        )
+    )
+
+    rendered = pretty_formula(formula)
+
+    assert rendered == "\n".join(
+        [
+            "CNF",
+            "  OR",
+            "    LITERAL[positive](_x.a <= 1)",
+            "    LITERAL[negative](_x.b <= 1)",
+        ]
+    )
+    assert "clause[0]" not in rendered
+
+
+===== test\unit\model\__pycache__\test_detector.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== test\unit\model\__pycache__\test_detector.cpython-314-pytest-9.0.1.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xf3 in position 37: invalid continuation byte]
+
+===== test\unit\model\__pycache__\test_introspector_factory.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== test\unit\model\__pycache__\test_introspector_factory.cpython-314-pytest-9.0.1.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0x8f in position 12: invalid start byte]
 
+===== test\unit\model\__pycache__\test_loader_factory.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== test\unit\model\__pycache__\test_loader_factory.cpython-314-pytest-9.0.1.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xb9 in position 12: invalid start byte]
+
+===== test\unit\model\__pycache__\test_loaders.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== test\unit\model\__pycache__\test_loaders.cpython-314-pytest-9.0.1.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode bytes in position 37-38: invalid continuation byte]
 
+===== test\unit\model\__pycache__\test_schema_dataclasses.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== test\unit\model\__pycache__\test_schema_dataclasses.cpython-314-pytest-9.0.1.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xf3 in position 37: invalid continuation byte]
 
+===== test\unit\model\__pycache__\test_sklearn_introspector.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== test\unit\model\__pycache__\test_sklearn_introspector.cpython-314-pytest-9.0.1.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode bytes in position 37-38: invalid continuation byte]
+
+===== test\unit\model\__pycache__\test_xgboost_introspector_optional.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== test\unit\model\__pycache__\test_xgboost_introspector_optional.cpython-314-pytest-9.0.1.pyc =====
 
@@ -125,7 +663,7 @@ import pytest
 from model.detector.detector import ModelDetector
 from model.detector.model_framework import EnumModelFramework
 from model.errors.detection import UnsupportedModelError
-test.s.model_bridge.factories import train_classification_model
+from test.fixtures.model_bridge.factories import train_classification_model
 
 
 def test_detector_detects_sklearn_estimator():
@@ -149,7 +687,10 @@ from model.detector.model_framework import EnumModelFramework
 from model.errors.introspection import UnsupportedIntrospectorError
 from model.introspector.introspector_factory import IntrospectorFactory
 from model.introspector.sklearn_introspector import SklearnIntrospector
-test.s.model_bridge.factories import dataset_path, train_classification_model
+from test.fixtures.model_bridge.factories import (
+    dataset_path,
+    train_classification_model,
+)
 
 
 def test_introspector_factory_creates_sklearn_introspector_with_target_name():
@@ -225,7 +766,7 @@ from model.errors.loading import ModelDeserializationError, ModelFileNotFoundErr
 from model.loader.joblib_loader import JoblibModelLoader
 from model.loader.json_loader import JsonModelLoader
 from model.loader.pkl_loader import PklModelLoader
-test.s.model_bridge.factories import (
+from test.fixtures.model_bridge.factories import (
     make_classification_joblib,
     make_classification_pkl,
 )
@@ -317,7 +858,7 @@ from model.errors.introspection import MissingFeatureMetadataError
 from model.introspector.sklearn_introspector import SklearnIntrospector
 from model.schema.feature_schema import FeatureSchema
 from model.schema.model_schema import ModelSchema
-test.s.model_bridge.factories import (
+from test.fixtures.model_bridge.factories import (
     dataset_path,
     train_classification_model,
 )
@@ -405,7 +946,7 @@ xgboost = pytest.importorskip("xgboost")
 
 from model.detector.model_framework import EnumModelFramework
 from model.introspector.xgboost_introspector import XGBoostIntrospector
-test.s.model_bridge.factories import dataset_path
+from test.fixtures.model_bridge.factories import dataset_path
 
 
 def test_xgboost_introspector_reuses_sklearn_contract_and_preserves_target():
@@ -436,49 +977,581 @@ def test_xgboost_introspector_reuses_sklearn_contract_and_preserves_target():
     assert "xgboost" in schema.metadata
 
 
+===== test\unit\normalization\__init__.py =====
+
+
+
+===== test\unit\normalization\__pycache__\__init__.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== test\unit\normalization\__pycache__\__init__.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
+
+===== test\unit\normalization\nnf\__init__.py =====
+
+
+
+===== test\unit\normalization\nnf\__pycache__\__init__.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== test\unit\normalization\nnf\__pycache__\__init__.cpython-314.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
+
+===== test\unit\normalization\nnf\__pycache__\test_nnf_atomic.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== test\unit\normalization\nnf\__pycache__\test_nnf_atomic.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf3 in position 37: invalid continuation byte]
+
+===== test\unit\normalization\nnf\__pycache__\test_nnf_comparison_operators.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== test\unit\normalization\nnf\__pycache__\test_nnf_comparison_operators.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf3 in position 37: invalid continuation byte]
+
+===== test\unit\normalization\nnf\__pycache__\test_nnf_demorgan.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== test\unit\normalization\nnf\__pycache__\test_nnf_demorgan.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xc1 in position 12: invalid start byte]
+
+===== test\unit\normalization\nnf\__pycache__\test_nnf_implication.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== test\unit\normalization\nnf\__pycache__\test_nnf_implication.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa3 in position 12: invalid start byte]
+
+===== test\unit\normalization\nnf\__pycache__\test_nnf_quantifier_scope_passthrough.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== test\unit\normalization\nnf\__pycache__\test_nnf_quantifier_scope_passthrough.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf3 in position 37: invalid continuation byte]
+
+===== test\unit\normalization\nnf\__pycache__\test_nnf_rejects_unknown_nodes.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== test\unit\normalization\nnf\__pycache__\test_nnf_rejects_unknown_nodes.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xab in position 12: invalid start byte]
+
+===== test\unit\normalization\nnf\__pycache__\test_nnf_wrappers_and_invariants.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== test\unit\normalization\nnf\__pycache__\test_nnf_wrappers_and_invariants.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xd7 in position 12: invalid continuation byte]
+
+===== test\unit\normalization\nnf\__pycache__\test_public_contract.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== test\unit\normalization\nnf\__pycache__\test_public_contract.cpython-314-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf3 in position 37: invalid continuation byte]
+
+===== test\unit\normalization\nnf\test_nnf_atomic.py =====
+
+from __future__ import annotations
+
+from dsl.ir.ir1.nodes import NotIR, ProblemIR
+
+from test.fixtures.normalization.nnf.helpers import (
+    assert_is_nnf,
+    cmp,
+    normalizer,
+    problem,
+    sexpr,
+)
+
+
+def test_atomic_comparison_is_preserved():
+    expr = cmp("a", 1)
+
+    got = normalizer().normalize_expr(expr)
+
+    assert got == expr
+    assert sexpr(got) == "CMP(x0.a <= 1)"
+    assert_is_nnf(got)
+
+
+def test_not_comparison_is_valid_nnf_leaf_negation():
+    expr = NotIR(cmp("a", 1))
+
+    got = normalizer().normalize_expr(expr)
+
+    assert sexpr(got) == "NOT(CMP(x0.a <= 1))"
+    assert_is_nnf(got)
+
+
+def test_problem_ir_is_preserved_as_atomic_predicate():
+    expr = problem()
+
+    got = normalizer().normalize_expr(expr)
+
+    assert isinstance(got, ProblemIR)
+    assert sexpr(got) == "PROBLEM(CLASSIFICATION.EQUAL)"
+    assert_is_nnf(got)
+
+
+def test_not_problem_ir_is_valid_nnf_leaf_negation():
+    expr = NotIR(problem())
+
+    got = normalizer().normalize_expr(expr)
+
+    assert sexpr(got) == "NOT(PROBLEM(CLASSIFICATION.EQUAL))"
+    assert_is_nnf(got)
+
+
+===== test\unit\normalization\nnf\test_nnf_comparison_operators.py =====
+
+from __future__ import annotations
+
+import pytest
+
+from dsl.ir.ir1.nodes import NotIR
+from dsl.language.vocabulary.operators import EnumComparisonOperator
+
+from test.fixtures.normalization.nnf.helpers import (
+    assert_is_nnf,
+    cmp,
+    normalizer,
+    sexpr,
+)
+
+
+@pytest.mark.parametrize(
+    "operator, expected_symbol",
+    [
+        (EnumComparisonOperator.EQ, "=="),
+        (EnumComparisonOperator.NEQ, "!="),
+        (EnumComparisonOperator.LT, "<"),
+        (EnumComparisonOperator.LTE, "<="),
+        (EnumComparisonOperator.GT, ">"),
+        (EnumComparisonOperator.GTE, ">="),
+    ],
+)
+def test_comparison_operator_is_preserved_under_leaf_negation(
+    operator, expected_symbol
+):
+    expr = NotIR(cmp("a", 1, op=operator))
+
+    got = normalizer().normalize_expr(expr)
+
+    assert sexpr(got) == f"NOT(CMP(x0.a {expected_symbol} 1))"
+    assert_is_nnf(got)
+
+
+===== test\unit\normalization\nnf\test_nnf_demorgan.py =====
+
+from __future__ import annotations
+
+from dsl.ir.ir1.nodes import AndIR, NotIR, OrIR
+
+from test.fixtures.normalization.nnf.helpers import (
+    assert_is_nnf,
+    cmp,
+    normalizer,
+    sexpr,
+)
+
+
+def test_demorgan_not_and_becomes_or_of_negated_operands():
+    expr = NotIR(
+        AndIR(
+            operands=[
+                cmp("a", 1),
+                cmp("b", 2),
+            ]
+        )
+    )
+
+    got = normalizer().normalize_expr(expr)
+
+    assert sexpr(got) == "OR(NOT(CMP(x0.a <= 1)), NOT(CMP(x0.b <= 2)))"
+    assert_is_nnf(got)
+
+
+def test_demorgan_not_or_becomes_and_of_negated_operands():
+    expr = NotIR(
+        OrIR(
+            operands=[
+                cmp("a", 1),
+                cmp("b", 2),
+            ]
+        )
+    )
+
+    got = normalizer().normalize_expr(expr)
+
+    assert sexpr(got) == "AND(NOT(CMP(x0.a <= 1)), NOT(CMP(x0.b <= 2)))"
+    assert_is_nnf(got)
+
+
+def test_double_negation_is_eliminated():
+    expr = NotIR(NotIR(cmp("a", 1)))
+
+    got = normalizer().normalize_expr(expr)
+
+    assert sexpr(got) == "CMP(x0.a <= 1)"
+    assert_is_nnf(got)
+
+
+def test_complex_demorgan_expression_is_nnf():
+    expr = NotIR(
+        OrIR(
+            operands=[
+                AndIR(operands=[cmp("a", 1), cmp("b", 2)]),
+                NotIR(cmp("c", 3)),
+            ]
+        )
+    )
+
+    got = normalizer().normalize_expr(expr)
+
+    assert sexpr(got) == (
+        "AND(OR(NOT(CMP(x0.a <= 1)), NOT(CMP(x0.b <= 2))), CMP(x0.c <= 3))"
+    )
+    assert_is_nnf(got)
+
+
+===== test\unit\normalization\nnf\test_nnf_implication.py =====
+
+from __future__ import annotations
+
+from dsl.ir.ir1.nodes import ImplyIR, NotIR
+
+from test.fixtures.normalization.nnf.helpers import (
+    assert_is_nnf,
+    assert_no_implication,
+    cmp,
+    normalizer,
+    sexpr,
+)
+
+
+def test_implication_is_lowered_to_or_not_left_right():
+    expr = ImplyIR(
+        left=cmp("a", 1),
+        right=cmp("b", 2),
+    )
+
+    got = normalizer().normalize_expr(expr)
+
+    assert sexpr(got) == "OR(NOT(CMP(x0.a <= 1)), CMP(x0.b <= 2))"
+    assert_no_implication(got)
+    assert_is_nnf(got)
+
+
+def test_negated_implication_is_lowered_to_and_left_not_right():
+    expr = NotIR(
+        ImplyIR(
+            left=cmp("a", 1),
+            right=cmp("b", 2),
+        )
+    )
+
+    got = normalizer().normalize_expr(expr)
+
+    assert sexpr(got) == "AND(CMP(x0.a <= 1), NOT(CMP(x0.b <= 2)))"
+    assert_no_implication(got)
+    assert_is_nnf(got)
+
+
+def test_nested_implication_is_removed_everywhere():
+    expr = ImplyIR(
+        left=cmp("a", 1),
+        right=ImplyIR(
+            left=cmp("b", 2),
+            right=cmp("c", 3),
+        ),
+    )
+
+    got = normalizer().normalize_expr(expr)
+
+    assert "IMPLY" not in sexpr(got)
+    assert_no_implication(got)
+    assert_is_nnf(got)
+
+
+===== test\unit\normalization\nnf\test_nnf_quantifier_scope_passthrough.py =====
+
+from __future__ import annotations
+
+from dsl.ir.ir1.nodes import AndIR, DomainIR, NotIR, ScopeIR
+
+from test.fixtures.normalization.nnf.helpers import (
+    assert_is_nnf,
+    assert_quantifier_scope,
+    assert_scope_domain_values,
+    cmp,
+    normalizer,
+    sexpr,
+    task_with_expr,
+)
+
+
+def test_normalize_task_preserves_quantifier_scope_and_domain():
+    task = task_with_expr(
+        NotIR(
+            AndIR(
+                operands=[
+                    cmp("a", 1, entity="_x"),
+                    cmp("b", 2, entity="_x"),
+                ]
+            )
+        )
+    )
+    task.scope = ScopeIR(
+        kind="quantifier",
+        variables={"_x": "symbolic"},
+        neighborhood=None,
+        domain=DomainIR(name="Segment", args={"values": ["A", "B"]}),
+    )
+
+    got = normalizer().normalize_task(task)
+
+    assert_quantifier_scope(got)
+    assert_scope_domain_values(got, "Segment", ["A", "B"])
+    assert sexpr(got.query.expression) == (
+        "OR(NOT(CMP(_x.a <= 1)), NOT(CMP(_x.b <= 2)))"
+    )
+    assert_is_nnf(got.query.expression)
+
+
+===== test\unit\normalization\nnf\test_nnf_rejects_unknown_nodes.py =====
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+import pytest
+
+from dsl.ir.ir1.nodes import LogicalIR
+
+from test.fixtures.normalization.nnf.helpers import normalizer
+
+
+@dataclass
+class UnknownLogicalIR(LogicalIR):
+    payload: str
+
+
+def test_unknown_logical_ir_node_is_rejected_explicitly():
+    with pytest.raises(TypeError):
+        normalizer().normalize_expr(UnknownLogicalIR(payload="unsupported"))
+
+
+===== test\unit\normalization\nnf\test_nnf_wrappers_and_invariants.py =====
+
+from __future__ import annotations
+
+from dsl.ir.ir1.nodes import AndIR, ImplyIR, NotIR, OrIR, QueryIR
+
+from test.fixtures.normalization.nnf.helpers import (
+    assert_is_nnf,
+    cmp,
+    normalizer,
+    sexpr,
+    task_with_expr,
+)
+
+
+def test_normalize_query_normalizes_query_expression():
+    query = QueryIR(
+        expression=NotIR(
+            AndIR(
+                operands=[
+                    cmp("a", 1),
+                    cmp("b", 2),
+                ]
+            )
+        )
+    )
+
+    got = normalizer().normalize_query(query)
+
+    assert sexpr(got.expression) == "OR(NOT(CMP(x0.a <= 1)), NOT(CMP(x0.b <= 2)))"
+    assert_is_nnf(got.expression)
+
+
+def test_normalize_task_preserves_non_query_metadata():
+    expr = ImplyIR(left=cmp("a", 1), right=cmp("b", 2))
+    task = task_with_expr(expr)
+
+    got = normalizer().normalize_task(task)
+
+    assert got.property_type == task.property_type
+    assert got.scope == task.scope
+    assert got.backend == task.backend
+    assert sexpr(got.query.expression) == "OR(NOT(CMP(x0.a <= 1)), CMP(x0.b <= 2))"
+    assert_is_nnf(got.query.expression)
+
+
+def test_normalize_tasks_normalizes_all_tasks():
+    tasks = [
+        task_with_expr(ImplyIR(left=cmp("a", 1), right=cmp("b", 2))),
+        task_with_expr(NotIR(OrIR(operands=[cmp("c", 3), cmp("d", 4)]))),
+    ]
+
+    got = normalizer().normalize_tasks(tasks)
+
+    assert len(got) == 2
+    assert sexpr(got[0].query.expression) == "OR(NOT(CMP(x0.a <= 1)), CMP(x0.b <= 2))"
+    assert (
+        sexpr(got[1].query.expression)
+        == "AND(NOT(CMP(x0.c <= 3)), NOT(CMP(x0.d <= 4)))"
+    )
+
+    for task in got:
+        assert_is_nnf(task.query.expression)
+
+
+def test_normalization_is_idempotent():
+    expr = NotIR(
+        OrIR(
+            operands=[
+                ImplyIR(left=cmp("a", 1), right=cmp("b", 2)),
+                NotIR(cmp("c", 3)),
+            ]
+        )
+    )
+
+    first = normalizer().normalize_expr(expr)
+    second = normalizer().normalize_expr(first)
+
+    assert sexpr(second) == sexpr(first)
+    assert_is_nnf(second)
+
+
+===== test\unit\normalization\nnf\test_public_contract.py =====
+
+from __future__ import annotations
+
+from test.fixtures.normalization.nnf.helpers import (
+    import_nnf_normalizer_cls,
+    import_run_nnf,
+)
+
+
+def test_nnf_normalizer_public_api_contract():
+    cls = import_nnf_normalizer_cls()
+    normalizer = cls()
+
+    assert hasattr(normalizer, "normalize_expr")
+    assert hasattr(normalizer, "normalize_query")
+    assert hasattr(normalizer, "normalize_task")
+    assert hasattr(normalizer, "normalize_tasks")
+
+
+def test_run_nnf_public_entrypoint_contract():
+    run_nnf = import_run_nnf()
+
+    assert callable(run_nnf)
+
+
+===== test\unit\parsing\__pycache__\helper.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== test\unit\parsing\__pycache__\helper.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xe0 in position 9: invalid continuation byte]
 
+===== test\unit\parsing\__pycache__\test_at.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== test\unit\parsing\__pycache__\test_at.cpython-314-pytest-9.0.1.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xf7 in position 8: invalid start byte]
+
+===== test\unit\parsing\__pycache__\test_body.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== test\unit\parsing\__pycache__\test_body.cpython-314-pytest-9.0.1.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode bytes in position 37-38: invalid continuation byte]
+
+===== test\unit\parsing\__pycache__\test_check_at.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== test\unit\parsing\__pycache__\test_check_at.cpython-314-pytest-9.0.1.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xff in position 12: invalid start byte]
+
+===== test\unit\parsing\__pycache__\test_exists.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== test\unit\parsing\__pycache__\test_exists.cpython-314-pytest-9.0.1.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xb1 in position 12: invalid start byte]
+
+===== test\unit\parsing\__pycache__\test_footer.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== test\unit\parsing\__pycache__\test_footer.cpython-314-pytest-9.0.1.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
+===== test\unit\parsing\__pycache__\test_forall.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== test\unit\parsing\__pycache__\test_forall.cpython-314-pytest-9.0.1.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xaf in position 12: invalid start byte]
+
+===== test\unit\parsing\__pycache__\test_header.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== test\unit\parsing\__pycache__\test_header.cpython-314-pytest-9.0.1.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xd0 in position 8: invalid continuation byte]
+
+===== test\unit\parsing\__pycache__\test_logic.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== test\unit\parsing\__pycache__\test_logic.cpython-314-pytest-9.0.1.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xb2 in position 8: invalid start byte]
+
+===== test\unit\parsing\__pycache__\test_pairwise.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== test\unit\parsing\__pycache__\test_pairwise.cpython-314-pytest-9.0.1.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xbf in position 8: invalid start byte]
+
+===== test\unit\parsing\__pycache__\test_semantic.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== test\unit\parsing\__pycache__\test_semantic.cpython-314-pytest-9.0.1.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xda in position 8: invalid continuation byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0xcc in position 8: invalid continuation byte]
 
 ===== test\unit\parsing\helper.py =====
 
@@ -628,6 +1701,7 @@ def assert_domain(domain, name: str, values: list[str]) -> None:
 # Backend helpers
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 def assert_backend(
     prop,
     expected_name: str | EnumBackend,
@@ -652,12 +1726,10 @@ def assert_backend(
 
     assert backend.name == expected_backend
 
-    actual_args = {
-        arg.key: arg.value
-        for arg in backend.args
-    }
+    actual_args = {arg.key: arg.value for arg in backend.args}
 
     assert actual_args == expected_args
+
 
 def assert_no_backend(prop) -> None:
     """
@@ -720,7 +1792,7 @@ def assert_quantifier_scope(prop) -> QuantifierExprNode:
 import pytest
 
 
-test.s.properties_samples import (
+from test.fixtures.properties_samples import (
     # VALID
     VALID_AT_WITH_DOMAIN,
     VALID_AT_WITH_NEIGHBORHOOD,
@@ -851,7 +1923,7 @@ def test_at_invalid(code):
 
 import pytest
 
-test.s.program_samples import (
+from test.fixtures.program_samples import (
     INVALID_BODY_EMPTY,
     INVALID_BODY_INVALID_ASSERTION,
     INVALID_BODY_SYNTAX_ERROR,
@@ -935,7 +2007,7 @@ def test_body_invalid(code):
 
 import pytest
 
-test.s.properties_samples import (
+from test.fixtures.properties_samples import (
     # VALID
     VALID_CHECK_AT_WITH_COMPLEX_ASSERTION,
     VALID_MINIMAL_CHECK_AT,
@@ -1006,7 +2078,7 @@ def test_check_at_invalid(code):
 # test/unit/parsing/test_exists.py
 
 
-test.s.properties_samples import (
+from test.fixtures.properties_samples import (
     # VALID
     VALID_EXISTS_WITH_DOMAIN,
     VALID_MINIMAL_EXISTS,
@@ -1109,7 +2181,7 @@ def test_footer_with_simple_comment():
 
 # test/unit/parsing/test_forall.py
 
-test.s.properties_samples import (
+from test.fixtures.properties_samples import (
     # VALID
     VALID_FORALL_WITH_DOMAIN,
     VALID_MINIMAL_FORALL,
@@ -1167,7 +2239,7 @@ def test_forall_with_domain():
 
 import pytest
 
-test.s.program_samples import (
+from test.fixtures.program_samples import (
     INVALID_HEADER_MISSING_BOTH,
     INVALID_HEADER_MISSING_MODEL,
     INVALID_HEADER_MISSING_TARGET,
@@ -1176,7 +2248,7 @@ test.s.program_samples import (
     VALID_PROGRAM_WITH_HEADER_COMMENTS,
 )
 
-test.s.properties_samples import (
+from test.fixtures.properties_samples import (
     VALID_MINIMAL_PAIRWISE,
 )
 
@@ -1251,7 +2323,7 @@ from dsl.builder.program import parse_program
 from dsl.language.vocabulary.problems import EnumProblem
 from dsl.parser.parser import parse_forml_code
 
-test.s.logic_samples import (
+from test.fixtures.logic_samples import (
     INVALID_LOGIC_SYNTAX,
     INVALID_PARENTHESES,
     NESTED_IMPLICATION_PROPERTY,
@@ -1441,7 +2513,7 @@ def test_invalid_parentheses():
 
 import pytest
 
-test.s.properties_samples import (
+from test.fixtures.properties_samples import (
     INVALID_PAIRWISE_MALFORMED_ABSTRACTOR,
     INVALID_PAIRWISE_MALFORMED_NEIGHBORHOOD,
     INVALID_PAIRWISE_MISSING_ASSERTION,
@@ -1562,13 +2634,13 @@ from dsl.language.vocabulary.backends import EnumBackend
 from dsl.language.vocabulary.properties import EnumProperty
 from dsl.parser.parser import parse_forml_code
 
-test.s.program_samples import (
+from test.fixtures.program_samples import (
     INVALID_BODY_MISSING_EXPRESSION,
     INVALID_BODY_MULTIPLE_EXPRESSION,
     VALID_PROGRAM_WITH_BODY_MULTIPLE_PROPERTIES,
 )
 
-test.s.properties_samples import (
+from test.fixtures.properties_samples import (
     VALID_AT_WITH_NEIGHBORHOOD,
     VALID_AT_WITH_NEIGHBORHOOD_AND_DOMAIN,
     VALID_FORALL_WITH_DOMAIN,
@@ -1771,19 +2843,29 @@ def test_invalid_missing_expr():
         parse(INVALID_BODY_MISSING_EXPRESSION)
 
 
+===== test\unit\semantic\__pycache__\test_attribute_semantic_binding.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== test\unit\semantic\__pycache__\test_attribute_semantic_binding.cpython-314-pytest-9.0.1.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0x88 in position 9: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0x8e in position 9: invalid start byte]
+
+===== test\unit\semantic\__pycache__\test_schema_aware_validation.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== test\unit\semantic\__pycache__\test_schema_aware_validation.cpython-314-pytest-9.0.1.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0x88 in position 9: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0x83 in position 8: invalid start byte]
 
 ===== test\unit\semantic\test_attribute_semantic_binding.py =====
 
+from dsl.ast.nodes.primitives import AttributeNode
 from dsl.builder.program import parse_program
 from dsl.parser.parser import parse_forml_code
 from dsl.semantic.core.validator import FORMLValidator
+from dsl.semantic.runtime.annotations import SemanticAnnotations
 from dsl.semantic.runtime.tracer import ValidationTracer
 from dsl.ast.nodes.assertion import ComparisonNode, AndNode, OrNode
 
@@ -1798,6 +2880,11 @@ def _build_and_validate(source: str):
     )
 
     return ast
+
+
+def _semantic(attr: AttributeNode) -> SemanticAnnotations:
+    assert attr.semantic is not None
+    return attr.semantic
 
 
 def _collect_comparisons(node):
@@ -1876,9 +2963,10 @@ def test_quantifier_attribute_receives_symbolic_entity():
     comparison = _collect_comparisons(root)[0]
     attr = comparison.left
 
-    assert attr.semantic is not None
-    assert attr.semantic.resolved_entity == "_x"
-    assert attr.semantic.resolved_path == ["_x", "age"]
+    semantic = _semantic(attr)
+
+    assert semantic.resolved_entity == "_x"
+    assert semantic.resolved_path == ["_x", "age"]
 
 
 def test_nested_logic_attributes_receive_semantic_annotations():
@@ -1896,8 +2984,7 @@ def test_nested_logic_attributes_receive_semantic_annotations():
     comparisons = _collect_comparisons(root)
 
     resolved = {
-        cmp.left.feature: cmp.left.semantic.resolved_entity
-        for cmp in comparisons
+        cmp.left.feature: _semantic(cmp.left).resolved_entity for cmp in comparisons
     }
 
     assert resolved == {
@@ -1906,10 +2993,12 @@ def test_nested_logic_attributes_receive_semantic_annotations():
         "score": "x0",
     }
 
+
 ===== test\unit\semantic\test_schema_aware_validation.py =====
 
 import pytest
 
+from dsl.ast.nodes.assertion import ComparisonNode
 from dsl.builder.program import parse_program
 from dsl.parser.parser import parse_forml_code
 from dsl.semantic.core.validator import FORMLValidator
@@ -2006,13 +3095,19 @@ def test_schema_aware_validation_sets_resolved_type_on_attribute():
         model_schema=_schema(),
     )
 
-    comparison = ast.body[0].rule.assertion.root
-    attr = comparison.left
+    root = ast.body[0].rule.assertion.root
+
+    assert isinstance(root, ComparisonNode)
+
+    attr = root.left
 
     assert attr.semantic is not None
-    assert attr.semantic.resolved_entity == "x0"
-    assert attr.semantic.resolved_path == ["x0", "income"]
-    assert attr.semantic.resolved_type == "float"
+
+    semantic = attr.semantic
+
+    assert semantic.resolved_entity == "x0"
+    assert semantic.resolved_path == ["x0", "income"]
+    assert semantic.resolved_type == "float"
 
 
 def test_schema_aware_validation_is_optional_without_model_schema():

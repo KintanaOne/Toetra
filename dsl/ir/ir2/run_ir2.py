@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dsl.ir.ir1.run_ir1 import run_ir
 from dsl.ir.ir2.builder import IR2Builder
+from dsl.ir.ir2.explain import IR2ExplainOptions, explain_ir2_tasks
 from dsl.ir.ir2.pretty import pretty_print_ir2_tasks
 from dsl.ir.normalization.nnf import NNFNormalizer
 
@@ -22,4 +23,18 @@ def run_ir2(source: str):
 
 if __name__ == "__main__":
     tasks = run_ir2(DEFAULT_SAMPLE)
+
+    print("\n=== IR2 PRETTY ===\n")
     pretty_print_ir2_tasks(tasks)
+
+    print("\n=== IR2 EXPLAIN ===\n")
+    print(
+        explain_ir2_tasks(
+            tasks,
+            options=IR2ExplainOptions(
+                include_assumption_formulas=True,
+                include_requirements=True,
+                include_mermaid=True,
+            ),
+        )
+    )

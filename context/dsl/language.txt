@@ -187,15 +187,15 @@ COMMENT_BLOCK : /'''(.|\n)*?'''/
 
 # === PROTECTED_WORDS ===
 
-IN.10 : "in"
-WITH.10 : "with"
-AT.10 : "at"
-CHECK_AT.10 : "check_at"
-USING.10 : "using"
-MODEL.10 : "model"
-TARGET.10 : "target"
-NEIGHBORHOOD.10 : "neighborhood"
-DATASET.10 : "dataset"
+IN.10 : /in(?![A-Za-z0-9_])/
+WITH.10 : /with(?![A-Za-z0-9_])/
+AT.10 : /at(?![A-Za-z0-9_])/
+CHECK_AT.10 : /check_at(?![A-Za-z0-9_])/
+USING.10 : /using(?![A-Za-z0-9_])/
+MODEL.10 : /model(?![A-Za-z0-9_])/
+TARGET.10 : /target(?![A-Za-z0-9_])/
+NEIGHBORHOOD.10 : /neighborhood(?![A-Za-z0-9_])/
+DATASET.10 : /dataset(?![A-Za-z0-9_])/
 
 
 # === PROBLEMS ===
@@ -526,7 +526,6 @@ from dsl.language.vocabulary.operators import (
     official_logic_operators,
     official_comparaison_operations,
 )
-
 
 # =========================
 # RAW DICTIONARIES
@@ -1097,9 +1096,17 @@ def fix_neighborhood_precedence(line: str) -> str:
 
 
 
+===== dsl\language\vocabulary\__pycache__\__init__.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== dsl\language\vocabulary\__pycache__\__init__.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xa6 in position 8: invalid start byte]
+
+===== dsl\language\vocabulary\__pycache__\backends.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== dsl\language\vocabulary\__pycache__\backends.cpython-314.pyc =====
 
@@ -1108,6 +1115,10 @@ def fix_neighborhood_precedence(line: str) -> str:
 ===== dsl\language\vocabulary\__pycache__\distances.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== dsl\language\vocabulary\__pycache__\functions.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== dsl\language\vocabulary\__pycache__\functions.cpython-314.pyc =====
 
@@ -1121,13 +1132,25 @@ def fix_neighborhood_precedence(line: str) -> str:
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
+===== dsl\language\vocabulary\__pycache__\operators.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== dsl\language\vocabulary\__pycache__\operators.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
+===== dsl\language\vocabulary\__pycache__\problems.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== dsl\language\vocabulary\__pycache__\problems.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== dsl\language\vocabulary\__pycache__\properties.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== dsl\language\vocabulary\__pycache__\properties.cpython-314.pyc =====
 
@@ -1135,11 +1158,15 @@ def fix_neighborhood_precedence(line: str) -> str:
 
 ===== dsl\language\vocabulary\__pycache__\protected_words.cpython-314.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xb5 in position 12: invalid start byte]
+[ERROR reading file: 'utf-8' codec can't decode byte 0x8f in position 9: invalid start byte]
 
 ===== dsl\language\vocabulary\__pycache__\quantifiers.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== dsl\language\vocabulary\__pycache__\utils.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== dsl\language\vocabulary\__pycache__\utils.cpython-314.pyc =====
 
@@ -1150,7 +1177,6 @@ def fix_neighborhood_precedence(line: str) -> str:
 from enum import Enum
 
 from dsl.language.vocabulary.utils import EnumMixin
-
 
 official_backends = {
     "z3": '"z3"',
@@ -1170,21 +1196,6 @@ class EnumBackend(EnumMixin, Enum):
     ZONOTOPE = "ZONOTOPE"
     BOX = "BOX"
 
-    @classmethod
-    def from_str(cls, value: str) -> "EnumBackend":
-        normalized = value.strip().strip('"').upper()
-
-        aliases = {
-            "Z3": cls.Z3,
-            "ERAN": cls.ERAN,
-            "ZONOTOPE": cls.ZONOTOPE,
-            "BOX": cls.BOX,
-        }
-
-        try:
-            return aliases[normalized]
-        except KeyError as e:
-            raise ValueError(f"Unknown backend: {value}") from e
 
 ===== dsl\language\vocabulary\distances.py =====
 
@@ -1347,28 +1358,28 @@ from enum import Enum
 from dsl.language.vocabulary.utils import EnumMixin
 
 protected_words = {
-    "IN.10": '"in"',
-    "WITH.10": '"with"',
-    "AT.10": '"at"',
-    "CHECK_AT.10": '"check_at"',
-    "USING.10": '"using"',
-    "MODEL.10": '"model"',
-    "TARGET.10": '"target"',
-    "NEIGHBORHOOD.10": '"neighborhood"',
-    "DATASET.10": '"dataset"',
+    "IN.10": r"/in(?![A-Za-z0-9_])/",
+    "WITH.10": r"/with(?![A-Za-z0-9_])/",
+    "AT.10": r"/at(?![A-Za-z0-9_])/",
+    "CHECK_AT.10": r"/check_at(?![A-Za-z0-9_])/",
+    "USING.10": r"/using(?![A-Za-z0-9_])/",
+    "MODEL.10": r"/model(?![A-Za-z0-9_])/",
+    "TARGET.10": r"/target(?![A-Za-z0-9_])/",
+    "NEIGHBORHOOD.10": r"/neighborhood(?![A-Za-z0-9_])/",
+    "DATASET.10": r"/dataset(?![A-Za-z0-9_])/",
 }
 
 
 class EnumProtectedWord(EnumMixin, Enum):
-    IN = '"in"'
-    WITH = '''"with"'''
-    AT = '"at"'
-    CHECK_AT = '"check_at"'
-    USING = '"using"'
-    MODEL = '"model"'
-    TARGET = '"target"'
-    NEIGHBORHOOD = '"neighborhood"'
-    DATASET = '"dataset"'
+    IN = "in"
+    WITH = "with"
+    AT = "at"
+    CHECK_AT = "check_at"
+    USING = "using"
+    MODEL = "model"
+    TARGET = "target"
+    NEIGHBORHOOD = "neighborhood"
+    DATASET = "dataset"
 
 
 ===== dsl\language\vocabulary\quantifiers.py =====
@@ -1395,15 +1406,28 @@ class EnumQuantifier(EnumMixin, Enum):
 
 ===== dsl\language\vocabulary\utils.py =====
 
-# /forml/grammar/official_contents/utils.py
+from __future__ import annotations
+
+from enum import Enum
+from typing import Self, cast
 
 
 class EnumMixin:
     @classmethod
-    def from_str(cls, name: str):
-        """ """
-        normalized = name.strip('"').upper()
-        for member in cls:
-            if member.value.upper() == normalized:
-                return member
+    def from_str(cls: type[Self], name: str) -> Self:
+        normalized = name.strip().strip('"').upper()
+
+        members = getattr(cls, "__members__", None)
+        if members is None:
+            raise TypeError(f"{cls.__name__} must be used with an Enum class")
+
+        for member in members.values():
+            enum_member = cast(Enum, member)
+
+            member_name = enum_member.name.strip().strip('"').upper()
+            member_value = str(enum_member.value).strip().strip('"').upper()
+
+            if member_name == normalized or member_value == normalized:
+                return cast(Self, enum_member)
+
         raise ValueError(f"{cls.__name__} inconnu : {name}")

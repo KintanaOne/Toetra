@@ -1,5 +1,7 @@
+
 from dsl.ir.ir2.builder import IR2Builder
 from dsl.ir.ir2.context import IR2BuildContext
+from dsl.ir.ir2.explain import IR2ExplainOptions, explain_ir2_task, explain_ir2_tasks
 from dsl.ir.ir2.enums import (
     AssumptionSource,
     NormalFormKind,
@@ -27,6 +29,7 @@ __all__ = [
     "DNFFormulaIR2",
     "FormulaIR2",
     "IR2BuildContext",
+    "IR2ExplainOptions",
     "IR2Builder",
     "IR2Requirements",
     "LiteralIR2",
@@ -36,4 +39,8 @@ __all__ = [
     "TermIR2",
     "VerificationSemantics",
     "VerificationTaskIR2",
+    "explain_ir2_task",
+    "explain_ir2_tasks",
 ]
+
+

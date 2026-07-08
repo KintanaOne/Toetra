@@ -11,6 +11,10 @@
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xe4 in position 12: invalid continuation byte]
 
+===== test\hypothesis\strategies\valid\__pycache__\valid_lexical.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== test\hypothesis\strategies\valid\__pycache__\valid_lexical.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xda in position 9: invalid continuation byte]
