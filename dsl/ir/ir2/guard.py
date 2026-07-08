@@ -2,17 +2,15 @@ from __future__ import annotations
 
 from dsl.ir.ir1.nodes import (
     AndIR,
-    ComparisonIR,
+    AtomicIR,
     ImplyIR,
     LogicalIR,
     NotIR,
     OrIR,
-    ProblemIR,
     QueryIR,
     VerificationTask,
 )
 from dsl.ir.ir2.errors import InvalidIR2InputError
-from dsl.ir.ir2.nodes import ModelConstraintIR2
 
 
 class NNFGuard:
@@ -54,4 +52,4 @@ class NNFGuard:
 
     @staticmethod
     def is_atomic(node: LogicalIR) -> bool:
-        return isinstance(node, (ComparisonIR, ProblemIR, ModelConstraintIR2))
+        return isinstance(node, AtomicIR)

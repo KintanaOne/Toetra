@@ -188,13 +188,26 @@ class LogicalIR:
     pass
 
 
+@dataclass
+class AtomicIR(LogicalIR):
+    """
+    Base class for logical atoms.
+
+    Atomic nodes are leaves for NNF/CNF/DNF normalization.
+    They may be DSL atoms, problem predicates, or backend-neutral
+    model constraints introduced later by IR2.
+    """
+
+    pass
+
+
 # =============================================================================
 # LEAF COMPARISON NODE
 # =============================================================================
 
 
 @dataclass
-class ComparisonIR(LogicalIR):
+class ComparisonIR(AtomicIR):
     """
     Atomic predicate:
         x'.age <= 30
@@ -264,7 +277,7 @@ class ImplyIR(LogicalIR):
 
 
 @dataclass
-class ProblemIR(LogicalIR):
+class ProblemIR(AtomicIR):
     """
     High-level semantic operator coming from FORML DSL.
 
@@ -939,8 +952,8 @@ class IRTranslator:
 
 ===== dsl\ir\ir2\__init__.py =====
 
-from dsl.ir.ir2.builder import IR2Builder
 from dsl.ir.ir2.context import IR2BuildContext
+from dsl.ir.ir2.explain import IR2ExplainOptions, explain_ir2_task, explain_ir2_tasks
 from dsl.ir.ir2.enums import (
     AssumptionSource,
     NormalFormKind,
@@ -948,12 +961,16 @@ from dsl.ir.ir2.enums import (
     VerificationSemantics,
 )
 from dsl.ir.ir2.nodes import (
+    AffineExpressionIR2,
+    AffineTermIR2,
     AssumptionIR2,
     ClauseIR2,
     CNFFormulaIR2,
     DNFFormulaIR2,
     FormulaIR2,
     LiteralIR2,
+    ModelConstraintIR2,
+    AffineOutputConstraintIR2,
     NNFFormulaIR2,
     TermIR2,
     VerificationTaskIR2,
@@ -961,6 +978,8 @@ from dsl.ir.ir2.nodes import (
 from dsl.ir.ir2.requirements import IR2Requirements
 
 __all__ = [
+    "AffineExpressionIR2",
+    "AffineTermIR2",
     "AssumptionIR2",
     "AssumptionSource",
     "ClauseIR2",
@@ -968,15 +987,19 @@ __all__ = [
     "DNFFormulaIR2",
     "FormulaIR2",
     "IR2BuildContext",
-    "IR2Builder",
+    "IR2ExplainOptions",
     "IR2Requirements",
     "LiteralIR2",
+    "ModelConstraintIR2",
+    "AffineOutputConstraintIR2",
     "NNFFormulaIR2",
     "NormalFormKind",
     "Polarity",
     "TermIR2",
     "VerificationSemantics",
     "VerificationTaskIR2",
+    "explain_ir2_task",
+    "explain_ir2_tasks",
 ]
 
 
@@ -1035,6 +1058,10 @@ __all__ = [
 ===== dsl\ir\ir2\__pycache__\errors.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xb7 in position 12: invalid start byte]
+
+===== dsl\ir\ir2\__pycache__\explain.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== dsl\ir\ir2\__pycache__\guard.cpython-311.pyc =====
 
@@ -1096,15 +1123,28 @@ __all__ = [
 
 from __future__ import annotations
 
-from dsl.ir.ir2.nodes import AssumptionIR2
+from collections.abc import Iterable
+
+from dsl.ir.ir2.errors import InvalidIR2InputError
+from dsl.ir.ir2.guard import NNFGuard
+from dsl.ir.ir2.nodes import AssumptionIR2, NNFFormulaIR2
 
 
 class AssumptionCollector:
-    """Collects assumptions already produced by upstream components.
+    """Collect and validate assumptions produced by upstream components.
 
     IR2 deliberately does not encode ML models itself. Future ModelEncoder
-    components can pass MODEL assumptions into IR2Builder. This collector simply
-    normalizes the optional input into an immutable tuple.
+    components can pass MODEL assumptions into IR2Builder. This collector is
+    the boundary guard between external assumption producers and IR2.
+
+    Contract:
+        - assumptions are immutable once collected;
+        - every item must be an AssumptionIR2;
+        - every assumption formula must be NNFFormulaIR2;
+        - every assumption expression must already satisfy NNF.
+
+    Normal-form adaptation is intentionally not done here. IR2 first aggregates
+    all assumptions into Γ, builds Γ ∧ ¬P, and only then selects CNF/DNF/NNF.
     """
 
     def collect(
@@ -1113,7 +1153,40 @@ class AssumptionCollector:
     ) -> tuple[AssumptionIR2, ...]:
         if assumptions is None:
             return ()
-        return tuple(assumptions)
+
+        collected = tuple(self._iter_assumptions(assumptions))
+
+        for index, assumption in enumerate(collected):
+            self._validate_assumption(assumption, index=index)
+
+        return collected
+
+    def _iter_assumptions(
+        self,
+        assumptions: Iterable[AssumptionIR2],
+    ) -> Iterable[AssumptionIR2]:
+        for assumption in assumptions:
+            yield assumption
+
+    def _validate_assumption(self, assumption: AssumptionIR2, *, index: int) -> None:
+        if not isinstance(assumption, AssumptionIR2):
+            raise InvalidIR2InputError(
+                f"IR2 assumption at index {index} must be AssumptionIR2, "
+                f"got {type(assumption).__name__}."
+            )
+
+        if not isinstance(assumption.formula, NNFFormulaIR2):
+            raise InvalidIR2InputError(
+                f"IR2 assumption at index {index} must contain NNFFormulaIR2, "
+                f"got {type(assumption.formula).__name__}."
+            )
+
+        try:
+            NNFGuard.assert_expr_is_nnf(assumption.formula.expression)
+        except InvalidIR2InputError as e:
+            raise InvalidIR2InputError(
+                f"IR2 assumption at index {index} is not valid NNF: {e}"
+            ) from e
 
 
 ===== dsl\ir\ir2\builder.py =====
@@ -1403,6 +1476,218 @@ class UnsupportedIR2FormError(IR2Error):
     """Raised when a form is unsupported by the current IR2 implementation."""
 
 
+===== dsl\ir\ir2\explain.py =====
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from dsl.ir.ir2.nodes import AssumptionIR2, VerificationTaskIR2
+from dsl.ir.ir2.pretty import pretty_formula
+
+
+@dataclass(frozen=True)
+class IR2ExplainOptions:
+    """Formatting options for developer-oriented IR2 explanations."""
+
+    include_assumption_formulas: bool = True
+    include_requirements: bool = True
+    include_mermaid: bool = False
+
+
+def explain_ir2_task(
+    task: VerificationTaskIR2,
+    *,
+    options: IR2ExplainOptions | None = None,
+) -> str:
+    """Return a developer-friendly explanation of an IR2 verification task.
+
+    The regular pretty-printer focuses on the final IR2 object. This explainer
+    focuses on the mental model used while debugging the FORML pipeline:
+
+        DSL spec P + assumptions Γ -> verification condition Γ ∧ ¬P
+        -> selected normal form.
+
+    It is intentionally backend-independent. It explains what IR2 built, not how
+    a concrete backend such as Z3 will encode it.
+    """
+
+    options = options or IR2ExplainOptions()
+
+    lines: list[str] = []
+    lines.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    lines.append("🔎 IR2 Explanation")
+    lines.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+    lines.extend(_summary(task))
+    lines.append("")
+    lines.extend(_semantics())
+    lines.append("")
+    lines.extend(_scope(task))
+    lines.append("")
+    lines.extend(_spec_formula(task))
+    lines.append("")
+    lines.extend(_assumptions(task.assumptions, options=options))
+    lines.append("")
+    lines.extend(_verification_condition(task))
+
+    if options.include_requirements:
+        lines.append("")
+        lines.extend(_requirements(task))
+
+    if options.include_mermaid:
+        lines.append("")
+        lines.extend(_mermaid(task))
+
+    return "\n".join(lines)
+
+
+def explain_ir2_tasks(
+    tasks: list[VerificationTaskIR2],
+    *,
+    options: IR2ExplainOptions | None = None,
+) -> str:
+    """Return explanations for several IR2 tasks."""
+
+    blocks = []
+    for i, task in enumerate(tasks):
+        blocks.append(f"=== IR2 EXPLANATION {i} ===")
+        blocks.append(explain_ir2_task(task, options=options))
+    return "\n\n".join(blocks)
+
+
+def _summary(task: VerificationTaskIR2) -> list[str]:
+    return [
+        f"Property      : {_enum_value(task.property_type)}",
+        f"Backend hint  : {_enum_value(task.backend)}",
+        f"Normal form   : {_enum_value(task.normal_form)}",
+        f"Semantics     : {_enum_value(task.semantics)}",
+    ]
+
+
+def _semantics() -> list[str]:
+    return [
+        "🧭 Semantics",
+        "  FORML proves the user property P by checking the refutation VC:",
+        "  VC = Γ ∧ ¬P",
+        "  - UNSAT means no counterexample was found under Γ, so P holds.",
+        "  - SAT means the backend found a candidate counterexample.",
+    ]
+
+
+def _scope(task: VerificationTaskIR2) -> list[str]:
+    scope = task.scope
+    lines = ["📍 Scope", f"  kind      : {scope.kind}", "  variables :"]
+
+    for name, role in scope.variables.items():
+        lines.append(f"    - {name} -> {role}")
+
+    if scope.neighborhood is not None:
+        lines.append("  neighborhood:")
+        lines.append(f"    metric : {scope.neighborhood.metric}")
+        lines.append(f"    eps    : {scope.neighborhood.eps}")
+        for key, value in scope.neighborhood.args.items():
+            lines.append(f"    {key} : {value}")
+
+    if scope.domain is not None:
+        lines.append("  domain:")
+        lines.append(f"    name : {scope.domain.name}")
+        for key, value in scope.domain.args.items():
+            lines.append(f"    {key} : {value}")
+
+    return lines
+
+
+def _spec_formula(task: VerificationTaskIR2) -> list[str]:
+    return [
+        "📝 User specification P",
+        _indent(pretty_formula(task.spec_formula), spaces=2),
+    ]
+
+
+def _assumptions(
+    assumptions: tuple[AssumptionIR2, ...],
+    *,
+    options: IR2ExplainOptions,
+) -> list[str]:
+    lines = ["🧱 Assumptions Γ", f"  count : {len(assumptions)}"]
+
+    if not assumptions:
+        lines.append("  <none>")
+        return lines
+
+    for i, assumption in enumerate(assumptions):
+        lines.append(f"  assumption[{i}]")
+        lines.append(f"    source      : {_enum_value(assumption.source)}")
+        lines.append(f"    description : {assumption.description or '<none>'}")
+
+        if assumption.metadata:
+            lines.append("    metadata    :")
+            for key, value in assumption.metadata.items():
+                lines.append(f"      {key}: {value}")
+
+        if options.include_assumption_formulas:
+            lines.append("    formula     :")
+            lines.append(_indent(pretty_formula(assumption.formula), spaces=6))
+
+    return lines
+
+
+def _verification_condition(task: VerificationTaskIR2) -> list[str]:
+    return [
+        "🎯 Verification condition",
+        "  VC = Γ ∧ ¬P",
+        f"  selected normal form : {_enum_value(task.normal_form)}",
+        _indent(pretty_formula(task.verification_condition), spaces=2),
+    ]
+
+
+def _requirements(task: VerificationTaskIR2) -> list[str]:
+    requirements = task.requirements
+    rows = [
+        ("boolean_logic", requirements.requires_boolean_logic),
+        ("numeric_comparisons", requirements.requires_numeric_comparisons),
+        ("problem_predicates", requirements.requires_problem_predicates),
+        ("model_assertions", requirements.requires_model_assertions),
+        ("quantifiers", requirements.requires_quantifiers),
+        ("domains", requirements.requires_domains),
+        ("neighborhoods", requirements.requires_neighborhoods),
+    ]
+
+    lines = ["🧩 Backend-neutral requirements"]
+    for name, enabled in rows:
+        lines.append(f"  - {name}: {enabled}")
+    lines.append(f"  - normal_form: {_enum_value(requirements.normal_form)}")
+    return lines
+
+
+def _mermaid(task: VerificationTaskIR2) -> list[str]:
+    assumption_label = f"Γ assumptions ({len(task.assumptions)})"
+    normal_form = _enum_value(task.normal_form)
+
+    return [
+        "🖼️ Mermaid view",
+        "```mermaid",
+        "flowchart LR",
+        "    DSL[DSL spec P] --> VC[VC = Γ ∧ ¬P]",
+        f"    MODEL[{assumption_label}] --> VC",
+        f"    VC --> NF[{normal_form} form]",
+        "    NF --> ROUTER[Backend routing]",
+        "```",
+    ]
+
+
+def _enum_value(value: object) -> object:
+    if value is None:
+        return None
+    return getattr(value, "value", value)
+
+
+def _indent(text: str, spaces: int) -> str:
+    prefix = " " * spaces
+    return "\n".join(prefix + line if line else line for line in text.splitlines())
+
+
 ===== dsl\ir\ir2\guard.py =====
 
 from __future__ import annotations
@@ -1419,10 +1704,11 @@ from dsl.ir.ir1.nodes import (
     VerificationTask,
 )
 from dsl.ir.ir2.errors import InvalidIR2InputError
+from dsl.ir.ir2.nodes import ModelConstraintIR2
 
 
 class NNFGuard:
-    """Guards the IR2 input contract: IR2 receives IR1 already in NNF."""
+    """Guards the IR2 input contract: IR2 receives logical input already in NNF."""
 
     @classmethod
     def assert_task_is_nnf(cls, task: VerificationTask) -> None:
@@ -1439,11 +1725,11 @@ class NNFGuard:
                 "IR2 input must not contain ImplyIR; run NNF first."
             )
 
-        if isinstance(node, (ComparisonIR, ProblemIR)):
+        if cls.is_atomic(node):
             return
 
         if isinstance(node, NotIR):
-            if not isinstance(node.operand, (ComparisonIR, ProblemIR)):
+            if not cls.is_atomic(node.operand):
                 raise InvalidIR2InputError(
                     "IR2 input must be NNF: NotIR may only wrap atomic predicates."
                 )
@@ -1455,8 +1741,12 @@ class NNFGuard:
             return
 
         raise InvalidIR2InputError(
-            f"Unsupported IR1 logical node for IR2: {type(node).__name__}"
+            f"Unsupported logical node for IR2: {type(node).__name__}"
         )
+
+    @staticmethod
+    def is_atomic(node: LogicalIR) -> bool:
+        return isinstance(node, (ComparisonIR, ProblemIR, ModelConstraintIR2))
 
 
 ===== dsl\ir\ir2\nodes.py =====
@@ -1467,12 +1757,14 @@ from dataclasses import dataclass, field
 from typing import Any, TYPE_CHECKING, TypeAlias
 
 from dsl.ir.ir1.nodes import (
+    AtomicIR,
     ComparisonIR,
     LogicalIR,
     ProblemIR,
     ScopeIR,
 )
 from dsl.language.vocabulary.backends import EnumBackend
+from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.properties import EnumProperty
 from dsl.ir.ir2.enums import (
     AssumptionSource,
@@ -1485,7 +1777,55 @@ if TYPE_CHECKING:
     from dsl.ir.ir2.requirements import IR2Requirements
 
 
-AtomIR2: TypeAlias = ComparisonIR | ProblemIR
+@dataclass(frozen=True)
+class AffineTermIR2:
+    """One term of an affine model expression: coefficient * entity.feature."""
+
+    entity: str
+    feature: str
+    coefficient: float
+
+
+@dataclass
+class AffineExpressionIR2:
+    """Backend-neutral affine expression used by simple model encoders.
+
+    Example:
+        0.5 * x.a + -1.2 * x.b + 3.0
+    """
+
+    terms: tuple[AffineTermIR2, ...]
+    bias: float = 0.0
+
+
+class ModelConstraintIR2(AtomicIR):
+    """
+    Base class for backend-neutral model constraints.
+
+    Model constraints are logical atoms from the point of view
+    of NNF/CNF/DNF normalization.
+    """
+
+    pass
+
+
+@dataclass
+class AffineOutputConstraintIR2(ModelConstraintIR2):
+    """Atomic affine model assumption relating output to w·x + b.
+
+    This is intentionally backend-independent. It does not encode Z3 terms and
+    does not decide the final normal form. It only states a model-level fact that
+    can participate in Γ before IR2 builds Γ ∧ ¬P.
+    """
+
+    output_entity: str
+    output_feature: str
+    op: EnumComparisonOperator
+    expression: AffineExpressionIR2
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+AtomIR2: TypeAlias = ComparisonIR | ProblemIR | ModelConstraintIR2
 
 
 @dataclass(frozen=True)
@@ -1624,7 +1964,12 @@ from dsl.ir.ir1.nodes import AndIR, ComparisonIR, LogicalIR, NotIR, OrIR, Proble
 from dsl.ir.ir2.context import IR2BuildContext
 from dsl.ir.ir2.enums import Polarity
 from dsl.ir.ir2.errors import InvalidNormalFormError, NormalFormExplosionError
-from dsl.ir.ir2.nodes import ClauseIR2, CNFFormulaIR2, LiteralIR2
+from dsl.ir.ir2.nodes import (
+    ClauseIR2,
+    CNFFormulaIR2,
+    LiteralIR2,
+    ModelConstraintIR2,
+)
 
 
 class CNFConverter:
@@ -1681,11 +2026,14 @@ class CNFConverter:
         return CNFFormulaIR2(clauses=tuple(clauses))
 
     def _literal_or_none(self, expr: LogicalIR) -> LiteralIR2 | None:
-        if isinstance(expr, (ComparisonIR, ProblemIR)):
+        if isinstance(expr, (ComparisonIR, ProblemIR, ModelConstraintIR2)):
             return LiteralIR2(atom=expr, polarity=Polarity.POSITIVE)
 
         if isinstance(expr, NotIR):
-            if isinstance(expr.operand, (ComparisonIR, ProblemIR)):
+            if isinstance(
+                expr.operand,
+                (ComparisonIR, ProblemIR, ModelConstraintIR2),
+            ):
                 return LiteralIR2(atom=expr.operand, polarity=Polarity.NEGATIVE)
             raise InvalidNormalFormError(
                 "CNF conversion expects NNF input; NotIR must wrap an atom."
@@ -1696,7 +2044,8 @@ class CNFConverter:
     def _check_limit(self, size: int, context: IR2BuildContext) -> None:
         if size > context.max_distribution_size:
             raise NormalFormExplosionError(
-                f"CNF conversion exceeded max_distribution_size={context.max_distribution_size}."
+                "CNF conversion exceeded "
+                f"max_distribution_size={context.max_distribution_size}."
             )
 
 
@@ -1707,6 +2056,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from dsl.ir.ir1.nodes import AndIR, ComparisonIR, LogicalIR, NotIR, OrIR, ProblemIR
+from dsl.ir.ir2.nodes import ModelConstraintIR2
 
 
 @dataclass(frozen=True)
@@ -1729,7 +2079,7 @@ class NormalFormCostEstimator:
         )
 
     def estimate_cnf_units(self, expr: LogicalIR) -> int:
-        if isinstance(expr, (ComparisonIR, ProblemIR)):
+        if isinstance(expr, (ComparisonIR, ProblemIR, ModelConstraintIR2)):
             return 1
         if isinstance(expr, NotIR):
             return 1
@@ -1743,7 +2093,7 @@ class NormalFormCostEstimator:
         return 1
 
     def estimate_dnf_units(self, expr: LogicalIR) -> int:
-        if isinstance(expr, (ComparisonIR, ProblemIR)):
+        if isinstance(expr, (ComparisonIR, ProblemIR, ModelConstraintIR2)):
             return 1
         if isinstance(expr, NotIR):
             return 1
@@ -1765,7 +2115,12 @@ from dsl.ir.ir1.nodes import AndIR, ComparisonIR, LogicalIR, NotIR, OrIR, Proble
 from dsl.ir.ir2.context import IR2BuildContext
 from dsl.ir.ir2.enums import Polarity
 from dsl.ir.ir2.errors import InvalidNormalFormError, NormalFormExplosionError
-from dsl.ir.ir2.nodes import DNFFormulaIR2, LiteralIR2, TermIR2
+from dsl.ir.ir2.nodes import (
+    DNFFormulaIR2,
+    LiteralIR2,
+    ModelConstraintIR2,
+    TermIR2,
+)
 
 
 class DNFConverter:
@@ -1820,11 +2175,14 @@ class DNFConverter:
         return DNFFormulaIR2(terms=tuple(terms))
 
     def _literal_or_none(self, expr: LogicalIR) -> LiteralIR2 | None:
-        if isinstance(expr, (ComparisonIR, ProblemIR)):
+        if isinstance(expr, (ComparisonIR, ProblemIR, ModelConstraintIR2)):
             return LiteralIR2(atom=expr, polarity=Polarity.POSITIVE)
 
         if isinstance(expr, NotIR):
-            if isinstance(expr.operand, (ComparisonIR, ProblemIR)):
+            if isinstance(
+                expr.operand,
+                (ComparisonIR, ProblemIR, ModelConstraintIR2),
+            ):
                 return LiteralIR2(atom=expr.operand, polarity=Polarity.NEGATIVE)
             raise InvalidNormalFormError(
                 "DNF conversion expects NNF input; NotIR must wrap an atom."
@@ -1835,7 +2193,8 @@ class DNFConverter:
     def _check_limit(self, size: int, context: IR2BuildContext) -> None:
         if size > context.max_distribution_size:
             raise NormalFormExplosionError(
-                f"DNF conversion exceeded max_distribution_size={context.max_distribution_size}."
+                "DNF conversion exceeded "
+                f"max_distribution_size={context.max_distribution_size}."
             )
 
 
@@ -1846,10 +2205,13 @@ from __future__ import annotations
 from dsl.ir.ir1.nodes import AndIR, ComparisonIR, LogicalIR, NotIR, OrIR, ProblemIR
 from dsl.ir.ir2.enums import Polarity
 from dsl.ir.ir2.nodes import (
+    AffineExpressionIR2,
+    AffineOutputConstraintIR2,
     CNFFormulaIR2,
     DNFFormulaIR2,
     FormulaIR2,
     LiteralIR2,
+    ModelConstraintIR2,
     NNFFormulaIR2,
     VerificationTaskIR2,
 )
@@ -1885,6 +2247,7 @@ def pretty_ir2_task(task: VerificationTaskIR2) -> str:
 def _pretty_requirements(task: VerificationTaskIR2) -> str:
     req = task.requirements
     active = []
+
     if req.requires_boolean_logic:
         active.append("boolean_logic")
     if req.requires_numeric_comparisons:
@@ -1899,6 +2262,7 @@ def _pretty_requirements(task: VerificationTaskIR2) -> str:
         active.append("domains")
     if req.requires_neighborhoods:
         active.append("neighborhoods")
+
     return ", ".join(active) if active else "none"
 
 
@@ -1939,6 +2303,7 @@ def _pretty_cnf(formula: CNFFormulaIR2) -> str:
         lines.append(f"  clause[{i}] OR")
         for literal in clause.literals:
             lines.append("    " + _pretty_literal(literal))
+
     return "\n".join(lines)
 
 
@@ -1959,6 +2324,7 @@ def _pretty_dnf(formula: DNFFormulaIR2) -> str:
         lines.append(f"  branch[{i}] AND")
         for literal in term.literals:
             lines.append("    " + _pretty_literal(literal))
+
     return "\n".join(lines)
 
 
@@ -1967,14 +2333,18 @@ def _pretty_literal(literal: LiteralIR2) -> str:
 
 
 def _pretty_logical_tree(node: LogicalIR) -> str:
-    if isinstance(node, (ComparisonIR, ProblemIR)):
+    if isinstance(node, (ComparisonIR, ProblemIR, ModelConstraintIR2)):
         return _pretty_literal(LiteralIR2(atom=node, polarity=Polarity.POSITIVE))
 
     if isinstance(node, NotIR):
-        if isinstance(node.operand, (ComparisonIR, ProblemIR)):
+        if isinstance(
+            node.operand,
+            (ComparisonIR, ProblemIR, ModelConstraintIR2),
+        ):
             return _pretty_literal(
                 LiteralIR2(atom=node.operand, polarity=Polarity.NEGATIVE)
             )
+
         return "NOT\n" + _indent(_pretty_logical_tree(node.operand), spaces=2)
 
     if isinstance(node, AndIR):
@@ -1988,19 +2358,62 @@ def _pretty_logical_tree(node: LogicalIR) -> str:
 
 def _pretty_variadic(name: str, operands: list[LogicalIR]) -> str:
     lines = [name]
+
     for operand in operands:
         lines.append(_indent(_pretty_logical_tree(operand), spaces=2))
+
     return "\n".join(lines)
 
 
-def _pretty_atom(atom: ComparisonIR | ProblemIR) -> str:
+def _pretty_atom(atom: ComparisonIR | ProblemIR | ModelConstraintIR2) -> str:
     if isinstance(atom, ComparisonIR):
-        op = getattr(atom.op, "value", atom.op)
-        return f"{atom.entity}.{atom.feature} {op} {atom.value}"
+        return _pretty_comparison(atom)
 
+    if isinstance(atom, ProblemIR):
+        return _pretty_problem(atom)
+
+    if isinstance(atom, ModelConstraintIR2):
+        return _pretty_model_constraint(atom)
+
+    raise TypeError(f"Unsupported IR2 atom: {type(atom).__name__}")
+
+
+def _pretty_comparison(atom: ComparisonIR) -> str:
+    op = getattr(atom.op, "value", atom.op)
+    return f"{atom.entity}.{atom.feature} {op} {atom.value}"
+
+
+def _pretty_problem(atom: ProblemIR) -> str:
     problem = getattr(atom.problem, "value", atom.problem)
     function = getattr(atom.function, "value", atom.function)
     return f"{problem}.{function}({atom.args or {}})"
+
+
+def _pretty_model_constraint(atom: ModelConstraintIR2) -> str:
+    if isinstance(atom, AffineOutputConstraintIR2):
+        return _pretty_affine_output_constraint(atom)
+
+    return f"<model-constraint:{type(atom).__name__}>"
+
+
+def _pretty_affine_output_constraint(atom: AffineOutputConstraintIR2) -> str:
+    op = getattr(atom.op, "value", atom.op)
+    return (
+        f"{atom.output_entity}.{atom.output_feature} "
+        f"{op} {_pretty_affine_expression(atom.expression)}"
+    )
+
+
+def _pretty_affine_expression(expression: AffineExpressionIR2) -> str:
+    parts: list[str] = []
+
+    for term in expression.terms:
+        parts.append(f"{term.coefficient}*{term.entity}.{term.feature}")
+
+    if expression.bias or not parts:
+        parts.append(str(expression.bias))
+
+    return " + ".join(parts)
 
 
 def _indent(text: str, spaces: int) -> str:
@@ -2031,6 +2444,8 @@ from dsl.ir.ir2.nodes import (
     DNFFormulaIR2,
     FormulaIR2,
     LiteralIR2,
+    AffineOutputConstraintIR2,
+    ModelConstraintIR2,
     NNFFormulaIR2,
 )
 
@@ -2070,14 +2485,16 @@ class RequirementsAnalyzer:
         return IR2Requirements(
             requires_boolean_logic=True,
             requires_numeric_comparisons=any(
-                isinstance(item, ComparisonIR) for item in all_items
+                isinstance(item, (ComparisonIR, AffineOutputConstraintIR2))
+                for item in all_items
             ),
             requires_problem_predicates=any(
                 isinstance(item, ProblemIR) for item in all_items
             ),
             requires_model_assertions=any(
                 a.source == AssumptionSource.MODEL for a in assumptions
-            ),
+            )
+            or any(isinstance(item, ModelConstraintIR2) for item in all_items),
             requires_quantifiers=scope.kind == "quantifier",
             requires_domains=scope.domain is not None
             or any(a.source == AssumptionSource.DOMAIN for a in assumptions),
@@ -2087,7 +2504,7 @@ class RequirementsAnalyzer:
 
     def _iter_literals_or_atoms(
         self, formula: FormulaIR2
-    ) -> Iterable[ComparisonIR | ProblemIR]:
+    ) -> Iterable[ComparisonIR | ProblemIR | ModelConstraintIR2]:
         if isinstance(formula, NNFFormulaIR2):
             yield from self._iter_atoms_from_logical(formula.expression)
             return
@@ -2106,18 +2523,21 @@ class RequirementsAnalyzer:
 
     def _iter_atom_from_literal(
         self, literal: LiteralIR2
-    ) -> Iterable[ComparisonIR | ProblemIR]:
+    ) -> Iterable[ComparisonIR | ProblemIR | ModelConstraintIR2]:
         yield literal.atom
 
     def _iter_atoms_from_logical(
         self, node: LogicalIR
-    ) -> Iterable[ComparisonIR | ProblemIR]:
-        if isinstance(node, (ComparisonIR, ProblemIR)):
+    ) -> Iterable[ComparisonIR | ProblemIR | ModelConstraintIR2]:
+        if isinstance(node, (ComparisonIR, ProblemIR, ModelConstraintIR2)):
             yield node
             return
 
         if isinstance(node, NotIR):
-            if isinstance(node.operand, (ComparisonIR, ProblemIR)):
+            if isinstance(
+                node.operand,
+                (ComparisonIR, ProblemIR, ModelConstraintIR2),
+            ):
                 yield node.operand
             return
 
@@ -2132,6 +2552,7 @@ from __future__ import annotations
 
 from dsl.ir.ir1.run_ir1 import run_ir
 from dsl.ir.ir2.builder import IR2Builder
+from dsl.ir.ir2.explain import IR2ExplainOptions, explain_ir2_tasks
 from dsl.ir.ir2.pretty import pretty_print_ir2_tasks
 from dsl.ir.normalization.nnf import NNFNormalizer
 
@@ -2152,7 +2573,21 @@ def run_ir2(source: str):
 
 if __name__ == "__main__":
     tasks = run_ir2(DEFAULT_SAMPLE)
+
+    print("\n=== IR2 PRETTY ===\n")
     pretty_print_ir2_tasks(tasks)
+
+    print("\n=== IR2 EXPLAIN ===\n")
+    print(
+        explain_ir2_tasks(
+            tasks,
+            options=IR2ExplainOptions(
+                include_assumption_formulas=True,
+                include_requirements=True,
+                include_mermaid=True,
+            ),
+        )
+    )
 
 
 ===== dsl\ir\ir2\selector.py =====
@@ -2218,12 +2653,16 @@ class NormalFormSelector:
 
 from __future__ import annotations
 
-from dsl.ir.ir2.enums import NormalFormKind
+from dsl.ir.ir1.nodes import ComparisonIR, ProblemIR
+from dsl.ir.ir2.enums import NormalFormKind, Polarity
 from dsl.ir.ir2.errors import IR2ValidationError
 from dsl.ir.ir2.guard import NNFGuard
 from dsl.ir.ir2.nodes import (
+    AssumptionIR2,
     CNFFormulaIR2,
     DNFFormulaIR2,
+    LiteralIR2,
+    ModelConstraintIR2,
     NNFFormulaIR2,
     VerificationTaskIR2,
 )
@@ -2237,6 +2676,7 @@ class IR2Validator:
             raise IR2ValidationError("spec_formula must be NNFFormulaIR2.")
 
         NNFGuard.assert_expr_is_nnf(task.spec_formula.expression)
+        self._validate_assumptions(task.assumptions)
 
         if task.normal_form == NormalFormKind.NNF:
             if not isinstance(task.verification_condition, NNFFormulaIR2):
@@ -2246,10 +2686,12 @@ class IR2Validator:
         elif task.normal_form == NormalFormKind.CNF:
             if not isinstance(task.verification_condition, CNFFormulaIR2):
                 raise IR2ValidationError("normal_form=CNF requires CNFFormulaIR2.")
+            self._validate_cnf(task.verification_condition)
 
         elif task.normal_form == NormalFormKind.DNF:
             if not isinstance(task.verification_condition, DNFFormulaIR2):
                 raise IR2ValidationError("normal_form=DNF requires DNFFormulaIR2.")
+            self._validate_dnf(task.verification_condition)
 
         else:
             raise IR2ValidationError(f"Unsupported normal form: {task.normal_form}")
@@ -2257,6 +2699,77 @@ class IR2Validator:
         if task.requirements.normal_form != task.normal_form:
             raise IR2ValidationError(
                 "requirements.normal_form must match task.normal_form."
+            )
+
+    def _validate_assumptions(
+        self,
+        assumptions: tuple[AssumptionIR2, ...],
+    ) -> None:
+        for index, assumption in enumerate(assumptions):
+            if not isinstance(assumption, AssumptionIR2):
+                raise IR2ValidationError(
+                    f"assumptions[{index}] must be AssumptionIR2, "
+                    f"got {type(assumption).__name__}."
+                )
+
+            if not isinstance(assumption.formula, NNFFormulaIR2):
+                raise IR2ValidationError(
+                    f"assumptions[{index}].formula must be NNFFormulaIR2."
+                )
+
+            NNFGuard.assert_expr_is_nnf(assumption.formula.expression)
+
+    def _validate_cnf(self, formula: CNFFormulaIR2) -> None:
+        if not formula.clauses:
+            raise IR2ValidationError("CNFFormulaIR2 must contain at least one clause.")
+
+        for clause_index, clause in enumerate(formula.clauses):
+            if not clause.literals:
+                raise IR2ValidationError(
+                    f"CNF clause at index {clause_index} must contain literals."
+                )
+
+            for literal_index, literal in enumerate(clause.literals):
+                self._validate_literal(
+                    literal,
+                    location=f"CNF clause {clause_index}, literal {literal_index}",
+                )
+
+    def _validate_dnf(self, formula: DNFFormulaIR2) -> None:
+        if not formula.terms:
+            raise IR2ValidationError("DNFFormulaIR2 must contain at least one term.")
+
+        for term_index, term in enumerate(formula.terms):
+            if not term.literals:
+                raise IR2ValidationError(
+                    f"DNF term at index {term_index} must contain literals."
+                )
+
+            for literal_index, literal in enumerate(term.literals):
+                self._validate_literal(
+                    literal,
+                    location=f"DNF term {term_index}, literal {literal_index}",
+                )
+
+    def _validate_literal(self, literal: LiteralIR2, *, location: str) -> None:
+        if not isinstance(literal, LiteralIR2):
+            raise IR2ValidationError(
+                f"{location} must be LiteralIR2, got {type(literal).__name__}."
+            )
+
+        if not isinstance(literal.polarity, Polarity):
+            raise IR2ValidationError(
+                f"{location} has invalid polarity: {literal.polarity!r}."
+            )
+
+        if not isinstance(
+            literal.atom,
+            (ComparisonIR, ProblemIR, ModelConstraintIR2),
+        ):
+            raise IR2ValidationError(
+                f"{location} atom must be ComparisonIR, ProblemIR or "
+                "ModelConstraintIR2, "
+                f"got {type(literal.atom).__name__}."
             )
 
 
@@ -2295,15 +2808,14 @@ from __future__ import annotations
 from dataclasses import replace
 
 from dsl.ir.ir1.nodes import (
-    AndIR,
-    ComparisonIR,
-    ImplyIR,
-    LogicalIR,
-    NotIR,
-    OrIR,
-    ProblemIR,
-    QueryIR,
     VerificationTask,
+    QueryIR,
+    LogicalIR,
+    AtomicIR,
+    AndIR,
+    OrIR,
+    NotIR,
+    ImplyIR,
 )
 
 
@@ -2330,7 +2842,7 @@ class NNFNormalizer:
         return self._nnf(node, negated=False)
 
     def _nnf(self, node: LogicalIR, negated: bool) -> LogicalIR:
-        if isinstance(node, (ComparisonIR, ProblemIR)):
+        if isinstance(node, AtomicIR):
             return NotIR(node) if negated else node
 
         if isinstance(node, NotIR):

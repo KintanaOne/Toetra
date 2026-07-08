@@ -1,18 +1,17 @@
 from __future__ import annotations
 
-from dsl.ir.ir1.nodes import ComparisonIR, ProblemIR
-from dsl.ir.ir2.enums import NormalFormKind, Polarity
-from dsl.ir.ir2.errors import IR2ValidationError
-from dsl.ir.ir2.guard import NNFGuard
-from dsl.ir.ir2.nodes import (
+from dsl.ir.ir1.nodes import AtomicIR
+from dsl.ir.ir2.dsl.nodes import (
     AssumptionIR2,
     CNFFormulaIR2,
     DNFFormulaIR2,
     LiteralIR2,
-    ModelConstraintIR2,
     NNFFormulaIR2,
     VerificationTaskIR2,
 )
+from dsl.ir.ir2.enums import NormalFormKind, Polarity
+from dsl.ir.ir2.errors import IR2ValidationError
+from dsl.ir.ir2.guard import NNFGuard
 
 
 class IR2Validator:
@@ -109,12 +108,8 @@ class IR2Validator:
                 f"{location} has invalid polarity: {literal.polarity!r}."
             )
 
-        if not isinstance(
-            literal.atom,
-            (ComparisonIR, ProblemIR, ModelConstraintIR2),
-        ):
+        if not isinstance(literal.atom, AtomicIR):
             raise IR2ValidationError(
-                f"{location} atom must be ComparisonIR, ProblemIR or "
-                "ModelConstraintIR2, "
+                f"{location} atom must be AtomicIR, "
                 f"got {type(literal.atom).__name__}."
             )

@@ -4,12 +4,11 @@ from typing import Any, Sequence, cast
 
 from dsl.ir.ir1.nodes import ScopeIR
 from dsl.ir.ir2.enums import AssumptionSource
-from dsl.ir.ir2.nodes import (
+from dsl.ir.ir2.dsl.nodes import AssumptionIR2, NNFFormulaIR2
+from dsl.ir.ir2.model.affine import (
     AffineExpressionIR2,
-    AffineTermIR2,
-    AssumptionIR2,
     AffineOutputConstraintIR2,
-    NNFFormulaIR2,
+    AffineTermIR2,
 )
 from dsl.language.vocabulary.operators import EnumComparisonOperator
 from model.encoder.context import ModelEncodingContext
@@ -42,7 +41,10 @@ class SklearnLinearRegressorEncoder:
     ) -> tuple[AssumptionIR2, ...]:
         context = context or ModelEncodingContext()
 
-        if not context.include_model_constraints:
+        if (
+            not context.include_model_constraints
+            or not context.include_output_constraints
+        ):
             return ()
 
         if schema.model_type not in self.supported_model_types:
