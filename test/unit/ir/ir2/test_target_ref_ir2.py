@@ -1,5 +1,5 @@
 from dsl.ir.ir1.nodes import ComparisonIR
-from dsl.ir.ir2.dsl.nodes import NNFFormulaIR2
+from dsl.ir.ir2.nodes import NNFFormulaIR2
 from dsl.ir.ir2.run_ir2 import run_ir2
 from dsl.language.vocabulary.operators import EnumComparisonOperator
 
