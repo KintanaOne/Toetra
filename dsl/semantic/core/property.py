@@ -56,7 +56,7 @@ class PropertyValidator:
     # ENTRY POINT
     # ─────────────────────────────────────────────
 
-    def validate(self, prop, model_schema=None):
+    def validate(self, prop, model_schema=None, model_target=None):
 
         self.tracer.log(f"Validating Property: {prop.type}")
 
@@ -102,6 +102,8 @@ class PropertyValidator:
             # ==================================================
 
             context = LHSValidator(tracer=self.tracer).validate(scope)
+
+            context.model_target = model_target
 
             prop.semantic.context = context
 

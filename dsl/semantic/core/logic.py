@@ -14,6 +14,7 @@ from dsl.ast.nodes.assertion import (
 from dsl.ast.nodes.primitives import (
     AttributeNode,
     ConstantNode,
+    TargetRefNode,
 )
 
 
@@ -156,6 +157,9 @@ class LogicValidator:
         Binding has already been performed upstream.
         """
 
+        if isinstance(node, TargetRefNode):
+            return self._validate_target_ref(node, context)
+
         if isinstance(node, AttributeNode):
             return self._validate_attribute(node, context)
 
@@ -163,6 +167,33 @@ class LogicValidator:
             return
 
         raise InvalidPropertyError(f"Invalid operand type: {type(node)}")
+
+    def _validate_target_ref(self, node: TargetRefNode, context):
+        semantic = node.semantic
+
+        if semantic is None:
+            raise InvalidPropertyError("Unbound target reference")
+
+        if semantic.resolved_entity != "_model":
+            raise InvalidPropertyError(
+                f"Invalid target reference binding: expected '_model', "
+                f"got {semantic.resolved_entity!r}"
+            )
+
+        if not semantic.resolved_path:
+            raise InvalidPropertyError(
+                "Invalid target reference: missing resolved path"
+            )
+
+        if context.model_target is None:
+            raise InvalidPropertyError("Invalid target reference: missing model target")
+
+        if semantic.resolved_path != ["_model", context.model_target]:
+            raise InvalidPropertyError(
+                f"Invalid target reference path: expected "
+                f"['_model', {context.model_target!r}], "
+                f"got {semantic.resolved_path!r}"
+            )
 
     # ─────────────────────────────
     # ATTRIBUTE

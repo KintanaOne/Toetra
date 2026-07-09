@@ -1,10 +1,10 @@
+from dsl.ast.nodes.assertion import AndNode, ComparisonNode, OrNode
 from dsl.ast.nodes.primitives import AttributeNode
 from dsl.builder.program import parse_program
 from dsl.parser.parser import parse_forml_code
 from dsl.semantic.core.validator import FORMLValidator
 from dsl.semantic.runtime.annotations import SemanticAnnotations
 from dsl.semantic.runtime.tracer import ValidationTracer
-from dsl.ast.nodes.assertion import ComparisonNode, AndNode, OrNode
 
 
 def _build_and_validate(source: str):
@@ -20,27 +20,42 @@ def _build_and_validate(source: str):
 
 
 def _semantic(attr: AttributeNode) -> SemanticAnnotations:
-    assert attr.semantic is not None
-    return attr.semantic
+    semantic = attr.semantic
+
+    assert semantic is not None
+
+    return semantic
 
 
-def _collect_comparisons(node):
+def _collect_comparisons(node: object) -> list[ComparisonNode]:
     if isinstance(node, ComparisonNode):
         return [node]
 
     if isinstance(node, AndNode):
-        result = []
+        result: list[ComparisonNode] = []
+
         for child in node.operands:
             result.extend(_collect_comparisons(child))
+
         return result
 
     if isinstance(node, OrNode):
-        result = []
+        result: list[ComparisonNode] = []
+
         for child in node.operands:
             result.extend(_collect_comparisons(child))
+
         return result
 
     return []
+
+
+def _left_attribute(node: ComparisonNode) -> AttributeNode:
+    left = node.left
+
+    assert isinstance(left, AttributeNode)
+
+    return left
 
 
 def test_check_at_attribute_receives_semantic_annotations():
@@ -56,11 +71,11 @@ def test_check_at_attribute_receives_semantic_annotations():
 
     root = ast.body[0].rule.assertion.root
     comparison = _collect_comparisons(root)[0]
-    attr = comparison.left
+    attr = _left_attribute(comparison)
+    semantic = _semantic(attr)
 
-    assert attr.semantic is not None
-    assert attr.semantic.resolved_entity == "x0"
-    assert attr.semantic.resolved_path == ["x0", "age"]
+    assert semantic.resolved_entity == "x0"
+    assert semantic.resolved_path == ["x0", "age"]
 
 
 def test_check_at_implicit_attribute_receives_default_entity():
@@ -76,13 +91,13 @@ def test_check_at_implicit_attribute_receives_default_entity():
 
     root = ast.body[0].rule.assertion.root
     comparison = _collect_comparisons(root)[0]
-    attr = comparison.left
+    attr = _left_attribute(comparison)
+    semantic = _semantic(attr)
 
     assert attr.entity is None
     assert attr.feature == "age"
-    assert attr.semantic is not None
-    assert attr.semantic.resolved_entity == "x0"
-    assert attr.semantic.resolved_path == ["x0", "age"]
+    assert semantic.resolved_entity == "x0"
+    assert semantic.resolved_path == ["x0", "age"]
 
 
 def test_quantifier_attribute_receives_symbolic_entity():
@@ -98,8 +113,7 @@ def test_quantifier_attribute_receives_symbolic_entity():
 
     root = ast.body[0].rule.assertion.root
     comparison = _collect_comparisons(root)[0]
-    attr = comparison.left
-
+    attr = _left_attribute(comparison)
     semantic = _semantic(attr)
 
     assert semantic.resolved_entity == "_x"
@@ -120,9 +134,13 @@ def test_nested_logic_attributes_receive_semantic_annotations():
     root = ast.body[0].rule.assertion.root
     comparisons = _collect_comparisons(root)
 
-    resolved = {
-        cmp.left.feature: _semantic(cmp.left).resolved_entity for cmp in comparisons
-    }
+    resolved: dict[str, str | None] = {}
+
+    for comparison in comparisons:
+        attr = _left_attribute(comparison)
+        semantic = _semantic(attr)
+
+        resolved[attr.feature] = semantic.resolved_entity
 
     assert resolved == {
         "age": "x0",

@@ -52,6 +52,7 @@ class SemanticContext:
     domain: Optional[object] = None
     neighborhood: Optional[object] = None
     quantifier: Optional[str] = None
+    model_target: Optional[str] = None
 
     # ---------------------------------------------
     # NEW:
