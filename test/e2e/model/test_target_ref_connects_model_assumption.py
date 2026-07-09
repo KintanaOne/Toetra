@@ -69,9 +69,13 @@ def test_target_ref_connects_to_model_output_assumption():
     assert model_constraint.output_entity == spec.entity
     assert model_constraint.output_feature == spec.feature
 
-    assert model_constraint.expression.terms[0].entity == "x0"
-    assert model_constraint.expression.terms[0].feature == "a"
-    assert model_constraint.expression.terms[0].coefficient == 2.0
+    assert len(model_constraint.expression.terms) == 1
+
+    term = model_constraint.expression.terms[0]
+
+    assert term.entity == "x0"
+    assert term.feature == "a"
+    assert term.coefficient == 2.0
     assert model_constraint.expression.bias == 1.0
 
     assert task.requirements.requires_model_assertions is True
