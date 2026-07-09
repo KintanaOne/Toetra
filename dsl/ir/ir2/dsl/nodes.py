@@ -10,6 +10,7 @@ from dsl.ir.ir2.enums import (
     Polarity,
     VerificationSemantics,
 )
+from dsl.ir.ir2.guardrails.diagnostics import IR2Diagnostic
 from dsl.language.vocabulary.backends import EnumBackend
 from dsl.language.vocabulary.properties import EnumProperty
 
@@ -105,3 +106,4 @@ class VerificationTaskIR2:
     normal_form: NormalFormKind
     requirements: IR2Requirements
     metadata: dict[str, Any] = field(default_factory=dict)
+    diagnostics: tuple[IR2Diagnostic, ...] = ()

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 from dsl.ir.ir1.nodes import VerificationTask
 from dsl.ir.ir2.assumptions import AssumptionCollector
 from dsl.ir.ir2.condition import VerificationConditionBuilder
@@ -7,6 +9,7 @@ from dsl.ir.ir2.context import IR2BuildContext
 from dsl.ir.ir2.enums import NormalFormKind, VerificationSemantics
 from dsl.ir.ir2.errors import NormalFormExplosionError
 from dsl.ir.ir2.guard import NNFGuard
+from dsl.ir.ir2.guardrails.validator import collect_ir2_diagnostics
 from dsl.ir.ir2.nodes import (
     AssumptionIR2,
     FormulaIR2,
@@ -58,7 +61,10 @@ class IR2Builder:
         NNFGuard.assert_task_is_nnf(task_nnf)
 
         collected_assumptions = self.assumption_collector.collect(assumptions)
-        spec_formula = NNFFormulaIR2(expression=task_nnf.query.expression)
+
+        spec_formula = NNFFormulaIR2(
+            expression=task_nnf.query.expression,
+        )
 
         vc_nnf = self.vc_builder.build_refutation_condition(
             spec_formula=spec_formula,
@@ -66,8 +72,11 @@ class IR2Builder:
         )
 
         selected_form = self.selector.select(vc_nnf, context=context)
+
         verification_condition, actual_form = self._convert(
-            vc_nnf, selected_form, context
+            vc_nnf,
+            selected_form,
+            context,
         )
 
         requirements = self.requirements_analyzer.analyze(
@@ -94,7 +103,13 @@ class IR2Builder:
         )
 
         self.validator.validate(task_ir2)
-        return task_ir2
+
+        diagnostics = collect_ir2_diagnostics(task_ir2)
+
+        return replace(
+            task_ir2,
+            diagnostics=diagnostics,
+        )
 
     def build_tasks(
         self,
@@ -104,7 +119,11 @@ class IR2Builder:
         context: IR2BuildContext | None = None,
     ) -> list[VerificationTaskIR2]:
         return [
-            self.build(task, assumptions=assumptions, context=context)
+            self.build(
+                task,
+                assumptions=assumptions,
+                context=context,
+            )
             for task in tasks_nnf
         ]
 
@@ -120,19 +139,26 @@ class IR2Builder:
         try:
             if selected_form == NormalFormKind.CNF:
                 return (
-                    self.cnf_converter.convert(vc_nnf.expression, context=context),
+                    self.cnf_converter.convert(
+                        vc_nnf.expression,
+                        context=context,
+                    ),
                     NormalFormKind.CNF,
                 )
 
             if selected_form == NormalFormKind.DNF:
                 return (
-                    self.dnf_converter.convert(vc_nnf.expression, context=context),
+                    self.dnf_converter.convert(
+                        vc_nnf.expression,
+                        context=context,
+                    ),
                     NormalFormKind.DNF,
                 )
 
         except NormalFormExplosionError:
             if context.allow_nnf_fallback:
                 return vc_nnf, NormalFormKind.NNF
+
             raise
 
         return vc_nnf, NormalFormKind.NNF
