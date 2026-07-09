@@ -10,7 +10,7 @@ from dsl.ast.nodes.assertion import (
     ProblemNode,
 )
 
-from dsl.ast.nodes.primitives import AttributeNode
+from dsl.ast.nodes.primitives import AttributeNode, TargetRefNode
 from dsl.ir.ir1.nodes import (
     QueryIR,
     LogicalIR,
@@ -124,7 +124,7 @@ class QueryTranslator:
         This must use semantic annotations, not raw parsed attributes.
         """
 
-        entity, feature, feature_dtype = self._resolve_ir_attribute(node.left)
+        entity, feature, feature_dtype = self._resolve_ir_operand(node.left)
 
         return ComparisonIR(
             entity=entity,
@@ -134,6 +134,40 @@ class QueryTranslator:
             feature_dtype=feature_dtype,
             value_dtype=node.right.dtype,
         )
+
+    def _resolve_ir_operand(
+        self,
+        node: AttributeNode | TargetRefNode,
+    ) -> tuple[str, str, EnumDataType | None]:
+        if isinstance(node, AttributeNode):
+            return self._resolve_ir_attribute(node)
+
+        if isinstance(node, TargetRefNode):
+            return self._resolve_ir_target_ref(node)
+
+        raise TypeError(f"Unsupported comparison left operand: {type(node)}")
+
+    def _resolve_ir_target_ref(
+        self,
+        node: TargetRefNode,
+    ) -> tuple[str, str, EnumDataType | None]:
+        semantic = node.semantic
+
+        if semantic is None:
+            raise ValueError("Cannot lower unbound target reference to IR")
+
+        if semantic.resolved_entity != "_model":
+            raise ValueError(
+                f"Invalid target reference binding: expected '_model', "
+                f"got {semantic.resolved_entity!r}"
+            )
+
+        if not semantic.resolved_path or len(semantic.resolved_path) < 2:
+            raise ValueError(
+                f"Invalid target reference path: {semantic.resolved_path!r}"
+            )
+
+        return "_model", semantic.resolved_path[-1], None
 
     def _translate_problem(self, node: ProblemNode) -> ProblemIR:
         problem = (

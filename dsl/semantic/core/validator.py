@@ -18,10 +18,13 @@ class FORMLValidator:
         self.tracer.log(f"Validating FORMLValidator: {program}")
 
         try:
+            model_target = program.header.target if program.header is not None else None
+
             for prop in program.body:
                 PropertyValidator(tracer=self.tracer).validate(
                     prop,
                     model_schema=model_schema,
+                    model_target=model_target,
                 )
 
         except ParserError:

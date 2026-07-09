@@ -12,7 +12,7 @@ from dsl.ast.nodes.assertion import (
     ProblemNode,
 )
 
-from dsl.ast.nodes.primitives import AttributeNode
+from dsl.ast.nodes.primitives import AttributeNode, TargetRefNode
 
 
 class BindingValidator:
@@ -62,6 +62,9 @@ class BindingValidator:
 
         if isinstance(node, ComparisonNode):
 
+            if isinstance(node.left, TargetRefNode):
+                self._resolve_target_ref(node.left, context)
+
             if isinstance(node.left, AttributeNode):
                 self._resolve_attribute(node.left, context)
 
@@ -101,6 +104,25 @@ class BindingValidator:
             return
 
         raise TypeError(f"Unsupported node type: {type(node)}")
+
+    def _resolve_target_ref(
+        self,
+        target: TargetRefNode,
+        context: SemanticContext,
+    ):
+        semantic = self._ensure_semantic(target)
+
+        if context.model_target is None:
+            raise UnboundVariableError(
+                "Cannot resolve 'target': missing model target in semantic context"
+            )
+
+        semantic.resolved_entity = "_model"
+        semantic.resolved_symbol = None
+        semantic.resolved_path = ["_model", context.model_target]
+        semantic.resolved_type = "model_output"
+
+        return
 
     # ─────────────────────────────────────────────
     # SEMANTIC INITIALIZATION
