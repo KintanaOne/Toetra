@@ -46,3 +46,17 @@ class AttributeNode(ASTNode):
 
     # Full parsed path
     path: list[str]
+
+
+@dataclass
+class TargetRefNode(ASTNode):
+    """
+    Reference to the model output declared in the FORML header.
+
+    Example:
+        target <= 10
+
+    This is not an input feature. It refers to the model target/output.
+    """
+
+    name: str = "target"

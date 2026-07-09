@@ -1152,7 +1152,7 @@ def parse_attribute(node: Tree) -> AttributeNode:
     """
     Parse:
         x.a
-        x.target
+        target
         x.a.b
 
     First segment must be a normal identifier.

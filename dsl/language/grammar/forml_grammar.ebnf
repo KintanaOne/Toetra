@@ -45,11 +45,14 @@ function        = ? official_functions ? ;
 function_expr   = function , "(" , [ args ] , ")" ;
 problem_expr    = ( ? official_problems ? ) , "." , function_expr ;
 
-(* === ATTRIBUTES === *)
-attribute_identifier = identifier | TARGET ;
-attribute = identifier , { "." , attribute_identifier } ;
+(* === ATTRIBUTES / MODEL OUTPUT === *)
+attribute = identifier , { "." , identifier } ;
+
+target_comparison_expr = TARGET , comparison_operation , value ;
+attribute_comparison_expr = attribute , comparison_operation , value ;
+
 logic_expr = attribute , logic_operation , value ;
-comparison_expr = attribute , comparison_operation , value ;
+comparison_expr = target_comparison_expr | attribute_comparison_expr ;
 
 (* === ASSERTION === *)
 

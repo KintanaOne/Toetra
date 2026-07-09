@@ -191,13 +191,14 @@ problem_expr : (CLASSIFICATION
     | ANOMALY_DETECTION
     | REINFORCEMENT_LEARNING) "." function_expr
 
-# === ATTRIBUTES ===
+# === ATTRIBUTES / MODEL OUTPUT ===
 
-attribute_identifier : identifier
-    | TARGET
-attribute : identifier ("." attribute_identifier)*
+attribute : identifier ("." identifier)*
+target_comparison_expr : TARGET comparison_operation value
+attribute_comparison_expr : attribute comparison_operation value
 logic_expr : attribute logic_operation value
-comparison_expr : attribute comparison_operation value
+comparison_expr : target_comparison_expr
+    | attribute_comparison_expr
 
 # === ASSERTION ===
 
