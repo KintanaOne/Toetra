@@ -17,6 +17,7 @@ from dsl.builder.core.ast_utils import parse_attribute, node_value, parse_value
 from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.problems import EnumProblem
+from dsl.ast.nodes.primitives import TargetRefNode
 
 # ============================================================================
 # COMPARISON
@@ -24,14 +25,24 @@ from dsl.language.vocabulary.problems import EnumProblem
 
 
 def build_comparison_expr(node: Tree) -> ComparisonNode:
-    attribute_node = find_node(node, "attribute")
     value_node = find_node(node, "value")
     op_node = find_node(node, "comparison_operation")
 
-    if attribute_node is None or value_node is None or op_node is None:
+    if value_node is None or op_node is None:
         raise ValueError("Invalid comparison")
 
-    left = parse_attribute(attribute_node)
+    target_comparison_node = find_node(node, "target_comparison_expr")
+
+    if target_comparison_node is not None:
+        left = TargetRefNode()
+    else:
+        attribute_node = find_node(node, "attribute")
+
+        if attribute_node is None:
+            raise ValueError("Invalid comparison")
+
+        left = parse_attribute(attribute_node)
+
     op = EnumComparisonOperator(get_token_value(op_node))
     right = parse_value(value_node)
 

@@ -86,7 +86,7 @@ VALID_MINIMAL_FORALL = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    forall => x.target == 0
+    forall => target == 0
     """
 
 
@@ -95,7 +95,7 @@ VALID_FORALL_WITH_DOMAIN = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    forall with gender("male", "female") => x.target == 0
+    forall with gender("male", "female") => target == 0
     """
 
 
@@ -106,7 +106,7 @@ VALID_MINIMAL_EXISTS = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    exists => x.target == 0
+    exists => target == 0
     """
 
 
@@ -115,7 +115,7 @@ VALID_EXISTS_WITH_DOMAIN = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    exists with gender("male", "female") => x.target == 0
+    exists with gender("male", "female") => target == 0
     """
 
 
