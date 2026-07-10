@@ -152,3 +152,9 @@ if __name__ == "__main__":
         recursive=True,
         output_file="context/model/model.txt",
     )
+
+    concat_files_in_folder(
+        "dsl/backends",
+        recursive=True,
+        output_file="context/dsl/backends.txt",
+    )

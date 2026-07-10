@@ -301,6 +301,14 @@ def test_backend_router_rejects_backend_without_required_normal_form():
         BackendRouter(registry).route(task)
 
 
+===== test\unit\backends\z3_backend\__pycache__\test_capabilities.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== test\unit\backends\z3_backend\test_capabilities.py =====
+
+
+
 ===== test\unit\builder\__pycache__\test_parse_value_boolean.cpython-311-pytest-9.0.1.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
@@ -374,11 +382,27 @@ def test_parse_value_false_boolean_literal():
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0x95 in position 9: invalid start byte]
 
+===== test\unit\ir\__pycache__\test_target_ref_ir_lowering.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== test\unit\ir\ir2\__pycache__\test_assumption_aggregation.cpython-311-pytest-9.0.1.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== test\unit\ir\ir2\__pycache__\test_explain.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== test\unit\ir\ir2\__pycache__\test_ir2_node_split.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== test\unit\ir\ir2\__pycache__\test_model_output_diagnostics.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== test\unit\ir\ir2\__pycache__\test_target_ref_ir2.cpython-311-pytest-9.0.1.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
@@ -676,6 +700,157 @@ def test_explain_ir2_task_can_include_mermaid_view():
     assert "Backend routing" in text
 
 
+===== test\unit\ir\ir2\test_ir2_node_split.py =====
+
+from dsl.ir.ir2.model.affine import AffineOutputConstraintIR2
+from dsl.ir.ir2.model.base import ModelConstraintIR2
+from dsl.ir.ir2.nodes import (
+    AffineOutputConstraintIR2 as CompatAffineOutputConstraintIR2,
+)
+
+
+def test_ir2_nodes_compat_exports_split_model_nodes():
+    assert CompatAffineOutputConstraintIR2 is AffineOutputConstraintIR2
+    assert issubclass(AffineOutputConstraintIR2, ModelConstraintIR2)
+
+
+===== test\unit\ir\ir2\test_model_output_diagnostics.py =====
+
+from dsl.ir.ir2.context import IR2BuildContext
+from dsl.ir.ir2.enums import NormalFormKind
+from dsl.ir.ir2.guardrails.diagnostics import DiagnosticSeverity
+from dsl.ir.ir2.guardrails.model_output import IR2_MODEL_OUTPUT_NOT_REFERENCED
+from dsl.ir.ir2.run_ir2 import run_ir2, run_ir2_with_model_schema
+from dsl.semantic.types.enums import EnumDataType
+from model.detector.model_framework import EnumModelFramework
+from model.schema.feature_schema import FeatureSchema
+from model.schema.model_schema import ModelSchema
+
+
+def _linear_regression_schema() -> ModelSchema:
+    return ModelSchema(
+        framework=EnumModelFramework.SKLEARN,
+        model_type="LinearRegression",
+        features={
+            "a": FeatureSchema(name="a", dtype=EnumDataType.FLOAT),
+        },
+        target="MyTarget",
+        task="regression",
+        metadata={
+            "linear": {
+                "coef": [2.0],
+                "intercept": 1.0,
+                "feature_names": ["a"],
+            }
+        },
+    )
+
+
+def _diagnostic_codes(task) -> set[str]:
+    return {diagnostic.code for diagnostic in task.diagnostics}
+
+
+def test_warns_when_model_assumption_is_injected_but_spec_does_not_reference_model_output():
+    code = """
+    model := "model.pkl"
+    target := MyTarget
+
+    [BOUND]:
+    check_at x0 => x0.a <= 10 using Z3
+    """
+
+    tasks = run_ir2_with_model_schema(
+        code,
+        schema=_linear_regression_schema(),
+        ir2_context=IR2BuildContext(preferred_normal_form=NormalFormKind.NNF),
+    )
+
+    task = tasks[0]
+
+    assert IR2_MODEL_OUTPUT_NOT_REFERENCED in _diagnostic_codes(task)
+
+    diagnostic = task.diagnostics[0]
+
+    assert diagnostic.code == IR2_MODEL_OUTPUT_NOT_REFERENCED
+    assert diagnostic.severity is DiagnosticSeverity.WARNING
+    assert "does not reference any model output symbol" in diagnostic.message
+
+
+def test_does_not_warn_when_spec_references_model_output():
+    code = """
+    model := "model.pkl"
+    target := MyTarget
+
+    [BOUND]:
+    check_at x0 => target <= 10 using Z3
+    """
+
+    tasks = run_ir2_with_model_schema(
+        code,
+        schema=_linear_regression_schema(),
+        ir2_context=IR2BuildContext(preferred_normal_form=NormalFormKind.NNF),
+    )
+
+    task = tasks[0]
+
+    assert IR2_MODEL_OUTPUT_NOT_REFERENCED not in _diagnostic_codes(task)
+
+
+def test_does_not_warn_without_model_assumptions():
+    code = """
+    model := "model.onnx"
+    target := MyTarget
+
+    [BOUND]:
+    check_at x0 => x0.a <= 10 using Z3
+    """
+
+    tasks = run_ir2(
+        code,
+        context=IR2BuildContext(preferred_normal_form=NormalFormKind.NNF),
+    )
+
+    task = tasks[0]
+
+    assert task.assumptions == ()
+    assert IR2_MODEL_OUTPUT_NOT_REFERENCED not in _diagnostic_codes(task)
+
+
+===== test\unit\ir\ir2\test_target_ref_ir2.py =====
+
+from dsl.ir.ir1.nodes import ComparisonIR
+from dsl.ir.ir2.nodes import NNFFormulaIR2
+from dsl.ir.ir2.run_ir2 import run_ir2
+from dsl.language.vocabulary.operators import EnumComparisonOperator
+
+
+def test_target_ref_survives_to_ir2_spec_formula():
+    code = """
+    model := "model.onnx"
+    target := MyTarget
+
+    [BOUND]:
+    check_at x0 => target <= 10 using Z3
+    """
+
+    tasks = run_ir2(code)
+
+    assert len(tasks) == 1
+
+    task = tasks[0]
+
+    assert isinstance(task.spec_formula, NNFFormulaIR2)
+
+    expr = task.spec_formula.expression
+
+    assert isinstance(expr, ComparisonIR)
+    assert expr.entity == "_model"
+    assert expr.feature == "MyTarget"
+    assert expr.op == EnumComparisonOperator.LTE
+    assert expr.value == 10
+    assert expr.feature_dtype is None
+
+
 ===== test\unit\ir\test_comparison_ir_schema_types.py =====
 
 from dsl.ir.ir1.nodes import ComparisonIR
@@ -804,6 +979,37 @@ def test_pretty_task_keeps_existing_format_when_feature_dtype_is_absent():
 
     assert "- x0.income <= 1000" in output
     assert "- x0.income : " not in output
+
+
+===== test\unit\ir\test_target_ref_ir_lowering.py =====
+
+from dsl.ir.ir1.nodes import ComparisonIR
+from dsl.ir.ir1.run_ir1 import run_ir
+from dsl.language.vocabulary.operators import EnumComparisonOperator
+from dsl.semantic.types.enums import EnumDataType
+
+
+def test_target_ref_lowers_to_model_output_in_ir1():
+    code = """
+    model := "model.onnx"
+    target := MyTarget
+
+    [BOUND]:
+    check_at x0 => target <= 10
+    """
+
+    tasks = run_ir(code)
+
+    expr = tasks[0].query.expression
+
+    assert isinstance(expr, ComparisonIR)
+    assert expr.entity == "_model"
+    assert expr.feature == "MyTarget"
+    assert expr.op == EnumComparisonOperator.LTE
+    assert expr.value == 10
+    assert expr.feature_dtype is None
+    assert expr.value_dtype is not None
+    assert expr.value_dtype == EnumDataType.INT
 
 
 ===== test\unit\ir2\__pycache__\test_pretty.cpython-311-pytest-9.0.1.pyc =====
@@ -3388,15 +3594,19 @@ def test_invalid_missing_expr():
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0x83 in position 8: invalid start byte]
 
+===== test\unit\semantic\__pycache__\test_target_ref_semantic_binding.cpython-311-pytest-9.0.1.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== test\unit\semantic\test_attribute_semantic_binding.py =====
 
+from dsl.ast.nodes.assertion import AndNode, ComparisonNode, OrNode
 from dsl.ast.nodes.primitives import AttributeNode
 from dsl.builder.program import parse_program
 from dsl.parser.parser import parse_forml_code
 from dsl.semantic.core.validator import FORMLValidator
 from dsl.semantic.runtime.annotations import SemanticAnnotations
 from dsl.semantic.runtime.tracer import ValidationTracer
-from dsl.ast.nodes.assertion import ComparisonNode, AndNode, OrNode
 
 
 def _build_and_validate(source: str):
@@ -3412,27 +3622,42 @@ def _build_and_validate(source: str):
 
 
 def _semantic(attr: AttributeNode) -> SemanticAnnotations:
-    assert attr.semantic is not None
-    return attr.semantic
+    semantic = attr.semantic
+
+    assert semantic is not None
+
+    return semantic
 
 
-def _collect_comparisons(node):
+def _collect_comparisons(node: object) -> list[ComparisonNode]:
     if isinstance(node, ComparisonNode):
         return [node]
 
     if isinstance(node, AndNode):
-        result = []
+        result: list[ComparisonNode] = []
+
         for child in node.operands:
             result.extend(_collect_comparisons(child))
+
         return result
 
     if isinstance(node, OrNode):
-        result = []
+        result: list[ComparisonNode] = []
+
         for child in node.operands:
             result.extend(_collect_comparisons(child))
+
         return result
 
     return []
+
+
+def _left_attribute(node: ComparisonNode) -> AttributeNode:
+    left = node.left
+
+    assert isinstance(left, AttributeNode)
+
+    return left
 
 
 def test_check_at_attribute_receives_semantic_annotations():
@@ -3448,11 +3673,11 @@ def test_check_at_attribute_receives_semantic_annotations():
 
     root = ast.body[0].rule.assertion.root
     comparison = _collect_comparisons(root)[0]
-    attr = comparison.left
+    attr = _left_attribute(comparison)
+    semantic = _semantic(attr)
 
-    assert attr.semantic is not None
-    assert attr.semantic.resolved_entity == "x0"
-    assert attr.semantic.resolved_path == ["x0", "age"]
+    assert semantic.resolved_entity == "x0"
+    assert semantic.resolved_path == ["x0", "age"]
 
 
 def test_check_at_implicit_attribute_receives_default_entity():
@@ -3468,13 +3693,13 @@ def test_check_at_implicit_attribute_receives_default_entity():
 
     root = ast.body[0].rule.assertion.root
     comparison = _collect_comparisons(root)[0]
-    attr = comparison.left
+    attr = _left_attribute(comparison)
+    semantic = _semantic(attr)
 
     assert attr.entity is None
     assert attr.feature == "age"
-    assert attr.semantic is not None
-    assert attr.semantic.resolved_entity == "x0"
-    assert attr.semantic.resolved_path == ["x0", "age"]
+    assert semantic.resolved_entity == "x0"
+    assert semantic.resolved_path == ["x0", "age"]
 
 
 def test_quantifier_attribute_receives_symbolic_entity():
@@ -3490,8 +3715,7 @@ def test_quantifier_attribute_receives_symbolic_entity():
 
     root = ast.body[0].rule.assertion.root
     comparison = _collect_comparisons(root)[0]
-    attr = comparison.left
-
+    attr = _left_attribute(comparison)
     semantic = _semantic(attr)
 
     assert semantic.resolved_entity == "_x"
@@ -3512,9 +3736,13 @@ def test_nested_logic_attributes_receive_semantic_annotations():
     root = ast.body[0].rule.assertion.root
     comparisons = _collect_comparisons(root)
 
-    resolved = {
-        cmp.left.feature: _semantic(cmp.left).resolved_entity for cmp in comparisons
-    }
+    resolved: dict[str, str | None] = {}
+
+    for comparison in comparisons:
+        attr = _left_attribute(comparison)
+        semantic = _semantic(attr)
+
+        resolved[attr.feature] = semantic.resolved_entity
 
     assert resolved == {
         "age": "x0",
@@ -3654,3 +3882,38 @@ def test_schema_aware_validation_is_optional_without_model_schema():
         ast,
         tracer=ValidationTracer(enabled=False),
     )
+
+
+===== test\unit\semantic\test_target_ref_semantic_binding.py =====
+
+from dsl.ast.nodes.assertion import ComparisonNode
+from dsl.ast.nodes.primitives import TargetRefNode
+from dsl.builder.program import parse_program
+from dsl.parser.parser import parse_forml_code
+from dsl.semantic.core.validator import FORMLValidator
+
+
+def test_target_ref_resolves_to_model_target():
+    code = """
+    model := "model.onnx"
+    target := MyTarget
+
+    [BOUND]:
+    check_at x0 => target <= 10
+    """
+
+    program = parse_program(parse_forml_code(code))
+
+    FORMLValidator().validate(program)
+
+    comparison = program.body[0].rule.assertion.root
+
+    assert isinstance(comparison, ComparisonNode)
+    assert isinstance(comparison.left, TargetRefNode)
+
+    semantic = comparison.left.semantic
+
+    assert semantic is not None
+    assert semantic.resolved_entity == "_model"
+    assert semantic.resolved_path == ["_model", "MyTarget"]
+    assert semantic.resolved_type == "model_output"
