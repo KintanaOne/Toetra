@@ -88,7 +88,7 @@ It contains:
 - scope type;
 - variables and roles;
 - default entity for implicit feature access;
-- optional domain;
+- optional typed domain;
 - optional neighborhood;
 - optional quantifier;
 - symbol table.
@@ -132,9 +132,19 @@ The LHS defines where the property is evaluated.
 | `check_at x` | pointwise | `x` as anchor |
 | `at x` | local | `x` as anchor, `x'` as perturbation |
 | `x ~ x'` | pairwise | `x` as anchor, `x'` as perturbation |
-| `forall` / `exists` | quantifier | `_x` as symbolic variable |
+| `forall x0` / `exists x0` | quantifier | declared identifier as symbolic variable |
 
 The LHS validator creates the semantic context used by later passes.
+
+For quantified scopes it must preserve the source identifier:
+
+```text
+forall applicant
+→ variables = {"applicant": "symbolic"}
+→ default_entity = "applicant"
+```
+
+The same identifier is used to validate explicit references in the domain and assertion.
 
 ---
 
@@ -145,14 +155,59 @@ Binding validation resolves attribute references in RHS assertions.
 Resolution priority:
 
 1. symbol table explicit resolution;
-2. explicit entity resolution;
+2. explicit entity validation;
 3. implicit default entity;
-4. single-variable fallback;
-5. ambiguity error.
+4. ambiguity or unbound-variable error.
 
-This means the semantic layer can resolve both explicit and concise DSL forms.
+For quantified scopes, the declared identifier is registered with role `symbolic` and becomes the default entity. An explicit reference to another entity must fail. The semantic layer must not use a single-variable alias fallback to reinterpret a misspelled explicit entity.
+
+Concise references remain supported because an unqualified feature such as `age` resolves through `default_entity`. `target` is resolved independently as the model output reference.
 
 ---
+
+## Domain Validation
+
+Typed domains are validated after scope variables are registered.
+
+For every domain entry, the semantic layer must:
+
+1. require an explicitly qualified subject;
+2. resolve the subject entity through the symbol table;
+3. reject entities not declared by the current scope;
+4. reject `target` as a domain subject;
+5. reject duplicate subjects;
+6. validate interval ordering and non-emptiness;
+7. preserve `OPEN` and `CLOSED` boundary kinds;
+8. validate finite-set uniqueness;
+9. attach resolved entity/path/symbol metadata;
+10. validate feature/literal compatibility when `ModelSchema` is available.
+
+Unknown explicit entities must not use the single-variable alias fallback. Domain validation should produce domain-specific diagnostics rather than generic binding failures where possible.
+
+---
+
+## Arithmetic and Scalar Type Validation
+
+The semantic layer recursively validates scalar expression trees.
+
+Responsibilities:
+
+- resolve every `AttributeNode` inside arithmetic operands;
+- resolve `target` to the model-output reference declared in the header;
+- verify that arithmetic operands are numeric;
+- infer result types for unary and binary arithmetic;
+- reject division by a literal zero;
+- classify the expression as affine or as requiring a stronger arithmetic capability;
+- preserve precise diagnostics at the offending subexpression.
+
+For the initial affine profile:
+
+- `+`, `-`, unary `+`, and unary `-` are supported over numeric expressions;
+- `*` requires at least one constant numeric operand;
+- `/` requires a non-zero constant numeric denominator;
+- symbolic products and symbolic denominators are marked unsupported for the initial profile.
+
+Domain-bound validation additionally rejects `target` and requires explicit feature qualification.
 
 ## Logic Validation
 
@@ -231,6 +286,9 @@ The semantic layer must guarantee:
 - scope variables are known;
 - property/scope compatibility is enforced;
 - logical nodes are structurally valid;
+- scalar-expression references are recursively resolved;
+- arithmetic operands are type-compatible;
+- arithmetic capability requirements are explicit;
 - problem functions are compatible with problem types;
 - semantic errors are not reported as parser errors in the stabilized architecture;
 - IR translation receives resolved semantic information.
@@ -279,6 +337,6 @@ Examples:
 - unsupported property/scope pair;
 - invalid problem/function pair;
 - missing neighborhood argument;
-- corrupted domain.
+- malformed, contradictory, or type-incompatible domain.
 
 The semantic layer should reject invalid mutations with precise semantic diagnostics.

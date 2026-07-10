@@ -1,139 +1,157 @@
 # Assertion Aggregation Contract
 
-> Status: P0 / Planned / Critical  
-> Scope: IR2 + semantic constraints + model constraints to AggregatedAssertionSet  
-> Implementation: Not yet implemented  
-> Audience: IR authors, backend authors, verification designers
+> Status: P0 / Accepted target contract  
+> Scope: Property formula + domain/model assumptions → verification condition  
+> Audience: IR2 builders, aggregation authors, runner authors and diagnostic authors
 
 ## Purpose
 
-The Assertion Aggregation contract defines how FORML builds the complete verification problem.
+Aggregation builds the complete logical problem that a backend must solve.
 
-It answers the question:
-
-```text
-What exactly must be verified?
-```
-
-The backend should not receive isolated DSL assertions only. It should receive the complete logical problem.
+A user property alone is not the complete verification condition.
 
 ---
 
-## Input
+## Inputs
+
+Aggregation may receive:
+
+- normalized user-property formula `P`;
+- domain assumptions `Γdomain`;
+- model assumptions `Γmodel`;
+- neighborhood or future semantic assumptions;
+- quantifier verification semantics;
+- source/provenance metadata.
+
+---
+
+## Source Separation
+
+Every assumption retains a source tag, at least:
 
 ```text
-IR2 Normal Forms
-+
-SemanticConstraintSet
-+
-ModelConstraintSet
-+
-BackendCapabilityConstraints
+DOMAIN
+MODEL
+NEIGHBORHOOD
+SEMANTIC
+USER
 ```
 
-Potential sources:
+Source separation is required before and after composition for diagnostics, traces and future unsat-core mapping.
 
-| Source | Examples |
+---
+
+## Universal Composition
+
+For:
+
+```forml
+forall x0 with domain(...) => P
+```
+
+universal proof by refutation builds:
+
+```text
+Γdomain(x0)
+AND Γmodel(x0, target)
+AND NOT P(x0, target)
+```
+
+Expected interpretation:
+
+| Solver outcome | FORML meaning |
 |---|---|
-| DSL assertion | `x'.age <= 30` |
-| Scope semantics | `x'` is perturbation of `x` |
-| Neighborhood | `distance(x, x') <= eps` |
-| Domain | `category in {A, B}` |
-| Quantifier | `forall _x` or `exists _x` |
-| ModelBridge | feature dtype, target, task |
-| Backend | supported functions/operators |
+| UNSAT | Universal property proved over the admissible domain. |
+| SAT | Counterexample found. |
+| UNKNOWN | Property not proved and no reliable counterexample conclusion. |
 
 ---
 
-## Output
+## Existential Composition
 
-```text
-AggregatedAssertionSet
+For:
+
+```forml
+exists x0 with domain(...) => P
 ```
 
-The artifact should contain:
-
-- a collection of logical assertions;
-- origin metadata for each assertion;
-- grouping information;
-- preservation metadata;
-- dependency information;
-- diagnostic context;
-- optional backend-preparation hints.
-
----
-
-## Aggregation Principle
-
-Aggregation must preserve meaning.
-
-It should not randomly flatten all constraints if structure matters.
-
-For example:
+witness search builds:
 
 ```text
-property intent
-+
-scope constraints
-+
-model constraints
+Γdomain(x0)
+AND Γmodel(x0, target)
+AND P(x0, target)
 ```
 
-must be composed in a way that still reflects the original property semantics.
+Expected interpretation:
+
+| Solver outcome | FORML meaning |
+|---|---|
+| SAT | Witness found; existential request satisfied. |
+| UNSAT | No admissible witness exists. |
+| UNKNOWN | Existence remains undecided. |
+
+A runner/result model must use semantics-appropriate labels. `SAT` is not always a counterexample.
 
 ---
 
-## Guarantees
+## Domain Composition
 
-If aggregation succeeds:
+Within `Γdomain`:
 
-- all required constraint families are represented;
-- every generated assertion is traceable to an origin;
-- no backend-specific query has been emitted;
-- the full verification problem is explicit;
-- lowering and minimization may operate on the complete set.
-
----
-
-## Non-Goals
-
-Aggregation must not:
-
-- perform final backend encoding;
-- execute a solver;
-- erase assertion origins;
-- silently drop constraints;
-- perform unsafe minimization without trace.
+- interval lower and upper restrictions are conjoined;
+- finite-set members are disjoined;
+- distinct domain entries are conjoined;
+- arithmetic bound expressions remain scalar expressions;
+- each generated component retains domain-entry provenance.
 
 ---
 
-## Failure Modes
+## Vacuity and Empty-Domain Diagnostics
 
-Aggregation should reject:
+An unsatisfiable `Γdomain ∧ Γmodel` can make a universal verification condition unsatisfiable independently of `P`.
 
-- missing required model constraints;
-- incompatible constraint families;
-- invalid IR2 structure;
-- unresolved semantic references;
-- backend constraints that make the request impossible;
-- ambiguous quantifier or scope composition.
-
----
-
-## Miova Hooks
-
-Miova may mutate aggregation inputs by:
-
-- removing a constraint family;
-- duplicating constraints;
-- corrupting origins;
-- replacing CNF/DNF groups;
-- introducing incompatible model constraints;
-- deleting scope constraints.
-
-Expected outcomes:
+Therefore the target aggregation/runtime contract should distinguish:
 
 ```text
-Invalid aggregation → aggregation rejection
-Valid but different aggregation → lowering may continue with trace
+property proved over a non-empty admissible set
 ```
+
+from:
+
+```text
+verification condition unsatisfiable because the admissible set is empty
+```
+
+At minimum, FORML should be able to emit a vacuity warning when emptiness is detected. The exact strategy may be a pre-check, diagnostic query or unsat-core analysis.
+
+For existential semantics, an empty admissible set directly means no witness exists.
+
+---
+
+## Provenance Invariant
+
+The aggregated condition keeps a trace from every generated atom to:
+
+- source property;
+- source domain entry or model constraint;
+- original scalar expression;
+- normalization/negation step;
+- final backend expression where possible.
+
+Logical grouping may change, but provenance must not be discarded.
+
+---
+
+## Aggregation-Owned Failures
+
+Aggregation rejects:
+
+- missing quantifier verification semantics;
+- missing required model assumptions;
+- malformed assumption source tags;
+- assumptions referring to entities absent from the scope;
+- property/domain/model formulas whose scalar requirements conflict internally;
+- a composition path that applies universal negation to existential semantics.
+
+Backend support is checked later unless aggregation itself cannot represent the formula.

@@ -3,22 +3,6 @@
 
 
 
-===== test\unit\__pycache__\__init__.cpython-311.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\__pycache__\__init__.cpython-314.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
-
-===== test\unit\ast\__pycache__\test_primitives_semantic_annotations.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\ast\__pycache__\test_primitives_semantic_annotations.cpython-314-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0x87 in position 9: invalid start byte]
-
 ===== test\unit\ast\test_primitives_semantic_annotations.py =====
 
 from dsl.ast.nodes.base import ASTNode
@@ -106,14 +90,6 @@ def test_primitive_constructors_are_not_polluted_by_semantic_field():
     assert arg.key == "eps"
     assert arg.value == 0.01
 
-
-===== test\unit\backends\__pycache__\test_router.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\backends\__pycache__\test_router.cpython-314-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0x8b in position 8: invalid start byte]
 
 ===== test\unit\backends\test_router.py =====
 
@@ -301,21 +277,365 @@ def test_backend_router_rejects_backend_without_required_normal_form():
         BackendRouter(registry).route(task)
 
 
-===== test\unit\backends\z3_backend\__pycache__\test_capabilities.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
 ===== test\unit\backends\z3_backend\test_capabilities.py =====
 
 
 
-===== test\unit\builder\__pycache__\test_parse_value_boolean.cpython-311-pytest-9.0.1.pyc =====
+===== test\unit\backends\z3_backend\test_z3_backend_execution.py =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+from dsl.backends.z3_backend.runner import VerificationStatus, Z3Runner
+from dsl.ir.ir1.nodes import AndIR, ComparisonIR, NotIR, ScopeIR
+from dsl.ir.ir2.enums import AssumptionSource, NormalFormKind, VerificationSemantics
+from dsl.ir.ir2.nodes import (
+    AffineExpressionIR2,
+    AffineOutputConstraintIR2,
+    AffineTermIR2,
+    AssumptionIR2,
+    NNFFormulaIR2,
+    VerificationTaskIR2,
+)
+from dsl.ir.ir2.requirements import IR2Requirements
+from dsl.language.vocabulary.backends import EnumBackend
+from dsl.language.vocabulary.operators import EnumComparisonOperator
+from dsl.language.vocabulary.properties import EnumProperty
 
-===== test\unit\builder\__pycache__\test_parse_value_boolean.cpython-314-pytest-9.0.1.pyc =====
 
-[ERROR reading file: 'utf-8' codec can't decode byte 0x97 in position 9: invalid start byte]
+def _pointwise_scope() -> ScopeIR:
+    return ScopeIR(
+        kind="pointwise",
+        variables={"x": "anchor"},
+        neighborhood=None,
+        domain=None,
+    )
+
+
+def _requirements(
+    *,
+    requires_model_assertions: bool = False,
+) -> IR2Requirements:
+    return IR2Requirements(
+        requires_boolean_logic=True,
+        requires_numeric_comparisons=True,
+        requires_problem_predicates=False,
+        requires_model_assertions=requires_model_assertions,
+        requires_quantifiers=False,
+        requires_domains=False,
+        requires_neighborhoods=False,
+        normal_form=NormalFormKind.NNF,
+    )
+
+
+def _task(
+    *,
+    spec: NNFFormulaIR2,
+    vc: NNFFormulaIR2,
+    assumptions: tuple[AssumptionIR2, ...] = (),
+    requires_model_assertions: bool = False,
+) -> VerificationTaskIR2:
+    return VerificationTaskIR2(
+        property_type=EnumProperty.LOGIC,
+        scope=_pointwise_scope(),
+        backend=EnumBackend.Z3,
+        assumptions=assumptions,
+        spec_formula=spec,
+        verification_condition=vc,
+        semantics=VerificationSemantics.REFUTATION,
+        normal_form=NormalFormKind.NNF,
+        requirements=_requirements(
+            requires_model_assertions=requires_model_assertions,
+        ),
+    )
+
+
+def test_z3_runner_returns_counterexample_when_vc_is_sat() -> None:
+    atom = ComparisonIR(
+        entity="x",
+        feature="a",
+        op=EnumComparisonOperator.LTE,
+        value=1.0,
+    )
+
+    task = _task(
+        spec=NNFFormulaIR2(expression=atom),
+        vc=NNFFormulaIR2(expression=atom),
+    )
+
+    result = Z3Runner().run(task)
+
+    assert result.status == VerificationStatus.COUNTEREXAMPLE
+    assert result.solver_status == "sat"
+    assert result.model is not None
+    assert "x.a" in result.model
+
+
+def test_z3_runner_returns_proved_when_vc_is_unsat() -> None:
+    atom = ComparisonIR(
+        entity="x",
+        feature="a",
+        op=EnumComparisonOperator.LTE,
+        value=1.0,
+    )
+
+    contradiction = AndIR(
+        operands=[
+            atom,
+            NotIR(atom),
+        ]
+    )
+
+    task = _task(
+        spec=NNFFormulaIR2(expression=atom),
+        vc=NNFFormulaIR2(expression=contradiction),
+    )
+
+    result = Z3Runner().run(task)
+
+    assert result.status == VerificationStatus.PROVED
+    assert result.solver_status == "unsat"
+    assert result.model is None
+
+
+def test_z3_runner_supports_affine_model_output_constraint() -> None:
+    atom = AffineOutputConstraintIR2(
+        output_entity="_model",
+        output_feature="MyTarget",
+        op=EnumComparisonOperator.EQ,
+        expression=AffineExpressionIR2(
+            terms=(
+                AffineTermIR2(
+                    entity="x",
+                    feature="a",
+                    coefficient=2.0,
+                ),
+            ),
+            bias=1.0,
+        ),
+    )
+
+    assumption = AssumptionIR2(
+        source=AssumptionSource.MODEL,
+        formula=NNFFormulaIR2(expression=atom),
+        description="test affine model equation",
+    )
+
+    contradiction = AndIR(
+        operands=[
+            atom,
+            NotIR(atom),
+        ]
+    )
+
+    task = _task(
+        spec=NNFFormulaIR2(expression=atom),
+        vc=NNFFormulaIR2(expression=contradiction),
+        assumptions=(assumption,),
+        requires_model_assertions=True,
+    )
+
+    result = Z3Runner().run(task)
+
+    assert result.status == VerificationStatus.PROVED
+    assert result.solver_status == "unsat"
+    assert result.model is None
+
+
+===== test\unit\backends\z3_backend\test_z3_normal_forms.py =====
+
+from __future__ import annotations
+
+from dsl.backends.z3_backend.runner import VerificationStatus, Z3Runner
+from dsl.ir.ir1.nodes import ComparisonIR, ScopeIR
+from dsl.ir.ir2.enums import NormalFormKind, Polarity, VerificationSemantics
+from dsl.ir.ir2.nodes import (
+    ClauseIR2,
+    CNFFormulaIR2,
+    DNFFormulaIR2,
+    FormulaIR2,
+    LiteralIR2,
+    NNFFormulaIR2,
+    TermIR2,
+    VerificationTaskIR2,
+)
+from dsl.ir.ir2.requirements import IR2Requirements
+from dsl.language.vocabulary.backends import EnumBackend
+from dsl.language.vocabulary.operators import EnumComparisonOperator
+from dsl.language.vocabulary.properties import EnumProperty
+
+
+def _atom() -> ComparisonIR:
+    return ComparisonIR(
+        entity="x",
+        feature="a",
+        op=EnumComparisonOperator.LTE,
+        value=1.0,
+    )
+
+
+def _pointwise_scope() -> ScopeIR:
+    return ScopeIR(
+        kind="pointwise",
+        variables={"x": "anchor"},
+        neighborhood=None,
+        domain=None,
+    )
+
+
+def _requirements(normal_form: NormalFormKind) -> IR2Requirements:
+    return IR2Requirements(
+        requires_boolean_logic=True,
+        requires_numeric_comparisons=True,
+        requires_problem_predicates=False,
+        requires_model_assertions=False,
+        requires_quantifiers=False,
+        requires_domains=False,
+        requires_neighborhoods=False,
+        normal_form=normal_form,
+    )
+
+
+def _task(
+    *,
+    spec: NNFFormulaIR2,
+    vc: FormulaIR2,
+    normal_form: NormalFormKind,
+) -> VerificationTaskIR2:
+    return VerificationTaskIR2(
+        property_type=EnumProperty.LOGIC,
+        scope=_pointwise_scope(),
+        backend=EnumBackend.Z3,
+        assumptions=(),
+        spec_formula=spec,
+        verification_condition=vc,
+        semantics=VerificationSemantics.REFUTATION,
+        normal_form=normal_form,
+        requirements=_requirements(normal_form),
+    )
+
+
+def _positive(atom: ComparisonIR) -> LiteralIR2:
+    return LiteralIR2(
+        atom=atom,
+        polarity=Polarity.POSITIVE,
+    )
+
+
+def _negative(atom: ComparisonIR) -> LiteralIR2:
+    return LiteralIR2(
+        atom=atom,
+        polarity=Polarity.NEGATIVE,
+    )
+
+
+def test_z3_runner_proves_unsat_cnf_contradiction() -> None:
+    atom = _atom()
+
+    # CNF:
+    #   (A) AND (NOT A)
+    #
+    # This is UNSAT, therefore FORML status must be PROVED.
+    vc = CNFFormulaIR2(
+        clauses=(
+            ClauseIR2(literals=(_positive(atom),)),
+            ClauseIR2(literals=(_negative(atom),)),
+        )
+    )
+
+    task = _task(
+        spec=NNFFormulaIR2(expression=atom),
+        vc=vc,
+        normal_form=NormalFormKind.CNF,
+    )
+
+    result = Z3Runner().run(task)
+
+    assert result.status == VerificationStatus.PROVED
+    assert result.solver_status == "unsat"
+    assert result.model is None
+
+
+def test_z3_runner_finds_counterexample_for_sat_cnf() -> None:
+    atom = _atom()
+
+    # CNF:
+    #   (A)
+    #
+    # This is SAT as a verification condition, therefore FORML status
+    # must be COUNTEREXAMPLE.
+    vc = CNFFormulaIR2(clauses=(ClauseIR2(literals=(_positive(atom),)),))
+
+    task = _task(
+        spec=NNFFormulaIR2(expression=atom),
+        vc=vc,
+        normal_form=NormalFormKind.CNF,
+    )
+
+    result = Z3Runner().run(task)
+
+    assert result.status == VerificationStatus.COUNTEREXAMPLE
+    assert result.solver_status == "sat"
+    assert result.model is not None
+    assert "x.a" in result.model
+
+
+def test_z3_runner_proves_unsat_dnf_contradiction() -> None:
+    atom = _atom()
+
+    # DNF:
+    #   (A AND NOT A)
+    #
+    # This is UNSAT, therefore FORML status must be PROVED.
+    vc = DNFFormulaIR2(
+        terms=(
+            TermIR2(
+                literals=(
+                    _positive(atom),
+                    _negative(atom),
+                )
+            ),
+        )
+    )
+
+    task = _task(
+        spec=NNFFormulaIR2(expression=atom),
+        vc=vc,
+        normal_form=NormalFormKind.DNF,
+    )
+
+    result = Z3Runner().run(task)
+
+    assert result.status == VerificationStatus.PROVED
+    assert result.solver_status == "unsat"
+    assert result.model is None
+
+
+def test_z3_runner_finds_counterexample_for_sat_dnf() -> None:
+    atom = _atom()
+
+    # DNF:
+    #   (A) OR (NOT A)
+    #
+    # This is SAT as a verification condition, therefore FORML status
+    # must be COUNTEREXAMPLE.
+    vc = DNFFormulaIR2(
+        terms=(
+            TermIR2(literals=(_positive(atom),)),
+            TermIR2(literals=(_negative(atom),)),
+        )
+    )
+
+    task = _task(
+        spec=NNFFormulaIR2(expression=atom),
+        vc=vc,
+        normal_form=NormalFormKind.DNF,
+    )
+
+    result = Z3Runner().run(task)
+
+    assert result.status == VerificationStatus.COUNTEREXAMPLE
+    assert result.solver_status == "sat"
+    assert result.model is not None
+    assert "x.a" in result.model
+
 
 ===== test\unit\builder\test_parse_value_boolean.py =====
 
@@ -365,46 +685,6 @@ def test_parse_value_false_boolean_literal():
     assert value.value is False
     assert value.dtype is EnumDataType.BOOL
 
-
-===== test\unit\ir\__pycache__\test_comparison_ir_schema_types.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\ir\__pycache__\test_comparison_ir_schema_types.cpython-314-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0x95 in position 9: invalid start byte]
-
-===== test\unit\ir\__pycache__\test_pretty_typed_ir.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\ir\__pycache__\test_pretty_typed_ir.cpython-314-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0x95 in position 9: invalid start byte]
-
-===== test\unit\ir\__pycache__\test_target_ref_ir_lowering.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\ir\ir2\__pycache__\test_assumption_aggregation.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\ir\ir2\__pycache__\test_explain.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\ir\ir2\__pycache__\test_ir2_node_split.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\ir\ir2\__pycache__\test_model_output_diagnostics.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\ir\ir2\__pycache__\test_target_ref_ir2.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== test\unit\ir\ir2\test_assumption_aggregation.py =====
 
@@ -614,6 +894,124 @@ def test_ir2_validator_rejects_invalid_literal_polarity() -> None:
 
     with pytest.raises(IR2ValidationError, match="invalid polarity"):
         IR2Validator().validate(task)
+
+
+===== test\unit\ir\ir2\test_domain_assumptions.py =====
+
+from __future__ import annotations
+
+import pytest
+
+from dsl.ir.ir1.nodes import ComparisonIR
+from dsl.ir.ir2.domain_assumptions import (
+    DomainAssumptionEncoder,
+    NumericFeatureBounds,
+)
+from dsl.ir.ir2.enums import AssumptionSource
+from dsl.ir.ir2.nodes import NNFFormulaIR2
+from dsl.language.vocabulary.operators import EnumComparisonOperator
+
+
+def test_domain_assumption_encoder_emits_lower_and_upper_bounds() -> None:
+    assumptions = DomainAssumptionEncoder().encode(
+        (
+            NumericFeatureBounds(
+                entity="x0",
+                feature="a",
+                lower=0.0,
+                upper=3.0,
+            ),
+        )
+    )
+
+    assert len(assumptions) == 2
+
+    lower, upper = assumptions
+
+    assert lower.source == AssumptionSource.DOMAIN
+    assert upper.source == AssumptionSource.DOMAIN
+
+    assert isinstance(lower.formula, NNFFormulaIR2)
+    assert isinstance(upper.formula, NNFFormulaIR2)
+
+    assert isinstance(lower.formula.expression, ComparisonIR)
+    assert isinstance(upper.formula.expression, ComparisonIR)
+
+    assert lower.formula.expression.entity == "x0"
+    assert lower.formula.expression.feature == "a"
+    assert lower.formula.expression.op == EnumComparisonOperator.GTE
+    assert lower.formula.expression.value == 0.0
+
+    assert upper.formula.expression.entity == "x0"
+    assert upper.formula.expression.feature == "a"
+    assert upper.formula.expression.op == EnumComparisonOperator.LTE
+    assert upper.formula.expression.value == 3.0
+
+
+def test_domain_assumption_encoder_emits_only_lower_bound() -> None:
+    assumptions = DomainAssumptionEncoder().encode(
+        (
+            NumericFeatureBounds(
+                entity="x0",
+                feature="a",
+                lower=0.0,
+            ),
+        )
+    )
+
+    assert len(assumptions) == 1
+
+    atom = assumptions[0].formula.expression
+
+    assert isinstance(atom, ComparisonIR)
+    assert atom.op == EnumComparisonOperator.GTE
+    assert atom.value == 0.0
+
+
+def test_domain_assumption_encoder_emits_only_upper_bound() -> None:
+    assumptions = DomainAssumptionEncoder().encode(
+        (
+            NumericFeatureBounds(
+                entity="x0",
+                feature="a",
+                upper=3.0,
+            ),
+        )
+    )
+
+    assert len(assumptions) == 1
+
+    atom = assumptions[0].formula.expression
+
+    assert isinstance(atom, ComparisonIR)
+    assert atom.op == EnumComparisonOperator.LTE
+    assert atom.value == 3.0
+
+
+def test_domain_assumption_encoder_rejects_empty_bounds() -> None:
+    with pytest.raises(ValueError, match="at least one"):
+        DomainAssumptionEncoder().encode(
+            (
+                NumericFeatureBounds(
+                    entity="x0",
+                    feature="a",
+                ),
+            )
+        )
+
+
+def test_domain_assumption_encoder_rejects_inverted_bounds() -> None:
+    with pytest.raises(ValueError, match="lower=4.0 > upper=3.0"):
+        DomainAssumptionEncoder().encode(
+            (
+                NumericFeatureBounds(
+                    entity="x0",
+                    feature="a",
+                    lower=4.0,
+                    upper=3.0,
+                ),
+            )
+        )
 
 
 ===== test\unit\ir\ir2\test_explain.py =====
@@ -1012,14 +1410,6 @@ def test_target_ref_lowers_to_model_output_in_ir1():
     assert expr.value_dtype == EnumDataType.INT
 
 
-===== test\unit\ir2\__pycache__\test_pretty.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\ir2\__pycache__\test_pretty.cpython-314-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0x98 in position 8: invalid start byte]
-
 ===== test\unit\ir2\test_pretty.py =====
 
 from dsl.ir.ir1.nodes import ComparisonIR
@@ -1107,70 +1497,6 @@ def test_pretty_cnf_single_clause_omits_clause_index_and_displays_polarity():
     )
     assert "clause[0]" not in rendered
 
-
-===== test\unit\model\__pycache__\test_detector.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\model\__pycache__\test_detector.cpython-314-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf3 in position 37: invalid continuation byte]
-
-===== test\unit\model\__pycache__\test_introspector_factory.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\model\__pycache__\test_introspector_factory.cpython-314-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0x8f in position 12: invalid start byte]
-
-===== test\unit\model\__pycache__\test_loader_factory.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\model\__pycache__\test_loader_factory.cpython-314-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xb9 in position 12: invalid start byte]
-
-===== test\unit\model\__pycache__\test_loaders.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\model\__pycache__\test_loaders.cpython-314-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode bytes in position 37-38: invalid continuation byte]
-
-===== test\unit\model\__pycache__\test_schema_dataclasses.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\model\__pycache__\test_schema_dataclasses.cpython-314-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf3 in position 37: invalid continuation byte]
-
-===== test\unit\model\__pycache__\test_sklearn_introspector.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\model\__pycache__\test_sklearn_introspector.cpython-314-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode bytes in position 37-38: invalid continuation byte]
-
-===== test\unit\model\__pycache__\test_xgboost_introspector_optional.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\model\__pycache__\test_xgboost_introspector_optional.cpython-314-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf3 in position 37: invalid continuation byte]
-
-===== test\unit\model\encoder\__pycache__\test_model_encoder_registry.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\model\encoder\__pycache__\test_sklearn_linear_encoder.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== test\unit\model\encoder\test_model_encoder_registry.py =====
 
@@ -1716,89 +2042,9 @@ def test_xgboost_introspector_reuses_sklearn_contract_and_preserves_target():
 
 
 
-===== test\unit\normalization\__pycache__\__init__.cpython-311.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\normalization\__pycache__\__init__.cpython-314.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
-
 ===== test\unit\normalization\nnf\__init__.py =====
 
 
-
-===== test\unit\normalization\nnf\__pycache__\__init__.cpython-311.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\normalization\nnf\__pycache__\__init__.cpython-314.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
-
-===== test\unit\normalization\nnf\__pycache__\test_nnf_atomic.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\normalization\nnf\__pycache__\test_nnf_atomic.cpython-314-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf3 in position 37: invalid continuation byte]
-
-===== test\unit\normalization\nnf\__pycache__\test_nnf_comparison_operators.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\normalization\nnf\__pycache__\test_nnf_comparison_operators.cpython-314-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf3 in position 37: invalid continuation byte]
-
-===== test\unit\normalization\nnf\__pycache__\test_nnf_demorgan.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\normalization\nnf\__pycache__\test_nnf_demorgan.cpython-314-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xc1 in position 12: invalid start byte]
-
-===== test\unit\normalization\nnf\__pycache__\test_nnf_implication.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\normalization\nnf\__pycache__\test_nnf_implication.cpython-314-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa3 in position 12: invalid start byte]
-
-===== test\unit\normalization\nnf\__pycache__\test_nnf_quantifier_scope_passthrough.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\normalization\nnf\__pycache__\test_nnf_quantifier_scope_passthrough.cpython-314-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf3 in position 37: invalid continuation byte]
-
-===== test\unit\normalization\nnf\__pycache__\test_nnf_rejects_unknown_nodes.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\normalization\nnf\__pycache__\test_nnf_rejects_unknown_nodes.cpython-314-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xab in position 12: invalid start byte]
-
-===== test\unit\normalization\nnf\__pycache__\test_nnf_wrappers_and_invariants.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\normalization\nnf\__pycache__\test_nnf_wrappers_and_invariants.cpython-314-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xd7 in position 12: invalid continuation byte]
-
-===== test\unit\normalization\nnf\__pycache__\test_public_contract.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\normalization\nnf\__pycache__\test_public_contract.cpython-314-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf3 in position 37: invalid continuation byte]
 
 ===== test\unit\normalization\nnf\test_nnf_atomic.py =====
 
@@ -2199,94 +2445,6 @@ def test_run_nnf_public_entrypoint_contract():
 
     assert callable(run_nnf)
 
-
-===== test\unit\parsing\__pycache__\helper.cpython-311.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\parsing\__pycache__\helper.cpython-314.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xe0 in position 9: invalid continuation byte]
-
-===== test\unit\parsing\__pycache__\test_at.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\parsing\__pycache__\test_at.cpython-314-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf7 in position 8: invalid start byte]
-
-===== test\unit\parsing\__pycache__\test_body.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\parsing\__pycache__\test_body.cpython-314-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode bytes in position 37-38: invalid continuation byte]
-
-===== test\unit\parsing\__pycache__\test_check_at.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\parsing\__pycache__\test_check_at.cpython-314-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xff in position 12: invalid start byte]
-
-===== test\unit\parsing\__pycache__\test_exists.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\parsing\__pycache__\test_exists.cpython-314-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xb1 in position 12: invalid start byte]
-
-===== test\unit\parsing\__pycache__\test_footer.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\parsing\__pycache__\test_footer.cpython-314-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
-
-===== test\unit\parsing\__pycache__\test_forall.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\parsing\__pycache__\test_forall.cpython-314-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xaf in position 12: invalid start byte]
-
-===== test\unit\parsing\__pycache__\test_header.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\parsing\__pycache__\test_header.cpython-314-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xd0 in position 8: invalid continuation byte]
-
-===== test\unit\parsing\__pycache__\test_logic.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\parsing\__pycache__\test_logic.cpython-314-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xb2 in position 8: invalid start byte]
-
-===== test\unit\parsing\__pycache__\test_pairwise.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\parsing\__pycache__\test_pairwise.cpython-314-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xbf in position 8: invalid start byte]
-
-===== test\unit\parsing\__pycache__\test_semantic.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\parsing\__pycache__\test_semantic.cpython-314-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xcc in position 8: invalid continuation byte]
 
 ===== test\unit\parsing\helper.py =====
 
@@ -3577,26 +3735,6 @@ def test_invalid_missing_expr():
     with pytest.raises(Exception):
         parse(INVALID_BODY_MISSING_EXPRESSION)
 
-
-===== test\unit\semantic\__pycache__\test_attribute_semantic_binding.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\semantic\__pycache__\test_attribute_semantic_binding.cpython-314-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0x8e in position 9: invalid start byte]
-
-===== test\unit\semantic\__pycache__\test_schema_aware_validation.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\unit\semantic\__pycache__\test_schema_aware_validation.cpython-314-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0x83 in position 8: invalid start byte]
-
-===== test\unit\semantic\__pycache__\test_target_ref_semantic_binding.cpython-311-pytest-9.0.1.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== test\unit\semantic\test_attribute_semantic_binding.py =====
 

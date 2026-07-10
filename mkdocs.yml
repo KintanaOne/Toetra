@@ -101,9 +101,13 @@ nav:
       - Syntax: language/syntax.md
       - Properties: language/properties.md
       - Scopes: language/scopes.md
+      - Quantified Bindings: language/quantified-bindings.md
+      - Domains: language/domains.md
       - Assertions: language/assertions.md
+      - Arithmetic Expressions: language/arithmetic-expressions.md
       - Backends Syntax: language/backends.md
       - Examples: language/examples.md
+      - Invalid Examples: language/invalid-examples.md
 
   - Compiler:
       - Pipeline: compiler/pipeline.md
@@ -146,6 +150,7 @@ nav:
       - AST to Semantic: contracts/ast-to-semantic.md
       - Semantic to IR1: contracts/semantic-to-ir1.md
       - IR1 to IR2: contracts/ir1-to-ir2.md
+      - Quantified Domains and Scalar Expressions: contracts/quantified-domain-scalar-expressions.md
       - Model to Schema: contracts/model-to-schema.md
       - Schema to Semantic: contracts/schema-to-semantic.md
       - Model Constraints: contracts/model-constraints.md
@@ -181,10 +186,11 @@ nav:
 
   - Testing:
       - Strategy: testing/strategy.md
-      - Unit Tests: testing/unit-test.md
-      - Compiler Contract Tests: testing/compiler-contract-test.md
+      - Unit Tests: testing/unit-tests.md
+      - Compiler Contract Tests: testing/compiler-contract-tests.md
       - Golden Samples: testing/golden-samples.md
-      - End-to-End Tests: testing/end-to-end-test.md
+      - Language Evolution Test Matrix: testing/language-evolution-test-matrix.md
+      - End-to-End Tests: testing/end-to-end-tests.md
       - Property-Based Testing: testing/property-based-testing.md
       - Intelligent Fuzzing: testing/intelligent-fuzzing.md
       - Miova Campaigns: testing/miova-campaigns.md
@@ -203,6 +209,9 @@ nav:
       - ADR-0010 Backend Boundary: adr/ADR-0010-backend-boundary.md
       - ADR-0011 Error Boundaries: adr/ADR-0011-error-boundaries.md
       - ADR-0012 Miova Mutation Boundaries: adr/ADR-0012-miova-mutation-boundaries.md
+      - ADR-0013 Explicit Quantified Bindings: adr/ADR-0013-explicit-quantified-bindings.md
+      - ADR-0014 Scalar Expression Comparisons: adr/ADR-0014-scalar-expression-comparisons.md
+      - ADR-0015 Typed Domains as Assumptions: adr/ADR-0015-typed-domains-as-assumptions.md
 
   - Roadmap:
       - Implementation Roadmap: roadmap/implementation-roadmap.md

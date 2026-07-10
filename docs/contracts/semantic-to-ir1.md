@@ -1,164 +1,165 @@
-# Semantic to IR1 Contract
+# SemanticValidatedAST to IR1 Contract
 
-> Status: P0 / Structural IR1 implemented / NNF planned  
-> Scope: SemanticValidatedAST to IR1 / VerificationTask  
-> Implementation: IR1 translator exists; NNF/De Morgan are target subphase contracts  
-> Audience: IR authors, backend authors, semantic maintainers
+> Status: P0 / Accepted target lowering  
+> Scope: Semantic meaning to backend-independent verification task  
+> Audience: IR maintainers, semantic maintainers and pretty-printer authors
 
 ## Purpose
 
-The Semantic to IR1 contract defines how validated FORML properties become backend-independent logical verification tasks.
-
-It answers the question:
-
-```text
-What is the first formal logical representation of this property?
-```
-
-IR1 is not a backend query. It is the first backend-independent logical representation after semantic validation; full NNF normalization is a target subphase, not an implicit guarantee of structural translation.
+IR1 detaches validated meaning from DSL syntax while preserving scope, scalar structure, domain structure and traceability.
 
 ---
 
-## Input
+## Input Preconditions
 
-```text
-SemanticValidatedAST
-```
+IR1 lowering accepts only a successfully validated property.
 
-The input must provide:
+Required preconditions:
 
-- property type;
-- semantic scope;
-- resolved variable bindings;
-- logical assertion root;
-- optional backend hint;
-- domain and neighborhood metadata.
+- quantified identifiers are registered and resolved;
+- all input and target references have semantic resolution;
+- scalar types are known or explicitly represented as unresolved model-dependent types allowed by contract;
+- domain subjects and bounds are semantically valid;
+- property/scope compatibility has passed.
 
 ---
 
 ## Output
 
-```text
-list[VerificationTask]
-```
-
-Each property becomes one `VerificationTask`.
-
-A task contains:
-
-- `property_type`;
-- `scope: ScopeIR`;
-- `query: QueryIR`;
-- `backend: EnumBackend | None`.
-
----
-
-## IR1 Artifacts
-
-| Artifact | Meaning |
-|---|---|
-| `VerificationTask` | Top-level verification unit. |
-| `ScopeIR` | Scope extracted from semantic context. |
-| `NeighborhoodIR` | Local perturbation information. |
-| `DomainIR` | Domain restriction. |
-| `QueryIR` | RHS expression wrapper. |
-| `LogicalIR` | Backend-independent boolean tree. |
-| `ComparisonIR` | Atomic feature predicate. |
-| `ProblemIR` | ML problem-level predicate. |
-
----
-
-## IR1 Logical Responsibilities
-
-IR1 should be responsible for:
-
-- translating semantic AST nodes to logical IR nodes;
-- preserving semantic bindings;
-- representing scope explicitly;
-- representing domain and neighborhood constraints;
-- preserving implication explicitly or marking it for normalization;
-- defining where De Morgan transformations must occur;
-- producing or preserving Negation Normal Form only after the NNF subphase has run.
-
----
-
-## NNF Invariant
-
-The target IR1-NNF invariant is:
+Conceptually:
 
 ```text
-Negations may only appear directly above atomic predicates.
+VerificationTaskIR1(
+    property_type,
+    scope,
+    query,
+    backend_hint,
+    requirements_seed,
+    provenance,
+)
 ```
 
-Allowed:
+Exact class names may evolve.
+
+---
+
+## ScopeIR Requirements
+
+For a quantified property, `ScopeIR` preserves:
 
 ```text
-NOT ComparisonIR(...)
-NOT ProblemIR(...)
+kind = QUANTIFIED
+quantifier = FORALL | EXISTS
+variables = {source_identifier: SYMBOLIC}
+default_entity = source_identifier
+domain = typed DomainIR1 | None
 ```
 
-Not allowed after full NNF normalization:
+The quantifier kind must not be discarded under a generic `kind="quantifier"` field without another field preserving `FORALL` versus `EXISTS`.
+
+---
+
+## Scalar IR Requirements
+
+IR1 mirrors the validated scalar tree with backend-independent nodes:
 
 ```text
-NOT AndIR(...)
-NOT OrIR(...)
-NOT ImplyIR(...)
+ConstantIR1
+FeatureRefIR1
+TargetRefIR1
+UnaryArithmeticIR1
+BinaryArithmeticIR1
+ComparisonIR1(left_expression, operator, right_expression)
 ```
 
----
+Each reference uses resolved identity, not raw unresolved syntax.
 
-## Guarantees
+Each node retains enough metadata for:
 
-If structural IR1 translation succeeds:
+- dtype/sort requirements;
+- source mapping;
+- diagnostics;
+- recursive backend translation later.
 
-- no raw AST logical nodes remain in IR1;
-- IR1 references resolved semantic entities, not ambiguous raw attributes;
-- backend hints are normalized if present;
-- logical structure is backend-independent;
-- IR2 may consume the task without re-reading the AST.
-
----
-
-## Non-Goals
-
-IR1 must not:
-
-- choose CNF or DNF;
-- aggregate model constraints;
-- minimize the full assertion set;
-- encode a solver-specific query;
-- execute verification.
+IR1 does not flatten the expression into coefficients unless a separate explicit affine-canonicalization pass is invoked.
 
 ---
 
-## Stabilization Notes
+## Typed Domain IR1
 
-The semantic-to-IR1 contract should stabilize:
+`ScopeIR.domain` remains typed and backend-independent.
 
-- use of semantic `resolved_entity` rather than raw attribute entity;
-- backend enum normalization;
-- pairwise variable splitting;
-- quantifier variable representation;
-- operator preservation in pretty printing;
-- robust handling of `ProblemNode` enums.
+It preserves:
+
+- entry subject as resolved feature reference;
+- interval lower/upper scalar expressions;
+- open/closed boundary kinds;
+- finite-set member values and literal kinds;
+- entry provenance;
+- simultaneous/conjunctive domain semantics.
+
+IR1 does not encode these constraints as Z3 expressions.
 
 ---
 
-## Miova Hooks
+## Target Mapping
 
-Miova may mutate semantic or IR1 artifacts by:
+The DSL keyword `target` lowers to a model-output reference tied to the header-declared target identity, for example conceptually:
 
-- deleting semantic resolution metadata;
-- inserting ambiguous attributes;
-- replacing logical operators;
-- corrupting backend hints;
-- injecting non-NNF negation shapes;
-- replacing scope metadata.
+```text
+TargetRefIR1(entity="_model", feature=<declared target>)
+```
 
-Expected outcomes:
+The concrete internal entity label may differ, but it must remain distinct from input entities and consistent with model assumptions.
 
-| Mutation | Expected Boundary |
-|---|---|
-| Missing semantic binding | Semantic → IR1 rejection. |
-| Valid alternative logical tree | IR1 produced. |
-| Invalid NNF shape after normalization | IR1 invariant failure. |
+---
+
+## Query Preservation
+
+Boolean structure remains backend-independent.
+
+A scalar comparison is a logical atom. IR1 may subsequently enter NNF normalization, but arithmetic subtrees are not logical subtrees.
+
+---
+
+## Requirements Seed
+
+IR1 lowering may emit or preserve requirement metadata discovered semantically:
+
+- scalar sorts;
+- affine/nonlinear arithmetic flags;
+- finite-set/categorical requirements;
+- target/model assumptions;
+- domain presence;
+- quantifier verification semantics.
+
+The definitive backend-compatibility decision remains later.
+
+---
+
+## Postconditions
+
+A valid IR1 task contains:
+
+- no Lark node;
+- no unresolved attribute;
+- no semantic alias guess;
+- no opaque `Domain(name, raw_args)` representation;
+- no asymmetric feature-to-constant-only comparison restriction;
+- no solver-native object;
+- preserved quantifier kind and variable identity.
+
+---
+
+## Failure Ownership
+
+IR1 lowering rejects an allegedly validated input when:
+
+- required semantic annotations are missing;
+- a resolved entity/path cannot be produced;
+- a scalar node lacks inferred type required by the IR contract;
+- a typed domain is incomplete;
+- quantifier kind or bound variable was lost;
+- target resolution is inconsistent with the program header.
+
+These are compiler-contract failures, not user backend-capability errors.

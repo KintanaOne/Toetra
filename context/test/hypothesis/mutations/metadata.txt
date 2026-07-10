@@ -1,16 +1,4 @@
 
-===== test\hypothesis\mutation\metadata\__pycache__\contract.cpython-314.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xba in position 8: invalid start byte]
-
-===== test\hypothesis\mutation\metadata\__pycache__\enums.cpython-311.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\hypothesis\mutation\metadata\__pycache__\enums.cpython-314.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xe9 in position 8: invalid continuation byte]
-
 ===== test\hypothesis\mutation\metadata\contract.py =====
 
 from __future__ import annotations

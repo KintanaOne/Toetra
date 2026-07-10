@@ -78,7 +78,7 @@ Examples:
 
 [BOUND]: check_at x => score >= 0
 
-[MONOTONICITY]: x ~ x' in neighborhood(metric=L1, eps=1.0) => REGRESSION.INCREASING()
+[MONOTONICITY]: x ~ x' in neighborhood(metric=L1, eps=1.0) => x'.score >= x.score
 ```
 
 ---
@@ -143,7 +143,7 @@ Implicit feature references are resolved against `x'` by default.
 Pairwise relation between two variables:
 
 ```forml
-[FAIRNESS]: x ~ x' in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUITY()
+[FAIRNESS]: x ~ x' in neighborhood(metric=L2, eps=0.1) => score == score
 ```
 
 The intended pairwise syntax is:
@@ -163,27 +163,28 @@ The semantic layer interprets:
 
 ### Quantifiers
 
-Quantified evaluation:
+Quantified evaluation introduces an explicitly named symbolic input variable:
 
 ```forml
-[BOUND]: forall with age(18, 65) => score >= 0
+[BOUND]: forall x0 => target >= 0
 ```
 
-Accepted quantifier forms should normalize to:
+```forml
+[BOUND]: exists candidate => candidate.score > 0
+```
+
+Word and Unicode forms normalize to the same internal quantifier values:
 
 ```text
-forall
-exists
+forall x0
+∀ x0
+exists x0
+∃ x0
 ```
 
-Potential user-facing forms:
+The identifier is mandatory and must be preserved across the compiler pipeline. Explicit input references in the domain or assertion must resolve to that identifier. Implicit feature references use it as the default entity. `target` remains a model-output reference and does not need to repeat the input identifier.
 
-```text
-forall
-exists
-∀
-∃
-```
+See [Quantified Variable Bindings](quantified-bindings.md) for the normative binding rules.
 
 ---
 
@@ -213,61 +214,144 @@ The most important argument is usually:
 
 ## Domain Syntax
 
-Domains restrict evaluation to a set of values.
+Domains restrict admissible input valuations.
 
 ```forml
-with age(18, 65)
-with segment("A", "B")
+with domain(
+    x0.a: [0.0, 3.0],
+    x0.b: {obj1, obj2},
+    x0.c: ]0.0, 3.0],
+    x0.d: {0.0, 7.0},
+    x0.e: ]0.0, 3.0[
+)
 ```
 
-A domain can be attached to supported scopes:
+A domain entry has the shape:
+
+```text
+qualified_attribute : domain_constraint
+```
+
+The subject must be explicit:
 
 ```forml
-[BOUND]: forall with age(18, 65) => score >= 0
+x0.age: [18, 65]
 ```
 
-Domain semantics are not only syntactic. They must later be interpreted by semantic validation and IR lowering.
+This is invalid:
 
----
+```forml
+age: [18, 65]
+```
+
+### Interval forms
+
+| Syntax | Lower bound | Upper bound |
+|---|---|---|
+| `[a, b]` | closed | closed |
+| `]a, b]` | open | closed |
+| `[a, b[` | closed | open |
+| `]a, b[` | open | open |
+
+Bounds may be arithmetic expressions:
+
+```forml
+with domain(
+    x0.a: [x0.b - 1.0, x0.b + 1.0],
+    x0.b: [0.0, 10.0]
+)
+```
+
+All input references inside a domain are explicit. `target` is not permitted in a domain bound.
+
+### Finite sets
+
+```forml
+x0.segment: {obj1, obj2}
+x0.level: {0.0, 7.0}
+```
+
+Curly braces always denote a finite discrete set. Finite-set members remain literals; arithmetic members are not part of this patch.
+
+### Binding and composition
+
+Every domain reference must resolve to a variable introduced by the enclosing scope. Entries are conjoined and interpreted simultaneously rather than evaluated in declaration order.
+
+See [Domains](domains.md) and [Arithmetic Expressions](arithmetic-expressions.md).
 
 ## Assertion Syntax
 
-Assertions describe what must hold.
+Assertions are logical predicates built from comparisons and problem-level predicates.
 
 ### Comparisons
 
-```forml
-score >= 0
-age <= 65
-prediction == 1
+The general comparison form is:
+
+```text
+scalar_expression comparison_operator scalar_expression
 ```
 
-Current comparison limitation: implemented comparisons are attribute-to-constant. Attribute-to-attribute comparisons are a planned extension and should not be used in V1 examples unless explicitly marked as future syntax.
+Examples:
+
+```forml
+target >= 0
+x0.age == 42
+x0.a + x0.b <= 7
+2 * target >= x0.a - 1
+```
+
+Supported comparison operators:
+
+```text
+== != < <= > >=
+```
+
+### Arithmetic expressions
+
+Arithmetic operators:
+
+```text
+unary +  unary -  *  /  +  -
+```
+
+Example:
+
+```forml
+2 * x0.a + x0.b <= target
+```
+
+The initial verification profile is affine: multiplication by a constant and division by a non-zero constant are supported. Symbolic products and symbolic denominators require future capabilities.
 
 ### Boolean composition
 
 ```forml
-score >= 0 AND score <= 1
+x0.a >= 0 AND x0.b <= 1
+x0.segment == "A" OR x0.segment == "B"
+NOT target < 0
 ```
 
-```forml
-NOT age < 18
-```
+### Logical implication
 
 ```forml
-age >= 18 OR segment == "adult"
-```
-
-### Implication
-
-```forml
-age >= 18 -> score >= 0.5
+x0.age >= 18 -> target >= 0.5
 ```
 
 ### Parentheses
 
 ```forml
-(age >= 18 AND age <= 65) -> score >= 0.5
+(x0.a + x0.b <= 7 AND target >= 0) OR target == -1
+```
+
+### Invalid chained comparison
+
+```forml
+0 <= x0.a <= 3
+```
+
+Write instead:
+
+```forml
+0 <= x0.a AND x0.a <= 3
 ```
 
 ### Problem predicates
@@ -277,7 +361,9 @@ CLASSIFICATION.EQUAL()
 REGRESSION.BETWEEN()
 ```
 
----
+Problem predicates are boolean leaves and cannot be used as arithmetic operands.
+
+See [Assertions](assertions.md) and [Arithmetic Expressions](arithmetic-expressions.md).
 
 ## Backend Syntax
 
@@ -339,7 +425,7 @@ Invalid because the property has no RHS assertion.
 ### Invalid pairwise form
 
 ```forml
-[FAIRNESS]: x ~ y in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUITY()
+[FAIRNESS]: x ~ y in neighborhood(metric=L2, eps=0.1) => score == score
 ```
 
 The semantic layer expects the right variable to be the primed version of the left variable, such as `x'`.
@@ -351,6 +437,9 @@ The semantic layer expects the right variable to be the primed version of the le
 - [Grammar](grammar.md)
 - [Properties](properties.md)
 - [Scopes](scopes.md)
+- [Domains](domains.md)
+- [Quantified Variable Bindings](quantified-bindings.md)
 - [Assertions](assertions.md)
+- [Arithmetic Expressions](arithmetic-expressions.md)
 - [Backends Syntax](backends.md)
 - [Examples](examples.md)

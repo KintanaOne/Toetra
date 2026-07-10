@@ -1,128 +1,150 @@
 # Source to CST Contract
 
-> Status: P0 / Implemented  
+> Status: P0 / Accepted target syntax  
 > Scope: Raw FORML source to Concrete Syntax Tree  
 > Implementation: Lark parser  
-> Audience: parser maintainers, grammar authors, test authors
+> Audience: grammar authors, parser maintainers and parser-test authors
 
 ## Purpose
 
-The Source to CST contract defines the parser boundary.
+This boundary decides only whether source text conforms to FORML syntax.
 
-It answers the question:
-
-```text
-When is raw text syntactically valid FORML?
-```
-
-This layer is purely syntactic. It does not validate semantic meaning.
+It does not decide what the program means.
 
 ---
 
-## Input
+## Input and Output
 
 ```text
-SourceText: str
+Input:  SourceText: str
+Output: CST rooted at `program`
 ```
 
-The input is a raw `.forml` source string.
-
-It may contain:
-
-- header declarations;
-- property sections;
-- scope expressions;
-- logical assertions;
-- backend hints;
-- comments and whitespace.
+The CST preserves tokens and grammar structure required by the builder.
 
 ---
 
-## Output
+## Normative Quantifier Syntax
 
 ```text
-CST: Lark Tree
+quantifier_scope ::= ("forall" | "exists" | "∀" | "∃") identifier [domain]
 ```
 
-The CST must:
+The identifier is mandatory.
 
-- be rooted at the `program` grammar rule;
-- preserve grammar structure;
-- expose enough structure for AST construction;
-- remain free from FORML semantic annotations;
-- remain free from backend objects.
+Valid:
+
+```forml
+forall x0 => target <= 7
+exists candidate => candidate.score > 0
+```
+
+Invalid at this boundary:
+
+```forml
+forall => target <= 7
+exists with domain(...) => target <= 7
+```
+
+The parser preserves the identifier spelling. It does not register or resolve the symbol.
 
 ---
 
-## Guarantees
+## Normative Domain Syntax
+
+Conceptually:
+
+```text
+domain          ::= "with" "domain" "(" domain_entry ("," domain_entry)* [","] ")"
+domain_entry    ::= qualified_attribute ":" domain_constraint
+domain_constraint ::= interval | finite_set
+```
+
+The grammar distinguishes:
+
+```text
+[a, b]
+]a, b]
+[a, b[
+]a, b[
+```
+
+and:
+
+```text
+{v1, v2, ...}
+```
+
+Curly braces always represent finite sets.
+
+The parser preserves delimiter orientation and member boundaries. It does not validate interval order, duplicate subjects, binding or feature types.
+
+---
+
+## Normative Scalar Syntax
+
+A comparison relates two scalar expressions:
+
+```text
+comparison ::= scalar_expression comparison_operator scalar_expression
+```
+
+Precedence is:
+
+```text
+parentheses
+unary + -
+* /
++ -
+comparison
+NOT
+AND
+OR
+logical implication
+```
+
+Comparisons are non-associative. Chained comparisons are rejected by the grammar or an immediately adjacent structural parser rule.
+
+---
+
+## Parser Guarantees
 
 If parsing succeeds:
 
-- the source conforms to the grammar;
-- the output is a CST, not an AST;
-- the parser did not perform semantic validation;
-- the parser did not infer model information;
-- no type compatibility has been checked yet.
+- the quantified identifier is present;
+- interval and set delimiters are structurally valid;
+- scalar precedence is represented in the CST;
+- comparison operands are syntactically present;
+- the result contains no semantic annotations or solver objects.
 
 ---
 
-## Non-Goals
+## Parser Non-Goals
 
-The parser must not:
+The parser does not:
 
-- resolve variables;
-- infer default entities;
-- check property/scope compatibility;
-- validate model features;
-- produce IR;
-- normalize boolean logic;
-- choose a backend.
-
----
-
-## Failure Modes
-
-The parser should reject:
-
-- malformed property declarations;
-- invalid header syntax;
-- invalid expression structure;
-- unsupported tokens;
-- invalid nesting or missing separators.
-
-The error should remain in the parsing family and not be confused with semantic errors.
+- verify that `x0` matches references in the assertion;
+- distinguish a valid feature from an unknown feature;
+- decide whether `obj1` is compatible with a categorical feature;
+- infer scalar types;
+- classify affine/nonlinear arithmetic;
+- reject duplicate domain subjects;
+- build verification conditions.
 
 ---
 
-## Stabilization Notes
+## Parser-Owned Failures
 
-The parser currently uses a Lark grammar loaded from a grammar file.
+The parser rejects:
 
-The contract should eventually require:
+- missing quantified identifier;
+- malformed domain parentheses;
+- malformed interval delimiters;
+- missing interval bound;
+- malformed finite-set separators;
+- missing comparison operand;
+- malformed arithmetic grouping;
+- chained comparison syntax;
+- unsupported tokens.
 
-- stable grammar file path resolution;
-- no dependency on test fixtures in runtime parser code;
-- consistent casing for logical operators;
-- strict separation between generated grammar and vocabulary definitions;
-- parser tests for all official examples.
-
----
-
-## Miova Hooks
-
-Miova may mutate source text by:
-
-- deleting delimiters;
-- corrupting keywords;
-- changing logical operators;
-- changing property names;
-- changing backend syntax;
-- injecting malformed scopes.
-
-Expected outcomes:
-
-| Mutation | Expected Status |
-|---|---|
-| Still syntactically valid | CST produced, downstream layer decides. |
-| Syntactically invalid | Parser rejection. |
-| Semantically invalid but syntactically valid | CST produced; semantic layer rejects later. |
+Semantically invalid but syntactically valid programs must reach later boundaries.

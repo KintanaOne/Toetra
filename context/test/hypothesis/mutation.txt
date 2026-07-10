@@ -1,20 +1,4 @@
 
-===== test\hypothesis\mutation\core\__pycache__\artifact.cpython-311.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\hypothesis\mutation\core\__pycache__\artifact.cpython-314.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0x8e in position 9: invalid start byte]
-
-===== test\hypothesis\mutation\core\__pycache__\pipeline.cpython-311.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\hypothesis\mutation\core\__pycache__\pipeline.cpython-314.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0x88 in position 8: invalid start byte]
-
 ===== test\hypothesis\mutation\core\artifact.py =====
 
 from __future__ import annotations
@@ -396,10 +380,6 @@ class MutationSelectionEngine:
         return self.random.choice(filtered)
 
 
-===== test\hypothesis\mutation\decorators\__pycache__\mutation.cpython-314.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa6 in position 8: invalid start byte]
-
 ===== test\hypothesis\mutation\decorators\mutation.py =====
 
 from __future__ import annotations
@@ -446,10 +426,6 @@ def mutation(
 
     return wrapper
 
-
-===== test\hypothesis\mutation\functions\__pycache__\base.cpython-314.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0x86 in position 8: invalid start byte]
 
 ===== test\hypothesis\mutation\functions\base.py =====
 
@@ -768,34 +744,6 @@ def mutation(
 ===== test\hypothesis\mutation\functions\lexical\__init__.py =====
 
 
-
-===== test\hypothesis\mutation\functions\lexical\__pycache__\__init__.cpython-314.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
-
-===== test\hypothesis\mutation\functions\lexical\__pycache__\base_helpers.cpython-314.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
-
-===== test\hypothesis\mutation\functions\lexical\__pycache__\corruption.cpython-314.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xe8 in position 8: invalid continuation byte]
-
-===== test\hypothesis\mutation\functions\lexical\__pycache__\encoding_mutations.cpython-314.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf4 in position 12: invalid continuation byte]
-
-===== test\hypothesis\mutation\functions\lexical\__pycache__\operator_arity_mutations.cpython-314.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 12: invalid start byte]
-
-===== test\hypothesis\mutation\functions\lexical\__pycache__\reserved_keyword_mutations.cpython-314.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xed in position 12: invalid continuation byte]
-
-===== test\hypothesis\mutation\functions\lexical\__pycache__\unicode_mutations.cpython-314.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
 
 ===== test\hypothesis\mutation\functions\lexical\base_helpers.py =====
 
@@ -4016,30 +3964,6 @@ def apply_ordering(ast: ProgramNode, n: int = 1):
 
 
 
-===== test\hypothesis\mutation\functions\syntactic\__pycache__\__init__.cpython-314.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
-
-===== test\hypothesis\mutation\functions\syntactic\__pycache__\grammar.cpython-314.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0x83 in position 12: invalid start byte]
-
-===== test\hypothesis\mutation\functions\syntactic\__pycache__\parse.cpython-314.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
-
-===== test\hypothesis\mutation\functions\syntactic\__pycache__\syntax.cpython-314.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xed in position 12: invalid continuation byte]
-
-===== test\hypothesis\mutation\functions\syntactic\__pycache__\tokens.cpython-314.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0x91 in position 12: invalid start byte]
-
-===== test\hypothesis\mutation\functions\syntactic\__pycache__\tree.cpython-314.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
-
 ===== test\hypothesis\mutation\functions\syntactic\grammar.py =====
 
 # test/hypothesis/mutations/cst/grammar.py
@@ -4762,18 +4686,6 @@ NUMERICAL_MUTATIONS = [
     invert_numeric_sign,
 ]
 
-
-===== test\hypothesis\mutation\metadata\__pycache__\contract.cpython-314.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xba in position 8: invalid start byte]
-
-===== test\hypothesis\mutation\metadata\__pycache__\enums.cpython-311.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\hypothesis\mutation\metadata\__pycache__\enums.cpython-314.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xe9 in position 8: invalid continuation byte]
 
 ===== test\hypothesis\mutation\metadata\contract.py =====
 

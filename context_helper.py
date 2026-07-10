@@ -3,16 +3,18 @@ from pathlib import Path
 
 def concat_files_in_folder(
     folder_path: str,
+    extension: str = ".py",
     recursive: bool = False,
     encoding: str = "utf-8",
     output_file: str = "tmp_context.txt",
 ) -> None:
     """
-    Concatène le contenu de tous les fichiers .py d'un dossier
+    Concatène le contenu de tous les fichiers {extension} d'un dossier
     et écrit le résultat dans un fichier.
 
     Args:
         folder_path: chemin du dossier
+        extension: extension des fichiers à concaténer
         recursive: si True, parcourt aussi les sous-dossiers
         encoding: encodage des fichiers texte
         output_file: fichier de sortie
@@ -20,9 +22,9 @@ def concat_files_in_folder(
     base_path = Path(folder_path)
 
     if recursive:
-        files = sorted([f for f in base_path.rglob("*") if f.is_file()])
+        files = sorted([f for f in base_path.rglob(f"*{extension}") if f.is_file()])
     else:
-        files = sorted([f for f in base_path.glob("*") if f.is_file()])
+        files = sorted([f for f in base_path.glob(f"*{extension}") if f.is_file()])
 
     parts = []
 
@@ -124,27 +126,10 @@ if __name__ == "__main__":
 
     # docs
     concat_files_in_folder(
-        "docs/architecture/ast",
+        "docs",
         recursive=True,
-        output_file="context/architecture/ast.txt",
-    )
-
-    concat_files_in_folder(
-        "docs/architecture/forml",
-        recursive=True,
-        output_file="context/architecture/forml.txt",
-    )
-
-    concat_files_in_folder(
-        "docs/architecture/layers",
-        recursive=True,
-        output_file="context/architecture/layers.txt",
-    )
-
-    concat_files_in_folder(
-        "docs/architecture/parsing",
-        recursive=True,
-        output_file="context/architecture/parsing.txt",
+        extension=".md",
+        output_file="context/docs.txt",
     )
 
     concat_files_in_folder(

@@ -1,14 +1,14 @@
 # IR1 NNF
 
-> Status: Planned / critical IR1 subphase  
-> Implementation: Target behavior; structural IR1 exists, full NNF rewrite pass still to implement  
+> Status: Implemented / Stabilizing  
+> Implementation: Early logical normalization with De Morgan and Negation Normal Form  
 > Scope: First normalized logical representation
 
 ## Purpose
 
 IR1 is FORML's first backend-independent logical representation.
 
-The current IR1 translator represents a property as a `VerificationTask`. The NNF pass described here is the next stabilization step and should be tested separately from structural translation.
+Its role is not only to represent a property as a `VerificationTask`, but also to begin logical normalization.
 
 IR1 should make the logical query easier to reason about, transform, test, and prepare for IR2.
 
@@ -16,7 +16,7 @@ IR1 should make the logical query easier to reason about, transform, test, and p
 
 ## IR1 Responsibilities
 
-The complete IR1 + NNF subphase is responsible for:
+IR1 is responsible for:
 
 - representing one property as a verification task,
 - projecting semantic scope into `ScopeIR`,
@@ -60,7 +60,7 @@ NOT(A) AND NOT(B)
 
 ## De Morgan Transformations
 
-The planned IR1-NNF pass uses De Morgan transformations to push negations inward.
+IR1 uses De Morgan transformations to push negations inward.
 
 | Input | Output |
 |---|---|
@@ -107,6 +107,30 @@ A valid IR1-NNF query should satisfy:
 | Traceable | Nodes should remain traceable to the originating assertion where possible. |
 
 ---
+
+## Arithmetic Atom Invariant
+
+A comparison remains an atomic logical predicate even when its operands contain arithmetic.
+
+Example:
+
+```text
+ComparisonIR(
+    left=ADD(FeatureRef(x0.a), MUL(Constant(2), FeatureRef(x0.b))),
+    op=LTE,
+    right=ModelOutputRef(MyTarget),
+)
+```
+
+NNF may move a negation onto this comparison or invert its comparison operator. It must not apply De Morgan or distributive laws inside the scalar-expression tree.
+
+Therefore:
+
+```forml
+NOT (x0.a + 2 * x0.b <= target)
+```
+
+is one negated atom, not a boolean expression over `x0.a`, `x0.b`, and `target`.
 
 ## What IR1 Does Not Do
 
@@ -177,7 +201,7 @@ That comparison inversion can be implemented either in IR1 normalization or in a
 
 ## Relationship with Testing
 
-IR1-NNF requires golden test.
+IR1-NNF requires golden tests.
 
 Examples should cover:
 
@@ -186,7 +210,9 @@ Examples should cover:
 - implications,
 - parentheses precedence,
 - problem predicates under negation,
-- mixed comparisons and problem predicates.
+- mixed comparisons and problem predicates;
+- arithmetic comparisons under negation;
+- preservation of arithmetic tree shape during operator inversion.
 
 ---
 
@@ -211,6 +237,6 @@ Expected outcomes should distinguish:
 
 ## Summary
 
-IR1-NNF is the first serious logical normalization target in FORML.
+IR1-NNF is the first serious logical normalization layer in FORML.
 
-The structural IR1 translator already moves from “parsed property” to “formal logical object”; this NNF subphase makes that object normalized and ready for IR2.
+It is where the system starts moving from “parsed property” to “formal logical object”.

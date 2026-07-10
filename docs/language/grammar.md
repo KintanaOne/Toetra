@@ -112,62 +112,126 @@ The current grammar supports four major scope forms:
 property_expr = quantifier_expr | at_expr | check_expr | pairwise_expr ;
 ```
 
+The target quantified-scope grammar is:
+
+```ebnf
+quantifier_expr = quantifier, identifier, [ domain ] ;
+quantifier      = "forall" | "exists" | "∀" | "∃" ;
+```
+
+The identifier is syntactically mandatory. The grammar only preserves it in the CST; matching explicit references against that declaration is a semantic responsibility.
+
+Target AST shape:
+
+```text
+QuantifierExprNode(quantifier, variable, domain)
+```
+
+The current implementation does not yet satisfy this target contract and must be updated only after the documentation patches are accepted.
+
 | Scope | Example | Meaning |
 |---|---|---|
 | `at` | `at x in neighborhood(metric=L2, eps=0.1)` | Local evaluation around an anchor. |
 | `check_at` | `check_at x` | Pointwise evaluation. |
 | `pairwise` | `x ~ x' in neighborhood(metric=L2, eps=0.1)` | Relation between anchor and perturbation. |
-| quantifier | `forall with age(18, 65)` | Symbolic or domain-wide evaluation. |
+| quantifier | `forall x0 with domain(...)` | Symbolic evaluation over an explicitly named variable. |
 
 ---
+
+## Domain Grammar
+
+The target typed-domain grammar is:
+
+```ebnf
+domain = "with", "domain", "(", domain_entry,
+         { ",", domain_entry }, [ "," ], ")" ;
+
+domain_entry = domain_subject, ":", domain_constraint ;
+domain_subject = qualified_attribute ;
+domain_constraint = interval_domain | finite_set_domain ;
+
+interval_domain = closed_closed_interval
+                | open_closed_interval
+                | closed_open_interval
+                | open_open_interval ;
+
+closed_closed_interval = "[", arithmetic_expression, ",", arithmetic_expression, "]" ;
+open_closed_interval   = "]", arithmetic_expression, ",", arithmetic_expression, "]" ;
+closed_open_interval   = "[", arithmetic_expression, ",", arithmetic_expression, "[" ;
+open_open_interval     = "]", arithmetic_expression, ",", arithmetic_expression, "[" ;
+
+finite_set_domain = "{", domain_literal,
+                    { ",", domain_literal }, "}" ;
+
+domain_literal = numeric_literal
+               | boolean_literal
+               | string_literal
+               | symbolic_literal ;
+```
+
+Grammar-level decisions:
+
+- `domain` is a protected keyword, not a generic identifier;
+- a domain contains at least one entry;
+- domain subjects are explicitly qualified attributes;
+- input references inside arithmetic bounds are also explicitly qualified;
+- a trailing comma is accepted;
+- empty finite sets are rejected syntactically;
+- interval boundaries preserve all four bracket combinations;
+- interval bounds may contain arithmetic expressions;
+- finite-set members remain literals in this language slice.
+
+The grammar preserves syntax. It does not validate entity binding, numeric typing, interval satisfiability, division by zero, target usage in a domain, or backend capability.
 
 ## Assertion Grammar
 
-The intended assertion grammar supports:
-
-- comparisons,
-- boolean composition,
-- implication,
-- negation,
-- problem-level predicates,
-- parentheses.
-
-Examples:
-
-```forml
-age <= 30
-score >= 0 AND score <= 1
-NOT age < 18
-CLASSIFICATION.EQUAL()
-(age >= 18 AND age <= 65) -> score >= 0.5
-```
-
-### Current Stabilization Point
-
-The grammar currently contains two overlapping concepts:
+The target assertion grammar separates scalar expressions from boolean expressions.
 
 ```ebnf
-logic_expr = attribute, logic_operation, value ;
-comparison_expr = attribute, comparison_operation, value ;
+comparison_expr = scalar_expression,
+                  comparison_operation,
+                  scalar_expression ;
+
+scalar_expression = additive_expression ;
+
+additive_expression = multiplicative_expression,
+                      { ("+" | "-"), multiplicative_expression } ;
+
+multiplicative_expression = unary_expression,
+                            { ("*" | "/"), unary_expression } ;
+
+unary_expression = [ "+" | "-" ], scalar_primary ;
+
+scalar_primary = numeric_literal
+               | boolean_literal
+               | string_literal
+               | attribute
+               | "target"
+               | "(", scalar_expression, ")" ;
+
+assertion = logic_imply ;
+logic_imply = logic_or | logic_or, "->", logic_imply ;
+logic_or = logic_and, { "OR", logic_and } ;
+logic_and = logic_not, { "AND", logic_not } ;
+logic_not = [ "NOT" ], logical_atom ;
+logical_atom = comparison_expr
+             | problem_expr
+             | "(", assertion, ")" ;
 ```
 
-`comparison_expr` is the proper representation for assertions such as:
+Normative consequences:
 
-```forml
-age <= 30
-```
+- comparisons accept expressions on both sides;
+- `target` is a scalar leaf distinct from an input attribute;
+- arithmetic precedence is encoded structurally;
+- comparison operators are non-associative;
+- chained comparisons are invalid;
+- boolean operators compose predicates, not numeric values;
+- problem predicates remain boolean leaves and are not arithmetic operands.
 
-`logic_expr` should be reviewed because boolean operators normally compose logical expressions, not attribute/value leaves directly.
+The grammar may represent multiplication or division that exceeds the initial affine verification profile. Semantic requirement analysis and backend routing decide whether such an expression is supported.
 
-Recommended decision:
-
-```text
-Keep comparison_expr as the atomic predicate form.
-Use AND/OR/NOT/IMPLY only at assertion-tree level.
-Remove or repurpose logic_expr if it creates ambiguity.
-```
-
----
+The previous `logic_expr = attribute logic_operation value` form is superseded. Boolean operators belong only to the logical assertion tree.
 
 ## Operator Casing
 
@@ -197,11 +261,10 @@ Recommended options:
 | Lowercase canonical | Users write `and`, `or`, `not`. | Good for Python-like readability. |
 | Case-insensitive | Both are accepted. | Flexible but must be tested carefully. |
 
-Recommended V1 freeze decision:
+Recommended P1 decision:
 
 ```text
-Use uppercase `AND`, `OR`, and `NOT` as the canonical public DSL spelling.
-Normalize internally to enum names. Lowercase aliases may be added later only if the grammar and golden tests explicitly cover both forms.
+Accept case-insensitive logical operators, normalize internally to uppercase enum names.
 ```
 
 ---
@@ -239,8 +302,10 @@ Grammar tests should include:
 | Minimal valid programs | Ensure basic parseability. |
 | Full valid programs | Cover all syntax branches. |
 | Invalid syntax samples | Ensure correct parse failure. |
-| Operator precedence samples | Validate assertion tree structure. |
-| Scope samples | Cover `at`, `check_at`, `pairwise`, quantifiers. |
+| Operator precedence samples | Validate logical and arithmetic tree structure. |
+| Arithmetic samples | Cover unary/binary precedence, symmetric comparisons, interval bounds, and chained-comparison rejection. |
+| Scope samples | Cover `at`, `check_at`, `pairwise`, `forall <identifier>`, and `exists <identifier>`. |
+| Domain samples | Cover four interval forms, finite sets, symbolic literals, trailing commas, and malformed domains. |
 | Backend samples | Cover backend names and arguments. |
 | Hypothesis-generated syntax | Discover grammar edge cases. |
 | Fuzzed syntax | Challenge parser robustness. |
@@ -253,4 +318,7 @@ Grammar tests should include:
 - [Vocabulary](vocabulary.md)
 - [Assertions](assertions.md)
 - [Scopes](scopes.md)
+- [Quantified Variable Bindings](quantified-bindings.md)
+- [Domains](domains.md)
+- [Arithmetic Expressions](arithmetic-expressions.md)
 - [Examples](examples.md)

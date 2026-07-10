@@ -1,133 +1,177 @@
 # IR1 to IR2 Contract
 
-> Status: P0 / Planned / Critical  
-> Scope: IR1-NNF to IR2 normal forms  
-> Implementation: Not yet implemented  
-> Audience: IR authors, solver integration authors, backend authors
+> Status: P0 / Accepted target normalization and assumption lowering  
+> Scope: IR1 logical task to IR2 verification task  
+> Audience: IR2 maintainers, normalizer authors and backend-router authors
 
 ## Purpose
 
-The IR1 to IR2 contract defines how normalized logical tasks are transformed into forms better suited for aggregation, minimization and backend preparation.
+This boundary normalizes boolean logic, materializes assumptions and calculates backend-facing requirements without creating backend objects.
 
-It answers the question:
+---
+
+## Inputs
 
 ```text
-Which normal form should this verification problem use next?
+VerificationTaskIR1
++ optional ModelAssumptions
++ selected/derived normal-form policy
 ```
 
-IR2 is the layer for CNF, DNF and future backend-preparation logical forms.
+IR1 preconditions include resolved scalar expressions and typed domains.
 
 ---
 
-## Input
+## Outputs
+
+Conceptually, IR2 contains:
+
+- normalized property formula;
+- domain assumptions;
+- model assumptions;
+- quantifier/verification semantics;
+- final or composable verification condition;
+- explicit requirements;
+- provenance and diagnostics.
+
+---
+
+## Comparison Atom Rule
+
+A complete scalar comparison remains one logical atom through NNF, CNF and DNF.
+
+Logical normalization may:
+
+- remove implications;
+- push negation to atoms;
+- distribute boolean conjunction/disjunction according to selected form;
+- represent atom polarity explicitly.
+
+It must not inspect arithmetic nodes as boolean operators or silently rewrite scalar algebra.
+
+---
+
+## Domain Assumption Lowering
+
+Typed `DomainIR1` entries lower to backend-independent assumptions tagged:
 
 ```text
-IR1 / VerificationTask
+AssumptionSource.DOMAIN
 ```
 
-Preconditions:
-
-- semantic bindings have already been resolved;
-- logical expression is backend-independent;
-- NNF invariant is satisfied when required;
-- no backend-specific query has been produced.
-
----
-
-## Output
+### Interval
 
 ```text
-IR2 / NormalFormIR
+subject: [lower, upper]
 ```
 
-The output may represent:
+lowers to the conjunction of the applicable lower and upper comparisons.
 
-- CNF;
-- DNF;
-- another explicit normal form;
-- a selected representation with metadata explaining why it was chosen.
+Boundary mapping:
 
----
+| Boundary | Lower operator | Upper operator |
+|---|---|---|
+| Closed | `>=` | `<=` |
+| Open | `>` | `<` |
 
-## Normal Form Selection
-
-IR2 may select a form based on:
-
-| Need | Preferred Form |
-|---|---|
-| SAT/SMT-style global consistency | CNF |
-| Clause-level simplification | CNF |
-| Case splitting | DNF |
-| Scenario exploration | DNF |
-| Counterexample search | DNF or backend-specific preparation |
-| Backend requirement | backend-compatible normal form |
-
----
-
-## Equivalence Policy
-
-IR2 transformations must declare their preservation mode.
-
-| Mode | Meaning |
-|---|---|
-| Semantic equivalence | The transformed formula has the same truth value for every assignment. |
-| Equisatisfiability | The transformed formula has the same satisfiability result, possibly with auxiliary variables. |
-| Approximation | The transformation is intentionally conservative or relaxed and must be explicitly marked. |
-
-The default expectation is semantic equivalence unless the transformation explicitly declares otherwise.
-
----
-
-## Guarantees
-
-If IR2 translation succeeds:
-
-- the output form is explicit;
-- the transformation preservation mode is known;
-- traceability to IR1 is preserved;
-- no backend-specific object is emitted yet;
-- aggregation can consume the IR2 artifact without re-normalizing from AST.
-
----
-
-## Non-Goals
-
-IR2 must not:
-
-- introduce model constraints;
-- aggregate multiple property assertions;
-- perform backend-specific encoding;
-- execute solver calls;
-- erase traceability.
-
----
-
-## Failure Modes
-
-IR2 should reject:
-
-- malformed IR1 trees;
-- unsupported logical operators;
-- non-normalizable expressions;
-- transformations that would lose semantics without explicit declaration;
-- backend-requested forms not supported by the current IR2 implementation.
-
----
-
-## Miova Hooks
-
-Miova may mutate IR1 or IR2 by:
-
-- inserting malformed negations;
-- breaking clause structure;
-- replacing CNF with DNF metadata;
-- deleting trace metadata;
-- introducing unsupported logical nodes;
-- corrupting preservation mode.
-
-Expected outcome:
+### Finite set
 
 ```text
-Invalid normal-form mutation → IR2 rejection or invariant failure
-Valid normal-form mutation   → aggregation may continue
+subject: {v1, v2, ...}
 ```
+
+lowers to:
+
+```text
+subject == v1 OR subject == v2 OR ...
+```
+
+All domain entries are conjoined.
+
+Every generated comparison or group retains provenance to the source domain entry.
+
+---
+
+## Model Assumptions
+
+Model assumptions remain separately tagged:
+
+```text
+AssumptionSource.MODEL
+```
+
+They connect input variables to the model output and other encoded model behavior.
+
+Domain and model assumptions are not merged into anonymous boolean nodes before provenance has been recorded.
+
+---
+
+## Quantifier Semantics Preservation
+
+IR2 records one of at least:
+
+```text
+UNIVERSAL_REFUTATION
+EXISTENTIAL_WITNESS
+```
+
+This is not equivalent to a generic boolean polarity flag.
+
+For universal refutation, the property contribution is negated.
+
+For existential witness search, the property contribution remains positive.
+
+The exact final composition may occur in the IR2 builder or assertion aggregator, but the semantic branch must already be explicit.
+
+---
+
+## Requirements Calculation
+
+IR2 requirements are computed recursively over:
+
+- property comparison atoms;
+- domain assumptions;
+- model assumptions;
+- scalar expression families;
+- scalar sorts/literal kinds;
+- selected normal form;
+- verification semantics.
+
+Required distinctions include:
+
+- affine arithmetic;
+- nonlinear multiplication;
+- symbolic division;
+- finite-set equality expansion;
+- categorical symbolic values;
+- integer/real/bool/string/enum-like sorts;
+- model assumptions;
+- domain assumptions.
+
+---
+
+## Soundness Rules
+
+IR1 → IR2 must not:
+
+- drop a domain entry;
+- change open to closed boundaries or vice versa;
+- reinterpret a finite numeric set as an interval;
+- lose quantified variable identity;
+- negate an existential property as if it were universal;
+- linearize nonlinear arithmetic without a documented sound transformation;
+- erase assumption provenance;
+- select a backend.
+
+---
+
+## Postconditions
+
+A valid IR2 task is:
+
+- backend-independent;
+- explicit about normal form;
+- explicit about verification semantics;
+- explicit about requirements;
+- complete with respect to property, domain and model assumptions supplied to the boundary;
+- traceable to source-level constructs.

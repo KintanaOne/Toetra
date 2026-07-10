@@ -262,3 +262,30 @@ End-to-end tests are sufficient when:
 - failure boundaries are explicit;
 - intermediate artifacts are inspectable;
 - future backend execution can be added without redesigning the test strategy.
+
+---
+
+## Mandatory Quantified Solver Scenarios
+
+The first executable language profile requires at least these solver-backed tests:
+
+| Scenario | Expected result |
+|---|---|
+| true universal affine bound | VERIFIED |
+| false universal affine bound | COUNTEREXAMPLE |
+| satisfiable existential affine request | WITNESS |
+| impossible existential affine request | NO_WITNESS |
+| empty universal admissible set | structured vacuity warning |
+| valid nonlinear request on affine-only backend | capability rejection before solver |
+| valid categorical domain on numeric-only backend | capability rejection before solver |
+
+The result model must be semantics-aware:
+
+```text
+SAT + universal refutation  → COUNTEREXAMPLE
+UNSAT + universal refutation → VERIFIED
+SAT + existential witness   → WITNESS
+UNSAT + existential witness → NO_WITNESS
+```
+
+Tests must assert both normalized result status and solver status. They must also inspect returned valuations for counterexamples and witnesses.

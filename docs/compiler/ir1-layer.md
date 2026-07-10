@@ -1,8 +1,8 @@
 # IR1 Layer
 
-> Status: P0 / Implemented structural translator / NNF planned  
+> Status: P0 / Implemented / Stabilizing  
 > Scope: SemanticValidatedAST to IR1  
-> Implementation: VerificationTask and logical IR tree; NNF rewrite pass still to implement  
+> Implementation: VerificationTask and logical IR tree  
 > Audience: IR authors, backend authors, testing authors
 
 ## Purpose
@@ -12,7 +12,7 @@ IR1 is the first backend-independent logical representation of a validated FORML
 It answers the question:
 
 ```text
-What is the backend-independent logical verification task represented by this property?
+What is the normalized logical verification task represented by this property?
 ```
 
 IR1 is not yet a backend query. It is the first formal logical layer after semantic validation.
@@ -40,7 +40,7 @@ IR1 receives semantically validated properties and produces backend-independent 
 | `VerificationTask` | Top-level verification unit for one property. |
 | `ScopeIR` | Semantic scope extracted from LHS. |
 | `NeighborhoodIR` | Perturbation space or local neighborhood. |
-| `DomainIR` | Optional domain restriction. |
+| `DomainIR` | Typed domain constraints with resolved subjects and preserved boundary/literal kinds. |
 | `QueryIR` | RHS verification expression. |
 | `LogicalIR` | Boolean tree representation. |
 | `ComparisonIR` | Atomic comparison predicate. |
@@ -81,14 +81,14 @@ IR1 is responsible for:
 - preserving resolved semantic bindings;
 - flattening associative boolean operators where appropriate;
 - preparing logic for normalization;
-- defining the target location for De Morgan and NNF transformations;
-- serving as the input to IR1 normalization and then IR2.
+- supporting De Morgan and NNF transformations;
+- serving as the input to IR2.
 
 ---
 
 ## IR1-NNF
 
-IR1-NNF is the target normalization subphase that should run after structural IR1 translation. It includes:
+IR1 owns early logical normalization, including:
 
 - implication elimination when required;
 - De Morgan transformations;
@@ -96,7 +96,7 @@ IR1-NNF is the target normalization subphase that should run after structural IR
 - producing or preserving Negation Normal Form;
 - ensuring negation appears only over atomic predicates when NNF is finalized.
 
-This means NNF should be implemented and tested as an explicit IR1 subphase, not silently assumed from the structural translator.
+This means NNF should be documented as an IR1 invariant or IR1 subphase.
 
 ---
 
@@ -111,6 +111,8 @@ IR1 must preserve:
 - domain restrictions;
 - resolved entity references;
 - logical structure;
+- scalar-expression operands;
+- arithmetic tree structure and inferred type metadata;
 - problem/function intent;
 - backend hint, if present.
 
@@ -167,6 +169,94 @@ ComparisonIR(entity=None, feature="age", ...)
 
 ---
 
+## Quantified Scope Preservation
+
+For a validated scope such as:
+
+```forml
+forall applicant => target <= 7
+```
+
+IR1 must preserve:
+
+```text
+kind = quantifier
+variables = {"applicant": "symbolic"}
+quantifier = forall
+```
+
+The translator must not synthesize `_x` or rename the declared variable. Any input reference reaching IR1 must already resolve to `applicant`. A target-only assertion remains valid because model assumptions connect the output to the quantified input later in the verification condition.
+
+---
+
+## Typed Domain Preservation
+
+`ScopeIR.domain` must preserve a typed domain representation.
+
+Target conceptual shape:
+
+```text
+DomainIR(
+    constraints=(
+        IntervalConstraintIR(
+            entity="x0",
+            feature="a",
+            lower=0.0,
+            upper=3.0,
+            lower_boundary=CLOSED,
+            upper_boundary=OPEN,
+        ),
+        FiniteSetConstraintIR(
+            entity="x0",
+            feature="region",
+            values=(EU, US),
+        ),
+    )
+)
+```
+
+IR1 must not collapse domains into an untyped `name`/`args` dictionary. It preserves semantic resolution and source provenance while remaining backend-independent.
+
+The later IR2/aggregation boundary lowers interval and finite-set constraints into logical assumptions tagged with `AssumptionSource.DOMAIN`.
+
+---
+
+## Scalar Expression Preservation
+
+IR1 must preserve backend-independent scalar expression structure.
+
+Target family:
+
+```text
+ScalarIR
+├── ConstantIR
+├── FeatureRefIR
+├── ModelOutputRefIR
+├── UnaryArithmeticIR
+└── BinaryArithmeticIR
+```
+
+Comparison becomes:
+
+```text
+ComparisonIR(
+    left: ScalarIR,
+    op: EnumComparisonOperator,
+    right: ScalarIR,
+)
+```
+
+Required guarantees:
+
+- feature references use semantic resolved entities;
+- model-output references remain distinct from input features;
+- arithmetic operators are canonical;
+- expression order and associativity are preserved;
+- no Z3 expression is created;
+- no unsupported nonlinear form is silently converted into an affine form.
+
+Logical normalization treats a complete `ComparisonIR` as an atom. Arithmetic children are not boolean-normalized.
+
 ## IR1 Output
 
 The output of IR1 is a list of verification tasks:
@@ -188,7 +278,7 @@ IR1 must guarantee:
 - logical expressions are explicit;
 - semantic scope is explicit;
 - resolved attributes are used when available;
-- structural IR1 preserves semantics; NNF/De Morgan transformations must preserve semantics once the normalization subphase is implemented;
+- NNF/De Morgan transformations preserve semantics;
 - backend hints remain metadata, not backend execution.
 
 ---
@@ -201,8 +291,8 @@ IR1 must guarantee:
 | Backend enum handling | Normalize backend names robustly. |
 | Attribute translation | Use semantic annotations for resolved entities. |
 | Pretty printer | Display actual comparison operators, not always equality. |
-| Domain pretty output | Correct domain args display. |
-| Quantifier variables | Preserve symbolic variable convention such as `_x`. |
+| Domain pretty output | Show explicit subjects, interval boundary kinds, finite-set members, and provenance. |
+| Quantifier variables | Preserve the exact identifier declared by `forall <identifier>` or `exists <identifier>`. |
 | NNF location | Make NNF an explicit IR1 transformation stage. |
 
 ---
@@ -211,7 +301,7 @@ IR1 must guarantee:
 
 IR2 consumes IR1.
 
-IR1 provides backend-independent logical structure. After the planned NNF subphase, IR2 decides the shape needed for later verification:
+IR1 provides normalized logical structure. IR2 decides the shape needed for later verification:
 
 - CNF for conjunction-of-clauses workflows;
 - DNF for case-splitting workflows;
