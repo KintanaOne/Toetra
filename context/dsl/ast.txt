@@ -102,7 +102,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from dsl.ast.nodes.base import ASTNode
-from dsl.ast.nodes.primitives import AttributeNode, ConstantNode
+from dsl.ast.nodes.primitives import AttributeNode, ConstantNode, TargetRefNode
 from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.problems import EnumProblem
@@ -133,7 +133,7 @@ class LogicalNode(ASTNode):
 
 @dataclass
 class ComparisonNode(LogicalNode):
-    left: AttributeNode
+    left: AttributeNode | TargetRefNode
     op: EnumComparisonOperator
     right: ConstantNode
 
@@ -371,6 +371,20 @@ class AttributeNode(ASTNode):
 
     # Full parsed path
     path: list[str]
+
+
+@dataclass
+class TargetRefNode(ASTNode):
+    """
+    Reference to the model output declared in the FORML header.
+
+    Example:
+        target <= 10
+
+    This is not an input feature. It refers to the model target/output.
+    """
+
+    name: str = "target"
 
 
 ===== dsl\ast\nodes\program.py =====

@@ -102,7 +102,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from dsl.ast.nodes.base import ASTNode
-from dsl.ast.nodes.primitives import AttributeNode, ConstantNode
+from dsl.ast.nodes.primitives import AttributeNode, ConstantNode, TargetRefNode
 from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.problems import EnumProblem
@@ -133,7 +133,7 @@ class LogicalNode(ASTNode):
 
 @dataclass
 class ComparisonNode(LogicalNode):
-    left: AttributeNode
+    left: AttributeNode | TargetRefNode
     op: EnumComparisonOperator
     right: ConstantNode
 
@@ -373,6 +373,20 @@ class AttributeNode(ASTNode):
     path: list[str]
 
 
+@dataclass
+class TargetRefNode(ASTNode):
+    """
+    Reference to the model output declared in the FORML header.
+
+    Example:
+        target <= 10
+
+    This is not an input feature. It refers to the model target/output.
+    """
+
+    name: str = "target"
+
+
 ===== dsl\ast\nodes\program.py =====
 
 from __future__ import annotations
@@ -557,6 +571,19 @@ class BackendCapabilities:
         return True
 
 
+===== dsl\backends\defaults.py =====
+
+from __future__ import annotations
+
+from dsl.backends.registry import BackendRegistry
+from dsl.backends.z3_backend.capabilities import Z3_CAPABILITIES
+
+
+def create_default_backend_registry() -> BackendRegistry:
+    registry = BackendRegistry()
+    registry.register(Z3_CAPABILITIES)
+    return registry
+
 ===== dsl\backends\errors.py =====
 
 class BackendError(Exception):
@@ -682,6 +709,330 @@ class BackendRouter:
         )
 
 
+===== dsl\backends\z3_backend\__init__.py =====
+
+from dsl.backends.z3_backend.capabilities import Z3_CAPABILITIES
+
+__all__ = ["Z3_CAPABILITIES"]
+
+===== dsl\backends\z3_backend\capabilities.py =====
+
+from __future__ import annotations
+
+from dsl.backends.capabilities import BackendCapabilities
+from dsl.ir.ir2.enums import NormalFormKind
+from dsl.language.vocabulary.backends import EnumBackend
+
+
+Z3_CAPABILITIES = BackendCapabilities(
+    backend=EnumBackend.Z3,
+    supports_boolean_logic=True,
+    supports_numeric_comparisons=True,
+    supports_problem_predicates=False,
+    supports_model_assertions=True,
+    supports_quantifiers=False,
+    supports_domains=False,
+    supports_neighborhoods=False,
+    supported_normal_forms=(
+        NormalFormKind.NNF,
+        NormalFormKind.CNF,
+        NormalFormKind.DNF,
+    ),
+)
+
+===== dsl\backends\z3_backend\runner.py =====
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from enum import Enum
+from typing import Any
+
+import z3
+
+from dsl.backends.z3_backend.translator import Z3Translator
+from dsl.ir.ir2.enums import VerificationSemantics
+from dsl.ir.ir2.nodes import VerificationTaskIR2
+
+
+class VerificationStatus(str, Enum):
+    PROVED = "proved"
+    COUNTEREXAMPLE = "counterexample"
+    UNKNOWN = "unknown"
+
+
+@dataclass(frozen=True)
+class Z3VerificationResult:
+    status: VerificationStatus
+    solver_status: str
+    model: dict[str, Any] | None = None
+
+
+class Z3Runner:
+    def __init__(self, translator: Z3Translator | None = None) -> None:
+        self.translator = translator or Z3Translator()
+
+    def run(self, task: VerificationTaskIR2) -> Z3VerificationResult:
+        if task.semantics != VerificationSemantics.REFUTATION:
+            raise NotImplementedError(
+                "Minimal Z3Runner only supports refutation semantics."
+            )
+
+        translation = self.translator.translate(task)
+
+        solver = z3.Solver()
+        solver.add(translation.expression)
+
+        result = solver.check()
+
+        if result == z3.unsat:
+            return Z3VerificationResult(
+                status=VerificationStatus.PROVED,
+                solver_status="unsat",
+                model=None,
+            )
+
+        if result == z3.sat:
+            model = solver.model()
+            return Z3VerificationResult(
+                status=VerificationStatus.COUNTEREXAMPLE,
+                solver_status="sat",
+                model={
+                    name: model.eval(var, model_completion=True)
+                    for name, var in translation.variables.items()
+                },
+            )
+
+        return Z3VerificationResult(
+            status=VerificationStatus.UNKNOWN,
+            solver_status="unknown",
+            model=None,
+        )
+
+===== dsl\backends\z3_backend\translator.py =====
+
+from __future__ import annotations
+
+from collections.abc import Iterable
+from dataclasses import dataclass
+from typing import Any, cast
+
+import z3 as z3_solver
+
+from dsl.backends.capabilities import BackendCapabilities
+from dsl.backends.z3_backend.capabilities import Z3_CAPABILITIES
+from dsl.ir.ir1.nodes import AndIR, ComparisonIR, LogicalIR, NotIR, OrIR, ProblemIR
+from dsl.ir.ir2.enums import Polarity
+from dsl.ir.ir2.nodes import (
+    AffineExpressionIR2,
+    AffineOutputConstraintIR2,
+    AtomIR2,
+    CNFFormulaIR2,
+    DNFFormulaIR2,
+    FormulaIR2,
+    LiteralIR2,
+    NNFFormulaIR2,
+    VerificationTaskIR2,
+)
+from dsl.language.vocabulary.backends import EnumBackend
+from dsl.language.vocabulary.operators import EnumComparisonOperator
+
+
+def _bool_and(expressions: Iterable[z3_solver.BoolRef]) -> z3_solver.BoolRef:
+    items = tuple(expressions)
+
+    if not items:
+        return cast(z3_solver.BoolRef, z3_solver.BoolVal(True))
+
+    return cast(z3_solver.BoolRef, z3_solver.And(*items))
+
+
+def _bool_or(expressions: Iterable[z3_solver.BoolRef]) -> z3_solver.BoolRef:
+    items = tuple(expressions)
+
+    if not items:
+        return cast(z3_solver.BoolRef, z3_solver.BoolVal(False))
+
+    return cast(z3_solver.BoolRef, z3_solver.Or(*items))
+
+
+def _bool_not(expression: z3_solver.BoolRef) -> z3_solver.BoolRef:
+    return cast(z3_solver.BoolRef, z3_solver.Not(expression))
+
+
+@dataclass(frozen=True)
+class Z3Translation:
+    expression: z3_solver.BoolRef
+    variables: dict[str, z3_solver.ArithRef]
+
+
+class Z3Translator:
+    backend: EnumBackend = EnumBackend.Z3
+    capabilities: BackendCapabilities = Z3_CAPABILITIES
+
+    def __init__(self) -> None:
+        self._variables: dict[str, z3_solver.ArithRef] = {}
+
+    def translate(self, task: VerificationTaskIR2) -> Z3Translation:
+        self._variables = {}
+        expression = self._translate_formula(task.verification_condition)
+
+        return Z3Translation(
+            expression=expression,
+            variables=dict(self._variables),
+        )
+
+    def _translate_formula(self, formula: FormulaIR2) -> z3_solver.BoolRef:
+        if isinstance(formula, NNFFormulaIR2):
+            return self._translate_logical(formula.expression)
+
+        if isinstance(formula, CNFFormulaIR2):
+            return _bool_and(
+                _bool_or(
+                    self._translate_literal(literal)
+                    for literal in clause.literals
+                )
+                for clause in formula.clauses
+            )
+
+        if isinstance(formula, DNFFormulaIR2):
+            return _bool_or(
+                _bool_and(
+                    self._translate_literal(literal)
+                    for literal in term.literals
+                )
+                for term in formula.terms
+            )
+
+        raise TypeError(f"Unsupported IR2 formula: {type(formula).__name__}")
+
+    def _translate_logical(self, node: LogicalIR) -> z3_solver.BoolRef:
+        if isinstance(node, ComparisonIR):
+            return self._translate_comparison(node)
+
+        if isinstance(node, AffineOutputConstraintIR2):
+            return self._translate_affine_output_constraint(node)
+
+        if isinstance(node, ProblemIR):
+            raise NotImplementedError(
+                "ProblemIR is not supported by minimal Z3 backend."
+            )
+
+        if isinstance(node, AndIR):
+            return _bool_and(self._translate_logical(op) for op in node.operands)
+
+        if isinstance(node, OrIR):
+            return _bool_or(self._translate_logical(op) for op in node.operands)
+
+        if isinstance(node, NotIR):
+            return _bool_not(self._translate_logical(node.operand))
+
+        raise TypeError(f"Unsupported logical IR node: {type(node).__name__}")
+
+    def _translate_literal(self, literal: LiteralIR2) -> z3_solver.BoolRef:
+        atom = self._translate_atom(literal.atom)
+
+        if literal.polarity == Polarity.POSITIVE:
+            return atom
+
+        if literal.polarity == Polarity.NEGATIVE:
+            return _bool_not(atom)
+
+        raise ValueError(f"Unsupported literal polarity: {literal.polarity}")
+
+    def _translate_atom(self, atom: AtomIR2) -> z3_solver.BoolRef:
+        if isinstance(atom, ComparisonIR):
+            return self._translate_comparison(atom)
+
+        if isinstance(atom, AffineOutputConstraintIR2):
+            return self._translate_affine_output_constraint(atom)
+
+        if isinstance(atom, ProblemIR):
+            raise NotImplementedError(
+                "ProblemIR is not supported by minimal Z3 backend."
+            )
+
+        raise TypeError(f"Unsupported atom: {type(atom).__name__}")
+
+    def _translate_comparison(self, atom: ComparisonIR) -> z3_solver.BoolRef:
+        left = self._var(atom.entity, atom.feature)
+        right = self._constant(atom.value)
+
+        return self._apply_operator(left, atom.op, right)
+
+    def _translate_affine_output_constraint(
+        self,
+        atom: AffineOutputConstraintIR2,
+    ) -> z3_solver.BoolRef:
+        left = self._var(atom.output_entity, atom.output_feature)
+        right = self._translate_affine_expression(atom.expression)
+
+        return self._apply_operator(left, atom.op, right)
+
+    def _translate_affine_expression(
+        self,
+        expression: AffineExpressionIR2,
+    ) -> z3_solver.ArithRef:
+        result = cast(z3_solver.ArithRef, z3_solver.RealVal(expression.bias))
+
+        for term in expression.terms:
+            coefficient = cast(
+                z3_solver.ArithRef,
+                z3_solver.RealVal(term.coefficient),
+            )
+            variable = self._var(term.entity, term.feature)
+            result = cast(z3_solver.ArithRef, result + coefficient * variable)
+
+        return result
+
+    def _var(self, entity: str, feature: str) -> z3_solver.ArithRef:
+        name = f"{entity}.{feature}"
+
+        if name not in self._variables:
+            self._variables[name] = cast(z3_solver.ArithRef, z3_solver.Real(name))
+
+        return self._variables[name]
+
+    def _constant(self, value: Any) -> z3_solver.ArithRef:
+        if isinstance(value, bool):
+            raise TypeError(
+                "Boolean constants are not supported in numeric comparisons."
+            )
+
+        if isinstance(value, int):
+            return cast(z3_solver.ArithRef, z3_solver.IntVal(value))
+
+        if isinstance(value, float):
+            return cast(z3_solver.ArithRef, z3_solver.RealVal(value))
+
+        raise TypeError(f"Unsupported comparison constant: {value!r}")
+
+    def _apply_operator(
+        self,
+        left: z3_solver.ArithRef,
+        op: EnumComparisonOperator,
+        right: z3_solver.ArithRef,
+    ) -> z3_solver.BoolRef:
+        if op == EnumComparisonOperator.EQ:
+            return cast(z3_solver.BoolRef, left == right)
+
+        if op == EnumComparisonOperator.NEQ:
+            return cast(z3_solver.BoolRef, left != right)
+
+        if op == EnumComparisonOperator.LT:
+            return cast(z3_solver.BoolRef, left < right)
+
+        if op == EnumComparisonOperator.LTE:
+            return cast(z3_solver.BoolRef, left <= right)
+
+        if op == EnumComparisonOperator.GT:
+            return cast(z3_solver.BoolRef, left > right)
+
+        if op == EnumComparisonOperator.GTE:
+            return cast(z3_solver.BoolRef, left >= right)
+
+        raise ValueError(f"Unsupported comparison operator: {op}")
+
 ===== dsl\builder\__init__.py =====
 
 
@@ -783,6 +1134,7 @@ from dsl.builder.core.ast_utils import parse_attribute, node_value, parse_value
 from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.problems import EnumProblem
+from dsl.ast.nodes.primitives import TargetRefNode
 
 # ============================================================================
 # COMPARISON
@@ -790,14 +1142,24 @@ from dsl.language.vocabulary.problems import EnumProblem
 
 
 def build_comparison_expr(node: Tree) -> ComparisonNode:
-    attribute_node = find_node(node, "attribute")
     value_node = find_node(node, "value")
     op_node = find_node(node, "comparison_operation")
 
-    if attribute_node is None or value_node is None or op_node is None:
+    if value_node is None or op_node is None:
         raise ValueError("Invalid comparison")
 
-    left = parse_attribute(attribute_node)
+    target_comparison_node = find_node(node, "target_comparison_expr")
+
+    if target_comparison_node is not None:
+        left = TargetRefNode()
+    else:
+        attribute_node = find_node(node, "attribute")
+
+        if attribute_node is None:
+            raise ValueError("Invalid comparison")
+
+        left = parse_attribute(attribute_node)
+
     op = EnumComparisonOperator(get_token_value(op_node))
     right = parse_value(value_node)
 
@@ -3156,7 +3518,7 @@ from dsl.ast.nodes.assertion import (
     ProblemNode,
 )
 
-from dsl.ast.nodes.primitives import AttributeNode
+from dsl.ast.nodes.primitives import AttributeNode, TargetRefNode
 from dsl.ir.ir1.nodes import (
     QueryIR,
     LogicalIR,
@@ -3270,7 +3632,7 @@ class QueryTranslator:
         This must use semantic annotations, not raw parsed attributes.
         """
 
-        entity, feature, feature_dtype = self._resolve_ir_attribute(node.left)
+        entity, feature, feature_dtype = self._resolve_ir_operand(node.left)
 
         return ComparisonIR(
             entity=entity,
@@ -3280,6 +3642,40 @@ class QueryTranslator:
             feature_dtype=feature_dtype,
             value_dtype=node.right.dtype,
         )
+
+    def _resolve_ir_operand(
+        self,
+        node: AttributeNode | TargetRefNode,
+    ) -> tuple[str, str, EnumDataType | None]:
+        if isinstance(node, AttributeNode):
+            return self._resolve_ir_attribute(node)
+
+        if isinstance(node, TargetRefNode):
+            return self._resolve_ir_target_ref(node)
+
+        raise TypeError(f"Unsupported comparison left operand: {type(node)}")
+
+    def _resolve_ir_target_ref(
+        self,
+        node: TargetRefNode,
+    ) -> tuple[str, str, EnumDataType | None]:
+        semantic = node.semantic
+
+        if semantic is None:
+            raise ValueError("Cannot lower unbound target reference to IR")
+
+        if semantic.resolved_entity != "_model":
+            raise ValueError(
+                f"Invalid target reference binding: expected '_model', "
+                f"got {semantic.resolved_entity!r}"
+            )
+
+        if not semantic.resolved_path or len(semantic.resolved_path) < 2:
+            raise ValueError(
+                f"Invalid target reference path: {semantic.resolved_path!r}"
+            )
+
+        return "_model", semantic.resolved_path[-1], None
 
     def _translate_problem(self, node: ProblemNode) -> ProblemIR:
         problem = (
@@ -3629,20 +4025,22 @@ from dsl.ir.ir2.enums import (
     Polarity,
     VerificationSemantics,
 )
-from dsl.ir.ir2.nodes import (
-    AffineExpressionIR2,
-    AffineTermIR2,
+from dsl.ir.ir2.dsl.nodes import (
     AssumptionIR2,
     ClauseIR2,
     CNFFormulaIR2,
     DNFFormulaIR2,
     FormulaIR2,
     LiteralIR2,
-    ModelConstraintIR2,
-    AffineOutputConstraintIR2,
     NNFFormulaIR2,
     TermIR2,
     VerificationTaskIR2,
+)
+from dsl.ir.ir2.model import (
+    AffineExpressionIR2,
+    AffineOutputConstraintIR2,
+    AffineTermIR2,
+    ModelConstraintIR2,
 )
 from dsl.ir.ir2.requirements import IR2Requirements
 
@@ -3862,6 +4260,8 @@ class AssumptionCollector:
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 from dsl.ir.ir1.nodes import VerificationTask
 from dsl.ir.ir2.assumptions import AssumptionCollector
 from dsl.ir.ir2.condition import VerificationConditionBuilder
@@ -3869,6 +4269,7 @@ from dsl.ir.ir2.context import IR2BuildContext
 from dsl.ir.ir2.enums import NormalFormKind, VerificationSemantics
 from dsl.ir.ir2.errors import NormalFormExplosionError
 from dsl.ir.ir2.guard import NNFGuard
+from dsl.ir.ir2.guardrails.validator import collect_ir2_diagnostics
 from dsl.ir.ir2.nodes import (
     AssumptionIR2,
     FormulaIR2,
@@ -3920,7 +4321,10 @@ class IR2Builder:
         NNFGuard.assert_task_is_nnf(task_nnf)
 
         collected_assumptions = self.assumption_collector.collect(assumptions)
-        spec_formula = NNFFormulaIR2(expression=task_nnf.query.expression)
+
+        spec_formula = NNFFormulaIR2(
+            expression=task_nnf.query.expression,
+        )
 
         vc_nnf = self.vc_builder.build_refutation_condition(
             spec_formula=spec_formula,
@@ -3928,8 +4332,11 @@ class IR2Builder:
         )
 
         selected_form = self.selector.select(vc_nnf, context=context)
+
         verification_condition, actual_form = self._convert(
-            vc_nnf, selected_form, context
+            vc_nnf,
+            selected_form,
+            context,
         )
 
         requirements = self.requirements_analyzer.analyze(
@@ -3956,7 +4363,13 @@ class IR2Builder:
         )
 
         self.validator.validate(task_ir2)
-        return task_ir2
+
+        diagnostics = collect_ir2_diagnostics(task_ir2)
+
+        return replace(
+            task_ir2,
+            diagnostics=diagnostics,
+        )
 
     def build_tasks(
         self,
@@ -3966,7 +4379,11 @@ class IR2Builder:
         context: IR2BuildContext | None = None,
     ) -> list[VerificationTaskIR2]:
         return [
-            self.build(task, assumptions=assumptions, context=context)
+            self.build(
+                task,
+                assumptions=assumptions,
+                context=context,
+            )
             for task in tasks_nnf
         ]
 
@@ -3982,19 +4399,26 @@ class IR2Builder:
         try:
             if selected_form == NormalFormKind.CNF:
                 return (
-                    self.cnf_converter.convert(vc_nnf.expression, context=context),
+                    self.cnf_converter.convert(
+                        vc_nnf.expression,
+                        context=context,
+                    ),
                     NormalFormKind.CNF,
                 )
 
             if selected_form == NormalFormKind.DNF:
                 return (
-                    self.dnf_converter.convert(vc_nnf.expression, context=context),
+                    self.dnf_converter.convert(
+                        vc_nnf.expression,
+                        context=context,
+                    ),
                     NormalFormKind.DNF,
                 )
 
         except NormalFormExplosionError:
             if context.allow_nnf_fallback:
                 return vc_nnf, NormalFormKind.NNF
+
             raise
 
         return vc_nnf, NormalFormKind.NNF
@@ -4067,6 +4491,334 @@ class IR2BuildContext:
             backend_hint=self.backend_hint,
             strict=self.strict,
         )
+
+
+===== dsl\ir\ir2\demos\__init__.py =====
+
+"""Runnable IR2 demos.
+
+These modules intentionally keep visual/debug examples outside the lightweight
+``dsl.ir.ir2.run_ir2`` API entry point.
+"""
+
+
+===== dsl\ir\ir2\demos\__pycache__\__init__.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== dsl\ir\ir2\demos\__pycache__\linear_model_demo.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== dsl\ir\ir2\demos\linear_model_demo.py =====
+
+from __future__ import annotations
+
+from dsl.ir.ir2.context import IR2BuildContext
+from dsl.ir.ir2.enums import NormalFormKind
+from dsl.ir.ir2.explain import IR2ExplainOptions, explain_ir2_tasks
+from dsl.ir.ir2.examples.samples import REAL_LINEAR_MODEL_SAMPLE
+from dsl.ir.ir2.nodes import VerificationTaskIR2
+from dsl.ir.ir2.pretty import pretty_print_ir2_tasks
+from dsl.ir.ir2.run_ir2 import run_ir2_with_model_schema
+from dsl.semantic.types.enums import EnumDataType
+from model.detector.detector import ModelDetector
+from model.introspector.introspector_factory import IntrospectorFactory
+from model.schema.feature_schema import FeatureSchema
+from model.schema.model_schema import ModelSchema
+
+
+def build_demo_linear_regression_schema() -> ModelSchema:
+    """Train and introspect a real sklearn LinearRegression model.
+
+    This helper intentionally goes through the model subsystem instead of
+    hand-writing ``ModelSchema.metadata['linear']``. The only external schema
+    supplied here is feature/target typing, because the demo has no CSV file to
+    infer dtypes from.
+    """
+
+    import pandas as pd
+    from sklearn.linear_model import LinearRegression
+
+    x = pd.DataFrame(
+        {
+            "a": [0.0, 1.0, 2.0, 3.0, 4.0],
+            "b": [1.0, 0.0, 1.0, 0.0, 2.0],
+        }
+    )
+    y = 2.0 * x["a"] - 1.0 * x["b"] + 0.5
+
+    model = LinearRegression()
+    model.fit(x, y)
+
+    framework = ModelDetector().detect(model)
+    input_schema = ModelSchema(
+        framework=framework,
+        model_type=type(model).__name__,
+        features={
+            "a": FeatureSchema(name="a", dtype=EnumDataType.FLOAT),
+            "b": FeatureSchema(name="b", dtype=EnumDataType.FLOAT),
+        },
+        target="MyTarget",
+        task="regression",
+    )
+
+    introspector = IntrospectorFactory.create(
+        framework,
+        model,
+        dataset_path=None,
+        schema=input_schema,
+        serialization_format="in-memory-demo",
+        target_name="MyTarget",
+    )
+
+    return introspector.introspect()
+
+
+def run_ir2_with_demo_linear_regression_model() -> list[VerificationTaskIR2]:
+    """Compile the visual demo using a real trained LinearRegression model."""
+
+    schema = build_demo_linear_regression_schema()
+
+    return run_ir2_with_model_schema(
+        REAL_LINEAR_MODEL_SAMPLE,
+        schema=schema,
+        ir2_context=IR2BuildContext(
+            preferred_normal_form=NormalFormKind.NNF,
+            allow_nnf_fallback=True,
+        ),
+    )
+
+
+def print_demo_linear_regression_ir2() -> None:
+    """Print a visual end-to-end IR2 demo with real model assumptions."""
+
+    schema = build_demo_linear_regression_schema()
+    linear_metadata = schema.metadata.get("linear", {})
+
+    tasks = run_ir2_with_model_schema(
+        REAL_LINEAR_MODEL_SAMPLE,
+        schema=schema,
+        ir2_context=IR2BuildContext(
+            preferred_normal_form=NormalFormKind.NNF,
+            allow_nnf_fallback=True,
+        ),
+    )
+
+    print("\n=== IR2 REAL MODEL DEMO ===\n")
+    print("Trained model    : sklearn.LinearRegression")
+    print(f"Target           : {schema.target}")
+    print(f"Features         : {', '.join(schema.features.keys())}")
+    print(f"Linear coef      : {linear_metadata.get('coef')}")
+    print(f"Linear intercept : {linear_metadata.get('intercept')}")
+
+    print("\n=== IR2 PRETTY WITH MODEL Γ ===\n")
+    pretty_print_ir2_tasks(tasks)
+
+    print("\n=== IR2 EXPLAIN WITH MODEL Γ ===\n")
+    print(
+        explain_ir2_tasks(
+            tasks,
+            options=IR2ExplainOptions(
+                include_assumption_formulas=True,
+                include_requirements=True,
+                include_mermaid=True,
+            ),
+        )
+    )
+
+
+def main() -> None:
+    print_demo_linear_regression_ir2()
+
+
+if __name__ == "__main__":
+    main()
+
+
+===== dsl\ir\ir2\demos\simple_logic_demo.py =====
+
+from __future__ import annotations
+
+from dsl.ir.ir2.explain import IR2ExplainOptions, explain_ir2_tasks
+from dsl.ir.ir2.examples.samples import DEFAULT_SAMPLE
+from dsl.ir.ir2.pretty import pretty_print_ir2_tasks
+from dsl.ir.ir2.run_ir2 import run_ir2
+
+
+def main() -> None:
+    """Print a compact IR2 demo without model assumptions."""
+
+    tasks = run_ir2(DEFAULT_SAMPLE)
+
+    print("\n=== IR2 PRETTY — SIMPLE LOGIC ===\n")
+    pretty_print_ir2_tasks(tasks)
+
+    print("\n=== IR2 EXPLAIN — SIMPLE LOGIC ===\n")
+    print(
+        explain_ir2_tasks(
+            tasks,
+            options=IR2ExplainOptions(
+                include_assumption_formulas=True,
+                include_requirements=True,
+                include_mermaid=True,
+            ),
+        )
+    )
+
+
+if __name__ == "__main__":
+    main()
+
+
+===== dsl\ir\ir2\dsl\__init__.py =====
+
+from dsl.ir.ir2.dsl.nodes import (
+    AssumptionIR2,
+    AtomIR2,
+    ClauseIR2,
+    CNFFormulaIR2,
+    DNFFormulaIR2,
+    FormulaIR2,
+    LiteralIR2,
+    NNFFormulaIR2,
+    TermIR2,
+    VerificationTaskIR2,
+)
+
+__all__ = [
+    "AssumptionIR2",
+    "AtomIR2",
+    "ClauseIR2",
+    "CNFFormulaIR2",
+    "DNFFormulaIR2",
+    "FormulaIR2",
+    "LiteralIR2",
+    "NNFFormulaIR2",
+    "TermIR2",
+    "VerificationTaskIR2",
+]
+
+
+===== dsl\ir\ir2\dsl\__pycache__\__init__.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== dsl\ir\ir2\dsl\__pycache__\nodes.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== dsl\ir\ir2\dsl\nodes.py =====
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Any, TYPE_CHECKING, TypeAlias
+
+from dsl.ir.ir1.nodes import AtomicIR, LogicalIR, ScopeIR
+from dsl.ir.ir2.enums import (
+    AssumptionSource,
+    NormalFormKind,
+    Polarity,
+    VerificationSemantics,
+)
+from dsl.ir.ir2.guardrails.diagnostics import IR2Diagnostic
+from dsl.language.vocabulary.backends import EnumBackend
+from dsl.language.vocabulary.properties import EnumProperty
+
+if TYPE_CHECKING:
+    from dsl.ir.ir2.requirements import IR2Requirements
+
+
+AtomIR2: TypeAlias = AtomicIR
+
+
+@dataclass(frozen=True)
+class LiteralIR2:
+    """A signed atomic predicate.
+
+    IR2 absorbs leaf negation into literal polarity instead of keeping NotIR
+    around atomic predicates in CNF/DNF forms.
+    """
+
+    atom: AtomIR2
+    polarity: Polarity = Polarity.POSITIVE
+
+
+@dataclass(frozen=True)
+class ClauseIR2:
+    """A disjunction of literals used in CNF."""
+
+    literals: tuple[LiteralIR2, ...]
+
+
+@dataclass(frozen=True)
+class TermIR2:
+    """A conjunction of literals used in DNF."""
+
+    literals: tuple[LiteralIR2, ...]
+
+
+@dataclass(frozen=True)
+class NNFFormulaIR2:
+    """Backend-neutral formula kept as an NNF logical tree."""
+
+    expression: LogicalIR
+
+
+@dataclass(frozen=True)
+class CNFFormulaIR2:
+    """Conjunctive normal form: AND of OR-clauses."""
+
+    clauses: tuple[ClauseIR2, ...]
+
+
+@dataclass(frozen=True)
+class DNFFormulaIR2:
+    """Disjunctive normal form: OR of AND-terms."""
+
+    terms: tuple[TermIR2, ...]
+
+
+FormulaIR2: TypeAlias = NNFFormulaIR2 | CNFFormulaIR2 | DNFFormulaIR2
+
+
+@dataclass(frozen=True)
+class AssumptionIR2:
+    """A typed assumption used to build Γ ∧ ¬P.
+
+    ModelEncoder produces MODEL assumptions. IR2 only carries them; it does not
+    inspect sklearn/xgboost/ONNX objects directly.
+    """
+
+    source: AssumptionSource
+    formula: NNFFormulaIR2
+    description: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class VerificationTaskIR2:
+    """Backend-neutral verification task.
+
+    spec_formula is the property P expressed by the DSL and normalized to NNF.
+    verification_condition is the internal condition Γ ∧ ¬P, optionally
+    converted to CNF or DNF when useful and safe.
+    """
+
+    property_type: EnumProperty
+    scope: ScopeIR
+    backend: EnumBackend | None
+
+    assumptions: tuple[AssumptionIR2, ...]
+    spec_formula: NNFFormulaIR2
+    verification_condition: FormulaIR2
+
+    semantics: VerificationSemantics
+    normal_form: NormalFormKind
+    requirements: IR2Requirements
+    metadata: dict[str, Any] = field(default_factory=dict)
+    diagnostics: tuple[IR2Diagnostic, ...] = ()
 
 
 ===== dsl\ir\ir2\enums.py =====
@@ -4143,6 +4895,44 @@ class IR2ValidationError(IR2Error):
 
 class UnsupportedIR2FormError(IR2Error):
     """Raised when a form is unsupported by the current IR2 implementation."""
+
+
+===== dsl\ir\ir2\examples\__init__.py =====
+
+"""Small FORML samples used by IR2 demos and tests."""
+
+from dsl.ir.ir2.examples.samples import DEFAULT_SAMPLE, REAL_LINEAR_MODEL_SAMPLE
+
+__all__ = ["DEFAULT_SAMPLE", "REAL_LINEAR_MODEL_SAMPLE"]
+
+
+===== dsl\ir\ir2\examples\__pycache__\__init__.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== dsl\ir\ir2\examples\__pycache__\samples.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== dsl\ir\ir2\examples\samples.py =====
+
+from __future__ import annotations
+
+DEFAULT_SAMPLE = """
+model := "model.onnx"
+target := MyTarget
+
+[LOGIC]:
+forall => a <= 1 -> b <= 2 using Z3
+"""
+
+REAL_LINEAR_MODEL_SAMPLE = """
+model := "demo-linear-regression"
+target := MyTarget
+
+[LOGIC]:
+check_at x0 => x0.a <= 10 using Z3
+"""
 
 
 ===== dsl\ir\ir2\explain.py =====
@@ -4363,17 +5153,15 @@ from __future__ import annotations
 
 from dsl.ir.ir1.nodes import (
     AndIR,
-    ComparisonIR,
+    AtomicIR,
     ImplyIR,
     LogicalIR,
     NotIR,
     OrIR,
-    ProblemIR,
     QueryIR,
     VerificationTask,
 )
 from dsl.ir.ir2.errors import InvalidIR2InputError
-from dsl.ir.ir2.nodes import ModelConstraintIR2
 
 
 class NNFGuard:
@@ -4415,35 +5203,211 @@ class NNFGuard:
 
     @staticmethod
     def is_atomic(node: LogicalIR) -> bool:
-        return isinstance(node, (ComparisonIR, ProblemIR, ModelConstraintIR2))
+        return isinstance(node, AtomicIR)
 
 
-===== dsl\ir\ir2\nodes.py =====
+===== dsl\ir\ir2\guardrails\__init__.py =====
+
+from dsl.ir.ir2.guardrails.diagnostics import DiagnosticSeverity, IR2Diagnostic
+from dsl.ir.ir2.guardrails.model_output import IR2_MODEL_OUTPUT_NOT_REFERENCED
+from dsl.ir.ir2.guardrails.validator import collect_ir2_diagnostics
+
+__all__ = [
+    "DiagnosticSeverity",
+    "IR2Diagnostic",
+    "IR2_MODEL_OUTPUT_NOT_REFERENCED",
+    "collect_ir2_diagnostics",
+]
+
+
+===== dsl\ir\ir2\guardrails\__pycache__\__init__.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== dsl\ir\ir2\guardrails\__pycache__\diagnostics.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== dsl\ir\ir2\guardrails\__pycache__\model_output.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== dsl\ir\ir2\guardrails\__pycache__\validator.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== dsl\ir\ir2\guardrails\diagnostics.py =====
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from enum import Enum
+
+
+class DiagnosticSeverity(str, Enum):
+    INFO = "info"
+    WARNING = "warning"
+    ERROR = "error"
+
+
+@dataclass(frozen=True)
+class IR2Diagnostic:
+    code: str
+    severity: DiagnosticSeverity
+    message: str
+
+
+===== dsl\ir\ir2\guardrails\model_output.py =====
+
+from __future__ import annotations
+
+from typing import Any
+
+from dsl.ir.ir1.nodes import AndIR, ComparisonIR, ImplyIR, NotIR, OrIR
+from dsl.ir.ir2.enums import AssumptionSource
+from dsl.ir.ir2.guardrails.diagnostics import DiagnosticSeverity, IR2Diagnostic
+
+IR2_MODEL_OUTPUT_NOT_REFERENCED = "IR2_MODEL_OUTPUT_NOT_REFERENCED"
+
+
+def diagnose_model_output_not_referenced(task: Any) -> tuple[IR2Diagnostic, ...]:
+    """
+    Emit a warning when model assumptions are present but the user spec
+    does not reference any model output symbol.
+
+    This is not invalid:
+        x0.age <= 30
+
+    But when model assumptions are injected, it means the property may be
+    an input/domain constraint rather than a model-behavior constraint.
+    """
+
+    assumptions = tuple(getattr(task, "assumptions", ()))
+
+    has_model_assumption = any(
+        assumption.source is AssumptionSource.MODEL for assumption in assumptions
+    )
+
+    if not has_model_assumption:
+        return ()
+
+    spec_formula = getattr(task, "spec_formula", None)
+
+    if spec_formula is None:
+        return ()
+
+    if _formula_references_model_output(spec_formula):
+        return ()
+
+    return (
+        IR2Diagnostic(
+            code=IR2_MODEL_OUTPUT_NOT_REFERENCED,
+            severity=DiagnosticSeverity.WARNING,
+            message=(
+                "Model assumptions were injected, but the specification does not "
+                "reference any model output symbol such as '_model.<target>'. "
+                "This property may still be valid as an input/domain constraint, "
+                "but it does not constrain model behavior directly."
+            ),
+        ),
+    )
+
+
+def _formula_references_model_output(formula: Any) -> bool:
+    expression = getattr(formula, "expression", formula)
+
+    return _expression_references_model_output(expression)
+
+
+def _expression_references_model_output(expression: Any) -> bool:
+    if isinstance(expression, ComparisonIR):
+        return expression.entity == "_model"
+
+    if isinstance(expression, AndIR):
+        return any(
+            _expression_references_model_output(op) for op in expression.operands
+        )
+
+    if isinstance(expression, OrIR):
+        return any(
+            _expression_references_model_output(op) for op in expression.operands
+        )
+
+    if isinstance(expression, NotIR):
+        return _expression_references_model_output(expression.operand)
+
+    if isinstance(expression, ImplyIR):
+        return _expression_references_model_output(
+            expression.left
+        ) or _expression_references_model_output(expression.right)
+
+    # Future-proofing for model-side IR2 nodes such as AffineOutputConstraintIR2.
+    output_entity = getattr(expression, "output_entity", None)
+
+    if output_entity == "_model":
+        return True
+
+    entity = getattr(expression, "entity", None)
+
+    return entity == "_model"
+
+
+===== dsl\ir\ir2\guardrails\validator.py =====
+
+from __future__ import annotations
+
+from typing import Any
+
+from dsl.ir.ir2.guardrails.diagnostics import IR2Diagnostic
+from dsl.ir.ir2.guardrails.model_output import diagnose_model_output_not_referenced
+
+
+def collect_ir2_diagnostics(task: Any) -> tuple[IR2Diagnostic, ...]:
+    diagnostics: list[IR2Diagnostic] = []
+
+    diagnostics.extend(diagnose_model_output_not_referenced(task))
+
+    return tuple(diagnostics)
+
+
+===== dsl\ir\ir2\model\__init__.py =====
+
+from dsl.ir.ir2.model.affine import (
+    AffineExpressionIR2,
+    AffineOutputConstraintIR2,
+    AffineTermIR2,
+)
+from dsl.ir.ir2.model.base import ModelConstraintIR2
+
+__all__ = [
+    "AffineExpressionIR2",
+    "AffineOutputConstraintIR2",
+    "AffineTermIR2",
+    "ModelConstraintIR2",
+]
+
+
+===== dsl\ir\ir2\model\__pycache__\__init__.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== dsl\ir\ir2\model\__pycache__\affine.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== dsl\ir\ir2\model\__pycache__\base.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
+===== dsl\ir\ir2\model\affine.py =====
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, TYPE_CHECKING, TypeAlias
+from typing import Any
 
-from dsl.ir.ir1.nodes import (
-    AtomicIR,
-    ComparisonIR,
-    LogicalIR,
-    ProblemIR,
-    ScopeIR,
-)
-from dsl.language.vocabulary.backends import EnumBackend
+from dsl.ir.ir2.model.base import ModelConstraintIR2
 from dsl.language.vocabulary.operators import EnumComparisonOperator
-from dsl.language.vocabulary.properties import EnumProperty
-from dsl.ir.ir2.enums import (
-    AssumptionSource,
-    NormalFormKind,
-    Polarity,
-    VerificationSemantics,
-)
-
-if TYPE_CHECKING:
-    from dsl.ir.ir2.requirements import IR2Requirements
 
 
 @dataclass(frozen=True)
@@ -4467,24 +5431,13 @@ class AffineExpressionIR2:
     bias: float = 0.0
 
 
-class ModelConstraintIR2(AtomicIR):
-    """
-    Base class for backend-neutral model constraints.
-
-    Model constraints are logical atoms from the point of view
-    of NNF/CNF/DNF normalization.
-    """
-
-    pass
-
-
 @dataclass
 class AffineOutputConstraintIR2(ModelConstraintIR2):
     """Atomic affine model assumption relating output to w·x + b.
 
     This is intentionally backend-independent. It does not encode Z3 terms and
-    does not decide the final normal form. It only states a model-level fact that
-    can participate in Γ before IR2 builds Γ ∧ ¬P.
+    does not decide the final normal form. It only states a model-level fact
+    that can participate in Γ before IR2 builds Γ ∧ ¬P.
     """
 
     output_entity: str
@@ -4494,94 +5447,73 @@ class AffineOutputConstraintIR2(ModelConstraintIR2):
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
-AtomIR2: TypeAlias = ComparisonIR | ProblemIR | ModelConstraintIR2
+===== dsl\ir\ir2\model\base.py =====
+
+from __future__ import annotations
+
+from dsl.ir.ir1.nodes import AtomicIR
 
 
-@dataclass(frozen=True)
-class LiteralIR2:
-    """A signed atomic predicate.
+class ModelConstraintIR2(AtomicIR):
+    """Base class for backend-neutral model constraints.
 
-    IR2 absorbs leaf negation into literal polarity instead of keeping NotIR
-    around comparisons/problem predicates in CNF/DNF forms.
+    Model constraints are logical atoms from the point of view of NNF/CNF/DNF
+    normalization.
     """
 
-    atom: AtomIR2
-    polarity: Polarity = Polarity.POSITIVE
+    pass
 
 
-@dataclass(frozen=True)
-class ClauseIR2:
-    """A disjunction of literals used in CNF."""
+===== dsl\ir\ir2\nodes.py =====
 
-    literals: tuple[LiteralIR2, ...]
+from __future__ import annotations
 
+from dsl.ir.ir2.dsl.nodes import (
+    AssumptionIR2,
+    AtomIR2,
+    ClauseIR2,
+    CNFFormulaIR2,
+    DNFFormulaIR2,
+    FormulaIR2,
+    LiteralIR2,
+    NNFFormulaIR2,
+    TermIR2,
+    VerificationTaskIR2,
+)
+from dsl.ir.ir2.model import (
+    AffineExpressionIR2,
+    AffineOutputConstraintIR2,
+    AffineTermIR2,
+    ModelConstraintIR2,
+)
 
-@dataclass(frozen=True)
-class TermIR2:
-    """A conjunction of literals used in DNF."""
+"""Compatibility exports for IR2 nodes.
 
-    literals: tuple[LiteralIR2, ...]
+IR2 nodes are now split by responsibility:
+- dsl.ir.ir2.dsl.* contains DSL/formula/task-level nodes;
+- dsl.ir.ir2.model.* contains backend-neutral model constraint nodes.
 
+This module intentionally re-exports the historical public API so existing
+imports such as ``from dsl.ir.ir2.nodes import VerificationTaskIR2`` remain
+valid during the refactor.
+"""
 
-@dataclass(frozen=True)
-class NNFFormulaIR2:
-    """Backend-neutral formula kept as an NNF logical tree."""
-
-    expression: LogicalIR
-
-
-@dataclass(frozen=True)
-class CNFFormulaIR2:
-    """Conjunctive normal form: AND of OR-clauses."""
-
-    clauses: tuple[ClauseIR2, ...]
-
-
-@dataclass(frozen=True)
-class DNFFormulaIR2:
-    """Disjunctive normal form: OR of AND-terms."""
-
-    terms: tuple[TermIR2, ...]
-
-
-FormulaIR2: TypeAlias = NNFFormulaIR2 | CNFFormulaIR2 | DNFFormulaIR2
-
-
-@dataclass(frozen=True)
-class AssumptionIR2:
-    """A typed assumption used to build Γ ∧ ¬P.
-
-    ModelEncoder will later produce MODEL assumptions. IR2 only carries them;
-    it does not inspect sklearn/xgboost/ONNX objects directly.
-    """
-
-    source: AssumptionSource
-    formula: NNFFormulaIR2
-    description: str | None = None
-    metadata: dict[str, Any] = field(default_factory=dict)
-
-
-@dataclass(frozen=True)
-class VerificationTaskIR2:
-    """Backend-neutral verification task.
-
-    spec_formula is the property P expressed by the DSL and normalized to NNF.
-    verification_condition is the internal condition Γ ∧ ¬P, optionally
-    converted to CNF or DNF when useful and safe.
-    """
-
-    property_type: EnumProperty
-    scope: ScopeIR
-    backend: EnumBackend | None
-
-    assumptions: tuple[AssumptionIR2, ...]
-    spec_formula: NNFFormulaIR2
-    verification_condition: FormulaIR2
-
-    semantics: VerificationSemantics
-    normal_form: NormalFormKind
-    requirements: IR2Requirements
-    metadata: dict[str, Any] = field(default_factory=dict)
+__all__ = [
+    "AffineExpressionIR2",
+    "AffineOutputConstraintIR2",
+    "AffineTermIR2",
+    "AssumptionIR2",
+    "AtomIR2",
+    "ClauseIR2",
+    "CNFFormulaIR2",
+    "DNFFormulaIR2",
+    "FormulaIR2",
+    "LiteralIR2",
+    "ModelConstraintIR2",
+    "NNFFormulaIR2",
+    "TermIR2",
+    "VerificationTaskIR2",
+]
 
 
 ===== dsl\ir\ir2\normal_forms\__init__.py =====
@@ -4629,16 +5561,11 @@ __all__ = ["CNFConverter", "DNFConverter", "NormalFormCostEstimator"]
 
 from __future__ import annotations
 
-from dsl.ir.ir1.nodes import AndIR, ComparisonIR, LogicalIR, NotIR, OrIR, ProblemIR
+from dsl.ir.ir1.nodes import AndIR, AtomicIR, LogicalIR, NotIR, OrIR
 from dsl.ir.ir2.context import IR2BuildContext
+from dsl.ir.ir2.dsl.nodes import ClauseIR2, CNFFormulaIR2, LiteralIR2
 from dsl.ir.ir2.enums import Polarity
 from dsl.ir.ir2.errors import InvalidNormalFormError, NormalFormExplosionError
-from dsl.ir.ir2.nodes import (
-    ClauseIR2,
-    CNFFormulaIR2,
-    LiteralIR2,
-    ModelConstraintIR2,
-)
 
 
 class CNFConverter:
@@ -4695,14 +5622,11 @@ class CNFConverter:
         return CNFFormulaIR2(clauses=tuple(clauses))
 
     def _literal_or_none(self, expr: LogicalIR) -> LiteralIR2 | None:
-        if isinstance(expr, (ComparisonIR, ProblemIR, ModelConstraintIR2)):
+        if isinstance(expr, AtomicIR):
             return LiteralIR2(atom=expr, polarity=Polarity.POSITIVE)
 
         if isinstance(expr, NotIR):
-            if isinstance(
-                expr.operand,
-                (ComparisonIR, ProblemIR, ModelConstraintIR2),
-            ):
+            if isinstance(expr.operand, AtomicIR):
                 return LiteralIR2(atom=expr.operand, polarity=Polarity.NEGATIVE)
             raise InvalidNormalFormError(
                 "CNF conversion expects NNF input; NotIR must wrap an atom."
@@ -4724,8 +5648,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from dsl.ir.ir1.nodes import AndIR, ComparisonIR, LogicalIR, NotIR, OrIR, ProblemIR
-from dsl.ir.ir2.nodes import ModelConstraintIR2
+from dsl.ir.ir1.nodes import AndIR, AtomicIR, LogicalIR, NotIR, OrIR
 
 
 @dataclass(frozen=True)
@@ -4748,7 +5671,7 @@ class NormalFormCostEstimator:
         )
 
     def estimate_cnf_units(self, expr: LogicalIR) -> int:
-        if isinstance(expr, (ComparisonIR, ProblemIR, ModelConstraintIR2)):
+        if isinstance(expr, AtomicIR):
             return 1
         if isinstance(expr, NotIR):
             return 1
@@ -4762,7 +5685,7 @@ class NormalFormCostEstimator:
         return 1
 
     def estimate_dnf_units(self, expr: LogicalIR) -> int:
-        if isinstance(expr, (ComparisonIR, ProblemIR, ModelConstraintIR2)):
+        if isinstance(expr, AtomicIR):
             return 1
         if isinstance(expr, NotIR):
             return 1
@@ -4780,16 +5703,11 @@ class NormalFormCostEstimator:
 
 from __future__ import annotations
 
-from dsl.ir.ir1.nodes import AndIR, ComparisonIR, LogicalIR, NotIR, OrIR, ProblemIR
+from dsl.ir.ir1.nodes import AndIR, AtomicIR, LogicalIR, NotIR, OrIR
 from dsl.ir.ir2.context import IR2BuildContext
+from dsl.ir.ir2.dsl.nodes import DNFFormulaIR2, LiteralIR2, TermIR2
 from dsl.ir.ir2.enums import Polarity
 from dsl.ir.ir2.errors import InvalidNormalFormError, NormalFormExplosionError
-from dsl.ir.ir2.nodes import (
-    DNFFormulaIR2,
-    LiteralIR2,
-    ModelConstraintIR2,
-    TermIR2,
-)
 
 
 class DNFConverter:
@@ -4844,14 +5762,11 @@ class DNFConverter:
         return DNFFormulaIR2(terms=tuple(terms))
 
     def _literal_or_none(self, expr: LogicalIR) -> LiteralIR2 | None:
-        if isinstance(expr, (ComparisonIR, ProblemIR, ModelConstraintIR2)):
+        if isinstance(expr, AtomicIR):
             return LiteralIR2(atom=expr, polarity=Polarity.POSITIVE)
 
         if isinstance(expr, NotIR):
-            if isinstance(
-                expr.operand,
-                (ComparisonIR, ProblemIR, ModelConstraintIR2),
-            ):
+            if isinstance(expr.operand, AtomicIR):
                 return LiteralIR2(atom=expr.operand, polarity=Polarity.NEGATIVE)
             raise InvalidNormalFormError(
                 "DNF conversion expects NNF input; NotIR must wrap an atom."
@@ -4871,19 +5786,26 @@ class DNFConverter:
 
 from __future__ import annotations
 
-from dsl.ir.ir1.nodes import AndIR, ComparisonIR, LogicalIR, NotIR, OrIR, ProblemIR
-from dsl.ir.ir2.enums import Polarity
-from dsl.ir.ir2.nodes import (
-    AffineExpressionIR2,
-    AffineOutputConstraintIR2,
+from dsl.ir.ir1.nodes import (
+    AndIR,
+    AtomicIR,
+    ComparisonIR,
+    LogicalIR,
+    NotIR,
+    OrIR,
+    ProblemIR,
+)
+from dsl.ir.ir2.dsl.nodes import (
     CNFFormulaIR2,
     DNFFormulaIR2,
     FormulaIR2,
     LiteralIR2,
-    ModelConstraintIR2,
     NNFFormulaIR2,
     VerificationTaskIR2,
 )
+from dsl.ir.ir2.enums import Polarity
+from dsl.ir.ir2.model.affine import AffineExpressionIR2, AffineOutputConstraintIR2
+from dsl.ir.ir2.model.base import ModelConstraintIR2
 
 
 def pretty_print_ir2_tasks(tasks: list[VerificationTaskIR2]) -> None:
@@ -4906,6 +5828,16 @@ def pretty_ir2_task(task: VerificationTaskIR2) -> str:
     lines.append(f"Normal form   : {task.normal_form.value}")
     lines.append("Requirements  : " + _pretty_requirements(task))
     lines.append(f"Assumptions   : {len(task.assumptions)}")
+
+    if task.assumptions:
+        lines.append("Assumption formulas:")
+        for index, assumption in enumerate(task.assumptions):
+            source = getattr(assumption.source, "value", assumption.source)
+            lines.append(f"  Γ[{index}] source={source}")
+            if assumption.description:
+                lines.append(f"    description : {assumption.description}")
+            lines.append(_indent(pretty_formula(assumption.formula), spaces=4))
+
     lines.append("Spec formula  :")
     lines.append(_indent(pretty_formula(task.spec_formula), spaces=2))
     lines.append("Verification condition:")
@@ -5002,14 +5934,11 @@ def _pretty_literal(literal: LiteralIR2) -> str:
 
 
 def _pretty_logical_tree(node: LogicalIR) -> str:
-    if isinstance(node, (ComparisonIR, ProblemIR, ModelConstraintIR2)):
+    if isinstance(node, AtomicIR):
         return _pretty_literal(LiteralIR2(atom=node, polarity=Polarity.POSITIVE))
 
     if isinstance(node, NotIR):
-        if isinstance(
-            node.operand,
-            (ComparisonIR, ProblemIR, ModelConstraintIR2),
-        ):
+        if isinstance(node.operand, AtomicIR):
             return _pretty_literal(
                 LiteralIR2(atom=node.operand, polarity=Polarity.NEGATIVE)
             )
@@ -5034,7 +5963,7 @@ def _pretty_variadic(name: str, operands: list[LogicalIR]) -> str:
     return "\n".join(lines)
 
 
-def _pretty_atom(atom: ComparisonIR | ProblemIR | ModelConstraintIR2) -> str:
+def _pretty_atom(atom: AtomicIR) -> str:
     if isinstance(atom, ComparisonIR):
         return _pretty_comparison(atom)
 
@@ -5099,6 +6028,7 @@ from typing import Iterable
 
 from dsl.ir.ir1.nodes import (
     AndIR,
+    AtomicIR,
     ComparisonIR,
     LogicalIR,
     NotIR,
@@ -5106,17 +6036,17 @@ from dsl.ir.ir1.nodes import (
     ProblemIR,
     ScopeIR,
 )
-from dsl.ir.ir2.enums import AssumptionSource, NormalFormKind
-from dsl.ir.ir2.nodes import (
+from dsl.ir.ir2.dsl.nodes import (
     AssumptionIR2,
     CNFFormulaIR2,
     DNFFormulaIR2,
     FormulaIR2,
     LiteralIR2,
-    AffineOutputConstraintIR2,
-    ModelConstraintIR2,
     NNFFormulaIR2,
 )
+from dsl.ir.ir2.enums import AssumptionSource, NormalFormKind
+from dsl.ir.ir2.model.affine import AffineOutputConstraintIR2
+from dsl.ir.ir2.model.base import ModelConstraintIR2
 
 
 @dataclass(frozen=True)
@@ -5171,9 +6101,7 @@ class RequirementsAnalyzer:
             normal_form=normal_form,
         )
 
-    def _iter_literals_or_atoms(
-        self, formula: FormulaIR2
-    ) -> Iterable[ComparisonIR | ProblemIR | ModelConstraintIR2]:
+    def _iter_literals_or_atoms(self, formula: FormulaIR2) -> Iterable[AtomicIR]:
         if isinstance(formula, NNFFormulaIR2):
             yield from self._iter_atoms_from_logical(formula.expression)
             return
@@ -5190,23 +6118,16 @@ class RequirementsAnalyzer:
                     yield from self._iter_atom_from_literal(literal)
             return
 
-    def _iter_atom_from_literal(
-        self, literal: LiteralIR2
-    ) -> Iterable[ComparisonIR | ProblemIR | ModelConstraintIR2]:
+    def _iter_atom_from_literal(self, literal: LiteralIR2) -> Iterable[AtomicIR]:
         yield literal.atom
 
-    def _iter_atoms_from_logical(
-        self, node: LogicalIR
-    ) -> Iterable[ComparisonIR | ProblemIR | ModelConstraintIR2]:
-        if isinstance(node, (ComparisonIR, ProblemIR, ModelConstraintIR2)):
+    def _iter_atoms_from_logical(self, node: LogicalIR) -> Iterable[AtomicIR]:
+        if isinstance(node, AtomicIR):
             yield node
             return
 
         if isinstance(node, NotIR):
-            if isinstance(
-                node.operand,
-                (ComparisonIR, ProblemIR, ModelConstraintIR2),
-            ):
+            if isinstance(node.operand, AtomicIR):
                 yield node.operand
             return
 
@@ -5219,44 +6140,86 @@ class RequirementsAnalyzer:
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from dsl.ir.ir1.run_ir1 import run_ir
 from dsl.ir.ir2.builder import IR2Builder
-from dsl.ir.ir2.explain import IR2ExplainOptions, explain_ir2_tasks
-from dsl.ir.ir2.pretty import pretty_print_ir2_tasks
+from dsl.ir.ir2.context import IR2BuildContext
+from dsl.ir.ir2.nodes import AssumptionIR2, VerificationTaskIR2
 from dsl.ir.normalization.nnf import NNFNormalizer
 
-DEFAULT_SAMPLE = """
-model := "model.onnx"
-target := MyTarget
-
-[LOGIC]:
-forall => a <= 1 -> b <= 2 using Z3
-"""
+if TYPE_CHECKING:
+    from model.encoder.context import ModelEncodingContext
+    from model.encoder.factory import ModelEncoderFactory
+    from model.schema.model_schema import ModelSchema
 
 
-def run_ir2(source: str):
+def run_ir2(
+    source: str,
+    *,
+    assumptions: tuple[AssumptionIR2, ...] | list[AssumptionIR2] | None = None,
+    context: IR2BuildContext | None = None,
+) -> list[VerificationTaskIR2]:
+    """Compile FORML source to IR2.
+
+    ``assumptions`` are applied to every generated task. This is useful for
+    global assumptions. For model assumptions, prefer
+    ``run_ir2_with_model_schema`` because model assumptions are scope-dependent.
+    """
+
     ir1_tasks = run_ir(source)
     nnf_tasks = NNFNormalizer().normalize_tasks(ir1_tasks)
-    return IR2Builder().build_tasks(nnf_tasks)
-
-
-if __name__ == "__main__":
-    tasks = run_ir2(DEFAULT_SAMPLE)
-
-    print("\n=== IR2 PRETTY ===\n")
-    pretty_print_ir2_tasks(tasks)
-
-    print("\n=== IR2 EXPLAIN ===\n")
-    print(
-        explain_ir2_tasks(
-            tasks,
-            options=IR2ExplainOptions(
-                include_assumption_formulas=True,
-                include_requirements=True,
-                include_mermaid=True,
-            ),
-        )
+    return IR2Builder().build_tasks(
+        nnf_tasks,
+        assumptions=assumptions,
+        context=context,
     )
+
+
+def run_ir2_with_model_schema(
+    source: str,
+    *,
+    schema: ModelSchema,
+    model_context: ModelEncodingContext | None = None,
+    ir2_context: IR2BuildContext | None = None,
+    encoder_factory: ModelEncoderFactory | None = None,
+) -> list[VerificationTaskIR2]:
+    """Compile FORML source to IR2 and inject model-derived assumptions.
+
+    The model encoder is executed per task because the selected input entity
+    depends on the task scope:
+    - ``at x`` usually emits assumptions over ``x'``;
+    - ``check_at x0`` emits assumptions over ``x0``;
+    - ``forall`` emits assumptions over ``_x``.
+
+    The resulting verification condition is still built by IR2 as ``Γ ∧ ¬P``.
+    """
+
+    from model.encoder.factory import ModelEncoderFactory
+
+    ir1_tasks = run_ir(source)
+    nnf_tasks = NNFNormalizer().normalize_tasks(ir1_tasks)
+
+    builder = IR2Builder()
+    factory = encoder_factory or ModelEncoderFactory()
+
+    tasks: list[VerificationTaskIR2] = []
+
+    for task in nnf_tasks:
+        model_assumptions = factory.encode(
+            schema,
+            task.scope,
+            context=model_context,
+        )
+        tasks.append(
+            builder.build(
+                task,
+                assumptions=model_assumptions,
+                context=ir2_context,
+            )
+        )
+
+    return tasks
 
 
 ===== dsl\ir\ir2\selector.py =====
@@ -5322,19 +6285,18 @@ class NormalFormSelector:
 
 from __future__ import annotations
 
-from dsl.ir.ir1.nodes import ComparisonIR, ProblemIR
-from dsl.ir.ir2.enums import NormalFormKind, Polarity
-from dsl.ir.ir2.errors import IR2ValidationError
-from dsl.ir.ir2.guard import NNFGuard
-from dsl.ir.ir2.nodes import (
+from dsl.ir.ir1.nodes import AtomicIR
+from dsl.ir.ir2.dsl.nodes import (
     AssumptionIR2,
     CNFFormulaIR2,
     DNFFormulaIR2,
     LiteralIR2,
-    ModelConstraintIR2,
     NNFFormulaIR2,
     VerificationTaskIR2,
 )
+from dsl.ir.ir2.enums import NormalFormKind, Polarity
+from dsl.ir.ir2.errors import IR2ValidationError
+from dsl.ir.ir2.guard import NNFGuard
 
 
 class IR2Validator:
@@ -5431,13 +6393,9 @@ class IR2Validator:
                 f"{location} has invalid polarity: {literal.polarity!r}."
             )
 
-        if not isinstance(
-            literal.atom,
-            (ComparisonIR, ProblemIR, ModelConstraintIR2),
-        ):
+        if not isinstance(literal.atom, AtomicIR):
             raise IR2ValidationError(
-                f"{location} atom must be ComparisonIR, ProblemIR or "
-                "ModelConstraintIR2, "
+                f"{location} atom must be AtomicIR, "
                 f"got {type(literal.atom).__name__}."
             )
 
@@ -5634,11 +6592,14 @@ function        = ? official_functions ? ;
 function_expr   = function , "(" , [ args ] , ")" ;
 problem_expr    = ( ? official_problems ? ) , "." , function_expr ;
 
-(* === ATTRIBUTES === *)
-attribute_identifier = identifier | TARGET ;
-attribute = identifier , { "." , attribute_identifier } ;
+(* === ATTRIBUTES / MODEL OUTPUT === *)
+attribute = identifier , { "." , identifier } ;
+
+target_comparison_expr = TARGET , comparison_operation , value ;
+attribute_comparison_expr = attribute , comparison_operation , value ;
+
 logic_expr = attribute , logic_operation , value ;
-comparison_expr = attribute , comparison_operation , value ;
+comparison_expr = target_comparison_expr | attribute_comparison_expr ;
 
 (* === ASSERTION === *)
 
@@ -5945,13 +6906,14 @@ problem_expr : (CLASSIFICATION
     | ANOMALY_DETECTION
     | REINFORCEMENT_LEARNING) "." function_expr
 
-# === ATTRIBUTES ===
+# === ATTRIBUTES / MODEL OUTPUT ===
 
-attribute_identifier : identifier
-    | TARGET
-attribute : identifier ("." attribute_identifier)*
+attribute : identifier ("." identifier)*
+target_comparison_expr : TARGET comparison_operation value
+attribute_comparison_expr : attribute comparison_operation value
 logic_expr : attribute logic_operation value
-comparison_expr : attribute comparison_operation value
+comparison_expr : target_comparison_expr
+    | attribute_comparison_expr
 
 # === ASSERTION ===
 
@@ -6072,9 +7034,17 @@ header : padding model_declaration padding target_declaration padding (dataset_d
 body : padding property_section (padding property_section)* padding
 program : header body
 
+===== dsl\language\tools\__pycache__\constants.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== dsl\language\tools\__pycache__\constants.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0x9b in position 8: invalid start byte]
+
+===== dsl\language\tools\__pycache__\formatter.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== dsl\language\tools\__pycache__\formatter.cpython-314.pyc =====
 
@@ -6084,9 +7054,17 @@ program : header body
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
+===== dsl\language\tools\__pycache__\registry.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== dsl\language\tools\__pycache__\registry.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== dsl\language\tools\__pycache__\transforms.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== dsl\language\tools\__pycache__\transforms.cpython-314.pyc =====
 
@@ -6714,6 +7692,10 @@ def fix_neighborhood_precedence(line: str) -> str:
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xe1 in position 8: invalid continuation byte]
 
+===== dsl\language\vocabulary\__pycache__\metrics.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== dsl\language\vocabulary\__pycache__\metrics.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
@@ -6742,9 +7724,17 @@ def fix_neighborhood_precedence(line: str) -> str:
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
+===== dsl\language\vocabulary\__pycache__\protected_words.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== dsl\language\vocabulary\__pycache__\protected_words.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0x8f in position 9: invalid start byte]
+
+===== dsl\language\vocabulary\__pycache__\quantifiers.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== dsl\language\vocabulary\__pycache__\quantifiers.cpython-314.pyc =====
 
@@ -7385,6 +8375,7 @@ class SemanticContext:
     domain: Optional[object] = None
     neighborhood: Optional[object] = None
     quantifier: Optional[str] = None
+    model_target: Optional[str] = None
 
     # ---------------------------------------------
     # NEW:
@@ -7579,7 +8570,7 @@ from dsl.ast.nodes.assertion import (
     ProblemNode,
 )
 
-from dsl.ast.nodes.primitives import AttributeNode
+from dsl.ast.nodes.primitives import AttributeNode, TargetRefNode
 
 
 class BindingValidator:
@@ -7629,6 +8620,9 @@ class BindingValidator:
 
         if isinstance(node, ComparisonNode):
 
+            if isinstance(node.left, TargetRefNode):
+                self._resolve_target_ref(node.left, context)
+
             if isinstance(node.left, AttributeNode):
                 self._resolve_attribute(node.left, context)
 
@@ -7668,6 +8662,25 @@ class BindingValidator:
             return
 
         raise TypeError(f"Unsupported node type: {type(node)}")
+
+    def _resolve_target_ref(
+        self,
+        target: TargetRefNode,
+        context: SemanticContext,
+    ):
+        semantic = self._ensure_semantic(target)
+
+        if context.model_target is None:
+            raise UnboundVariableError(
+                "Cannot resolve 'target': missing model target in semantic context"
+            )
+
+        semantic.resolved_entity = "_model"
+        semantic.resolved_symbol = None
+        semantic.resolved_path = ["_model", context.model_target]
+        semantic.resolved_type = "model_output"
+
+        return
 
     # ─────────────────────────────────────────────
     # SEMANTIC INITIALIZATION
@@ -8107,6 +9120,7 @@ from dsl.ast.nodes.assertion import (
 from dsl.ast.nodes.primitives import (
     AttributeNode,
     ConstantNode,
+    TargetRefNode,
 )
 
 
@@ -8249,6 +9263,9 @@ class LogicValidator:
         Binding has already been performed upstream.
         """
 
+        if isinstance(node, TargetRefNode):
+            return self._validate_target_ref(node, context)
+
         if isinstance(node, AttributeNode):
             return self._validate_attribute(node, context)
 
@@ -8256,6 +9273,33 @@ class LogicValidator:
             return
 
         raise InvalidPropertyError(f"Invalid operand type: {type(node)}")
+
+    def _validate_target_ref(self, node: TargetRefNode, context):
+        semantic = node.semantic
+
+        if semantic is None:
+            raise InvalidPropertyError("Unbound target reference")
+
+        if semantic.resolved_entity != "_model":
+            raise InvalidPropertyError(
+                f"Invalid target reference binding: expected '_model', "
+                f"got {semantic.resolved_entity!r}"
+            )
+
+        if not semantic.resolved_path:
+            raise InvalidPropertyError(
+                "Invalid target reference: missing resolved path"
+            )
+
+        if context.model_target is None:
+            raise InvalidPropertyError("Invalid target reference: missing model target")
+
+        if semantic.resolved_path != ["_model", context.model_target]:
+            raise InvalidPropertyError(
+                f"Invalid target reference path: expected "
+                f"['_model', {context.model_target!r}], "
+                f"got {semantic.resolved_path!r}"
+            )
 
     # ─────────────────────────────
     # ATTRIBUTE
@@ -8434,7 +9478,7 @@ class PropertyValidator:
     # ENTRY POINT
     # ─────────────────────────────────────────────
 
-    def validate(self, prop, model_schema=None):
+    def validate(self, prop, model_schema=None, model_target=None):
 
         self.tracer.log(f"Validating Property: {prop.type}")
 
@@ -8480,6 +9524,8 @@ class PropertyValidator:
             # ==================================================
 
             context = LHSValidator(tracer=self.tracer).validate(scope)
+
+            context.model_target = model_target
 
             prop.semantic.context = context
 
@@ -8619,10 +9665,13 @@ class FORMLValidator:
         self.tracer.log(f"Validating FORMLValidator: {program}")
 
         try:
+            model_target = program.header.target if program.header is not None else None
+
             for prop in program.body:
                 PropertyValidator(tracer=self.tracer).validate(
                     prop,
                     model_schema=model_schema,
+                    model_target=model_target,
                 )
 
         except ParserError:

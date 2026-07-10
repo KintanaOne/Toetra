@@ -48,11 +48,14 @@ function        = ? official_functions ? ;
 function_expr   = function , "(" , [ args ] , ")" ;
 problem_expr    = ( ? official_problems ? ) , "." , function_expr ;
 
-(* === ATTRIBUTES === *)
-attribute_identifier = identifier | TARGET ;
-attribute = identifier , { "." , attribute_identifier } ;
+(* === ATTRIBUTES / MODEL OUTPUT === *)
+attribute = identifier , { "." , identifier } ;
+
+target_comparison_expr = TARGET , comparison_operation , value ;
+attribute_comparison_expr = attribute , comparison_operation , value ;
+
 logic_expr = attribute , logic_operation , value ;
-comparison_expr = attribute , comparison_operation , value ;
+comparison_expr = target_comparison_expr | attribute_comparison_expr ;
 
 (* === ASSERTION === *)
 
@@ -359,13 +362,14 @@ problem_expr : (CLASSIFICATION
     | ANOMALY_DETECTION
     | REINFORCEMENT_LEARNING) "." function_expr
 
-# === ATTRIBUTES ===
+# === ATTRIBUTES / MODEL OUTPUT ===
 
-attribute_identifier : identifier
-    | TARGET
-attribute : identifier ("." attribute_identifier)*
+attribute : identifier ("." identifier)*
+target_comparison_expr : TARGET comparison_operation value
+attribute_comparison_expr : attribute comparison_operation value
 logic_expr : attribute logic_operation value
-comparison_expr : attribute comparison_operation value
+comparison_expr : target_comparison_expr
+    | attribute_comparison_expr
 
 # === ASSERTION ===
 
@@ -486,9 +490,17 @@ header : padding model_declaration padding target_declaration padding (dataset_d
 body : padding property_section (padding property_section)* padding
 program : header body
 
+===== dsl\language\tools\__pycache__\constants.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== dsl\language\tools\__pycache__\constants.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0x9b in position 8: invalid start byte]
+
+===== dsl\language\tools\__pycache__\formatter.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== dsl\language\tools\__pycache__\formatter.cpython-314.pyc =====
 
@@ -498,9 +510,17 @@ program : header body
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
+===== dsl\language\tools\__pycache__\registry.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== dsl\language\tools\__pycache__\registry.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
+
+===== dsl\language\tools\__pycache__\transforms.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== dsl\language\tools\__pycache__\transforms.cpython-314.pyc =====
 
@@ -1128,6 +1148,10 @@ def fix_neighborhood_precedence(line: str) -> str:
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xe1 in position 8: invalid continuation byte]
 
+===== dsl\language\vocabulary\__pycache__\metrics.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== dsl\language\vocabulary\__pycache__\metrics.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
@@ -1156,9 +1180,17 @@ def fix_neighborhood_precedence(line: str) -> str:
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0xf9 in position 8: invalid start byte]
 
+===== dsl\language\vocabulary\__pycache__\protected_words.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
+
 ===== dsl\language\vocabulary\__pycache__\protected_words.cpython-314.pyc =====
 
 [ERROR reading file: 'utf-8' codec can't decode byte 0x8f in position 9: invalid start byte]
+
+===== dsl\language\vocabulary\__pycache__\quantifiers.cpython-311.pyc =====
+
+[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
 
 ===== dsl\language\vocabulary\__pycache__\quantifiers.cpython-314.pyc =====
 
