@@ -11,7 +11,7 @@ Z3_CAPABILITIES = BackendCapabilities(
     supports_problem_predicates=False,
     supports_model_assertions=True,
     supports_quantifiers=False,
-    supports_domains=False,
+    supports_domains=True,
     supports_neighborhoods=False,
     supported_normal_forms=(
         NormalFormKind.NNF,

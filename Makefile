@@ -39,6 +39,7 @@ type:
 # Full local CI
 ci:
 	python -m ruff check .
+	python -m black .
 	python -m black --check .
 	python -m pyright
 	python -m pytest -q
