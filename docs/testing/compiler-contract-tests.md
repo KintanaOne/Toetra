@@ -110,8 +110,10 @@ missing target declaration → build failure
 valid at expression → AtExprNode
 valid pairwise expression → PairwiseExprNode
 valid check_at expression → CheckAtExprNode
-valid quantifier expression → QuantifierExprNode
+valid `forall x0` expression → QuantifierExprNode(variable="x0")
 valid RHS comparison → ComparisonNode
+valid arithmetic comparison → symmetric expression tree
+arithmetic precedence → expected unary/binary AST shape
 valid problem expression → ProblemNode
 ```
 
@@ -139,6 +141,8 @@ each property has type, rule, backend
 each rule has scope and assertion
 logical tree preserves parentheses/precedence
 primitive values have inferred dtype
+scalar-expression nodes preserve operator precedence and operand order
+comparison nodes contain two scalar-expression operands
 ```
 
 ## AST → SemanticValidatedAST
@@ -170,9 +174,19 @@ ProgramNode enriched with SemanticAnnotations
 at scope introduces x and x'
 check_at uses x as default entity
 pairwise requires x ~ x'
-forall introduces _x
-implicit attribute resolves to default entity
-unknown explicit variable fails
+forall x0 introduces x0 as symbolic variable
+implicit attribute resolves to quantified default entity
+matching explicit quantified variable succeeds
+mismatched explicit quantified variable fails
+typed domain subjects bind to declared scope variables
+implicit domain subject fails
+interval boundaries and finite-set literals are preserved
+duplicate/reversed/empty domains fail at documented boundaries
+target-only quantified assertion remains valid
+arithmetic feature references are recursively bound
+non-numeric arithmetic fails type validation
+literal-zero division fails semantic validation
+target inside domain bounds fails semantic validation
 unsupported property/scope combination fails
 ```
 
@@ -206,7 +220,10 @@ local scope → ScopeIR(kind="local")
 pointwise scope → ScopeIR(kind="pointwise")
 pairwise scope → ScopeIR(kind="pairwise")
 quantifier scope → ScopeIR(kind="quantifier")
-comparison → ComparisonIR
+typed domain → DomainIR with resolved constraints
+comparison → ComparisonIR(left expression, operator, right expression)
+arithmetic AST → recursive scalar IR
+arithmetic domain bound → typed DomainIR expression
 AND/OR/NOT/IMPLY → corresponding IR nodes or normalized forms
 problem predicate → ProblemIR
 ```
@@ -231,7 +248,8 @@ IR2 normal-form artifact
 - semantic equivalence is preserved when possible;
 - equisatisfiability is explicitly tracked when strict equivalence is not preserved;
 - traceability to source assertions is preserved;
-- no backend-specific query is emitted yet.
+- no backend-specific query is emitted yet;
+- arithmetic capability requirements remain explicit and traceable.
 
 ### Tests
 
@@ -333,6 +351,9 @@ single property aggregation
 multiple property aggregation
 model constraints added
 semantic constraints added
+domain assumptions expanded with source=DOMAIN
+open/closed interval operators preserved
+finite-set disjunction preserved
 origin metadata preserved
 contradiction detected
 ```
@@ -415,3 +436,42 @@ Compiler contract tests are sufficient when every FORML boundary has:
 - one expected error case;
 - one preservation check;
 - one mutation scenario.
+
+---
+
+## Mandatory Quantified-Domain-Arithmetic Contract Suite
+
+The implementation must include the stable test families defined below.
+
+```text
+test_parser_requires_quantified_identifier
+test_parser_accepts_all_interval_boundary_combinations
+test_parser_accepts_numeric_and_symbolic_finite_sets
+test_parser_preserves_arithmetic_precedence
+
+test_builder_preserves_quantified_identifier
+test_builder_builds_typed_interval_boundaries
+test_builder_builds_typed_finite_set
+test_builder_builds_symmetric_scalar_comparison
+
+test_semantic_binds_matching_quantified_entity
+test_semantic_resolves_implicit_assertion_feature
+test_semantic_rejects_mismatched_quantified_entity
+test_semantic_requires_explicit_domain_subject
+test_semantic_rejects_duplicate_domain_subject
+test_semantic_rejects_invalid_or_empty_interval
+test_semantic_rejects_target_in_domain
+test_semantic_classifies_affine_and_nonlinear_arithmetic
+
+test_ir1_preserves_scalar_expression_tree
+test_ir1_preserves_typed_domain
+test_ir2_expands_domain_with_domain_provenance
+test_ir2_keeps_arithmetic_comparison_atomic
+
+test_aggregation_builds_universal_refutation
+test_aggregation_builds_existential_witness_search
+test_router_rejects_unsupported_nonlinear_requirement
+test_router_rejects_unsupported_categorical_requirement
+```
+
+Exact cases and acceptance boundaries are defined in [Language Evolution Test Matrix](language-evolution-test-matrix.md).

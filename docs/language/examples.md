@@ -1,21 +1,15 @@
-# Examples
 
-> Status: Stabilizing  
-> Scope: User-facing language examples and future golden samples  
-> Priority: P1  
-> Audience: FORML users, test authors, documentation readers
+# Normative FORML Examples
+
+> Status: Accepted language baseline  
+> Scope: Explicit quantified bindings, typed domains and scalar arithmetic  
+> Audience: users, compiler authors, test authors and backend authors
 
 ## Purpose
 
-This document provides example FORML specifications.
+The examples in this document are normative.
 
-Examples serve three roles:
-
-1. Help users understand the DSL.
-2. Provide documentation samples.
-3. Become future golden samples for parser, builder, semantic, IR, and end-to-end test.
-
-Each example should eventually define expected outputs at several layers:
+Each example has a stable identifier and defines observable expectations across the compiler pipeline. Formatting may evolve, but the represented meaning must remain stable unless a later ADR supersedes it.
 
 ```text
 source
@@ -23,317 +17,391 @@ source
 → AST
 → SemanticValidatedAST
 → IR1
-→ IR2
-→ AggregatedAssertionSet
-→ BackendQuery
+→ IR2 assumptions
+→ verification condition
+→ backend result
 ```
 
 ---
 
-## Minimal Bound Check
+## QV-001 — Universal Target Bound
 
 ```forml
-model := "model.joblib"
-target := prediction
+model := "demo.onnx"
+target := MyTarget
 
-[BOUND]: check_at x => score >= 0
+[LOGIC]:
+forall x0
+    with domain(
+        x0.a: [0.0, 3.0],
+        x0.b: {obj1, obj2},
+        x0.c: ]0.0, 3.0],
+        x0.d: {0.0, 7.0},
+        x0.e: ]0.0, 3.0[
+    )
+    => target <= 7
+    using Z3
 ```
 
-### Intent
+### Meaning
 
-Ensure that `score` is non-negative at a given point.
+For every admissible valuation of `x0`, the model output declared by `target := MyTarget` is at most `7`.
 
-### Expected Scope
+### Binding
 
 ```text
-kind: pointwise
-variables:
-  x: anchor
-default_entity: x
+quantifier: forall
+variable: x0
+role: symbolic
+default_entity: x0
+target reference: _model.MyTarget
 ```
 
-### Expected Assertion
+The assertion does not need to mention `x0` textually. Model assumptions connect the quantified model inputs to the output.
+
+### Domain expansion
 
 ```text
-x.score >= 0
+x0.a >= 0.0
+x0.a <= 3.0
+x0.b == obj1 OR x0.b == obj2
+x0.c > 0.0
+x0.c <= 3.0
+x0.d == 0.0 OR x0.d == 7.0
+x0.e > 0.0
+x0.e < 3.0
 ```
+
+### Universal verification condition
+
+```text
+Γdomain(x0)
+AND Γmodel(x0, _model.MyTarget)
+AND NOT(_model.MyTarget <= 7)
+```
+
+### Backend profile
+
+The source, AST and semantic layers accept symbolic values such as `obj1` and `obj2`.
+
+A backend without categorical-domain capability must reject the request as unsupported. It must not reinterpret the symbols as numeric variables or strings silently.
 
 ---
 
-## Bounded Score Range
+## QV-002 — Explicit Quantified Feature
 
 ```forml
-model := "model.joblib"
-target := prediction
-
-[BOUND]: check_at x => score >= 0 AND score <= 1
-```
-
-### Intent
-
-Ensure that the model score remains in `[0, 1]`.
-
-### Expected Logical Shape
-
-```text
-AND(
-  x.score >= 0,
-  x.score <= 1
-)
-```
-
----
-
-## Local Robustness
-
-```forml
-model := "classifier.joblib"
-target := prediction
-
-dataset := "data.csv"
-
-[ROBUSTNESS]: at x in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUAL()
-```
-
-### Intent
-
-Ensure classification output remains stable for perturbations around `x`.
-
-### Expected Scope
-
-```text
-kind: local
-variables:
-  x: anchor
-  x': perturbation
-default_entity: x'
-neighborhood:
-  metric: L2
-  eps: 0.1
-```
-
-### Target End-to-End Meaning
-
-```text
-For all perturbations x' around x within an L2 epsilon ball,
-the classification output should remain equal.
-```
-
----
-
-## Pointwise Logical Rule
-
-```forml
-model := "model.joblib"
-target := approved
-
-[LOGIC]: check_at x => (age >= 18 AND income >= 1000) -> approved == true
-```
-
-### Intent
-
-Express a conditional behavioral rule.
-
-### Expected Logical Shape
-
-```text
-IMPLY(
-  AND(
-    x.age >= 18,
-    x.income >= 1000
-  ),
-  x.approved == true
-)
-```
-
-### IR1 Target
-
-IR1 should normalize implication and negation according to the IR1-NNF contract.
-
----
-
-## Pairwise Monotonicity
-
-```forml
-model := "regressor.joblib"
+model := "demo.joblib"
 target := score
 
-[MONOTONICITY]: x ~ x' in neighborhood(metric=L1, eps=1.0) => REGRESSION.INCREASING()
+[BOUND]: forall applicant => applicant.age >= 18
 ```
 
-### Intent
-
-Compare two related points and express a monotonicity constraint through a problem-level predicate.
-
-### Expected Scope
+Expected binding:
 
 ```text
-kind: pairwise
-variables:
-  x: anchor
-  x': perturbation
-default_entity: x'
+applicant.age → declared symbolic entity `applicant`, feature `age`
 ```
-
-### Expected Assertion
-
-```text
-ProblemIR(problem=REGRESSION, function=INCREASING)
-```
-
-### Planned Extension
-
-A future attribute-to-attribute form such as `x'.score >= x.score` is useful, but it requires extending the comparison AST, builder, semantic validation, and IR contracts so the right-hand side can be an `AttributeNode`, not only a constant.
 
 ---
 
-## Quantified Bound
+## QV-003 — Implicit Quantified Feature
 
 ```forml
-model := "model.joblib"
-target := prediction
+model := "demo.joblib"
+target := score
 
-[BOUND]: forall with age(18, 65) => score >= 0
+[BOUND]: forall applicant => age >= 18
 ```
 
-### Intent
-
-Ensure a bound for all symbolic inputs in a domain.
-
-### Expected Scope
+Expected binding:
 
 ```text
-kind: quantifier
-variables:
-  _x: symbolic
-default_entity: _x
-domain:
-  age: [18, 65]
+age → applicant.age
 ```
 
-### Expected Assertion
-
-```text
-_x.score >= 0
-```
+An unqualified feature is allowed in an assertion when the scope defines one unambiguous default entity.
 
 ---
 
-## Regression Stability
+## QE-001 — Existential Witness
 
 ```forml
-model := "regressor.joblib"
-target := prediction
+model := "demo.joblib"
+target := score
 
-[STABILITY]: at x in neighborhood(metric=L2, eps=0.05) => REGRESSION.BETWEEN()
+[LOGIC]:
+exists applicant
+    with domain(
+        applicant.age: [18, 65],
+        applicant.income: ]0, 100000]
+    )
+    => target >= 0.8
+    using Z3
 ```
 
-### Intent
+### Meaning
 
-Ensure regression output remains inside a controlled range under local perturbation.
+Find at least one admissible `applicant` whose model output is at least `0.8`.
 
-### Future Requirements
-
-This example requires:
-
-- model task detection,
-- regression function compatibility,
-- ModelBridge constraints,
-- backend-specific output encoding.
-
----
-
-## Backend Selection Example
-
-```forml
-model := "model.joblib"
-target := prediction
-
-[BOUND]: check_at x => score >= 0 using z3(timeout=30)
-```
-
-### Intent
-
-Request Z3 as the verification backend.
-
-### Expected Compiler Behavior
+### Existential verification condition
 
 ```text
-Parse backend syntax
-→ build BackendNode
-→ normalize backend name
-→ attach backend to IR task
-→ validate backend capability before lowering
+Γdomain(applicant)
+AND Γmodel(applicant, _model.score)
+AND _model.score >= 0.8
 ```
+
+### Result interpretation
+
+| Solver result | FORML result |
+|---|---|
+| SAT | Witness found |
+| UNSAT | No admissible witness exists |
+| UNKNOWN | Existence undecided |
+
+SAT is not a counterexample under existential witness semantics.
 
 ---
 
-## Invalid Example: Missing Header
+## DOM-001 — Boundary Matrix
 
 ```forml
-[BOUND]: check_at x => score >= 0
+model := "demo.joblib"
+target := score
+
+[LOGIC]:
+forall x0
+    with domain(
+        x0.closed: [0, 3],
+        x0.open_left: ]0, 3],
+        x0.open_right: [0, 3[,
+        x0.open: ]0, 3[
+    )
+    => target >= 0
 ```
 
-Expected failure:
+Expected operators:
 
-```text
-source-to-cst or builder boundary rejects missing header declarations.
-```
+| Source | Lower operator | Upper operator |
+|---|---|---|
+| `[0, 3]` | `>=` | `<=` |
+| `]0, 3]` | `>` | `<=` |
+| `[0, 3[` | `>=` | `<` |
+| `]0, 3[` | `>` | `<` |
+
+Boundary kinds remain explicit in typed domain artifacts before expansion.
 
 ---
 
-## Invalid Example: Unknown Variable
+## DOM-002 — Numeric Finite Set
 
 ```forml
-model := "model.joblib"
-target := prediction
+model := "demo.joblib"
+target := score
 
-[BOUND]: check_at x => y.score >= 0
+[LOGIC]:
+forall x0
+    with domain(
+        x0.level: {0.0, 7.0}
+    )
+    => target <= 10
 ```
 
-Expected failure:
+Expected domain formula:
 
 ```text
-semantic binding rejects y because only x exists in the scope.
+x0.level == 0.0 OR x0.level == 7.0
 ```
+
+`{0.0, 7.0}` is a discrete finite set, not an interval.
 
 ---
 
-## Invalid Example: Property/Scope Mismatch
+## DOM-003 — Symbolic Finite Set
 
 ```forml
-model := "model.joblib"
-target := prediction
+model := "demo.joblib"
+target := score
 
-[FAIRNESS]: check_at x => CLASSIFICATION.EQUITY()
+[LOGIC]:
+forall x0
+    with domain(
+        x0.region: {EU, US, APAC}
+    )
+    => target <= 10
 ```
 
-Expected failure:
+The identifiers `EU`, `US` and `APAC` are symbolic categorical literals in domain-value position.
+
+Expected semantic requirement:
 
 ```text
-semantic validation rejects FAIRNESS with pointwise scope if FAIRNESS requires pairwise scope.
+requires_categorical_values = true
+requires_finite_set_membership = true
 ```
 
 ---
 
-## Golden Sample Roadmap
+## ARI-001 — Precedence
 
-Each example should eventually become a golden sample with expected artifacts:
+```forml
+model := "finance.joblib"
+target := risk
 
-| Example | CST | AST | Semantic | IR1 | IR2 | BackendQuery |
-|---|---|---|---|---|---|---|
-| Minimal Bound Check | planned | planned | planned | planned | planned | planned |
-| Bounded Score Range | planned | planned | planned | planned | planned | planned |
-| Local Robustness | planned | planned | planned | planned | planned | planned |
-| Pairwise Monotonicity | planned | planned | planned | planned | planned | planned |
-| Quantified Bound | planned | planned | planned | planned | planned | planned |
+[LOGIC]:
+forall account
+    => account.revenue - 2 * account.cost + account.reserve <= target + 7
+    using Z3
+```
+
+Expected scalar tree:
+
+```text
+ADD(
+  SUB(
+    FeatureRef(account.revenue),
+    MUL(Constant(2), FeatureRef(account.cost))
+  ),
+  FeatureRef(account.reserve)
+)
+<=
+ADD(TargetRef(_model.risk), Constant(7))
+```
+
+Multiplication binds more tightly than addition and subtraction. Additive operators are left-associative.
 
 ---
+
+## ARI-002 — Unary Arithmetic
+
+```forml
+model := "demo.joblib"
+target := score
+
+[LOGIC]: forall x0 => -x0.debt + x0.assets >= 0
+```
+
+Expected scalar tree:
+
+```text
+ADD(
+  NEG(FeatureRef(x0.debt)),
+  FeatureRef(x0.assets)
+)
+>= Constant(0)
+```
+
+---
+
+## ARI-003 — Arithmetic Domain Bounds
+
+```forml
+model := "demo.joblib"
+target := score
+
+[LOGIC]:
+forall x0
+    with domain(
+        x0.b: [0.0, 10.0],
+        x0.a: [x0.b - 1.0, x0.b + 1.0]
+    )
+    => x0.a + x0.b <= target
+    using Z3
+```
+
+Expected domain assumptions:
+
+```text
+x0.b >= 0.0
+x0.b <= 10.0
+x0.a >= x0.b - 1.0
+x0.a <= x0.b + 1.0
+```
+
+Domain entries are simultaneous constraints. Their textual order does not imply assignment order.
+
+---
+
+## ARI-004 — Initial Affine Profile
+
+```forml
+model := "demo.joblib"
+target := score
+
+[LOGIC]: forall x0 => (3 * x0.a - x0.b) / 2 <= target
+```
+
+This belongs to the initial affine profile because division is by a non-zero constant.
+
+Equivalent internal classification:
+
+```text
+linear_or_affine = true
+nonlinear = false
+symbolic_division = false
+```
+
+---
+
+## ARI-005 — Valid Language, Nonlinear Requirement
+
+```forml
+model := "demo.joblib"
+target := score
+
+[LOGIC]: forall x0 => x0.a * x0.b <= target
+```
+
+This expression is syntactically and semantically valid for numeric features.
+
+It requires:
+
+```text
+requires_nonlinear_arithmetic = true
+```
+
+A backend supporting only affine arithmetic must reject it at capability matching, not during parsing and not by silently approximating the product.
+
+---
+
+## PW-001 — Pointwise Scope Remains Distinct
+
+```forml
+model := "demo.joblib"
+target := score
+
+[BOUND]: check_at x0 => target <= 7
+```
+
+`check_at x0` denotes one concrete evaluation point. It is not equivalent to `forall x0` and does not use a domain to generate symbolic valuations.
+
+---
+
+## Golden-Sample Rule
+
+Each normative example should eventually provide normalized snapshots for all layers it reaches:
+
+```text
+source.forml
+cst.json
+ast.json
+semantic.json
+ir1.json
+ir2.json
+verification-condition.json
+backend-query.json
+result.json
+metadata.yaml
+```
+
+Snapshots must use canonical serialization, not unstable Python `repr` output.
 
 ## Related Documents
 
-- [Syntax](syntax.md)
-- [Properties](properties.md)
 - [Scopes](scopes.md)
-- [Assertions](assertions.md)
-- [Golden Samples](../testing/golden-samples.md)
+- [Quantified Bindings](quantified-bindings.md)
+- [Domains](domains.md)
+- [Arithmetic Expressions](arithmetic-expressions.md)
+- [Invalid and Unsupported Examples](invalid-examples.md)
+- [Language Evolution Test Matrix](../testing/language-evolution-test-matrix.md)

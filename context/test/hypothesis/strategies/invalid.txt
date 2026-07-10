@@ -1,40 +1,4 @@
 
-===== test\hypothesis\strategies\invalid\__pycache__\generic.cpython-311.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\hypothesis\strategies\invalid\__pycache__\generic.cpython-314.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0x8e in position 9: invalid start byte]
-
-===== test\hypothesis\strategies\invalid\__pycache__\invalid_cst.cpython-314.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0x8a in position 9: invalid start byte]
-
-===== test\hypothesis\strategies\invalid\__pycache__\invalid_lexical.cpython-314.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
-
-===== test\hypothesis\strategies\invalid\__pycache__\invalid_program.cpython-311.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xa7 in position 0: invalid start byte]
-
-===== test\hypothesis\strategies\invalid\__pycache__\invalid_program.cpython-314.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xfa in position 12: invalid start byte]
-
-===== test\hypothesis\strategies\invalid\__pycache__\invalid_string.cpython-314.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
-
-===== test\hypothesis\strategies\invalid\__pycache__\invalid_syntactic.cpython-314.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0xe3 in position 16: invalid continuation byte]
-
-===== test\hypothesis\strategies\invalid\__pycache__\program.cpython-314.pyc =====
-
-[ERROR reading file: 'utf-8' codec can't decode byte 0x8b in position 9: invalid start byte]
-
 ===== test\hypothesis\strategies\invalid\generic.py =====
 
 """

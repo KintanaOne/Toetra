@@ -69,8 +69,8 @@ Examples:
 check_at x
 at x in neighborhood(metric=L2, eps=0.1)
 x ~ x' in neighborhood(metric=L2, eps=0.1)
-forall with domain(...)
-exists with domain(...)
+forall x0 with domain(...)
+exists x0 with domain(...)
 ```
 
 ## Assertion
@@ -116,4 +116,4 @@ source
 
 This page should be updated alongside the grammar and golden samples.
 
-The examples should eventually be executable as integration test.
+The examples should eventually be executable as integration tests.

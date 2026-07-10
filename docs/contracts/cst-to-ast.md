@@ -1,136 +1,156 @@
 # CST to AST Contract
 
-> Status: P0 / Implemented / Stabilizing  
-> Scope: Concrete Syntax Tree to FORML AST  
-> Implementation: custom builder layer  
-> Audience: builder maintainers, AST maintainers, Miova campaign authors
+> Status: P0 / Accepted target contract  
+> Scope: Concrete Syntax Tree to typed FORML AST  
+> Audience: builder maintainers, AST maintainers and mutation authors
 
 ## Purpose
 
-The CST to AST contract defines how parser-specific structures become FORML domain objects.
+The builder removes parser-specific structure while preserving every semantically relevant part of the source.
 
-It answers the question:
+---
+
+## Input and Output
 
 ```text
-What structured FORML program does this syntax tree represent?
+Input:  official FORML CST
+Output: ProgramNode AST
 ```
 
-The builder removes grammar noise and produces typed domain nodes.
+No raw Lark node is required downstream after a successful build.
 
 ---
 
-## Input
+## Quantifier Mapping
+
+Source:
+
+```forml
+forall x0
+```
+
+Target conceptual node:
 
 ```text
-CST: Lark Tree
+QuantifierExprNode(
+    quantifier=FORALL,
+    variable="x0",
+    domain=None,
+)
 ```
 
-Preconditions:
+The builder:
 
-- CST was produced by the official FORML parser;
-- CST root corresponds to a complete program;
-- no semantic validation is assumed.
+- canonicalizes the quantifier vocabulary;
+- preserves the exact identifier text;
+- does not invent `_x`;
+- does not check assertion binding;
+- rejects a CST shape lacking the required identifier.
 
 ---
 
-## Output
+## Domain Mapping
+
+Source:
+
+```forml
+with domain(
+    x0.a: ]0.0, 3.0],
+    x0.region: {EU, US}
+)
+```
+
+Conceptual AST:
 
 ```text
-ProgramNode
+DomainNode(entries=[
+    DomainEntryNode(
+        subject=AttributeNode(path=["x0", "a"]),
+        constraint=IntervalDomainNode(
+            lower=ConstantNode(0.0),
+            upper=ConstantNode(3.0),
+            lower_boundary=OPEN,
+            upper_boundary=CLOSED,
+        ),
+    ),
+    DomainEntryNode(
+        subject=AttributeNode(path=["x0", "region"]),
+        constraint=FiniteSetDomainNode(values=[
+            SymbolicCategoryNode("EU"),
+            SymbolicCategoryNode("US"),
+        ]),
+    ),
+])
 ```
 
-The AST root must contain:
+The builder preserves:
 
-- `HeaderNode`;
-- one or more `PropertyNode` objects;
-- each property with a `PropertyRuleNode`;
-- each rule with a scope expression and assertion;
-- optional backend metadata.
+- subject path;
+- entry order;
+- bound expression trees;
+- boundary kinds;
+- set member order and literal kind;
+- source location when available.
 
----
-
-## Main AST Products
-
-| Node | Purpose |
-|---|---|
-| `ProgramNode` | Full FORML program. |
-| `HeaderNode` | Model and target declarations. |
-| `PropertyNode` | One property section. |
-| `PropertyRuleNode` | LHS scope + RHS assertion. |
-| `ExpressionNode` variants | `at`, `check_at`, `pairwise`, quantifier contexts. |
-| `AssertionNode` | RHS wrapper. |
-| `LogicalNode` variants | Boolean and predicate structure. |
-| `BackendNode` | Optional backend hint. |
+It must not flatten a domain into `name + raw values`.
 
 ---
 
-## Guarantees
+## Scalar Expression Mapping
 
-If the builder succeeds:
+Required conceptual mappings:
 
-- no raw Lark nodes should be required by downstream layers;
-- AST nodes should represent FORML concepts directly;
-- mandatory syntactic information should be present;
-- optional constructs should be represented explicitly as `None` or empty collections;
-- AST construction should fail early on structurally invalid CST shapes.
+```text
+literal               → ConstantNode
+qualified/unqualified feature → AttributeNode
+target keyword        → TargetRefNode
+unary arithmetic      → UnaryArithmeticNode
+binary arithmetic     → BinaryArithmeticNode
+comparison            → ComparisonNode(left_expr, op, right_expr)
+```
 
----
+The builder preserves precedence, associativity and operand order.
 
-## Non-Goals
-
-The builder must not:
-
-- resolve variable bindings;
-- infer implicit entities;
-- validate property/scope compatibility;
-- validate feature existence in a model;
-- normalize logical expressions into NNF/CNF/DNF;
-- generate backend queries.
+Parentheses may disappear as nodes when their grouping is fully represented by the resulting tree.
 
 ---
 
-## Failure Modes
+## Structural Guarantees
 
-The builder should reject:
+A successful build guarantees:
 
-- missing model declaration;
-- missing target declaration;
-- unsupported property mode;
-- missing RHS assertion;
-- invalid comparison structure;
-- invalid backend argument structure;
-- malformed domain or neighborhood nodes.
-
----
-
-## Stabilization Notes
-
-Current builder stabilization should focus on:
-
-- consistent enum normalization;
-- consistent quantifier normalization;
-- strict AST node inheritance policy;
-- robust pairwise parsing;
-- avoiding accidental runtime dependency on test fixtures;
-- ensuring `logic_expr` grammar nodes are either supported or removed.
+- every property has a scope and assertion;
+- every quantified scope has a variable field;
+- every comparison has two scalar operands;
+- every unary/binary expression has the required operands;
+- every domain entry has one explicit subject and one typed constraint;
+- no solver-native type appears in the AST;
+- controlled vocabulary is canonicalized at the builder boundary where documented.
 
 ---
 
-## Miova Hooks
+## Builder Non-Goals
 
-Miova may mutate CST or AST-adjacent artifacts by:
+The builder does not:
 
-- removing required subtrees;
-- swapping property modes;
-- corrupting backend nodes;
-- replacing comparison operators;
-- replacing assertion nodes;
-- generating syntactically valid but structurally unexpected CST shapes.
+- resolve input symbols;
+- apply default entities;
+- validate interval ordering;
+- reject duplicate domain subjects;
+- validate arithmetic operand types;
+- decide backend support;
+- expand domain entries into boolean formulas.
 
-Expected outcomes:
+---
 
-| Mutation | Expected Boundary |
-|---|---|
-| CST shape invalid | Builder rejection. |
-| AST structurally valid but semantically invalid | Semantic rejection later. |
-| AST still valid | Continue to semantic validation. |
+## Builder-Owned Failures
+
+The builder rejects CST shapes that are syntactically accepted but structurally impossible to map, including:
+
+- missing quantified variable subtree;
+- missing domain subject or constraint;
+- interval with absent bound node;
+- finite-set member that cannot be represented as a literal;
+- arithmetic operator with missing operand;
+- comparison with fewer or more than two scalar operands;
+- unrecognized protected vocabulary after normalization.

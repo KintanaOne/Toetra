@@ -64,6 +64,72 @@ The AST must be:
 
 ---
 
+## Typed Domain AST
+
+The current generic domain shape is not sufficient for interval boundaries, finite-set values, or binding diagnostics.
+
+Target node family:
+
+```text
+DomainNode(entries)
+DomainEntryNode(subject, constraint)
+DomainConstraintNode
+IntervalDomainNode(lower, upper, lower_boundary, upper_boundary)
+FiniteSetDomainNode(values)
+SymbolLiteralNode(name)
+EnumBoundaryKind.OPEN
+EnumBoundaryKind.CLOSED
+```
+
+AST responsibilities:
+
+- preserve the explicitly qualified subject;
+- preserve all four interval boundary combinations;
+- distinguish finite sets from intervals;
+- distinguish symbolic category literals from quoted strings;
+- preserve source ordering for diagnostics;
+- avoid raw `name`/`values` dictionaries.
+
+The AST does not decide whether the subject entity is declared, whether bounds are ordered, or whether values match a feature type. Those are semantic responsibilities.
+
+---
+
+## Scalar Expression AST
+
+Arithmetic requires a symmetric expression tree rather than a comparison node specialized for `attribute op constant`.
+
+Target family:
+
+```text
+ScalarExpressionNode
+├── ConstantNode
+├── AttributeNode
+├── TargetRefNode
+├── UnaryArithmeticNode
+└── BinaryArithmeticNode
+```
+
+Target comparison shape:
+
+```text
+ComparisonNode(
+    left: ScalarExpressionNode,
+    op: EnumComparisonOperator,
+    right: ScalarExpressionNode,
+)
+```
+
+Structural invariants:
+
+- unary nodes have exactly one operand;
+- binary nodes have exactly two operands;
+- parentheses affect tree shape but do not require a dedicated semantic node;
+- operators are canonical enums after the builder boundary;
+- string and boolean leaves may be compared but are not valid arithmetic operands;
+- no solver object or affine simplification belongs in AST.
+
+The AST preserves user expression structure. Numeric typing, affine classification, and capability checks belong to later layers.
+
 ## AST vs SemanticValidatedAST
 
 The AST is the builder output.
@@ -115,7 +181,7 @@ The following invariants should hold for any builder-produced AST:
 | Property has a rule | Every property has a scope and assertion. |
 | Scope is explicit | Scope is one of the supported expression node types. |
 | Assertion has root | Every assertion wraps a logical root. |
-| Comparison has operands | Comparisons have left attribute, operator and right constant. |
+| Comparison has operands | Comparisons have two scalar-expression operands and one comparison operator. |
 | Backend hint is optional | Absence of backend does not invalidate AST. |
 
 ---

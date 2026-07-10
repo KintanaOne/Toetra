@@ -1,181 +1,158 @@
 # Backend Capabilities
 
-> Status: Planned / post-V1 orchestration; minimal Z3 checks needed for V1  
-> Scope: Backend metadata, compatibility checking, strategy selection  
-> Priority: P1
+> Status: Stabilizing; target dimensions accepted  
+> Scope: Backend-neutral capability declaration and routing
 
 ## Purpose
 
-A backend capability describes what a verification backend can support.
+Backend capability declarations allow FORML to reject incompatible verification requests before translation or execution.
 
-## V1 boundary
+A capability model must describe what a backend profile actually supports, not merely identify the backend by name.
 
-The full capability system is mainly a post-V1 orchestration concern. V1 still needs a minimal Z3 compatibility check, but it should not implement general multi-backend capability routing before the Z3 path is functional.
+---
 
-FORML should not assume that every backend can handle every property, model type, logical form, or constraint. Capability declarations make backend selection explicit, explainable, and testable.
+## Requirement/Capability Principle
 
-This document answers:
-
-```text
-How does FORML know whether a backend can verify a given property?
-```
-
-## Why capabilities matter
-
-Without explicit capabilities, backend selection becomes fragile and implicit.
-
-For example:
-
-- an SMT solver may support symbolic linear constraints but not arbitrary neural network verification;
-- an abstract interpretation backend may support robustness but not fairness;
-- a backend may require CNF-like clauses;
-- a backend may accept only specific model families;
-- a backend may produce approximate results instead of exact proof/counterexample results.
-
-Capabilities prevent invalid backend calls and enable meaningful diagnostics.
-
-## Capability dimensions
-
-A backend capability should describe several independent dimensions.
-
-| Dimension | Examples | Purpose |
-|---|---|---|
-| Property support | `ROBUSTNESS`, `BOUND`, `MONOTONICITY`, `FAIRNESS` | Which FORML properties can be handled. |
-| Problem support | `CLASSIFICATION`, `REGRESSION`, `CLUSTERING` | Which ML task families are supported. |
-| Model support | sklearn, XGBoost, neural networks, linear models | Which model representations can be encoded. |
-| Logical form support | NNF, CNF, DNF, arbitrary boolean tree | Which IR2/lowered forms can be consumed. |
-| Constraint support | linear, nonlinear, categorical, neighborhood, domain | Which constraint categories are valid. |
-| Result support | proof, counterexample, unknown, diagnostics | What the backend can report. |
-| Execution support | local, external process, API, library call | How the backend is executed. |
-
-## Suggested capability model
-
-A future backend capability object may follow this structure:
-
-```python
-@dataclass(frozen=True)
-class BackendCapability:
-    name: str
-    supported_properties: set[EnumProperty]
-    supported_problems: set[EnumProblem]
-    supported_frameworks: set[EnumModelFramework]
-    supported_model_types: set[str]
-    supported_logical_forms: set[str]
-    supported_constraint_kinds: set[str]
-    result_modes: set[str]
-    exact: bool
-    supports_counterexamples: bool
-    supports_timeout: bool
-```
-
-This is not a required implementation yet. It is a design target for backend orchestration.
-
-## Compatibility checking
-
-Before executing a backend, FORML should check:
+Routing succeeds only when:
 
 ```text
-BackendCapability
-+ Property type
-+ Problem type
-+ ModelSchema
-+ AggregatedAssertionSet
-+ LoweredQuery
-→ compatible / incompatible / partially compatible
+all task requirements are satisfied by backend capabilities
 ```
 
-Possible outcomes:
+Backend-specific conditionals must not be scattered through IR construction.
 
-| Outcome | Meaning |
-|---|---|
-| Compatible | Backend can execute the query. |
-| Incompatible | Backend cannot support the request. |
-| Partially compatible | Backend can support part of the query but not all constraints. |
-| Requires lowering | Backend needs a specific logical form or simplified query. |
-| Requires model encoding | Backend needs a symbolic model representation first. |
+---
 
-## Early failure principle
+## Required Capability Dimensions
 
-Backend incompatibility should fail before execution.
+### Logical
 
-FORML should prefer:
+- boolean conjunction/disjunction/negation;
+- supported normal forms;
+- problem-level predicates;
+- native quantifiers when applicable.
+
+### Scalar comparisons
+
+- equality/inequality;
+- ordered comparisons;
+- supported scalar sorts;
+- mixed numeric promotion.
+
+### Arithmetic
+
+- unary numeric signs;
+- affine addition/subtraction;
+- constant multiplication;
+- constant division;
+- nonlinear multiplication;
+- symbolic division;
+- exact rational/real handling where relevant.
+
+### Domains
+
+- interval assumptions;
+- open and closed bounds;
+- finite-set equality expansion;
+- boolean/string/category values;
+- symbolic categorical encoding.
+
+### Model and execution
+
+- model assumptions;
+- supported model-constraint families;
+- universal-refutation execution;
+- existential-witness execution;
+- counterexample/witness extraction;
+- provenance/trace support.
+
+---
+
+## Target Requirement Shape
+
+The exact API may use booleans, enums or sets, but it must represent distinctions equivalent to:
 
 ```text
-clear diagnostic before backend execution
+requires_affine_arithmetic
+requires_nonlinear_multiplication
+requires_symbolic_division
+required_scalar_sorts
+requires_finite_set_membership
+requires_symbolic_categories
+requires_domain_assumptions
+requires_model_assumptions
+verification_semantics
+normal_form
 ```
 
-over:
+A single `requires_numeric_comparisons` flag does not provide enough information for scalar expressions and typed domains.
+
+---
+
+## Capability Profiles
+
+A backend may expose multiple profiles rather than one overly broad declaration.
+
+Example:
 
 ```text
-late backend crash or unclear solver error
+Z3_NUMERIC_AFFINE
+Z3_TYPED_CATEGORICAL
+Z3_NONLINEAR_EXPERIMENTAL
 ```
 
-## Example diagnostics
+Profiles make support explicit and prevent a partially implemented translator from claiming all theoretical Z3 capabilities.
 
-A capability checker should be able to produce diagnostics such as:
+---
+
+## Minimal Z3 Numeric-Affine Profile
+
+A realistic first profile may declare:
+
+- boolean logic;
+- integer/real equality and ordering;
+- affine arithmetic;
+- numeric interval domains;
+- affine model assumptions;
+- NNF/CNF/DNF accepted forms;
+- universal refutation;
+- counterexample extraction.
+
+It must declare `False` for features not yet translated even when the underlying solver could theoretically support them, such as:
+
+- strings;
+- enum datatypes;
+- categorical finite sets;
+- symbolic division;
+- nonlinear model families;
+- existential result interpretation if the runner does not implement witnesses yet.
+
+---
+
+## Routing Diagnostics
+
+When routing fails, diagnostics should state:
 
 ```text
-Backend 'z3' cannot encode model type 'RandomForestClassifier' without a model encoder.
+required capability
+requested/considered backend profile
+unsupported expression or domain source
+possible compatible profiles when available
 ```
+
+Example:
 
 ```text
-Backend 'eran' supports robustness properties but not pairwise fairness properties.
+Property requires SYMBOLIC_CATEGORY equality for domain entry x0.region.
+Backend profile Z3_NUMERIC_AFFINE supports numeric sorts only.
 ```
 
-```text
-Backend 'box' supports approximate bounds but cannot produce exact counterexamples.
-```
+---
 
-## Relationship with backend orchestration
+## Soundness Rule
 
-Backend orchestration depends on capabilities.
+A backend capability declaration is a contract.
 
-```text
-LoweredQuery
-+ ModelConstraints
-+ BackendCapabilities
-→ Backend selection
-```
+Over-declaring support is a soundness bug because it allows unsupported or incorrectly encoded properties to pass routing.
 
-If the user explicitly requests a backend, capabilities validate that choice.
-
-If the user does not request a backend, capabilities allow FORML to select one automatically in the future.
-
-## Relationship with contracts
-
-Backend capabilities should be covered by contracts:
-
-| Contract | Responsibility |
-|---|---|
-| `ir-to-backend.md` | Defines accepted input to backend compilation. |
-| `type-normalization.md` | Ensures capability checks use normalized enums/types. |
-| `errors.md` | Defines backend incompatibility diagnostics. |
-| `mutation-boundaries.md` | Defines how Miova can mutate backend configs and capabilities. |
-
-## Miova testing strategy
-
-Miova can test backend capabilities by mutating:
-
-- supported property sets;
-- backend names;
-- logical form requirements;
-- model framework metadata;
-- execution options;
-- timeout settings;
-- capability declarations.
-
-Expected outcomes:
-
-| Mutation | Expected result |
-|---|---|
-| Unsupported property added to query | Backend incompatibility diagnostic. |
-| Unknown backend name | Backend selection failure. |
-| Unsupported model framework | Capability rejection. |
-| Missing required logical form | Lowering requirement diagnostic. |
-
-## Design invariant
-
-A backend must never be selected only because its name appears in the DSL.
-
-Backend selection must be validated against capabilities.
-
+Under-declaring support is a completeness/usability issue but does not silently change verification meaning.

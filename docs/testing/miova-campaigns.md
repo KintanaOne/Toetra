@@ -8,7 +8,7 @@
 
 Miova campaigns challenge FORML by mutating artifacts across the pipeline.
 
-The purpose is not to replace unit tests or contract test. Miova is used to explore
+The purpose is not to replace unit tests or contract tests. Miova is used to explore
 whether FORML remains robust when artifacts are modified, corrupted, simplified, or
 semantically challenged.
 
@@ -314,3 +314,25 @@ Miova campaigns are useful when:
 - they can reproduce failures;
 - they improve confidence in compiler evolution;
 - they make FORML robust against future refactors.
+
+---
+
+## Language Evolution Mutation Seeds
+
+Miova campaigns should seed from the normative examples and apply mutations such as:
+
+| Mutation | Expected classification |
+|---|---|
+| remove quantified identifier | REJECTED at parser |
+| rename declaration but not references | REJECTED at semantic binding |
+| remove entity qualifier from domain subject | REJECTED at semantic domain validation |
+| flip one interval boundary | SUCCESS with changed domain semantics |
+| reverse interval endpoints | REJECTED at semantic domain validation |
+| duplicate domain entry | REJECTED at semantic domain validation |
+| replace numeric finite member with symbolic member | SUCCESS with changed capability requirements |
+| replace constant multiplier with feature reference | SUCCESS, reclassified nonlinear |
+| replace constant denominator with zero | REJECTED semantically |
+| erase DOMAIN provenance after expansion | REJECTED by IR2/aggregation invariant |
+| change universal semantics to existential without changing task metadata | REJECTED by aggregation invariant |
+
+Successful semantics-changing mutations must record lineage and changed requirements; they must not be reported as equivalent transformations.

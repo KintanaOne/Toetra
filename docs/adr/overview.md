@@ -17,7 +17,10 @@ The goal of the ADR section is to make explicit:
 - why IR1 and IR2 are distinct,
 - why ModelBridge exists as a dedicated subsystem,
 - why Z3 is the minimal V1 backend,
-- and why Miova is used as an external mutation and contract validation framework.
+- why Miova is used as an external mutation and contract validation framework,
+- why quantified variables are explicitly bound,
+- why comparisons relate general scalar expressions,
+- and why typed domains are lowered into provenanced assumptions.
 
 ## ADR format
 
@@ -49,6 +52,9 @@ Impact on FORML
 | ADR-0010 | Use Z3 as the minimal V1 backend boundary |
 | ADR-0011 | Preserve error boundaries between layers |
 | ADR-0012 | Use Miova for mutation boundaries and contract validation |
+| ADR-0013 | Use explicitly bound quantified variables |
+| ADR-0014 | Represent comparisons as relations between scalar expressions |
+| ADR-0015 | Preserve typed domains and lower them into provenanced assumptions |
 
 ## Decision status vocabulary
 

@@ -1,129 +1,129 @@
 # AST Contract
 
-> Status: P0 / Implemented / Stabilizing  
-> Scope: FORML domain syntax representation  
-> Implementation: dataclass-based nodes  
-> Audience: AST maintainers, semantic validators, Miova mutation authors
+> Status: P0 / Accepted target structure  
+> Scope: Raw typed FORML syntax before semantic validation  
+> Audience: AST maintainers, semantic validators and mutation authors
 
 ## Purpose
 
-The AST contract defines what a valid FORML AST is before semantic validation.
-
-It answers the question:
+The AST answers:
 
 ```text
-What shape must the FORML program have before meaning is checked?
+What structured syntax did the user write?
 ```
 
-The AST is the domain-level syntax representation of a `.forml` program.
+It does not yet guarantee that the syntax has valid meaning for a scope or model.
 
 ---
 
-## AST Root
+## Required Node Families
 
-The AST root is:
-
-```text
-ProgramNode
-```
-
-A valid `ProgramNode` contains:
-
-- `header: HeaderNode`;
-- `body: list[PropertyNode]`.
-
-The body must contain at least one property before meaningful verification can occur.
-
----
-
-## Required Families
-
-| Family | Required Nodes |
+| Family | Conceptual nodes |
 |---|---|
 | Program | `ProgramNode`, `HeaderNode` |
 | Property | `PropertyNode`, `PropertyRuleNode` |
-| Scope | `AtExprNode`, `CheckAtExprNode`, `PairwiseExprNode`, `QuantifierExprNode` |
-| Assertion | `AssertionNode`, `ComparisonNode`, `AndNode`, `OrNode`, `NotNode`, `ImplicationNode`, `ProblemNode` |
-| Primitive | `AttributeNode`, `ConstantNode`, `ArgNode` |
-| Context | `DomainNode`, `NeighborhoodNode`, `BackendNode` |
+| Scope | `CheckAtExprNode`, `AtExprNode`, `PairwiseExprNode`, `QuantifierExprNode` |
+| Boolean | `AssertionNode`, `ComparisonNode`, `AndNode`, `OrNode`, `NotNode`, `ImplicationNode`, `ProblemNode` |
+| Scalar | `ScalarExpressionNode`, `ConstantNode`, `AttributeNode`, `TargetRefNode`, `UnaryArithmeticNode`, `BinaryArithmeticNode` |
+| Domain | `DomainNode`, `DomainEntryNode`, `IntervalDomainNode`, `FiniteSetDomainNode`, boundary-kind and literal-kind vocabulary |
+| Other context | `NeighborhoodNode`, `BackendNode`, `ArgNode` |
+
+Concrete Python names may differ, but the represented concepts and invariants are normative.
 
 ---
 
-## AST Guarantees
+## Quantified Scope Invariants
 
-A valid AST must guarantee:
-
-- no raw Lark tree is required downstream;
-- each property has exactly one scope expression;
-- each property has one assertion root;
-- attributes preserve raw parsed path information;
-- constants preserve parsed value and inferred dtype;
-- backend hints are optional;
-- domain and neighborhood modifiers are explicit when present.
-
----
-
-## Semantic Attachment Policy
-
-The AST contract distinguishes two states:
+A raw quantified-scope node contains:
 
 ```text
-AST
-SemanticValidatedAST
+quantifier: canonical quantifier kind
+variable: non-empty source identifier
+domain: typed domain or None
 ```
 
-Today, `SemanticValidatedAST` is represented by the AST after semantic annotations have been attached to relevant nodes.
+Raw AST guarantees identity preservation, not binding correctness.
 
-The target contract should decide whether:
-
-- all AST nodes inherit a semantic-capable base class; or
-- only specific nodes expose semantic metadata explicitly.
-
-The contract requires this policy to be explicit and stable.
+The AST must not replace the source variable with `_x` or another internal alias.
 
 ---
 
-## Non-Goals
+## Scalar Expression Invariants
 
-The AST must not:
+- leaves are constants, attributes or target references;
+- unary nodes contain exactly one operand;
+- binary nodes contain exactly two ordered operands;
+- comparisons contain exactly two scalar expressions;
+- chained comparisons are absent;
+- source grouping is represented by tree shape;
+- no backend-native arithmetic object is present.
 
-- encode solver-specific details;
-- decide backend compatibility;
-- perform NNF/CNF/DNF rewriting;
-- represent model internals;
-- aggregate constraints;
-- perform minimization.
+Raw AST may still contain:
 
----
+- an unknown explicit entity;
+- arithmetic over incompatible types;
+- unsupported nonlinear structure;
+- a literal zero denominator.
 
-## Invariants
-
-| Invariant | Description |
-|---|---|
-| Parser independence | AST users should not depend on Lark. |
-| Domain explicitness | FORML concepts are represented as FORML nodes. |
-| No backend leakage | AST contains backend hints only, not backend queries. |
-| No semantic assumption | Raw AST may contain unresolved variables. |
-| Stable mutation target | Miova can mutate AST nodes without parser involvement. |
+Those are semantic or capability concerns.
 
 ---
 
-## Miova Hooks
+## Domain Invariants
 
-Miova may mutate AST by:
+A raw domain AST satisfies structural rules:
 
-- removing required property fields;
-- replacing a scope type;
-- corrupting an attribute path;
-- changing constant dtype;
-- replacing a logical node;
-- deleting backend hints;
-- injecting unknown logical nodes.
+- the domain contains at least one entry;
+- every subject is an explicitly qualified attribute syntax node;
+- every entry contains exactly one interval or finite-set constraint;
+- interval lower/upper expressions and boundary kinds are preserved;
+- finite sets contain at least one typed member;
+- symbolic category literals are distinct from strings and feature references;
+- source provenance is available when parser position data exists.
 
-Expected outcome depends on mutation severity:
+Raw AST does not guarantee:
 
-| Mutation Type | Expected Outcome |
-|---|---|
-| Structural invalidity | AST or semantic rejection. |
-| Semantic invalidity | Semantic rejection. |
-| Valid alternative structure | Continue to semantic validation. |
+- subject binding to the scope variable;
+- unique subject features;
+- interval non-emptiness;
+- set-member compatibility;
+- numeric bound types;
+- backend encodability.
+
+---
+
+## Target Reference Invariant
+
+`TargetRefNode` represents the model output declared in the header.
+
+It is distinct from:
+
+```text
+AttributeNode(entity="target", ...)
+```
+
+The target reference may appear in assertions and assertion arithmetic, but a later semantic rule rejects it in input-domain subjects or bounds.
+
+---
+
+## Semantic Attachment Boundary
+
+The raw AST and SemanticValidatedAST are distinct artifacts.
+
+Semantic annotations may be attached to AST nodes as the current representation strategy, but downstream code must not infer semantic validity merely from node type.
+
+A validated marker/context or successful semantic pass is required.
+
+---
+
+## Forbidden AST Content
+
+The AST must not contain:
+
+- Lark nodes required for interpretation;
+- Z3 expressions;
+- backend variable declarations;
+- model coefficients as implicit syntax;
+- expanded domain boolean formulas;
+- guessed entity bindings;
+- silent arithmetic approximations.

@@ -275,3 +275,39 @@ Property-Based Testing is effective when:
 - discovered bugs become regression tests;
 - strategies are aligned with compiler contracts;
 - generated artifacts do not bypass the layer they are meant to test.
+
+---
+
+## Quantified Domain and Arithmetic Strategies
+
+Recommended Hypothesis strategies:
+
+```text
+quantified_identifier()
+quantifier_kind()
+interval_boundary_kind()
+non_empty_numeric_interval()
+finite_numeric_set(min_size=1)
+finite_symbolic_set(min_size=1)
+scalar_constant()
+feature_ref(bound_entities)
+affine_scalar_expression()
+nonlinear_scalar_expression()
+comparison_expression()
+typed_domain(bound_entity)
+```
+
+Required properties include:
+
+1. Every generated valid quantified source preserves its identifier through AST and semantic scope.
+2. Replacing the declared entity in one explicit reference with a fresh identifier causes semantic rejection.
+3. Every interval delimiter pair maps to the expected strict/non-strict operators.
+4. Domain expansion is logically equivalent to membership for sampled numeric valuations.
+5. Arithmetic parsing respects precedence independently of whitespace and redundant parentheses.
+6. Affine classification is invariant under parenthesization that preserves the same tree meaning.
+7. Symbolic products are never misclassified as affine.
+8. Generated literal-zero divisions are always rejected before backend translation.
+9. Normal-form conversion never descends into or mutates scalar-expression internals.
+10. Capability rejection remains deterministic for the same requirements/backend registry.
+
+Shrunk failures should be promoted to the invalid or golden-sample catalog.

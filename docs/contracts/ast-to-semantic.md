@@ -1,161 +1,196 @@
-# AST to Semantic Contract
+# AST to SemanticValidatedAST Contract
 
-> Status: P0 / Implemented / Stabilizing  
-> Scope: AST to SemanticValidatedAST  
-> Implementation: LHS validation, binding validation, logic validation, compatibility checks  
-> Audience: semantic maintainers, compiler authors, Miova campaign authors
+> Status: P0 / Accepted target semantics  
+> Scope: Scope construction, binding, typing and semantic validation  
+> Audience: semantic maintainers, compiler authors and diagnostic authors
 
 ## Purpose
 
-The AST to Semantic contract defines how raw AST syntax becomes semantically validated FORML.
-
-It answers the question:
+This boundary answers:
 
 ```text
-What does this FORML property mean in its evaluation context?
-```
-
-This is the boundary where scope, binding, symbols and property compatibility are resolved.
-
----
-
-## Input
-
-```text
-ProgramNode / PropertyNode
-```
-
-Preconditions:
-
-- AST was produced by the builder;
-- nodes are structurally present;
-- variables may still be unresolved;
-- feature references may still be implicit.
-
----
-
-## Output
-
-```text
-SemanticValidatedAST
-```
-
-Current representation:
-
-```text
-AST + SemanticAnnotations
-```
-
-The semantic layer enriches properties and attributes with:
-
-- semantic context;
-- symbol table;
-- resolved entity;
-- resolved path;
-- resolved symbol;
-- logical root cache;
-- scope metadata.
-
----
-
-## Semantic Pipeline
-
-```text
-PropertyNode
-    ↓
-LHS validation
-    ↓
-SemanticContext
-    ↓
-Binding validation
-    ↓
-resolved attributes
-    ↓
-Logic validation
-    ↓
-property/scope compatibility
-    ↓
-SemanticValidatedAST
+What does the typed syntax mean in this FORML scope and model context?
 ```
 
 ---
 
-## Main Responsibilities
-
-| Step | Responsibility |
-|---|---|
-| LHS validation | Determine semantic scope and variable roles. |
-| Symbol registration | Register anchor, perturbation, symbolic variables. |
-| Binding validation | Resolve explicit and implicit attribute references. |
-| Logic validation | Validate logical node structure and problem predicates. |
-| Compatibility validation | Ensure property type supports the semantic scope. |
-
----
-
-## Scope Semantics
-
-| Scope | Variables | Default Entity | Meaning |
-|---|---|---|---|
-| `check_at` | `x` | `x` | Pointwise evaluation. |
-| `at` | `x`, `x'` | `x'` | Local perturbation evaluation. |
-| `pairwise` | `x`, `x'` | `x'` | Pairwise relation between anchor and perturbation. |
-| quantifier | `_x` | `_x` | Symbolic universal/existential evaluation. |
-
----
-
-## Guarantees
-
-If semantic validation succeeds:
-
-- all attributes used in comparisons are resolved;
-- implicit feature access has a resolved entity;
-- semantic context exists for each property;
-- property/scope compatibility has been checked;
-- problem/function compatibility has been checked;
-- IR translation may consume semantic annotations.
-
----
-
-## Non-Goals
-
-The semantic layer must not:
-
-- produce IR directly;
-- perform NNF/CNF/DNF rewriting;
-- encode model internals as solver constraints;
-- choose backend strategy;
-- execute verification.
-
----
-
-## Stabilization Notes
-
-The semantic contract should stabilize:
-
-- enum normalization at semantic boundaries;
-- problem/function compatibility handling;
-- property/scope compatibility handling;
-- quantifier normalization;
-- semantic error boundaries;
-- distinction between parser errors and semantic errors;
-- feature validation against ModelSchema once schema integration is available.
-
----
-
-## Miova Hooks
-
-Miova may challenge semantic validation by:
-
-- removing semantic context;
-- corrupting variable roles;
-- replacing a scope with an incompatible property;
-- making implicit attributes ambiguous;
-- introducing unresolved entities;
-- corrupting problem/function combinations.
-
-Expected outcome:
+## Input and Output
 
 ```text
-Invalid semantic mutation → semantic rejection
-Valid semantic mutation   → IR translation may continue
+Input:  structurally valid ProgramNode / PropertyNode
+Output: SemanticValidatedAST + SemanticContext
 ```
+
+The current implementation may represent the output as AST nodes enriched by semantic annotations. The guarantees remain the same.
+
+---
+
+## Semantic Pass Order
+
+```text
+scope validation
+→ symbol registration
+→ domain binding
+→ assertion binding
+→ recursive scalar typing
+→ domain validity
+→ property/scope compatibility
+→ model-schema compatibility when available
+→ requirement classification
+```
+
+A concrete implementation may merge passes, but diagnostic ownership and postconditions remain explicit.
+
+---
+
+## Quantified Binding Algorithm
+
+For:
+
+```forml
+forall x0
+```
+
+semantic validation must:
+
+1. create exactly one symbolic scope variable named `x0`;
+2. register `x0` in the symbol table;
+3. preserve quantifier kind `FORALL`;
+4. set `x0` as the default input entity;
+5. resolve `x0.feature` to that symbol;
+6. resolve unqualified assertion features to `x0.feature`;
+7. reject any explicit unknown entity such as `y.feature`;
+8. disable single-variable alias fallback for explicit entity names;
+9. resolve `target` through the header/model-output namespace;
+10. preserve source and resolved paths for diagnostics.
+
+The same rules apply to `exists x0`, with quantifier kind `EXISTS` preserved for later verification semantics.
+
+An assertion is not required to mention the quantified identifier textually:
+
+```forml
+forall x0 => target <= 7
+```
+
+remains valid when the model assumptions connect `x0` and `target`.
+
+---
+
+## Domain Semantic Rules
+
+For each domain entry, semantic validation must:
+
+- require an explicitly qualified input subject;
+- resolve the subject entity to a variable declared by the scope;
+- reject implicit subjects;
+- reject unknown or mismatched entities;
+- reject `target` as subject;
+- reject duplicate resolved subjects;
+- recursively bind feature references inside arithmetic bounds;
+- require bound references to use declared scope entities;
+- reject `target` inside bounds;
+- validate finite-set literal compatibility;
+- preserve boundary and literal kinds;
+- validate constant-foldable interval ordering and emptiness;
+- treat entries as simultaneous constraints.
+
+A symbolic interval whose emptiness cannot be decided locally may pass semantic validation and later produce a satisfiability/vacuity diagnostic.
+
+---
+
+## Recursive Scalar Binding
+
+The validator walks both comparison operands recursively.
+
+For every scalar leaf:
+
+- input attributes receive resolved entity/path/symbol metadata;
+- `target` receives resolved model-output metadata;
+- constants retain scalar type and literal kind.
+
+For every arithmetic node:
+
+- operand types are validated;
+- result type is inferred;
+- numeric promotion is canonical;
+- a literal zero denominator is rejected;
+- expression requirements are classified.
+
+---
+
+## Type Rules
+
+### Arithmetic
+
+Arithmetic operators require numeric operands.
+
+The initial canonical promotion is:
+
+```text
+INT op INT     → INT, except `/`
+INT op REAL    → REAL
+REAL op INT    → REAL
+REAL op REAL   → REAL
+numeric `/`    → REAL unless a future exact rational type is explicit
+```
+
+Boolean, string, null and symbolic-category values are not arithmetic operands.
+
+### Comparison
+
+- equality/inequality require compatible scalar categories;
+- `<`, `<=`, `>`, `>=` require ordered compatible types;
+- numeric comparison uses canonical promotion;
+- symbolic categories support equality/inequality only unless an ordering is explicitly declared.
+
+---
+
+## Requirement Classification
+
+Successful semantic validation classifies, without backend choice:
+
+- scalar sorts required;
+- affine arithmetic usage;
+- nonlinear multiplication usage;
+- symbolic division usage;
+- finite-set membership;
+- categorical symbolic literals;
+- interval assumptions;
+- model-output references.
+
+Classification is metadata for IR requirements. It is not permission to execute the construct.
+
+---
+
+## Postconditions
+
+After success:
+
+- no input reference is unresolved;
+- no target reference is ambiguous;
+- all arithmetic nodes have compatible inferred types;
+- every domain subject is exactly bound;
+- domain structural meaning is preserved;
+- quantifier kind and variable identity are preserved;
+- IR1 lowering requires no alias guess or type guess.
+
+---
+
+## Semantic-Owned Failures
+
+This boundary owns:
+
+- unbound explicit entity;
+- quantified identifier mismatch in assertion/domain;
+- implicit domain subject;
+- duplicate domain subject;
+- target used in input domain;
+- incompatible finite-set members;
+- non-numeric arithmetic;
+- literal division by zero;
+- statically empty/reversed interval;
+- incompatible comparison types;
+- property/scope incompatibility;
+- missing model feature when schema-aware validation is active.
+
+Unsupported backend capability is not a semantic error when the expression is otherwise meaningful.

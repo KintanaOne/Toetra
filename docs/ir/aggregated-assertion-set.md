@@ -76,7 +76,7 @@ Examples:
 ```text
 age <= 30
 CLASSIFICATION.EQUAL()
-REGRESSION.INCREASING()
+x'.score >= x.score
 ```
 
 ---
@@ -90,7 +90,7 @@ Examples:
 ```text
 x is an anchor variable
 x' is a perturbation variable
-_x is a symbolic variable
+x0 is the symbolic variable declared by the quantified scope
 implicit age resolves to x'.age
 ```
 
@@ -125,14 +125,29 @@ metric = L2
 
 ### Domain Constraints
 
-Constraints derived from domain restrictions.
+Constraints derived from typed input-domain restrictions.
 
 Examples:
 
 ```text
-age in [18, 65]
-region in {"EU", "US"}
+x0.a: [0.0, 3.0]
+→ x0.a >= 0.0 AND x0.a <= 3.0
 ```
+
+```text
+x0.region: {EU, US}
+→ x0.region == EU OR x0.region == US
+```
+
+Domain assumptions must use:
+
+```text
+AssumptionSource.DOMAIN
+```
+
+and preserve provenance to the source entry, subject, interval/set form, and generated atoms.
+
+Domain assumptions are composed conjunctively with model assumptions and the verification query. Their internal finite-set expansion may contain disjunctions.
 
 ---
 

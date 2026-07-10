@@ -1,23 +1,21 @@
 # Scopes
 
-> Status: Implemented / stabilizing  
-> Scope: Evaluation scopes and semantic contexts  
-> Priority: P1  
-> Audience: DSL users, semantic layer contributors, IR authors
+> Status: Target language contract — implementation partially available  
+> Scope: Evaluation scopes, variable introduction, and semantic contexts  
+> Priority: P0  
+> Audience: DSL users, semantic layer contributors, IR authors, test authors
 
 ## Purpose
 
 Scopes define where a FORML property is evaluated.
 
-They are the left-hand side of a property rule:
+They form the left-hand side of a property rule:
 
 ```forml
 [PROPERTY]: scope => assertion
 ```
 
-The scope is responsible for introducing variables, roles, default entity resolution, domains, and perturbation spaces.
-
-In the compiler pipeline, scope syntax is transformed into a `SemanticContext`, then into `ScopeIR`.
+A scope introduces variables and semantic roles. It may also attach a neighborhood or a domain. During compilation, scope syntax becomes a `SemanticContext`, then a `ScopeIR`.
 
 ---
 
@@ -27,12 +25,14 @@ A scope defines:
 
 | Responsibility | Example |
 |---|---|
-| Variables | `x`, `x'`, `_x` |
-| Roles | anchor, perturbation, symbolic |
-| Default entity | implicit `age` resolves to `x'.age` or `_x.age` |
+| Declared variables | `x`, `x'`, `x0` |
+| Semantic roles | anchor, perturbation, symbolic |
+| Default entity | implicit `age` resolves to the scope's default variable |
 | Neighborhood | `L2` ball with `eps=0.1` |
-| Domain | `with age(18, 65)` |
-| Semantic scope type | local, pointwise, pairwise, quantifier |
+| Domain | admissible valuations for a symbolic variable |
+| Semantic scope kind | pointwise, local, pairwise, quantifier |
+
+A scope does not define the model output. The keyword `target` refers to the output declared in the program header.
 
 ---
 
@@ -41,43 +41,45 @@ A scope defines:
 ### Syntax
 
 ```forml
-[BOUND]: check_at x => score >= 0
+[BOUND]: check_at x0 => target >= 0
 ```
 
 ### Meaning
 
-`check_at` evaluates a property at a single point.
+`check_at` evaluates a property for one concrete point identified by `x0`.
 
 Semantic context:
 
 | Variable | Role |
 |---|---|
-| `x` | anchor |
+| `x0` | anchor |
 
 Default entity:
 
 ```text
-x
+x0
 ```
 
-Implicit reference:
+Therefore:
 
 ```forml
-score >= 0
+age >= 18
 ```
 
 resolves to:
 
 ```text
-x.score >= 0
+x0.age >= 18
 ```
+
+`check_at` is not a domain-wide scope. The concrete values associated with `x0` must come from an execution context, observation, dataset row, or future binding mechanism. A domain does not transform `check_at` into universal quantification.
 
 ### Typical Use Cases
 
-- bounded outputs,
-- local sanity checks,
-- pointwise logical assertions,
-- deterministic model checks.
+- checking one known observation;
+- pointwise model diagnostics;
+- deterministic regression tests;
+- validating a concrete counterexample candidate.
 
 ---
 
@@ -91,7 +93,7 @@ x.score >= 0
 
 ### Meaning
 
-`at` introduces an anchor point and an implicit perturbation around it.
+`at` introduces an anchor point and an implicit perturbation variable.
 
 Semantic context:
 
@@ -106,13 +108,13 @@ Default entity:
 x'
 ```
 
-This means:
+Thus an implicit feature reference such as:
 
 ```forml
 age <= 30
 ```
 
-is resolved as:
+is resolved to:
 
 ```text
 x'.age <= 30
@@ -120,10 +122,9 @@ x'.age <= 30
 
 ### Typical Use Cases
 
-- robustness around a point,
-- stability under perturbations,
-- local counterexample search,
-- neighborhood-constrained verification.
+- local robustness;
+- stability under perturbation;
+- neighborhood-constrained counterexample search.
 
 ---
 
@@ -132,21 +133,21 @@ x'.age <= 30
 ### Syntax
 
 ```forml
-[FAIRNESS]: x ~ x' in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUITY()
+[MONOTONICITY]: x ~ x' in neighborhood(metric=L1, eps=1.0) => x'.score >= x.score
 ```
 
 ### Meaning
 
-Pairwise scope compares two related points.
+Pairwise scope compares two explicitly named related inputs.
 
 Semantic context:
 
 | Variable | Role |
 |---|---|
 | `x` | anchor |
-| `x'` | perturbation / paired point |
+| `x'` | perturbation or paired point |
 
-The semantic layer expects the right variable to be the primed version of the left variable.
+The current pair convention requires the right identifier to be the primed form of the left identifier.
 
 Valid:
 
@@ -154,89 +155,170 @@ Valid:
 x ~ x'
 ```
 
-Invalid:
+Invalid under the current contract:
 
 ```text
 x ~ y
 ```
 
-unless the language later introduces explicit unrelated-pair semantics.
-
-### Typical Use Cases
-
-- fairness comparisons,
-- monotonicity checks,
-- counterfactual pairs,
-- controlled feature perturbation.
+Unrelated or independently bound pairs require a future language decision.
 
 ---
 
-## Quantifier Scope
+## Quantified Scopes
 
-### Syntax
+### Target Syntax
 
 ```forml
-[BOUND]: forall with age(18, 65) => score >= 0
+[BOUND]: forall x0 => target <= 7
 ```
 
-or:
+```forml
+[BOUND]: exists candidate => candidate.score > 0
+```
+
+Unicode aliases may be accepted:
 
 ```forml
-[BOUND]: exists with age(18, 65) => score < 0
+[BOUND]: ∀ x0 => target <= 7
+```
+
+```forml
+[BOUND]: ∃ candidate => candidate.score > 0
 ```
 
 ### Meaning
 
-A quantifier introduces an implicit symbolic variable.
+A quantified scope introduces one explicitly named symbolic input variable.
 
-Internal convention:
-
-| Internal Variable | Role |
-|---|---|
-| `_x` | symbolic |
-
-Default entity:
-
-```text
-_x
-```
-
-Implicit reference:
+For:
 
 ```forml
-score >= 0
+forall x0
 ```
 
-resolves to:
+the semantic context is:
 
 ```text
-_x.score >= 0
+quantifier = forall
+variables = {
+    "x0": "symbolic"
+}
+default_entity = "x0"
 ```
 
-### Accepted User-Facing Forms
+FORML must preserve the declared identifier. It must not replace it with an implicit internal name such as `_x`.
 
-Potential accepted forms:
+### Universal Quantifier
 
-| User Form | Normalized Value |
-|---|---|
-| `forall` | `forall` |
-| `∀` | `forall` |
-| `exists` | `exists` |
-| `∃` | `exists` |
+```forml
+forall x0 => assertion
+```
+
+means that `assertion` must hold for every admissible valuation of `x0`.
+
+### Existential Quantifier
+
+```forml
+exists x0 => assertion
+```
+
+means that at least one admissible valuation of `x0` must satisfy `assertion`.
+
+The language meaning is independent from backend availability. A backend may reject a quantified request when its capabilities do not support the required semantics.
+
+---
+
+## Quantified Binding Rules
+
+Inside `forall x0` or `exists x0`:
+
+- `x0.age` is a valid explicit input reference;
+- `age` is a valid implicit reference and resolves to `x0.age`;
+- `y.age` is invalid unless `y` is separately declared by a future multi-variable scope;
+- `target` remains valid because it is a model-output reference, not an input entity.
+
+Valid:
+
+```forml
+[BOUND]: forall x0 => x0.age >= 18
+```
+
+Valid with implicit input binding:
+
+```forml
+[BOUND]: forall x0 => age >= 18
+```
+
+Valid target-only assertion:
+
+```forml
+[BOUND]: forall x0 => target <= 7
+```
+
+Invalid explicit binding:
+
+```forml
+[BOUND]: forall x0 => y.age >= 18
+```
+
+An unknown explicit entity must be rejected. The semantic layer must not silently alias `y` to `x0` merely because the scope contains one variable.
+
+The complete normative rules are defined in [Quantified Variable Bindings](quantified-bindings.md).
+
+---
+
+## Domains on Quantified Scopes
+
+A quantified variable may be restricted by a typed domain:
+
+```forml
+[LOGIC]:
+forall x0
+    with domain(
+        x0.age: [18, 65],
+        x0.region: {EU, US}
+    )
+    => target <= 7
+```
+
+Domain subjects are always explicitly qualified. Every subject entity must be declared by the scope.
+
+Valid:
+
+```forml
+forall x0
+    with domain(
+        x0.age: [18, 65]
+    )
+    => target <= 7
+```
+
+Invalid:
+
+```forml
+forall x0
+    with domain(
+        y.age: [18, 65]
+    )
+    => target <= 7
+```
+
+The domain contributes admissibility assumptions. It does not replace the quantifier and does not turn `check_at` into a domain-wide scope.
+
+Multiple domain entries are conjunctive. Intervals preserve open/closed boundary kinds, and braces denote finite discrete sets. The full contract is defined in [Domains](domains.md).
 
 ---
 
 ## Neighborhoods
 
-Neighborhoods define perturbation constraints.
+Neighborhoods define perturbation constraints for scopes such as `at` and pairwise scopes.
 
 Example:
 
 ```forml
 in neighborhood(metric=L2, eps=0.1)
 ```
-
-A neighborhood is attached to scopes such as `at` and pairwise.
 
 Expected semantic representation:
 
@@ -246,96 +328,94 @@ eps: 0.1
 args: {...}
 ```
 
-Neighborhoods later become part of:
+Neighborhoods later participate in:
 
-- `SemanticContext`,
-- `ScopeIR`,
-- model-aware constraints,
+- `SemanticContext`;
+- `ScopeIR`;
+- assertion aggregation;
 - backend lowering.
-
----
-
-## Domains
-
-Domains restrict evaluation.
-
-Example:
-
-```forml
-with age(18, 65)
-```
-
-A domain can represent:
-
-- categorical values,
-- numeric boundaries,
-- subsets of input space,
-- future symbolic constraints.
-
-Current syntax is simple. Target semantics should define whether a domain represents enumeration, interval, or backend-specific constraint.
 
 ---
 
 ## Scope to SemanticContext
 
-The semantic validator transforms scopes into `SemanticContext` objects.
-
 | Scope Syntax | Semantic Scope | Variables | Default Entity |
 |---|---|---|---|
-| `check_at x` | pointwise | `{x: anchor}` | `x` |
+| `check_at x0` | pointwise | `{x0: anchor}` | `x0` |
 | `at x` | local | `{x: anchor, x': perturbation}` | `x'` |
 | `x ~ x'` | pairwise | `{x: anchor, x': perturbation}` | `x'` |
-| `forall` | quantifier | `{_x: symbolic}` | `_x` |
-| `exists` | quantifier | `{_x: symbolic}` | `_x` |
+| `forall x0` | quantifier | `{x0: symbolic}` | `x0` |
+| `exists x0` | quantifier | `{x0: symbolic}` | `x0` |
 
 ---
 
 ## Scope to IR
 
-Scopes lower into `ScopeIR`.
+`ScopeIR` must preserve:
 
-`ScopeIR` should preserve:
+- scope kind;
+- the exact declared variable names;
+- variable roles;
+- quantifier kind when applicable;
+- neighborhood metadata;
+- domain metadata;
+- enough provenance for diagnostics and backend routing.
 
-- scope kind,
-- variable roles,
-- neighborhood constraints,
-- domain constraints,
-- enough information for assertion aggregation and backend lowering.
-
-Example conceptual `ScopeIR`:
+Conceptual quantified `ScopeIR`:
 
 ```text
-kind: local
+kind: quantifier
 variables:
-  x: anchor
-  x': perturbation
-neighborhood:
-  metric: L2
-  eps: 0.1
-domain: null
+  x0: symbolic
+quantifier: forall
+domain: ...
 ```
+
+---
+
+## Current and Target Behavior
+
+| Area | Current implementation | Target contract |
+|---|---|---|
+| `check_at`, `at`, pairwise scopes | available | retained |
+| word and Unicode quantifiers | partially available | retained and normalized |
+| explicit quantified identifier | not yet represented end-to-end | required |
+| implicit `_x` convention | present in older documentation/implementation | removed from the public contract |
+| strict mismatch rejection | current single-variable fallback may interfere | required for explicit quantified references |
+| quantified backend execution | backend-dependent | capability-gated |
 
 ---
 
 ## Testing Requirements
 
-Each scope should be tested at:
-
-| Layer | Requirement |
-|---|---|
-| Grammar | Valid and invalid syntax. |
-| AST builder | Correct scope node. |
-| Semantic validation | Correct context and default entity. |
-| IR1 | Correct `ScopeIR`. |
-| IR2 | Scope constraints preserved. |
-| Miova | Mutated scopes fail or transform as expected. |
-| Hypothesis | Generated scopes cover valid and invalid boundaries. |
+```text
+check_at_introduces_anchor
+at_introduces_anchor_and_perturbation
+pairwise_preserves_both_identifiers
+forall_requires_identifier
+exists_requires_identifier
+quantifier_preserves_declared_identifier
+quantifier_sets_declared_identifier_as_default_entity
+matching_explicit_reference_is_accepted
+implicit_reference_resolves_to_declared_identifier
+mismatched_explicit_reference_is_rejected
+target_only_assertion_is_accepted
+mismatched_domain_subject_is_rejected
+implicit_domain_subject_is_rejected
+domain_interval_boundaries_are_preserved
+domain_finite_set_values_are_preserved
+scope_ir_preserves_quantified_identifier
+```
 
 ---
 
 ## Related Documents
 
+- [Quantified Variable Bindings](quantified-bindings.md)
+- [Domains](domains.md)
 - [Properties](properties.md)
 - [Assertions](assertions.md)
+- [Syntax](syntax.md)
+- [Grammar](grammar.md)
 - [IR Scope](../ir/scope-ir.md)
 - [AST to Semantic Contract](../contracts/ast-to-semantic.md)

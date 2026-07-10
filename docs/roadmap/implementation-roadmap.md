@@ -64,8 +64,6 @@ Tasks:
 
 ## Phase 2 — IR1 / NNF stabilization
 
-Structural IR1 already exists. This phase is about making the normalization subphase real and testable.
-
 Goal:
 
 ```text
@@ -129,7 +127,7 @@ Tasks:
 - track assertion provenance,
 - detect contradictions,
 - preserve traceability,
-- add aggregation contract test.
+- add aggregation contract tests.
 
 ## Phase 6 — Lowering and minimization
 
@@ -191,3 +189,39 @@ Post-V1 extensions include:
 - richer model encodings,
 - advanced optimization passes,
 - proof/explanation layers.
+
+---
+
+## Documentation-First Language Migration
+
+The documentation baseline for explicit quantified bindings, typed domains and scalar arithmetic is complete after patches 01 through 06.
+
+Implementation proceeds in this order:
+
+```text
+1. EBNF and Lark grammar
+2. parser golden tests
+3. AST node model and builder
+4. semantic scope/binding/domain/type validation
+5. IR1 scalar and domain representation
+6. IR2 domain assumptions, provenance and requirements
+7. backend capabilities and initial Z3 numeric-affine translation
+8. universal/existential result interpretation
+9. complete end-to-end tests
+```
+
+Each step follows the corresponding gate in `docs/testing/language-evolution-test-matrix.md`.
+
+### Initial implementation boundary
+
+Implement first:
+
+- required identifiers for `forall` and `exists`;
+- exact binding with no explicit-entity alias fallback;
+- all four interval boundary combinations;
+- numeric and symbolic finite-set representation;
+- scalar expression AST/IR;
+- numeric affine execution in Z3;
+- structured rejection of nonlinear and categorical requests not yet supported.
+
+Do not block language representation on full backend support. Do not claim backend support merely because the parser accepts a construct.

@@ -1,125 +1,131 @@
 # Contracts Overview
 
-> Status: P0 / Architecture Baseline  
+> Status: P0 / Active architecture baseline  
 > Scope: FORML artifact boundaries and verification contracts  
-> Implementation: Mixed — implemented, stabilizing and planned contracts  
-> Audience: FORML maintainers, contributors, Miova campaign authors, backend implementers
+> Implementation: Mixed — implemented, stabilizing and target contracts  
+> Audience: maintainers, contributors, backend authors and Miova campaign authors
 
 ## Purpose
 
 FORML is organized as a sequence of explicit artifact transformations.
 
-A contract defines the boundary between two layers.
-
-It answers the question:
+A contract answers:
 
 ```text
-What must be true before and after a transformation?
+What must be true before this transformation?
+What must be preserved by it?
+What may the next layer rely on?
+Which layer owns each rejection?
 ```
 
-Contracts make FORML testable, evolvable and mutation-resilient.
-
-They prevent the system from becoming a loose sequence of ad-hoc conversions.
+Contracts prevent the compiler from becoming a chain of ad-hoc conversions and make documentation-first changes executable as testable obligations.
 
 ---
 
 ## Contracted Pipeline
 
-The target FORML end-to-end pipeline is:
-
 ```text
 .forml source
-    ↓
-Source → CST
-    ↓
-CST → AST
-    ↓
-AST → SemanticValidatedAST
-    ↓
-SemanticValidatedAST → IR1 / NNF
-    ↓
-IR1 → IR2 / CNF-DNF
-    ↓
-IR2 + Model Constraints → AggregatedAssertionSet
-    ↓
-AggregatedAssertionSet → LoweredQuery
-    ↓
-LoweredQuery → BackendQuery
+→ CST
+→ AST
+→ SemanticValidatedAST
+→ IR1
+→ IR2 normal forms + assumptions
+→ Aggregated verification condition
+→ BackendQuery
+→ VerificationResult
 ```
 
-The ModelBridge pipeline contributes a second source of truth:
+ModelBridge contributes:
 
 ```text
 model artifact
-    ↓
-Model → ModelSchema
-    ↓
-ModelSchema → semantic validation support
-    ↓
-ModelSchema → model constraints
+→ ModelSchema
+→ model assumptions
+→ aggregated verification condition
 ```
+
+---
+
+## Language-Evolution Contract
+
+The normative cross-layer contract for explicit quantifiers, typed domains and scalar expressions is:
+
+```text
+contracts/quantified-domain-scalar-expressions.md
+```
+
+It consolidates ADR-0013, ADR-0014 and ADR-0015 into boundary-level obligations.
 
 ---
 
 ## Contract Categories
 
-| Category | Documents | Purpose |
+| Category | Main documents | Purpose |
 |---|---|---|
-| Compiler contracts | source, CST, AST, semantic, IR | Stabilize the DSL compiler pipeline. |
-| Logical contracts | IR1, IR2, aggregation, lowering | Stabilize logical normalization and verification preparation. |
-| ModelBridge contracts | model schema, semantic integration, model constraints | Connect ML artifacts to FORML verification. |
-| Backend contracts | IR to backend, backend query | Define solver-facing boundaries. |
-| Cross-cutting contracts | errors, type normalization, mutation boundaries | Stabilize failure semantics and testing strategy. |
+| Syntax | `source-to-cst`, `cst-to-ast`, `ast-contract` | Preserve legal syntax as typed domain objects. |
+| Semantics | `ast-to-semantic`, `schema-to-semantic` | Resolve binding, types, scopes and model meaning. |
+| Logical IR | `semantic-to-ir1`, `ir1-to-ir2` | Preserve meaning while normalizing logic. |
+| Composition | `assertion-aggregation`, `model-constraints` | Build the complete verification condition. |
+| Backend | `ir-to-backend`, `lowering-minimization` | Check capabilities and produce solver artifacts. |
+| Cross-cutting | `errors`, `type-normalization`, `mutation-boundaries` | Stabilize diagnostics, types and validation campaigns. |
 
 ---
 
-## Contract Template
+## Required Contract Sections
 
-Each contract should define:
+Every boundary contract should state:
 
-| Section | Meaning |
-|---|---|
-| Purpose | Why this boundary exists. |
-| Input | Accepted artifact and preconditions. |
-| Output | Produced artifact and required invariants. |
-| Guarantees | What downstream layers may rely on. |
-| Non-goals | What this layer must not do. |
-| Failure modes | Expected errors and rejection cases. |
-| Miova hooks | Where mutations may challenge the boundary. |
+- purpose;
+- input and preconditions;
+- output and postconditions;
+- information-preservation requirements;
+- invariants;
+- non-goals;
+- failure ownership;
+- current implementation gap when relevant;
+- mutation/testing hooks.
 
 ---
 
-## Current vs Target Guarantees
+## Preservation Principle
 
-FORML contracts intentionally distinguish:
+Every transformation must preserve user intent until a documented semantic rewrite occurs.
+
+In particular:
+
+- quantified identifiers are never replaced silently;
+- interval boundary kinds are never reduced to ambiguous booleans;
+- finite sets are never confused with intervals;
+- scalar expressions are never flattened to text;
+- unsupported arithmetic is never approximated silently;
+- domain assumptions retain provenance;
+- `forall` and `exists` never share the same result interpretation accidentally.
+
+---
+
+## Current and Target Labels
 
 | Label | Meaning |
 |---|---|
-| Implemented | Present in the current codebase. |
-| Stabilizing | Present but requiring cleanup, normalization, or stricter test. |
-| Planned / Critical | Not implemented yet, but required for end-to-end verification. |
-| Research Direction | Future exploration beyond the first stable end-to-end path. |
+| Implemented | Present and exercised in the current codebase. |
+| Stabilizing | Present but still gaining stricter contracts or diagnostics. |
+| Accepted target | Semantics are decided; implementation may still be pending. |
+| Deferred | Deliberately outside the current implementation scope. |
 
-This lets the documentation describe the target architecture without pretending every layer already exists.
+A target contract is authoritative for planned changes but must not be described as already implemented.
 
 ---
 
 ## Relationship with Miova
 
-Miova is not part of the normal FORML verification path.
+Miova is external to normal verification execution.
 
-Miova is used to challenge FORML's contracts.
+It may challenge each artifact boundary and assert:
 
-It can mutate artifacts such as:
-
-- source strings;
-- CST-like structures;
-- AST nodes;
-- semantic annotations;
-- IR1 logical expressions;
-- planned IR2 forms;
-- ModelSchema objects;
-- aggregated assertions;
-- backend-preparable queries.
-
-A contract is considered stronger when it can survive controlled mutations and reject invalid artifacts at the correct boundary.
+```text
+valid mutation   → accepted and preserved
+invalid mutation → rejected at the owning boundary
+wrong-boundary rejection → contract failure
+silent reinterpretation  → contract failure
+```

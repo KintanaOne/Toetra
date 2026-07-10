@@ -138,3 +138,20 @@ After all packs are integrated, the documentation should be checked for:
 - ModelBridge terminology,
 - outdated SMS terminology,
 - missing golden samples.
+
+---
+
+## Language Evolution Documentation Freeze
+
+The documentation-first package is complete when patches 01 through 06 are applied:
+
+```text
+01 explicit quantified bindings
+02 typed domains
+03 arithmetic expressions
+04 architecture decisions
+05 cross-layer contracts
+06 normative examples and test matrix
+```
+
+The next work belongs to implementation and test delivery, not additional speculative language documentation. Documentation should now evolve alongside concrete code changes and discovered edge cases.

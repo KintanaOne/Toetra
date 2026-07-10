@@ -101,8 +101,8 @@ FORML supports multiple ways to define where a property is evaluated.
 | `at` | `at x` | local |
 | `check_at` | `check_at x` | pointwise |
 | pairwise token | `x ~ x'` | pairwise |
-| `forall` / `∀` | `forall with age(18, 65)` | quantifier |
-| `exists` / `∃` | `exists with age(18, 65)` | quantifier |
+| `forall` / `∀` | `forall x0 with domain(...)` | quantifier |
+| `exists` / `∃` | `exists x0 with domain(...)` | quantifier |
 
 Quantifier tokens should be normalized before semantic validation.
 
@@ -113,14 +113,41 @@ forall
 exists
 ```
 
-Accepted user-facing forms may include:
+Accepted user-facing forms include a mandatory identifier:
 
 ```text
-forall
-exists
-∀
-∃
+forall x0
+exists x0
+∀ x0
+∃ x0
 ```
+
+The tokens normalize to `forall` or `exists`, while the declared identifier remains a separate preserved binding. See [Quantified Variable Bindings](quantified-bindings.md).
+
+---
+
+## Domain Vocabulary
+
+| Vocabulary | Example | Meaning |
+|---|---|---|
+| `with domain` | `with domain(x0.age: [18, 65])` | Introduces input admissibility constraints. |
+| `[` on lower side | `[0, 1]` | Closed lower boundary. |
+| `]` on lower side | `]0, 1]` | Open lower boundary. |
+| `]` on upper side | `[0, 1]` | Closed upper boundary. |
+| `[` on upper side | `[0, 1[` | Open upper boundary. |
+| `{...}` | `{EU, US}` | Finite discrete set. |
+| symbolic literal | `EU` | Unquoted categorical value inside a finite set. |
+
+Recommended canonical internal values:
+
+```text
+EnumBoundaryKind.OPEN
+EnumBoundaryKind.CLOSED
+```
+
+The same bracket glyph has a different role depending on whether it appears on the lower or upper side. The AST must preserve the resulting boundary kind rather than relying on raw characters downstream.
+
+`domain` should be reserved as a keyword. Unquoted identifiers inside finite sets should be represented as symbolic literals, not input-variable references.
 
 ---
 
@@ -181,6 +208,30 @@ score <= 1.0
 
 ---
 
+## Arithmetic Operators
+
+| Operator | Canonical enum intent | Meaning |
+|---|---|---|
+| `+` | `ADD` or unary `POS` | Addition or unary identity. |
+| `-` | `SUB` or unary `NEG` | Subtraction or unary negation. |
+| `*` | `MUL` | Multiplication. |
+| `/` | `DIV` | Division. |
+
+Recommended internal vocabularies:
+
+```text
+EnumArithmeticOperator.ADD
+EnumArithmeticOperator.SUB
+EnumArithmeticOperator.MUL
+EnumArithmeticOperator.DIV
+EnumUnaryArithmeticOperator.POS
+EnumUnaryArithmeticOperator.NEG
+```
+
+The same surface token may have unary or binary meaning according to CST position. The builder must normalize it into the corresponding canonical enum.
+
+The initial verification profile permits only affine multiplication/division shapes. This is a capability rule, not a token-normalization rule.
+
 ## Backends
 
 Current grammar-level backend names include:
@@ -235,6 +286,7 @@ Recommended canonicalization boundaries:
 | Backend enum names | Mixed lowercase/uppercase enum members. | Use canonical uppercase enum names. |
 | Logical casing | Lowercase tokens vs uppercase grammar literals. | Accept flexible syntax, normalize internally. |
 | Problem/function validation | Must compare enums, not raw strings. | Use a shared enum normalization helper. |
+| Arithmetic operators | Unary and binary tokens reuse `+` and `-`. | Normalize by AST role into explicit unary/binary enums. |
 
 ---
 
@@ -244,4 +296,5 @@ Recommended canonicalization boundaries:
 - [Syntax](syntax.md)
 - [Properties](properties.md)
 - [Assertions](assertions.md)
+- [Arithmetic Expressions](arithmetic-expressions.md)
 - [Backends Syntax](backends.md)

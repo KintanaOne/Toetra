@@ -162,3 +162,37 @@ The testing strategy is considered effective when:
 - Miova can mutate artifacts without corrupting unrelated layers;
 - end-to-end compilation can be validated deterministically;
 - failures are classified precisely enough to support debugging and CI.
+
+---
+
+## Language Evolution Freeze
+
+Before changing implementation, FORML freezes the expected behavior of explicit quantifiers, typed domains and scalar arithmetic through stable example and test identifiers.
+
+The mandatory gate sequence is:
+
+```text
+G1 parser
+→ G2 AST/builder
+→ G3 semantic
+→ G4 IR1
+→ G5 IR2/aggregation
+→ G6 backend
+→ G7 end-to-end
+```
+
+The detailed matrix is defined in [Language Evolution Test Matrix](language-evolution-test-matrix.md).
+
+A test must distinguish:
+
+- invalid source;
+- invalid semantic meaning;
+- valid but unsupported backend requirement;
+- verified universal property;
+- universal counterexample;
+- existential witness;
+- absence of existential witness;
+- inconclusive result;
+- vacuous universal result.
+
+The existing test suite remains a regression gate throughout the migration.

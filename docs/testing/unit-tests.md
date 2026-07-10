@@ -56,7 +56,9 @@ Builder unit tests should validate:
 - correct `PropertyNode` construction;
 - correct LHS mode detection;
 - correct RHS assertion extraction;
-- correct comparison, problem, and logical node construction.
+- correct comparison, problem, and logical node construction;
+- correct unary/binary arithmetic tree construction;
+- preservation of arithmetic precedence and associativity.
 
 Important builder invariants:
 
@@ -89,11 +91,14 @@ Semantic unit tests should validate:
 - `check_at` creates pointwise context;
 - `at` creates local anchor/perturbation context;
 - `pairwise` creates anchor/perturbation context;
-- quantifiers introduce symbolic variables;
+- `forall <identifier>` and `exists <identifier>` introduce the declared symbolic variable;
 - implicit feature access resolves to the correct default entity;
 - explicit variables are resolved via symbol table;
 - ambiguous implicit references are rejected;
-- property/scope compatibility is enforced.
+- property/scope compatibility is enforced;
+- arithmetic operands are recursively bound and typed;
+- literal-zero division and target-in-domain are rejected;
+- affine and nonlinear requirements are classified.
 
 Example test families:
 
@@ -101,6 +106,10 @@ Example test families:
 test_at_scope_introduces_anchor_and_perturbation
 test_check_at_uses_anchor_as_default_entity
 test_pairwise_requires_primed_right_variable
+test_quantifier_requires_identifier
+test_quantifier_preserves_declared_identifier
+test_quantifier_rejects_mismatched_explicit_entity
+test_quantifier_accepts_target_only_assertion
 test_implicit_attribute_resolves_to_default_entity
 test_ambiguous_attribute_without_default_entity_fails
 test_property_scope_compatibility
@@ -110,7 +119,9 @@ test_property_scope_compatibility
 
 IR unit tests should validate:
 
-- `ComparisonNode` becomes `ComparisonIR`;
+- `ComparisonNode` becomes a symmetric expression-to-expression `ComparisonIR`;
+- scalar AST nodes lower recursively to scalar IR nodes;
+- arithmetic tree structure is preserved through logical normalization;
 - comparison operators are preserved;
 - logical operators are preserved or normalized according to the IR layer;
 - semantic entity resolution is preserved;
@@ -121,6 +132,10 @@ Example test families:
 
 ```text
 test_comparison_translation_preserves_operator
+test_arithmetic_precedence_builds_expected_ast
+test_expression_to_expression_comparison_lowers_to_ir1
+test_arithmetic_domain_bound_preserves_boundary_and_expression
+test_symbolic_product_requires_nonlinear_capability
 test_at_scope_translation_contains_anchor_and_perturbation
 test_pairwise_translation_splits_on_tilde
 test_implicit_attribute_uses_semantic_resolution
@@ -168,4 +183,27 @@ Unit tests should not attempt to prove:
 - backend completeness;
 - large-scale runtime behavior.
 
-Those are covered by higher-level test.
+Those are covered by higher-level tests.
+
+---
+
+## Language Evolution Unit-Test Minimum
+
+The migration is not complete without isolated unit tests for:
+
+- quantifier token and identifier extraction;
+- interval delimiter to `OPEN`/`CLOSED` normalization;
+- finite-set literal typing;
+- arithmetic precedence and associativity;
+- unary expression construction;
+- recursive feature binding inside scalar expressions;
+- strict rejection of explicit entity mismatch;
+- duplicate-domain detection;
+- interval emptiness/order validation;
+- affine/nonlinear/symbolic-division classification;
+- literal division-by-zero detection;
+- domain-to-assumption operator selection;
+- requirements computation;
+- solver-result interpretation by verification semantics.
+
+A unit test should target one responsibility. Full source-to-solver behavior belongs to end-to-end tests.

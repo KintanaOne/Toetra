@@ -1,84 +1,92 @@
 # Assertions
 
-> Status: Implemented / stabilizing  
+> Status: Target contract accepted for documentation-first implementation  
 > Scope: RHS logical expressions  
-> Priority: P1  
-> Audience: DSL users, IR authors, backend authors, test authors
+> Priority: P0  
+> Audience: DSL users, AST/IR authors, semantic validators, backend authors, test authors
 
 ## Purpose
 
-Assertions define what must hold within a property scope.
-
-They are the right-hand side of a property rule:
+Assertions define what must hold within a property scope:
 
 ```forml
 [PROPERTY]: scope => assertion
 ```
 
-Assertions are compiled into logical AST nodes, then into IR logical nodes, then normalized through IR1 and IR2.
+They compile through logical CST, AST, semantic validation, IR1, IR2, and the final verification condition.
 
 ---
 
 ## Assertion Categories
 
-FORML assertions currently include:
-
 | Category | Example | Purpose |
 |---|---|---|
-| Comparison | `score >= 0` | Atomic predicate. |
+| Comparison | `target <= 7` | Atomic predicate. |
+| Arithmetic comparison | `2 * x0.a + x0.b <= target` | Relate numeric expressions. |
 | Boolean composition | `a >= 0 AND b <= 1` | Combine predicates. |
-| Negation | `NOT age < 18` | Express logical negation. |
-| Implication | `age >= 18 -> score >= 0.5` | Conditional property. |
-| Parentheses | `(a AND b) OR c` | Control precedence. |
-| Problem predicate | `CLASSIFICATION.EQUAL()` | ML task-level semantic predicate. |
+| Negation | `NOT age < 18` | Negate a predicate. |
+| Logical implication | `age >= 18 -> target >= 0.5` | Conditional rule. |
+| Parentheses | `(a >= 0 AND b <= 1) OR target == 0` | Control precedence. |
+| Problem predicate | `CLASSIFICATION.EQUAL()` | ML task-level predicate. |
 
 ---
 
-## Comparison Assertions
+## Atomic Comparisons
 
-Comparison assertions are atomic predicates.
+The normative comparison shape is:
+
+```text
+scalar_expression comparison_operator scalar_expression
+```
 
 Examples:
 
 ```forml
-score >= 0
-score <= 1
-age == 42
-segment != "A"
+target >= 0
+x0.age == 42
+x0.segment != "A"
+x0.a + x0.b <= 7
+2 * target >= x0.a - 1
 ```
+
+The previous restricted shape `attribute comparison_operator constant` is superseded.
 
 Conceptual AST:
 
 ```text
 ComparisonNode(
-  left=AttributeNode(...),
-  op=EnumComparisonOperator,
-  right=ConstantNode(...)
+    left=ScalarExpressionNode(...),
+    op=EnumComparisonOperator,
+    right=ScalarExpressionNode(...),
 )
 ```
 
-Conceptual IR:
+Conceptual IR1:
 
 ```text
 ComparisonIR(
-  entity="x'",
-  feature="score",
-  op=GTE,
-  value=0
+    left=ScalarIR(...),
+    op=EnumComparisonOperator,
+    right=ScalarIR(...),
 )
 ```
 
-The entity should come from semantic resolution, not raw syntax alone.
+---
+
+## Scalar Expressions
+
+Comparison operands may contain constants, explicit or implicit input features, `target`, unary arithmetic, binary arithmetic, and parentheses.
+
+Arithmetic typing and profile restrictions are defined in [Arithmetic Expressions](arithmetic-expressions.md).
 
 ---
 
-## Attribute References
+## Attribute and Target References
 
-Attributes can be explicit:
+Input features can be explicit:
 
 ```forml
-x.age >= 18
-x'.score <= 1
+x0.age >= 18
 ```
 
 or implicit:
@@ -87,226 +95,153 @@ or implicit:
 age >= 18
 ```
 
-Implicit attributes are resolved by the semantic context.
-
-Example in an `at x` scope:
+Example:
 
 ```forml
-[BOUND]: at x in neighborhood(metric=L2, eps=0.1) => age >= 18
+[LOGIC]: forall x0 => age + 1 <= target
 ```
 
-The semantic layer resolves:
+resolves conceptually to:
 
 ```text
-age → x'.age
+x0.age + 1 <= _model.<declared-target>
+```
+
+`target` is a model-output reference, not an input feature.
+
+---
+
+## Comparison Typing
+
+| Operator family | Operand requirement |
+|---|---|
+| `<`, `<=`, `>`, `>=` | Compatible ordered scalar types; numeric in the initial profile. |
+| `==`, `!=` | Compatible scalar types. |
+
+Valid:
+
+```forml
+x0.a + 1 <= target
+x0.segment == "A"
+x0.enabled != false
+```
+
+Invalid:
+
+```forml
+x0.segment + 1 <= 2
+x0.enabled < true
 ```
 
 ---
 
 ## Boolean Composition
 
-Assertions may be combined with boolean operators.
-
-### AND
+Boolean operators compose complete predicates.
 
 ```forml
-score >= 0 AND score <= 1
+x0.a >= 0 AND x0.b <= 1
+x0.segment == "A" OR x0.segment == "B"
+NOT target < 0
+x0.age >= 18 -> target >= 0.5
 ```
 
-Meaning:
-
-```text
-Both predicates must hold.
-```
-
-### OR
+A scalar expression is not a predicate by itself:
 
 ```forml
-segment == "A" OR segment == "B"
+x0.a + x0.b AND target <= 7
 ```
 
-Meaning:
-
-```text
-At least one predicate must hold.
-```
-
-### NOT
-
-```forml
-NOT score < 0
-```
-
-Meaning:
-
-```text
-The predicate must not hold.
-```
-
-### Implication
-
-```forml
-age >= 18 -> score >= 0.5
-```
-
-Meaning:
-
-```text
-If age is at least 18, then score must be at least 0.5.
-```
+is invalid.
 
 ---
 
 ## Operator Precedence
 
-The intended precedence is:
+From strongest to weakest:
 
 ```text
-parentheses
+parenthesized scalar expression
+unary arithmetic + and -
+multiplication and division
+addition and subtraction
+comparison
 NOT
 AND
 OR
-IMPLY
+logical implication
 ```
 
-Implication is right-associative:
-
-```forml
-a -> b -> c
-```
-
-should be interpreted as:
-
-```text
-a -> (b -> c)
-```
-
-unless explicitly parenthesized differently.
+Logical implication is right-associative. Comparisons are non-associative, so chained comparisons are rejected.
 
 ---
 
 ## Problem Predicates
 
-Problem predicates express ML task-level conditions.
-
-Examples:
+Problem predicates remain boolean leaves:
 
 ```forml
 CLASSIFICATION.EQUAL()
 REGRESSION.BETWEEN()
 ```
 
-They are represented as semantic logical leaves:
-
-```text
-ProblemIR(problem=CLASSIFICATION, function=EQUAL)
-```
-
-Problem predicates require compatibility validation:
-
-- problem/function compatibility,
-- model task compatibility,
-- property compatibility,
-- backend support.
+They cannot participate directly in arithmetic.
 
 ---
 
-## IR1 Normalization
+## Logical Normalization
 
-IR1-NNF is the planned early logical normalization subphase.
-
-It should handle:
-
-- implication elimination or normalization,
-- De Morgan transformations,
-- pushing negations inward,
-- producing NNF where applicable.
+A comparison containing arithmetic remains one atomic predicate. NNF, CNF, and DNF passes may negate or invert the comparison but do not distribute through its arithmetic tree.
 
 Example:
 
 ```forml
-NOT (age < 18 OR score < 0)
+NOT (x0.a + x0.b <= target OR target < 0)
 ```
 
-NNF form:
+NNF shape:
 
 ```text
-NOT age < 18 AND NOT score < 0
+NOT(x0.a + x0.b <= target)
+AND
+NOT(target < 0)
 ```
 
-Depending on the chosen representation, comparison negation may later be normalized into inverted comparison operators.
+---
+
+## Initial Verification Profile
+
+The first end-to-end profile supports addition, subtraction, unary signs, multiplication by a numeric constant, and division by a non-zero numeric constant.
+
+Nonlinear symbolic products and symbolic denominators require a stronger capability and must never be approximated silently.
 
 ---
 
-## IR2 Normal Forms
+## Failure Boundaries
 
-IR2 is planned for clause-oriented forms.
-
-It may produce:
-
-| Form | Use Case |
+| Failure | Expected boundary |
 |---|---|
-| CNF | Solver-style conjunction of clauses. |
-| DNF | Scenario exploration and case splitting. |
-
-IR2 should define whether transformations preserve:
-
-- strict logical equivalence,
-- equisatisfiability,
-- or a traced approximation.
-
----
-
-## Assertion Aggregation
-
-Assertions are not lowered alone in the target architecture.
-
-They are combined with:
-
-- scope constraints,
-- semantic constraints,
-- ModelBridge-derived constraints,
-- backend capability constraints.
-
-The output is an `AggregatedAssertionSet`, then a `LoweredQuery`, then a backend-specific query.
-
----
-
-## Known Stabilization Items
-
-| Item | Issue | Recommended Fix |
-|---|---|---|
-| Logic operator casing | Lowercase tokens vs uppercase literals. | Normalize consistently. |
-| `logic_expr` overlap | Attribute logical operation value is ambiguous. | Prefer `comparison_expr` as atomic predicate. |
-| Problem/function validation | Raw strings and enums can be mixed. | Normalize before validation. |
-| IR comparison entity | Raw `AttributeNode.entity` may be missing. | Use semantic resolved entity/path. |
-| Pretty printer | Must display actual operator. | Use `ComparisonIR.op`. |
+| malformed expression | parser |
+| chained comparison | parser or AST contract |
+| unbound explicit entity | semantic binding |
+| incompatible arithmetic types | semantic type validation |
+| division by zero constant | semantic arithmetic validation |
+| unsupported nonlinear requirement | capability routing |
+| backend encoding mismatch | backend compilation |
 
 ---
 
 ## Testing Requirements
 
-Assertions need tests for:
-
-- atomic comparisons,
-- nested boolean expressions,
-- operator precedence,
-- parentheses,
-- negation,
-- implication,
-- problem predicates,
-- NNF transformations,
-- CNF/DNF transformations,
-- Hypothesis-generated logical trees,
-- intelligent fuzzing of ambiguous expressions,
-- Miova mutations on AST and IR logical nodes.
+Required tests include expression-to-expression comparisons, precedence, unary operators, implicit and explicit binding, type errors, division by zero, nonlinear capability rejection, logical normalization preservation, and Z3 translation of the affine profile.
 
 ---
 
 ## Related Documents
 
+- [Arithmetic Expressions](arithmetic-expressions.md)
 - [Grammar](grammar.md)
 - [Syntax](syntax.md)
+- [Domains](domains.md)
 - [IR1 NNF](../ir/ir1-nnf.md)
-- [IR2 Normal Forms](../ir/ir2-normal-forms.md)
 - [Semantic to IR1 Contract](../contracts/semantic-to-ir1.md)

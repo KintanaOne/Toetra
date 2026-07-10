@@ -1,145 +1,151 @@
 # IR to Backend Contract
 
-> Status: P0 / Planned / Critical  
-> Scope: LoweredQuery to BackendQuery  
-> Implementation: Not yet implemented  
-> Audience: backend authors, solver integration authors, architecture maintainers
+> Status: P0 / Accepted target backend boundary  
+> Scope: Capability-checked IR2/LoweredQuery to BackendQuery  
+> Audience: backend authors, router authors and solver integration authors
 
 ## Purpose
 
-The IR to Backend contract defines the backend boundary.
+This is the first boundary allowed to create backend-native artifacts.
 
-It answers the question:
+It answers:
 
 ```text
-What exactly is sent to a verification backend?
+Can this backend represent every requirement of this verification task exactly?
 ```
-
-This is the first layer where backend-specific artifacts may be produced.
 
 ---
 
-## Input
+## Inputs
 
 ```text
-LoweredQuery
-+
-BackendSelection
-+
-ModelEncodingStrategy
+VerificationTaskIR2 or LoweredQuery
++ BackendSelection
++ BackendCapabilities
++ model encoding context
 ```
 
-The backend compiler may also receive:
+The input already contains:
 
-- backend capability metadata;
-- diagnostic context;
-- execution configuration;
-- model encoding constraints;
-- traceability metadata.
+- resolved scalar expressions;
+- normalized logical formula;
+- domain/model assumptions;
+- verification semantics;
+- explicit requirements;
+- provenance.
 
 ---
 
-## Output
+## Compatibility Gate
+
+Backend compilation starts only after:
+
+```text
+task.requirements ⊆ backend.capabilities
+```
+
+The gate must distinguish at least:
+
+- boolean logic;
+- equality and ordered comparisons;
+- affine arithmetic;
+- nonlinear multiplication;
+- symbolic division;
+- required scalar sorts;
+- finite-set membership/equality expansion;
+- symbolic categorical literals;
+- domain assumptions;
+- model assumptions;
+- normal forms;
+- universal-refutation or existential-witness execution semantics.
+
+A single `supports_numeric_comparisons` flag is insufficient for the target language.
+
+---
+
+## Backend Output
+
+A successful compiler produces:
 
 ```text
 BackendQuery
 ```
 
-A `BackendQuery` is backend-specific.
+containing backend-native:
+
+- variable declarations with sorts;
+- scalar expressions;
+- boolean assertions;
+- model constraints;
+- execution semantics metadata;
+- source-to-backend trace mapping.
+
+---
+
+## Exactness Rule
+
+The backend compiler must encode the accepted IR exactly under the declared semantics.
+
+It must not:
+
+- coerce categorical symbols to arbitrary reals without a declared sound encoding;
+- replace open bounds with closed bounds;
+- ignore unsupported finite-set members;
+- drop arithmetic terms;
+- linearize symbolic products silently;
+- replace symbolic division with a constant;
+- treat `exists` SAT as a counterexample;
+- invent missing bindings.
+
+An unsupported requirement causes a routing or backend-compilation diagnostic.
+
+---
+
+## Sort Mapping
+
+Backend sort mapping is driven by canonical FORML scalar types.
 
 Examples:
 
-| Backend | Possible BackendQuery |
+| FORML type | Possible Z3 sort |
 |---|---|
-| Z3 | Z3 expressions, solver declarations, assertions. |
-| ERAN | ERAN-compatible robustness query/configuration. |
-| future backend | backend-specific verification artifact. |
+| INT | `Int` |
+| REAL | `Real` |
+| BOOL | `Bool` |
+| STRING | `String` when supported by the profile |
+| SYMBOLIC_CATEGORY | Enum/datatype/string encoding selected explicitly |
+
+The chosen encoding must be recorded in backend metadata.
 
 ---
 
-## Boundary Rule
+## Minimal Z3 Profile
 
-Before this boundary:
+The first complete Z3 profile may remain narrower than the language:
 
-```text
-FORML artifacts are backend-independent or backend-preparable.
-```
+- boolean logic;
+- integer/real comparisons;
+- affine arithmetic;
+- numeric interval assumptions;
+- affine model assumptions;
+- universal refutation;
+- existential witness when runner/result semantics are implemented.
 
-After this boundary:
-
-```text
-Artifacts may be backend-specific.
-```
-
-No solver-specific object should leak into earlier layers.
+Categorical finite sets, strings, symbolic products or symbolic division remain incompatible until Z3 capabilities and translator support declare them explicitly.
 
 ---
 
-## Guarantees
+## Backend-Owned Failures
 
-If backend compilation succeeds:
+This boundary owns:
 
-- the selected backend supports the requested query;
-- all required model encodings exist;
-- unsupported features were rejected or rewritten earlier;
-- the backend query is executable by the target backend;
-- traceability to FORML assertions is preserved.
+- no registered compatible backend;
+- requested backend lacking a required capability;
+- unsupported scalar sort/encoding;
+- unsupported arithmetic family;
+- missing model encoder;
+- invalid backend-native translation;
+- inability to preserve verification semantics;
+- inconsistent source-to-backend trace mapping.
 
----
-
-## Non-Goals
-
-The IR to Backend contract does not:
-
-- define the full solver API;
-- execute verification;
-- perform runtime monitoring;
-- choose the backend alone;
-- repair semantically invalid properties.
-
----
-
-## Failure Modes
-
-Expected failures include:
-
-- unsupported backend;
-- unsupported operator/function;
-- missing model encoding;
-- unsupported normal form;
-- incompatible property/backend pair;
-- backend capability mismatch;
-- invalid lowered query.
-
----
-
-## Backend Diagnostics
-
-Failures at this boundary should produce actionable diagnostics.
-
-Diagnostics should explain:
-
-- which backend was selected;
-- which constraint failed;
-- which FORML property originated it;
-- whether another backend may support it;
-- whether rewriting/minimization could help.
-
----
-
-## Miova Hooks
-
-Miova may mutate:
-
-- backend selection metadata;
-- lowered query structure;
-- model encoding constraints;
-- backend capability declarations;
-- backend query output.
-
-Expected outcome:
-
-```text
-Invalid backend artifact → backend-boundary rejection
-Valid backend artifact   → runtime execution may continue
-```
+It does not own syntax, binding or semantic typing errors.

@@ -93,7 +93,7 @@ Pairwise scope compares an anchor and a primed counterpart.
 DSL example:
 
 ```forml
-[MONOTONICITY]: x ~ x' in neighborhood(metric=L2, eps=0.1) => REGRESSION.INCREASING()
+[MONOTONICITY]: x ~ x' in neighborhood(metric=L2, eps=0.1) => x'.score >= x.score
 ```
 
 Conceptual IR:
@@ -108,18 +108,16 @@ variables = {
 
 The pairwise convention must remain consistent with the semantic validator.
 
-Pairwise parsing invariant: the pair separator is `~`. IR translation must split pairwise tokens on `~`, not on comma.
-
 ---
 
 ### Quantifier Scope
 
-Quantifier scope introduces a symbolic variable.
+Quantifier scope introduces an explicitly named symbolic variable.
 
 DSL example:
 
 ```forml
-[BOUND]: forall with age(18, 65) => age >= 18
+[BOUND]: forall applicant => applicant.age >= 18
 ```
 
 Conceptual IR:
@@ -127,9 +125,12 @@ Conceptual IR:
 ```text
 kind = quantifier
 variables = {
-  "_x": "symbolic"
+  "applicant": "symbolic"
 }
+quantifier = forall
 ```
+
+The identifier is preserved from source to `ScopeIR`. It must not be replaced by `_x`. Implicit features use the same identifier as their resolved entity.
 
 ---
 
@@ -159,30 +160,48 @@ The `eps` value should be normalized as a numeric value.
 
 ## Domain IR
 
-Domains restrict the scope of a property.
+`DomainIR` represents validated, backend-independent input admissibility constraints.
 
-Conceptually:
+Target conceptual shape:
 
 ```text
 DomainIR
-├── name
-└── args
+├── constraints
+│   ├── IntervalConstraintIR
+│   │   ├── entity
+│   │   ├── feature
+│   │   ├── lower
+│   │   ├── upper
+│   │   ├── lower_boundary
+│   │   └── upper_boundary
+│   └── FiniteSetConstraintIR
+│       ├── entity
+│       ├── feature
+│       └── values
+└── provenance
 ```
 
-Examples:
+Example:
 
 ```text
-domain = age(18, 65)
-domain = region("EU", "US")
+DomainIR(
+  constraints=(
+    IntervalConstraintIR(x0.a, 0.0, 3.0, CLOSED, OPEN),
+    FiniteSetConstraintIR(x0.region, (EU, US)),
+  )
+)
 ```
 
-Domain handling should eventually distinguish:
+Invariants:
 
-- enumerated domains,
-- numeric ranges,
-- categorical domains,
-- dataset-derived domains,
-- model-schema-derived domains.
+- every subject is semantically resolved;
+- interval boundary kinds are explicit;
+- finite-set members retain their semantic literal kinds;
+- constraints are conjunctive at the domain level;
+- no generic domain name or ad-hoc args dictionary is required;
+- no backend-specific expression appears in `DomainIR`.
+
+`DomainIR` is later expanded into `AssumptionIR2(source=DOMAIN)` formulas. The scope representation itself should remain readable and traceable.
 
 ---
 
@@ -206,9 +225,9 @@ A valid `ScopeIR` must satisfy:
 The current implementation already represents scope information, but several points should be stabilized:
 
 - pairwise parsing must split `x ~ x'` consistently, not comma-separated pairs;
-- quantifier scope should explicitly include the symbolic variable used by semantic validation;
+- quantifier scope must preserve the exact identifier declared in the source;
 - pointwise role naming should align with semantic roles;
-- domain arguments should have a stable representation instead of ad-hoc dictionaries;
+- typed domain constraints should replace ad-hoc name/argument dictionaries;
 - metrics should be normalized with official vocabulary values.
 
 ---

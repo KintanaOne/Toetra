@@ -78,10 +78,59 @@ A property has:
 |---|---|
 | Property type | Describes the verification intent, such as `ROBUSTNESS`, `BOUND`, `FAIRNESS`. |
 | Scope | Defines where the property is evaluated, such as `at`, `check_at`, `pairwise`, or `forall`. |
+| Domain | Optionally restricts admissible input valuations with typed intervals or finite sets. |
 | Assertion | Defines what must hold in that scope. |
 | Optional backend | Suggests or selects a verification backend. |
 
 ---
+
+## Typed Domains
+
+A typed domain restricts the admissible values of explicitly qualified input features:
+
+```forml
+[LOGIC]:
+forall x0
+    with domain(
+        x0.a: [0.0, 3.0],
+        x0.b: {obj1, obj2},
+        x0.c: ]0.0, 3.0[
+    )
+    => target <= 7
+```
+
+Domain entries are assumptions over model inputs. They are not model-output assertions.
+
+The language distinguishes:
+
+- closed and open numeric interval bounds;
+- finite discrete sets;
+- quoted strings and symbolic categorical literals;
+- domain subjects from assertion expressions.
+
+Domain subjects are always explicit (`x0.a`) so semantic validation can verify that their entity is declared by the enclosing scope. The complete normative contract is defined in [Domains](domains.md).
+
+---
+
+## Arithmetic Expressions
+
+FORML comparisons accept expressions on both sides:
+
+```forml
+2 * x0.a + x0.b <= target
+```
+
+Arithmetic expressions may also define interval bounds:
+
+```forml
+with domain(
+    x0.a: [x0.b - 1.0, x0.b + 1.0]
+)
+```
+
+The public language supports a structured arithmetic tree. The first end-to-end verification profile is affine: addition, subtraction, unary signs, multiplication by a constant, and division by a non-zero constant.
+
+Logical normal forms treat each comparison as an atom and do not rewrite inside arithmetic subexpressions. See [Arithmetic Expressions](arithmetic-expressions.md).
 
 ## Language vs Semantics
 
@@ -156,10 +205,11 @@ Language documentation must therefore describe not only valid syntax, but also e
 | Header syntax | Implemented / stabilizing | `model`, `target`, optional `dataset`, optional variables. |
 | Property sections | Implemented / stabilizing | Property type, scope, implication, assertion, optional backend. |
 | Scopes | Implemented / stabilizing | `at`, `check_at`, `pairwise`, quantifiers. |
-| Assertions | Implemented / needs cleanup | Comparison, boolean operators, problem predicates. |
+| Typed domains | Target contract defined / implementation pending | Explicit subjects, interval boundaries, finite sets, arithmetic interval bounds. |
+| Assertions | Target contract defined / implementation pending | Expression-to-expression comparisons, arithmetic, boolean operators, problem predicates. |
 | Logic casing | Needs stabilization | Grammar currently mixes lowercase tokens and uppercase literal operators. |
 | Vocabulary enums | Needs normalization | Some enum/string boundaries should be stabilized. |
-| Backend syntax | Implemented / stabilizing | `using z3`; other backend names are reserved/post-V1. |
+| Backend syntax | Implemented / stabilizing | `using z3`, `using ERAN`, etc. |
 | Model-aware validation | Planned / critical | Requires ModelSchema integration. |
 
 ---
@@ -171,6 +221,31 @@ Language documentation must therefore describe not only valid syntax, but also e
 - [Syntax](syntax.md)
 - [Properties](properties.md)
 - [Scopes](scopes.md)
+- [Domains](domains.md)
 - [Assertions](assertions.md)
+- [Arithmetic Expressions](arithmetic-expressions.md)
 - [Backends Syntax](backends.md)
 - [Examples](examples.md)
+
+---
+
+## Documentation-First Language Baseline
+
+The accepted language evolution is defined by:
+
+- explicit quantified bindings: `forall <identifier>` and `exists <identifier>`;
+- typed domains with bracket-only open/closed interval notation;
+- finite sets with numeric or symbolic members;
+- scalar expression comparisons;
+- exact semantic binding and capability-driven backend rejection.
+
+The normative behavioral references are:
+
+- [Normative Examples](examples.md)
+- [Invalid and Unsupported Examples](invalid-examples.md)
+- [Quantified Bindings](quantified-bindings.md)
+- [Domains](domains.md)
+- [Arithmetic Expressions](arithmetic-expressions.md)
+- [Language Evolution Test Matrix](../testing/language-evolution-test-matrix.md)
+
+Implementation must follow these documents rather than infer intended behavior from the current code snapshot.

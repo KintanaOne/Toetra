@@ -1,21 +1,12 @@
 # Compiler Pipeline Contract
 
-> Status: P0 / Stabilizing  
+> Status: P0 / Stabilizing with accepted target extensions  
 > Scope: End-to-end compiler artifact progression  
-> Implementation: Implemented until IR1, planned beyond IR1  
-> Audience: compiler maintainers, architecture maintainers, Miova campaign authors
+> Audience: compiler maintainers, architecture maintainers and Miova campaign authors
 
 ## Purpose
 
-The compiler pipeline contract defines the official progression of FORML compiler artifacts.
-
-It answers the question:
-
-```text
-Which artifacts are allowed to exist between compiler layers?
-```
-
-This contract prevents downstream layers from relying on parser internals, partial AST assumptions, or backend-specific objects too early.
+This contract defines the official progression of FORML artifacts and prohibits cross-layer shortcuts.
 
 ---
 
@@ -23,96 +14,147 @@ This contract prevents downstream layers from relying on parser internals, parti
 
 ```text
 SourceText
-    ↓
-CST
-    ↓
-AST / ProgramNode
-    ↓
-SemanticValidatedAST
-    ↓
-IR1 / VerificationTask
-    ↓
-IR2 / NormalFormIR
-    ↓
-AggregatedAssertionSet
-    ↓
-LoweredQuery
-    ↓
-BackendQuery
+→ CST
+→ ProgramNode AST
+→ SemanticValidatedAST
+→ VerificationTask IR1
+→ VerificationTask IR2
+→ Aggregated verification condition
+→ BackendQuery
+→ VerificationResult
+```
+
+The model path contributes:
+
+```text
+ModelArtifact
+→ ModelSchema
+→ ModelAssumptions
+→ VerificationTask IR2 / aggregation
 ```
 
 ---
 
-## Current Implementation
+## Artifact Ownership
 
-| Artifact | Status | Notes |
-|---|---|---|
-| SourceText | Implemented | Raw `.forml` string. |
-| CST | Implemented | Produced by the Lark parser. |
-| AST | Implemented / stabilizing | Built as dataclass-based FORML nodes. |
-| SemanticValidatedAST | Implemented / stabilizing | Currently represented by AST enriched with semantic annotations. |
-| IR1 | Implemented / stabilizing | `VerificationTask`, `ScopeIR`, `QueryIR`, logical nodes. |
-| IR1-NNF | Planned / critical | De Morgan and NNF belong here once the pass exists. |
-| IR2 | Planned / critical | CNF/DNF and normal-form selection. |
-| AggregatedAssertionSet | Planned / critical | DSL assertions + semantic/model constraints. |
-| LoweredQuery | Planned / critical | Simplified backend-preparable query. |
-| BackendQuery | Planned / critical | Backend-specific executable artifact. |
+| Artifact | Producer | May contain | Must not contain |
+|---|---|---|---|
+| SourceText | User/tooling | Public DSL syntax | Compiler objects |
+| CST | Parser | Grammar structure and tokens | Resolved symbols, solver objects |
+| AST | Builder | Typed syntax nodes | Assumed binding, Z3 expressions |
+| SemanticValidatedAST | Semantic passes | Resolved symbols, types, context | Backend expressions |
+| IR1 | IR1 translator | Backend-independent scopes, scalar/logical expressions, typed domains | Lark nodes, unresolved references |
+| IR2 | IR2 builder/normalizer | Normal forms, assumptions, requirements, verification semantics | Raw DSL syntax |
+| BackendQuery | Backend compiler | Backend-native declarations and formulas | Unchecked requirements |
+
+---
+
+## New Language Feature Flow
+
+### Quantified identifier
+
+```text
+forall x0
+```
+
+must progress as:
+
+```text
+identifier token
+→ AST scope variable `x0`
+→ semantic symbol `x0`
+→ IR scope variable `x0`
+→ backend-symbol provenance `x0`
+```
+
+### Typed domain
+
+```text
+Domain syntax
+→ typed Domain AST
+→ validated typed domain
+→ typed Domain IR1
+→ DOMAIN assumptions in IR2
+→ backend expressions
+```
+
+### Scalar comparison
+
+```text
+source arithmetic tree
+→ scalar AST tree
+→ resolved/typed scalar tree
+→ scalar IR1 tree
+→ comparison atom in IR2
+→ recursive backend scalar encoding
+```
 
 ---
 
 ## Global Guarantees
 
-The compiler pipeline must guarantee:
+The pipeline must guarantee:
 
-- each layer consumes only the artifact type declared by the previous layer;
-- each layer either produces a valid next artifact or fails explicitly;
-- no backend-specific object leaks before the backend boundary;
-- semantic resolution is preserved from semantic validation to IR;
-- logical transformations declare whether they preserve equivalence or equisatisfiability;
-- each layer has a clear mutation boundary for Miova.
+1. each layer consumes only its declared input artifact;
+2. each transformation either produces a valid next artifact or fails explicitly;
+3. source identifiers and provenance remain traceable;
+4. no solver object leaks before the backend boundary;
+5. no unresolved input or target reference enters IR1;
+6. domain assumptions remain distinct from the property formula;
+7. requirement analysis precedes backend compilation;
+8. unsupported expressions are rejected, not approximated;
+9. universal and existential semantics are preserved through result interpretation.
 
 ---
 
-## Non-Goals
+## Verification-Condition Branch
 
-The compiler pipeline contract does not define:
+A quantified task does not become a native solver quantifier automatically.
 
-- the full syntax of the DSL;
-- the internal implementation of each transformation;
-- backend-specific solver encoding details;
-- runtime monitoring behavior;
-- user-facing documentation examples.
+The initial semantics use symbolic variables and different verification conditions.
 
-Those concerns are documented in dedicated sections.
+Universal:
+
+```text
+Γdomain ∧ Γmodel ∧ ¬P
+```
+
+Existential:
+
+```text
+Γdomain ∧ Γmodel ∧ P
+```
+
+Native backend quantifiers are a separate future capability.
 
 ---
 
 ## Expected Failure Boundaries
 
-| Failure | Expected Boundary |
+| Failure | Boundary |
 |---|---|
-| Invalid syntax | Source → CST |
-| Unsupported grammar construct | Source → CST or CST → AST |
-| Missing AST field | CST → AST |
-| Unbound variable | AST → Semantic |
-| Incompatible property/scope | AST → Semantic |
-| Invalid logical transform | Semantic → IR1 or IR1 → IR2 |
-| Unsupported model schema | Model → Schema or Schema → Semantic |
-| Unsupported backend feature | IR → Backend |
+| Malformed quantified syntax | Source → CST |
+| Malformed expression/domain CST | CST → AST |
+| Unbound or mismatched entity | AST → Semantic |
+| Type-invalid arithmetic/domain | AST → Semantic |
+| Missing semantic resolution | Semantic → IR1 |
+| Invalid normal form or provenance | IR1 → IR2 |
+| Invalid condition composition | Aggregation |
+| Unsupported required capability | Routing / IR → Backend |
+| Solver runtime failure | Backend runtime |
 
 ---
 
-## Miova Contract Testing
+## Forbidden Shortcuts
 
-Miova should be able to test the pipeline by applying mutations at each artifact layer.
+The following paths are invalid:
 
-Examples:
+```text
+Source → Z3
+AST → Z3
+Raw Domain AST → Z3
+Unvalidated scalar AST → IR2
+Backend capability repair inside the parser
+```
 
-| Layer | Mutation Example | Expected Outcome |
-|---|---|---|
-| Source | corrupt keyword, operator, bracket | parser rejection |
-| AST | remove scope, backend, assertion | builder/semantic rejection |
-| Semantic | remove binding metadata | IR translation rejection |
-| IR1 | insert invalid negation shape | IR2 rejection |
-| IR2 | corrupt CNF/DNF structure | aggregation/lowering rejection |
-| ModelSchema | remove feature dtype | schema-semantic rejection |
+Compatibility adapters may exist temporarily, but they must not redefine the target contract.

@@ -1,143 +1,138 @@
-# Type Normalization Contract
+# Type and Vocabulary Normalization Contract
 
-> Status: P0 / Needs Stabilization  
-> Scope: enum, dtype, value and symbolic type normalization  
-> Implementation: partially implemented across vocabulary, builder, semantic and ModelBridge  
-> Audience: compiler maintainers, semantic maintainers, ModelBridge authors
+> Status: P0 / Accepted target normalization  
+> Scope: Vocabulary, scalar types, literal kinds and operator families  
+> Audience: parser, builder, semantic, IR and ModelBridge maintainers
 
 ## Purpose
 
-The Type Normalization contract defines how FORML converts raw values, strings and framework metadata into stable internal types.
+Normalization ensures that equivalent surface forms become stable internal values without erasing source meaning.
 
-It answers the question:
+---
+
+## Canonical Controlled Vocabulary
+
+The target internal vocabulary includes enum-like values for:
+
+- property types;
+- backend names;
+- quantifier kinds (`FORALL`, `EXISTS`);
+- comparison operators;
+- arithmetic operators;
+- interval boundary kinds (`OPEN`, `CLOSED`);
+- semantic scope kinds;
+- verification semantics;
+- assumption sources;
+- normal-form kinds.
+
+Aliases such as `∀` and `forall` normalize to the same quantifier kind while the original token may remain in source provenance.
+
+---
+
+## Scalar Types
+
+Canonical scalar types include at least:
 
 ```text
-When two layers say the same thing differently, what is the canonical form?
+INT
+REAL
+BOOL
+STRING
+NULL
+SYMBOLIC_CATEGORY
+UNKNOWN_MODEL_DEPENDENT
 ```
 
-Without a normalization contract, small spelling/casing differences can break the compiler.
+`SYMBOLIC_CATEGORY` is distinct from:
+
+- a string literal;
+- an input-feature reference;
+- a variable identifier.
+
+Example:
+
+```forml
+x0.region: {EU, US}
+```
+
+contains two symbolic category literals.
 
 ---
 
-## Normalization Targets
+## Literal Kinds
 
-| Category | Examples |
-|---|---|
-| Properties | `ROBUSTNESS`, `BOUND`, `FAIRNESS` |
-| Problems | `CLASSIFICATION`, `REGRESSION` |
-| Functions | `EQUAL`, `BETWEEN`, `INCREASING` |
-| Backends | `z3`, `Z3`, `ERAN` |
-| Metrics | `L1`, `L2`, `Linf` |
-| Quantifiers | `forall`, `exists`, `∀`, `∃` |
-| Comparison operators | `==`, `!=`, `<`, `<=`, `>`, `>=` |
-| Data types | `int`, `float`, `bool`, `string`, `none` |
-| Model tasks | `classification`, `regression`, `unknown` |
+A scalar value preserves both value and literal kind.
 
----
-
-## Canonicalization Principle
-
-At every boundary, FORML should convert raw values into canonical internal representations.
-
-Preferred canonical forms:
-
-- enums for controlled vocabularies;
-- explicit dtype enum for data types;
-- lowercase normalized strings only when enum is not appropriate;
-- structured dataclasses for model schema and IR artifacts.
-
----
-
-## Boundary Rules
-
-| Boundary | Normalization Responsibility |
-|---|---|
-| Parser | Preserve raw syntax. |
-| Builder | Convert tokens to AST values/enums where possible. |
-| Semantic | Normalize and validate enums before compatibility checks. |
-| ModelBridge | Normalize framework, task and feature dtypes. |
-| IR1 | Preserve normalized enum values. |
-| IR2 | Preserve logical operator semantics. |
-| Backend | Convert canonical FORML types to backend types. |
-
----
-
-## Value Parsing
-
-Constants should preserve both:
-
-- raw parsed value;
-- inferred semantic dtype.
-
-Examples:
-
-| Source | Value | Type |
+| Source | Canonical value | Literal kind |
 |---|---|---|
-| `10` | `10` | int |
-| `10.5` | `10.5` | float |
-| `true` | `True` | bool |
-| `"A"` | `A` | string |
+| `10` | `10` | integer |
+| `10.5` | exact decimal/rational representation where possible | real |
+| `true` | `True` | boolean |
+| `"EU"` | `EU` | string |
+| `EU` inside finite set | `EU` | symbolic category |
+| `null` | `None` | null |
+
+A builder must not identify symbolic categories only by `str` runtime type without a literal-kind discriminator.
 
 ---
 
-## Feature Type Normalization
+## Numeric Promotion
 
-ModelBridge maps external framework types into FORML semantic types.
+The semantic layer applies one documented promotion policy.
 
-Examples:
-
-| External dtype | FORML dtype |
-|---|---|
-| pandas int dtype | `INT` |
-| pandas float dtype | `FLOAT` |
-| pandas bool dtype | `BOOL` |
-| object/string dtype | `STRING` |
-
----
-
-## Stabilization Notes
-
-The contract should stabilize:
-
-- backend enum normalization;
-- quantifier normalization;
-- metric values without embedded quotes;
-- property and problem enum handling;
-- function compatibility handling;
-- casing policy for logical operators;
-- schema task names.
-
----
-
-## Failure Modes
-
-This layer should reject:
-
-- unknown enum values;
-- unsupported dtype conversions;
-- invalid quantifier aliases;
-- operator/value incompatibilities;
-- model tasks not supported by a property;
-- backend names not known to FORML.
-
----
-
-## Miova Hooks
-
-Miova may mutate:
-
-- enum casing;
-- backend aliases;
-- dtype values;
-- metric spelling;
-- quantifier symbols;
-- task labels;
-- comparison operators.
-
-Expected outcome:
+Target baseline:
 
 ```text
-Known alias      → normalized
-Unknown value    → normalization rejection
-Valid new value  → downstream layer may continue
+INT +,-,* INT → INT
+INT with REAL → REAL
+REAL with REAL → REAL
+numeric division → REAL
 ```
+
+Backends may use exact rational values internally. Floating-point approximation is not introduced silently by normalization.
+
+---
+
+## Target Type
+
+`target` obtains its scalar type from ModelSchema/model encoding when available.
+
+Until resolved, it may carry an explicit model-dependent type marker, but backend compilation cannot guess its sort.
+
+---
+
+## Boundary Ownership
+
+| Boundary | Responsibility |
+|---|---|
+| Parser | Preserve surface tokens and literal spelling. |
+| Builder | Produce canonical vocabulary and typed literal nodes. |
+| Semantic | Resolve scalar types, promotion and compatibility. |
+| ModelBridge | Normalize feature/target dtypes. |
+| IR1/IR2 | Preserve canonical types and requirements. |
+| Backend | Map canonical types to backend sorts exactly. |
+
+---
+
+## Prohibited Normalizations
+
+FORML must not:
+
+- normalize an unknown explicit entity to the only variable in scope;
+- normalize `{0, 7}` to `[0, 7]`;
+- normalize `]0, 3[` to `[0, 3]`;
+- normalize symbolic categories to feature references;
+- normalize unsupported nonlinear arithmetic to affine arithmetic;
+- normalize `exists` execution into universal refutation;
+- coerce every feature to a real backend variable regardless of schema.
+
+---
+
+## Normalization-Owned Failures
+
+- unknown controlled-vocabulary value;
+- invalid literal token-to-kind mapping;
+- incompatible scalar promotion;
+- unresolved model-dependent type at backend boundary;
+- unsupported external dtype mapping;
+- ambiguous categorical encoding.
