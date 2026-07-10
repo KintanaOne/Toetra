@@ -11,27 +11,22 @@ from dsl.ir.ir2.context import IR2BuildContext
 from dsl.ir.ir2.enums import NormalFormKind
 from dsl.ir.normalization.nnf import NNFNormalizer
 
-
-PROVED_SAMPLE = dedent(
-    """
+PROVED_SAMPLE = dedent("""
     model := "demo.onnx"
     target := MyTarget
 
     [LOGIC]:
     check_at x0 => x0.a <= 1 OR NOT x0.a <= 1 using Z3
-    """
-).strip()
+    """).strip()
 
 
-COUNTEREXAMPLE_SAMPLE = dedent(
-    """
+COUNTEREXAMPLE_SAMPLE = dedent("""
     model := "demo.onnx"
     target := MyTarget
 
     [LOGIC]:
     check_at x0 => x0.a <= 1 using Z3
-    """
-).strip()
+    """).strip()
 
 
 def run_forml_z3(source: str):
