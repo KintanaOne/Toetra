@@ -40,8 +40,6 @@ def _requirements(
         requires_numeric_comparisons=True,
         requires_problem_predicates=False,
         requires_model_assertions=requires_model_assertions,
-        # Compatibility field during the quantifier migration.
-        requires_quantifiers=False,
         requires_domains=False,
         requires_neighborhoods=False,
         normal_form=NormalFormKind.NNF,

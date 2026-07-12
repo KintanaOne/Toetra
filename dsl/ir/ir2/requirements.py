@@ -49,20 +49,12 @@ class IR2Requirements:
     quantifiers when FORML lowers it to the refutation condition::
 
         Γ(x0) AND NOT P(x0)
-
-    ``requires_quantifiers`` is temporarily retained as a compatibility field.
-    During the migration it represents the same backend requirement as
-    ``requires_native_quantifiers``. It will be removed once all callers and
-    backend capabilities use the explicit native-quantifier field.
     """
 
     requires_boolean_logic: bool
     requires_numeric_comparisons: bool
     requires_problem_predicates: bool
     requires_model_assertions: bool
-
-    # Temporary compatibility field.
-    requires_quantifiers: bool
 
     requires_domains: bool
     requires_neighborhoods: bool
@@ -124,7 +116,6 @@ class RequirementsAnalyzer:
             or any(isinstance(item, ModelConstraintIR2) for item in all_items),
             # Compatibility field: it now reflects a backend-native need,
             # not the mere presence of a quantified FORML scope.
-            requires_quantifiers=requires_native_quantifiers,
             requires_domains=scope.domain is not None
             or any(
                 assumption.source == AssumptionSource.DOMAIN
