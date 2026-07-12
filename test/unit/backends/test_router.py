@@ -148,8 +148,6 @@ def _capabilities(
         supports_numeric_comparisons=True,
         supports_problem_predicates=True,
         supports_model_assertions=True,
-        # Historical compatibility field.
-        supports_quantifiers=False,
         supports_domains=True,
         supports_neighborhoods=True,
         supported_normal_forms=forms,
