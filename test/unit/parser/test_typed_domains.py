@@ -278,9 +278,9 @@ def test_unqualified_domain_subject_parses_for_semantic_rejection(
         if isinstance(child, Tree) and child.data == "attribute"
     )
 
-    assert [
-        str(first_cst_token(node)) for node in subject.find_data("identifier")
-    ] == ["a"]
+    assert [str(first_cst_token(node)) for node in subject.find_data("identifier")] == [
+        "a"
+    ]
 
 
 def test_target_bound_parses_for_semantic_rejection() -> None:

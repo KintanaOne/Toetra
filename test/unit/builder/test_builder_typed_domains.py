@@ -20,7 +20,7 @@ def build(source: str):
 
 
 def program_with_domain(entries: str, *, scope: str = "forall x0") -> str:
-    return f'''
+    return f"""
 model := "model.onnx"
 target := MyTarget
 
@@ -30,7 +30,7 @@ target := MyTarget
         {entries}
     )
     => target <= 7
-'''
+"""
 
 
 @pytest.mark.parametrize(
@@ -108,16 +108,16 @@ def test_builds_typed_quoted_and_numeric_finite_sets():
 
 def test_preserves_domain_entry_order_and_subject_qualification():
     source = program_with_domain(
-        "x0.a: [0, 3],\n"
-        "        x0.b: {one, two},\n"
-        "        x0.c: ]0, 3["
+        "x0.a: [0, 3],\n" "        x0.b: {one, two},\n" "        x0.c: ]0, 3["
     )
     program = build(source)
     scope = program.body[0].rule.scope
 
     assert isinstance(scope, QuantifierExprNode)
     assert scope.domain is not None
-    assert [(entry.subject.entity, entry.subject.feature) for entry in scope.domain.entries] == [
+    assert [
+        (entry.subject.entity, entry.subject.feature) for entry in scope.domain.entries
+    ] == [
         ("x0", "a"),
         ("x0", "b"),
         ("x0", "c"),

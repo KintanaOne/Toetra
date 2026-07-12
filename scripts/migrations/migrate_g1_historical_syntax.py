@@ -16,7 +16,6 @@ import argparse
 import re
 from pathlib import Path
 
-
 QUANTIFIER_TARGETS = {
     "dsl/ir/ir2/examples/samples.py",
     "dsl/ir/normalization/run_nnf.py",
@@ -160,7 +159,7 @@ def run(root: Path, *, write: bool) -> int:
 
 
 def self_test() -> None:
-    quantifier_source = '''
+    quantifier_source = """
 model := "model.onnx"
 target := MyTarget
 
@@ -169,7 +168,7 @@ forall => a <= 1
 
 [LOGIC]:
 ∃ => b <= 2
-'''
+"""
     migrated = migrate_text(
         "test/golden/normalization/nnf/test_nnf_golden.py",
         quantifier_source,
@@ -177,21 +176,18 @@ forall => a <= 1
     assert "forall x0 =>" in migrated
     assert "∃ x0 =>" in migrated
 
-    domain_source = '''
+    domain_source = """
 model := "model.onnx"
 target := MyTarget
 
 [LOGIC]:
 forall with gender("male", "female") => a <= 1
-'''
+"""
     migrated = migrate_text(
         "test/fixtures/program_samples.py",
         domain_source,
     )
-    assert (
-        'forall x0 with domain(x0.gender: {"male", "female"})'
-        in migrated
-    )
+    assert 'forall x0 with domain(x0.gender: {"male", "female"})' in migrated
     assert stale_reasons("test/fixtures/program_samples.py", migrated) == ()
 
     untouched = migrate_text("test/unit/parser/test_quantified_scopes.py", "forall =>")

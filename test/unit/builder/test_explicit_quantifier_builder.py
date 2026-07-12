@@ -18,13 +18,13 @@ def test_builder_preserves_explicit_quantified_identifier(
     quantifier: str,
     identifier: str,
 ):
-    source = f'''
+    source = f"""
     model := "model.onnx"
     target := MyTarget
 
     [LOGIC]:
     {quantifier} {identifier} => score >= 0
-    '''
+    """
 
     program = parse_program(parse_forml_code(source))
     scope = program.body[0].rule.scope

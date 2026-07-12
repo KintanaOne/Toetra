@@ -5,7 +5,6 @@ from lark import Tree
 from dsl.ast.nodes.primitives import ScalarExpressionNode, TargetRefNode
 from dsl.builder.core.ast_utils import parse_attribute, parse_value
 
-
 _SINGLE_CHILD_WRAPPERS = {
     "scalar_expression",
     "additive_expr",

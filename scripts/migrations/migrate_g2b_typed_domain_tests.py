@@ -16,7 +16,6 @@ import argparse
 import re
 from pathlib import Path
 
-
 TEXT_TARGETS = {
     "test/e2e/backends/test_z3_domain_assumptions.py",
     "test/e2e/normalization/nnf/test_run_nnf.py",
@@ -125,7 +124,7 @@ _TYPED_SCOPE_DOMAIN_HELPER = '''def assert_scope_domain_values(
 
 '''
 
-_TYPED_DOMAIN_CONSTRUCTOR = '''DomainIR(
+_TYPED_DOMAIN_CONSTRUCTOR = """DomainIR(
                 entries=(
                     DomainEntryIR(
                         entity="x0",
@@ -138,7 +137,7 @@ _TYPED_DOMAIN_CONSTRUCTOR = '''DomainIR(
                         ),
                     ),
                 )
-            )'''
+            )"""
 
 _EXTRA_IR_IMPORT = (
     "from dsl.ir.ir1.nodes import "
@@ -216,7 +215,10 @@ def _migrate_scope_domain_helper(relative_path: str, text: str) -> str:
 
 
 def _migrate_manual_domain_ir(relative_path: str, text: str) -> str:
-    if relative_path != "test/unit/normalization/nnf/test_nnf_quantifier_scope_passthrough.py":
+    if (
+        relative_path
+        != "test/unit/normalization/nnf/test_nnf_quantifier_scope_passthrough.py"
+    ):
         return text
 
     migrated = _LEGACY_DOMAIN_CONSTRUCTOR.sub(_TYPED_DOMAIN_CONSTRUCTOR, text)
@@ -265,9 +267,7 @@ def migrate_text(relative_path: str, text: str) -> str:
     migrated = _migrate_explicit_binding_expectations(migrated)
     migrated = _migrate_scope_domain_helper(relative_path, migrated)
     migrated = _migrate_manual_domain_ir(relative_path, migrated)
-    migrated = _migrate_remaining_explicit_binding_contracts(
-        relative_path, migrated
-    )
+    migrated = _migrate_remaining_explicit_binding_contracts(relative_path, migrated)
     return migrated
 
 
@@ -301,9 +301,8 @@ def stale_reasons(relative_path: str, text: str) -> tuple[str, ...]:
         reasons.append("legacy DomainIR name/values expectation")
     if "DomainIR(name=" in text:
         reasons.append("legacy DomainIR constructor")
-    if (
-        _DUPLICATED_FORALL_BEFORE_DOMAIN.search(text)
-        or _CONSECUTIVE_FORALL.search(text)
+    if _DUPLICATED_FORALL_BEFORE_DOMAIN.search(text) or _CONSECUTIVE_FORALL.search(
+        text
     ):
         reasons.append("duplicated forall before typed domain")
     if (
@@ -367,13 +366,13 @@ def run(root: Path, *, write: bool) -> int:
 
 
 def self_test() -> None:
-    sample = '''
+    sample = """
 [LOGIC]:
 ∀ => NOT (a <= 1 AND b <= 2)
 assert task.scope.variables == {"_x": "symbolic"}
 SCOPE variables=_x:symbolic
 assert semantic.resolved_path == ["_x", "age"]
-'''
+"""
     migrated = migrate_text(
         "test/integration/normalization/nnf/test_ir1_to_nnf_quantifiers.py",
         sample,
@@ -390,7 +389,7 @@ assert semantic.resolved_path == ["_x", "age"]
     )
     assert "{token} x0 =>" in migrated
 
-    duplicated_domain = '''
+    duplicated_domain = """
 [BOUND]:
     forall x0
         forall x0
@@ -398,7 +397,7 @@ assert semantic.resolved_path == ["_x", "age"]
                 x0.a: [0, 3]
             )
     => x0.a <= 3
-'''
+"""
     migrated_once = migrate_text(
         "test/e2e/backends/test_z3_domain_assumptions.py",
         duplicated_domain,
@@ -410,13 +409,13 @@ assert semantic.resolved_path == ["_x", "age"]
     assert migrated_once == migrated_twice
     assert migrated_once.count("forall x0") == 1
 
-    bare_domain = '''
+    bare_domain = """
 [BOUND]:
     with domain(
         x0.a: [0, 3]
     )
     => x0.a <= 3
-'''
+"""
     migrated_once = migrate_text(
         "test/e2e/backends/test_z3_domain_assumptions.py",
         bare_domain,
@@ -428,16 +427,16 @@ assert semantic.resolved_path == ["_x", "age"]
     assert migrated_once == migrated_twice
     assert migrated_once.count("forall x0") == 1
 
-    manual_domain = '''from dsl.ir.ir1.nodes import DomainIR\n\ndomain=DomainIR(name="Segment", args={"values": ["A", "B"]})\n'''
+    manual_domain = """from dsl.ir.ir1.nodes import DomainIR\n\ndomain=DomainIR(name="Segment", args={"values": ["A", "B"]})\n"""
     migrated = migrate_text(
         "test/unit/normalization/nnf/test_nnf_quantifier_scope_passthrough.py",
         manual_domain,
     )
     assert "DomainEntryIR(" in migrated
     assert "FiniteSetDomainIR(" in migrated
-    assert "SymbolLiteralIR(\"A\")" in migrated
+    assert 'SymbolLiteralIR("A")' in migrated
 
-    same_indent_duplicate = '''
+    same_indent_duplicate = """
 [BOUND]:
     forall x0
     forall x0
@@ -445,7 +444,7 @@ assert semantic.resolved_path == ["_x", "age"]
             x0.a: [0, 3]
         )
     => x0.a <= 3
-'''
+"""
     migrated_once = migrate_text(
         "test/e2e/backends/test_z3_domain_assumptions.py",
         same_indent_duplicate,

@@ -1,4 +1,3 @@
-
 # /dsl/ir/pretty.py
 
 from dsl.ir.ir1.nodes import (
@@ -92,11 +91,11 @@ def _pretty_scope(scope: ScopeIR) -> list[str]:
                 if entry.entity is not None
                 else entry.feature
             )
-            lines.append(f"    - {subject}: {_pretty_domain_constraint(entry.constraint)}")
+            lines.append(
+                f"    - {subject}: {_pretty_domain_constraint(entry.constraint)}"
+            )
 
     return lines
-
-
 
 
 def _pretty_scalar_expression(node) -> str:
@@ -104,9 +103,7 @@ def _pretty_scalar_expression(node) -> str:
         return repr(node.value)
     if isinstance(node, AttributeExpressionIR):
         return (
-            f"{node.entity}.{node.feature}"
-            if node.entity is not None
-            else node.feature
+            f"{node.entity}.{node.feature}" if node.entity is not None else node.feature
         )
     if isinstance(node, TargetExpressionIR):
         return node.name
@@ -124,7 +121,9 @@ def _pretty_domain_constraint(constraint) -> str:
             f"{_pretty_scalar_expression(constraint.upper)}{right}"
         )
     if isinstance(constraint, FiniteSetDomainIR):
-        values = ", ".join(_pretty_scalar_expression(value) for value in constraint.values)
+        values = ", ".join(
+            _pretty_scalar_expression(value) for value in constraint.values
+        )
         return "{" + values + "}"
     return repr(constraint)
 
@@ -213,5 +212,3 @@ def _pretty_logical(node: LogicalIR, indent=0) -> list[str]:
     # -----------------------------
     lines.append(f"{space}UNKNOWN NODE: {node}")
     return lines
-
-

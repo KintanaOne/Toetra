@@ -1,4 +1,3 @@
-
 # dsl/language/tools/registry.py
 
 from dsl.language.vocabulary.protected_words import protected_words

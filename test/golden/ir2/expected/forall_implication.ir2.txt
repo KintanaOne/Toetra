@@ -6,7 +6,7 @@ Backend       : Z3
 Scope         : quantifier
 Semantics     : refutation
 Normal form   : dnf
-Requirements  : boolean_logic, numeric_comparisons, quantifiers
+Requirements  : boolean_logic, numeric_comparisons
 Assumptions   : 0
 Spec formula  :
   NNF

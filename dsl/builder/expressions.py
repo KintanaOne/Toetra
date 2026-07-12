@@ -1,4 +1,3 @@
-
 from lark import Tree
 from dsl.ast.nodes.expressions import (
     AtExprNode,
@@ -171,5 +170,3 @@ def parse_quantifier(prop: Tree) -> QuantifierExprNode:
         variable=variable,
         domain=domain,
     )
-
-

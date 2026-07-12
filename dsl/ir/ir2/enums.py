@@ -16,14 +16,35 @@ class NormalFormKind(str, Enum):
 
 
 class VerificationSemantics(str, Enum):
-    """How the verification condition must be interpreted.
+    """How a verification condition must be interpreted.
 
-    REFUTATION means FORML proves a property P by checking whether Γ ∧ ¬P is
-    satisfiable. If it is impossible, then P holds under assumptions Γ.
+    REFUTATION
+        FORML searches for a violation of a property P by solving:
+
+            Gamma AND NOT P
+
+        Solver interpretation:
+            SAT     -> a counterexample exists
+            UNSAT   -> the property is proved under Gamma
+            UNKNOWN -> no conclusion can be drawn
+
+    SATISFACTION
+        FORML searches for a value satisfying a property P by solving:
+
+            Gamma AND P
+
+        Solver interpretation:
+            SAT     -> a witness exists
+            UNSAT   -> no witness exists
+            UNKNOWN -> no conclusion can be drawn
+
+    These semantics describe the meaning of the backend query. They are
+    distinct from the source-level FORML quantifier and from the final
+    verification status.
     """
 
     REFUTATION = "refutation"
-    DIRECT = "direct"
+    SATISFACTION = "satisfaction"
 
 
 class Polarity(str, Enum):
