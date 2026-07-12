@@ -43,7 +43,6 @@ def _requirements(normal_form: NormalFormKind) -> IR2Requirements:
         requires_numeric_comparisons=True,
         requires_problem_predicates=False,
         requires_model_assertions=False,
-        requires_quantifiers=False,
         requires_domains=False,
         requires_neighborhoods=False,
         normal_form=normal_form,

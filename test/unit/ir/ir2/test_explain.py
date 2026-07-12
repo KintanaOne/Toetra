@@ -48,7 +48,7 @@ def _task() -> VerificationTaskIR2:
             requires_numeric_comparisons=True,
             requires_problem_predicates=False,
             requires_model_assertions=True,
-            requires_quantifiers=True,
+            requires_native_quantifiers=True,
             requires_domains=False,
             requires_neighborhoods=False,
             normal_form=NormalFormKind.NNF,

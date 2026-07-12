@@ -39,9 +39,6 @@ def _requirements(
         requires_numeric_comparisons=True,
         requires_problem_predicates=False,
         requires_model_assertions=False,
-        # Compatibility field during the migration.
-        # It represents a native backend requirement, not the DSL scope.
-        requires_quantifiers=requires_native_quantifiers,
         requires_domains=False,
         requires_neighborhoods=False,
         normal_form=form,
@@ -200,7 +197,6 @@ def test_backend_router_accepts_lowered_forall_without_native_quantifiers():
     assert task.requirements.uses_quantified_scope is True
 
     assert task.requirements.requires_native_quantifiers is False
-    assert task.requirements.requires_quantifiers is False
 
     assert (
         task.requirements.required_verification_semantics

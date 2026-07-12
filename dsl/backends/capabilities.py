@@ -76,20 +76,17 @@ class BackendCapabilities:
         ):
             return False
 
-        # Compatibility during the migration:
-        # either historical field may indicate a native quantifier need.
-        requires_native_quantifiers = (
-            requirements.requires_native_quantifiers
-            or requirements.requires_quantifiers
-        )
-
-        # Likewise, an old backend declaration using supports_quantifiers=True
-        # remains compatible until that field is removed.
+        # The requirement contract is now explicit: only a representation that
+        # actually reaches the backend with native quantifiers requires this
+        # capability.
+        #
+        # The historical backend field remains temporarily accepted until all
+        # backend declarations have migrated.
         supports_native_quantifiers = (
             self.supports_native_quantifiers or self.supports_quantifiers
         )
 
-        if requires_native_quantifiers and not supports_native_quantifiers:
+        if requirements.requires_native_quantifiers and not supports_native_quantifiers:
             return False
 
         if (
