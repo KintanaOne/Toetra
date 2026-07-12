@@ -38,12 +38,12 @@ def test_arithmetic_precedence_is_preserved_in_cst(
 
     assert len(direct_multiplicative) == 2
     assert cst_operator_values(additive, "additive_operator") == ["+"]
-    assert cst_operator_values(
-        direct_multiplicative[0], "multiplicative_operator"
-    ) == []
-    assert cst_operator_values(
-        direct_multiplicative[1], "multiplicative_operator"
-    ) == ["*"]
+    assert (
+        cst_operator_values(direct_multiplicative[0], "multiplicative_operator") == []
+    )
+    assert cst_operator_values(direct_multiplicative[1], "multiplicative_operator") == [
+        "*"
+    ]
 
 
 def test_unary_sign_is_preserved_in_cst(

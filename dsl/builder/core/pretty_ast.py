@@ -1,4 +1,3 @@
-
 # dsl/utils/pretty_ast.py
 
 from typing import Any
@@ -358,5 +357,3 @@ def _pretty_program(node: ProgramNode, indent: int):
         lines.append("")
 
     return "\n".join(lines).strip()
-
-

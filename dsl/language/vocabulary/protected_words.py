@@ -1,4 +1,3 @@
-
 # /forml/grammar/official_contents/protected_words.py
 
 from enum import Enum

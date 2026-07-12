@@ -10,7 +10,12 @@ from dsl.ast.nodes.assertion import (
     ProblemNode,
 )
 
-from dsl.ast.nodes.primitives import AttributeNode, TargetRefNode
+from dsl.ast.nodes.primitives import (
+    AttributeNode,
+    ConstantNode,
+    TargetRefNode,
+)
+
 from dsl.ir.ir1.nodes import (
     QueryIR,
     LogicalIR,
@@ -116,23 +121,55 @@ class QueryTranslator:
     # LEAVES
     # ------------------------------------------------------------------
 
-    def _translate_comparison(self, node: ComparisonNode) -> ComparisonIR:
-        """
-        Translate a semantically resolved comparison into IR.
+    def _translate_comparison(
+        self,
+        node: ComparisonNode,
+    ) -> ComparisonIR:
+        """Translate the scalar-leaf subset currently supported by IR1.
 
-        IMPORTANT:
-        This must use semantic annotations, not raw parsed attributes.
+        The AST accepts general scalar expressions on both sides so that the
+        language can evolve toward arithmetic expressions.
+
+        The current IR1 comparison representation remains intentionally
+        asymmetric:
+
+            attribute | target-reference
+                operator
+            constant
+
+        Other scalar combinations must be lowered by a future arithmetic IR gate.
         """
 
-        entity, feature, feature_dtype = self._resolve_ir_operand(node.left)
+        left = node.left
+        right = node.right
+
+        if not isinstance(
+            left,
+            (
+                AttributeNode,
+                TargetRefNode,
+            ),
+        ):
+            raise NotImplementedError(
+                "IR1 comparison lowering currently requires an attribute "
+                "or target reference on the left-hand side."
+            )
+
+        if not isinstance(right, ConstantNode):
+            raise NotImplementedError(
+                "IR1 comparison lowering currently requires a constant "
+                "on the right-hand side."
+            )
+
+        entity, feature, feature_dtype = self._resolve_ir_operand(left)
 
         return ComparisonIR(
             entity=entity,
             feature=feature,
             op=node.op,
-            value=node.right.value,
+            value=right.value,
             feature_dtype=feature_dtype,
-            value_dtype=node.right.dtype,
+            value_dtype=right.dtype,
         )
 
     def _resolve_ir_operand(

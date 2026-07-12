@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -211,5 +210,3 @@ def _enum_value(value: object) -> object:
 def _indent(text: str, spaces: int) -> str:
     prefix = " " * spaces
     return "\n".join(prefix + line if line else line for line in text.splitlines())
-
-

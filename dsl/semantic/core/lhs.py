@@ -1,4 +1,3 @@
-
 from dsl.semantic.context.context import SemanticContext
 from dsl.semantic.context.scope import SemanticScope
 from dsl.semantic.errors.errors import InvalidPropertyError
@@ -272,5 +271,3 @@ class LHSValidator:
         )
 
         return context
-
-

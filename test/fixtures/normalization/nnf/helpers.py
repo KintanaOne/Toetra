@@ -185,11 +185,11 @@ def assert_scope_domain_values(
     assert isinstance(entry.constraint, FiniteSetDomainIR)
 
     actual_values = [
-        value.name
-        if isinstance(value, SymbolLiteralIR)
-        else value.value
-        if isinstance(value, ConstantExpressionIR)
-        else value
+        (
+            value.name
+            if isinstance(value, SymbolLiteralIR)
+            else value.value if isinstance(value, ConstantExpressionIR) else value
+        )
         for value in entry.constraint.values
     ]
     assert actual_values == values

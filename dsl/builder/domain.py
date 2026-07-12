@@ -16,7 +16,6 @@ from dsl.builder.core.utils import find_child, find_node
 from dsl.builder.scalar import parse_scalar_expression
 from dsl.language.vocabulary.domains import EnumBoundaryKind
 
-
 _INTERVAL_BOUNDARIES: dict[
     str,
     tuple[EnumBoundaryKind, EnumBoundaryKind],
@@ -137,7 +136,9 @@ def parse_domain(node: Tree) -> DomainNode:
     """Build a typed domain AST without performing semantic validation."""
 
     domain = require_node(find_node(node, "domain"), "Domain node not found")
-    entries = [_parse_entry(entry) for entry in _direct_children(domain, "domain_entry")]
+    entries = [
+        _parse_entry(entry) for entry in _direct_children(domain, "domain_entry")
+    ]
 
     if not entries:
         raise ValueError("Domain requires at least one entry")

@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 from typing import Any
@@ -20,6 +19,7 @@ from dsl.ir.ir1.nodes import (
     AttributeExpressionIR,
     ConstantExpressionIR,
     DomainEntryIR,
+    DomainFiniteValueIR,
     DomainIR,
     FiniteSetDomainIR,
     IntervalDomainIR,
@@ -104,16 +104,40 @@ class ScopeTranslator:
     # ------------------------------------------------------------------
 
     def _translate_quantifier(self, scope: QuantifierExprNode) -> ScopeIR:
+        quantifier = self._normalize_quantifier(scope.quantifier)
+
         return ScopeIR(
             kind="quantifier",
             variables={scope.variable: "symbolic"},
             neighborhood=None,
             domain=self._translate_domain(scope.domain),
+            quantifier=quantifier,
         )
 
     # ------------------------------------------------------------------
     # HELPERS
     # ------------------------------------------------------------------
+
+    @staticmethod
+    def _normalize_quantifier(quantifier: str) -> str:
+        """Normalize a source quantifier to its canonical IR representation."""
+
+        raw_quantifier = quantifier.strip()
+
+        normalized = {
+            "∀": "forall",
+            "∃": "exists",
+        }.get(
+            raw_quantifier,
+            raw_quantifier.lower(),
+        )
+
+        if normalized not in {"forall", "exists"}:
+            raise ValueError(
+                f"Unsupported quantifier during IR1 translation: " f"{quantifier!r}"
+            )
+
+        return normalized
 
     def _translate_neighborhood(self, neighborhood) -> NeighborhoodIR | None:
         if neighborhood is None:
@@ -164,16 +188,37 @@ class ScopeTranslator:
         if isinstance(constraint, FiniteSetDomainNode):
             return FiniteSetDomainIR(
                 values=tuple(
-                    SymbolLiteralIR(value.name)
-                    if isinstance(value, SymbolLiteralNode)
-                    else self._translate_scalar_leaf(value)
-                    for value in constraint.values
+                    self._translate_finite_value(value) for value in constraint.values
                 )
             )
 
-        raise TypeError(
-            f"Unsupported domain constraint: {type(constraint).__name__}"
-        )
+        raise TypeError(f"Unsupported domain constraint: {type(constraint).__name__}")
+
+    def _translate_finite_value(
+        self,
+        node: ConstantNode | SymbolLiteralNode,
+    ) -> DomainFiniteValueIR:
+        """Translate one finite-set value to its restricted IR representation.
+
+        Finite sets intentionally accept only:
+
+            - scalar constants;
+            - unquoted symbolic category literals.
+
+        Attribute and target expressions are valid scalar expressions for other
+        constructs, such as interval bounds, but are not finite-set values.
+        """
+
+        if isinstance(node, SymbolLiteralNode):
+            return SymbolLiteralIR(name=node.name)
+
+        if isinstance(node, ConstantNode):
+            return ConstantExpressionIR(
+                value=node.value,
+                dtype=node.dtype,
+            )
+
+        raise TypeError(f"Unsupported finite-set value: {type(node).__name__}")
 
     def _translate_scalar_leaf(self, node):
         if isinstance(node, ConstantNode):
@@ -189,5 +234,3 @@ class ScopeTranslator:
             return TargetExpressionIR(name=node.name)
 
         raise TypeError(f"Unsupported scalar domain leaf: {type(node).__name__}")
-
-

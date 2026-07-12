@@ -1,4 +1,3 @@
-
 from typing import List
 
 from lark import Tree, Token
@@ -13,7 +12,7 @@ from dsl.ast.nodes.assertion import (
     LogicalNode,
 )
 
-from dsl.builder.core.utils import find_node, get_token_value
+from dsl.builder.core.utils import get_token_value
 from dsl.builder.core.ast_utils import node_value
 from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.operators import EnumComparisonOperator
@@ -35,8 +34,7 @@ def build_comparison_expr(node: Tree) -> ComparisonNode:
         (
             child
             for child in node.children
-            if isinstance(child, Tree)
-            and str(child.data) == "comparison_operation"
+            if isinstance(child, Tree) and str(child.data) == "comparison_operation"
         ),
         None,
     )
@@ -153,5 +151,3 @@ def parse_assertion(node: Tree | Token | None) -> LogicalNode:
     # FALLBACK
     # ----------------------------------------------------------------------
     raise ValueError(f"Unhandled node: {t}")
-
-

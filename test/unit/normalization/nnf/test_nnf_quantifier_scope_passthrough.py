@@ -30,19 +30,19 @@ def test_normalize_task_preserves_quantifier_scope_and_domain():
         variables={"x0": "symbolic"},
         neighborhood=None,
         domain=DomainIR(
-                entries=(
-                    DomainEntryIR(
-                        entity="x0",
-                        feature="Segment",
-                        constraint=FiniteSetDomainIR(
-                            values=(
-                                SymbolLiteralIR("A"),
-                                SymbolLiteralIR("B"),
-                            )
-                        ),
+            entries=(
+                DomainEntryIR(
+                    entity="x0",
+                    feature="Segment",
+                    constraint=FiniteSetDomainIR(
+                        values=(
+                            SymbolLiteralIR("A"),
+                            SymbolLiteralIR("B"),
+                        )
                     ),
-                )
-            ),
+                ),
+            )
+        ),
     )
 
     got = normalizer().normalize_task(task)

@@ -1,4 +1,3 @@
-
 # /forml/grammar/official_contents/quantifiers.py
 
 from enum import Enum
@@ -56,4 +55,3 @@ class EnumArithmeticOperator(EnumMixin, Enum):
 class EnumUnaryOperator(EnumMixin, Enum):
     PLUS = "+"
     MINUS = "-"
-

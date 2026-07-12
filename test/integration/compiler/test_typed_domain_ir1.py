@@ -13,7 +13,7 @@ from dsl.semantic.types.enums import EnumDataType
 
 
 def test_typed_domain_survives_ast_to_ir1_without_legacy_name_values_shape():
-    source = '''
+    source = """
 model := "model.onnx"
 target := MyTarget
 
@@ -25,7 +25,7 @@ forall applicant
         applicant.score: {0.0, 7.0}
     )
     => target <= 7
-'''
+"""
 
     (task,) = run_ir(source)
 

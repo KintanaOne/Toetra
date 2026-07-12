@@ -43,7 +43,7 @@ def concat_files_in_folder(
 
 
 if __name__ == "__main__":
-    
+
     # docs
     concat_files_in_folder(
         "docs",

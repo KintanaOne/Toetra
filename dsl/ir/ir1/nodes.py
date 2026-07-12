@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -42,26 +41,32 @@ class VerificationTask:
 
 @dataclass
 class ScopeIR:
-    """
-    Semantic context extracted from the LHS of a FORML property.
+    """Semantic context extracted from the left-hand side of a property.
 
-    Defines:
-        - variables (anchor, perturbation, symbolic variables)
-        - neighborhood constraints (e.g. L2 epsilon ball)
-        - optional domain constraints
+    ``kind`` identifies the general scope family:
+
+        pointwise
+        local
+        pairwise
+        quantifier
+
+    ``quantifier`` preserves the precise source-level intent for quantified
+    scopes:
+
+        forall
+        exists
+
+    It remains ``None`` for non-quantified scopes.
     """
 
-    kind: str  # "local", "pairwise", "quantifier", "pointwise"
+    kind: str
 
     variables: dict[str, str]
-    # Example:
-    # {
-    #   "x": "anchor",
-    #   "x'": "perturbation"
-    # }
 
     neighborhood: NeighborhoodIR | None
     domain: DomainIR | None
+
+    quantifier: str | None = None
 
 
 @dataclass
@@ -276,5 +281,3 @@ class ProblemIR(AtomicIR):
     problem: EnumProblem
     function: EnumFunction | None
     args: dict[str, Any] | None = None
-
-

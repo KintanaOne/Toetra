@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -80,5 +79,3 @@ class ProblemNode(LogicalNode):
 @dataclass
 class UnknownNode(LogicalNode):
     raw: str
-
-

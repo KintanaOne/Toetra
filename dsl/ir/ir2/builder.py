@@ -56,22 +56,34 @@ class IR2Builder:
         assumptions: tuple[AssumptionIR2, ...] | list[AssumptionIR2] | None = None,
         context: IR2BuildContext | None = None,
     ) -> VerificationTaskIR2:
-        context = context or IR2BuildContext(backend_hint=task_nnf.backend)
+        context = context or IR2BuildContext(
+            backend_hint=task_nnf.backend,
+        )
 
         NNFGuard.assert_task_is_nnf(task_nnf)
 
-        collected_assumptions = self.assumption_collector.collect(assumptions)
+        collected_assumptions = self.assumption_collector.collect(
+            assumptions,
+        )
 
         spec_formula = NNFFormulaIR2(
             expression=task_nnf.query.expression,
         )
 
-        vc_nnf = self.vc_builder.build_refutation_condition(
-            spec_formula=spec_formula,
-            assumptions=collected_assumptions,
+        semantics = self._resolve_verification_semantics(
+            task_nnf,
         )
 
-        selected_form = self.selector.select(vc_nnf, context=context)
+        vc_nnf = self.vc_builder.build_condition(
+            spec_formula=spec_formula,
+            assumptions=collected_assumptions,
+            semantics=semantics,
+        )
+
+        selected_form = self.selector.select(
+            vc_nnf,
+            context=context,
+        )
 
         verification_condition, actual_form = self._convert(
             vc_nnf,
@@ -84,6 +96,14 @@ class IR2Builder:
             verification_condition=verification_condition,
             assumptions=collected_assumptions,
             normal_form=actual_form,
+            semantics=semantics,
+            # The current quantified scopes are eliminated into either:
+            #
+            #   Gamma AND NOT P
+            #   Gamma AND P
+            #
+            # No native ForAll/Exists reaches the backend.
+            requires_native_quantifiers=False,
         )
 
         task_ir2 = VerificationTaskIR2(
@@ -93,12 +113,13 @@ class IR2Builder:
             assumptions=collected_assumptions,
             spec_formula=spec_formula,
             verification_condition=verification_condition,
-            semantics=VerificationSemantics.REFUTATION,
+            semantics=semantics,
             normal_form=actual_form,
             requirements=requirements,
             metadata={
                 "source_ir": "ir1_nnf",
                 "builder": "IR2Builder",
+                "verification_semantics": semantics.value,
             },
         )
 
@@ -110,6 +131,47 @@ class IR2Builder:
             task_ir2,
             diagnostics=diagnostics,
         )
+
+    @staticmethod
+    def _resolve_verification_semantics(
+        task: VerificationTask,
+    ) -> VerificationSemantics:
+        """Select verification semantics from the preserved IR1 scope.
+
+        Non-quantified scopes and universal scopes use refutation:
+
+            Gamma AND NOT P
+
+        Existential scopes use satisfaction:
+
+            Gamma AND P
+        """
+
+        scope = task.scope
+
+        if scope.kind != "quantifier":
+            return VerificationSemantics.REFUTATION
+
+        quantifier = scope.quantifier
+
+        if quantifier is None:
+            raise ValueError("Quantified IR1 scope is missing its quantifier.")
+
+        normalized = {
+            "∀": "forall",
+            "∃": "exists",
+        }.get(
+            quantifier.strip(),
+            quantifier.strip().lower(),
+        )
+
+        if normalized == "forall":
+            return VerificationSemantics.REFUTATION
+
+        if normalized == "exists":
+            return VerificationSemantics.SATISFACTION
+
+        raise ValueError(f"Unsupported IR1 quantifier: {quantifier!r}")
 
     def build_tasks(
         self,

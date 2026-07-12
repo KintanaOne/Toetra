@@ -3,6 +3,7 @@ from typing import cast
 import pytest
 from lark import Tree
 
+from dsl.ast.nodes.domain import FiniteSetDomainNode, SymbolLiteralNode
 from dsl.ast.nodes.expressions import (
     AtExprNode,
     CheckAtExprNode,
@@ -155,9 +156,20 @@ def test_program_with_quantifier():
     assert domain is not None
     assert len(domain.entries) == 1
     entry = domain.entries[0]
+
     assert entry.subject.entity == "x0"
     assert entry.subject.feature == "gender"
-    assert [value.value for value in entry.constraint.values] == ["male", "female"]
+
+    constraint = entry.constraint
+
+    assert isinstance(constraint, FiniteSetDomainNode)
+
+    actual_values = [
+        value.name if isinstance(value, SymbolLiteralNode) else value.value
+        for value in constraint.values
+    ]
+
+    assert actual_values == ["male", "female"]
 
     assert prop.backend is None
 
@@ -205,10 +217,20 @@ def test_program_with_domain_and_neighborhood():
     assert domain is not None
     assert len(domain.entries) == 1
     entry = domain.entries[0]
+
     assert entry.subject.entity == "x0"
     assert entry.subject.feature == "sex"
-    assert [value.value for value in entry.constraint.values] == ["male", "female"]
 
+    constraint = entry.constraint
+
+    assert isinstance(constraint, FiniteSetDomainNode)
+
+    actual_values = [
+        value.name if isinstance(value, SymbolLiteralNode) else value.value
+        for value in constraint.values
+    ]
+
+    assert actual_values == ["male", "female"]
     assert prop.backend is None
 
 
