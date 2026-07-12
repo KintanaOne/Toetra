@@ -15,8 +15,6 @@ class BackendCapabilities:
 
     Quantifier distinction
     ----------------------
-    ``supports_quantifiers`` is the historical compatibility field.
-
     ``supports_native_quantifiers`` explicitly means that the backend adapter
     can receive and encode native quantified expressions such as ``ForAll`` or
     ``Exists``.
@@ -38,12 +36,6 @@ class BackendCapabilities:
     supports_numeric_comparisons: bool
     supports_problem_predicates: bool
     supports_model_assertions: bool
-
-    # Historical compatibility field.
-    # It will be removed after all backend declarations and tests migrate to
-    # ``supports_native_quantifiers``.
-    supports_quantifiers: bool
-
     supports_domains: bool
     supports_neighborhoods: bool
     supported_normal_forms: tuple[NormalFormKind, ...]
@@ -76,17 +68,10 @@ class BackendCapabilities:
         ):
             return False
 
-        # The requirement contract is now explicit: only a representation that
-        # actually reaches the backend with native quantifiers requires this
-        # capability.
-        #
-        # The historical backend field remains temporarily accepted until all
-        # backend declarations have migrated.
-        supports_native_quantifiers = (
-            self.supports_native_quantifiers or self.supports_quantifiers
-        )
-
-        if requirements.requires_native_quantifiers and not supports_native_quantifiers:
+        if (
+            requirements.requires_native_quantifiers
+            and not self.supports_native_quantifiers
+        ):
             return False
 
         if (
