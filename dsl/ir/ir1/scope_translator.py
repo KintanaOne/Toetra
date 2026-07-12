@@ -1,18 +1,32 @@
+
 from __future__ import annotations
 
 from typing import Any
 
+from dsl.ast.nodes.domain import (
+    FiniteSetDomainNode,
+    IntervalDomainNode,
+    SymbolLiteralNode,
+)
 from dsl.ast.nodes.expressions import (
     AtExprNode,
     CheckAtExprNode,
     PairwiseExprNode,
     QuantifierExprNode,
 )
+from dsl.ast.nodes.primitives import AttributeNode, ConstantNode, TargetRefNode
 
 from dsl.ir.ir1.nodes import (
-    ScopeIR,
-    NeighborhoodIR,
+    AttributeExpressionIR,
+    ConstantExpressionIR,
+    DomainEntryIR,
     DomainIR,
+    FiniteSetDomainIR,
+    IntervalDomainIR,
+    NeighborhoodIR,
+    ScopeIR,
+    SymbolLiteralIR,
+    TargetExpressionIR,
 )
 
 
@@ -92,10 +106,7 @@ class ScopeTranslator:
     def _translate_quantifier(self, scope: QuantifierExprNode) -> ScopeIR:
         return ScopeIR(
             kind="quantifier",
-            # Keep the semantic binding introduced by LHSValidator.
-            # Quantified formulas bind implicit feature access such as `a <= 1`
-            # to `_x.a`, so IR must declare the `_x` symbolic variable.
-            variables={"_x": "symbolic"},
+            variables={scope.variable: "symbolic"},
             neighborhood=None,
             domain=self._translate_domain(scope.domain),
         )
@@ -131,6 +142,52 @@ class ScopeTranslator:
             return None
 
         return DomainIR(
-            name=domain.name,
-            args={"values": domain.values},
+            entries=tuple(
+                DomainEntryIR(
+                    entity=entry.subject.entity,
+                    feature=entry.subject.feature,
+                    constraint=self._translate_domain_constraint(entry.constraint),
+                )
+                for entry in domain.entries
+            )
         )
+
+    def _translate_domain_constraint(self, constraint):
+        if isinstance(constraint, IntervalDomainNode):
+            return IntervalDomainIR(
+                lower=self._translate_scalar_leaf(constraint.lower),
+                upper=self._translate_scalar_leaf(constraint.upper),
+                lower_boundary=constraint.lower_boundary,
+                upper_boundary=constraint.upper_boundary,
+            )
+
+        if isinstance(constraint, FiniteSetDomainNode):
+            return FiniteSetDomainIR(
+                values=tuple(
+                    SymbolLiteralIR(value.name)
+                    if isinstance(value, SymbolLiteralNode)
+                    else self._translate_scalar_leaf(value)
+                    for value in constraint.values
+                )
+            )
+
+        raise TypeError(
+            f"Unsupported domain constraint: {type(constraint).__name__}"
+        )
+
+    def _translate_scalar_leaf(self, node):
+        if isinstance(node, ConstantNode):
+            return ConstantExpressionIR(value=node.value, dtype=node.dtype)
+
+        if isinstance(node, AttributeNode):
+            entity = node.entity
+            if node.semantic is not None and node.semantic.resolved_entity is not None:
+                entity = node.semantic.resolved_entity
+            return AttributeExpressionIR(entity=entity, feature=node.feature)
+
+        if isinstance(node, TargetRefNode):
+            return TargetExpressionIR(name=node.name)
+
+        raise TypeError(f"Unsupported scalar domain leaf: {type(node).__name__}")
+
+

@@ -1,3 +1,4 @@
+
 from typing import List
 
 from lark import Tree, Token
@@ -13,11 +14,11 @@ from dsl.ast.nodes.assertion import (
 )
 
 from dsl.builder.core.utils import find_node, get_token_value
-from dsl.builder.core.ast_utils import parse_attribute, node_value, parse_value
+from dsl.builder.core.ast_utils import node_value
 from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.problems import EnumProblem
-from dsl.ast.nodes.primitives import TargetRefNode
+from dsl.builder.scalar import parse_scalar_expression
 
 # ============================================================================
 # COMPARISON
@@ -25,26 +26,27 @@ from dsl.ast.nodes.primitives import TargetRefNode
 
 
 def build_comparison_expr(node: Tree) -> ComparisonNode:
-    value_node = find_node(node, "value")
-    op_node = find_node(node, "comparison_operation")
+    scalar_nodes = [
+        child
+        for child in node.children
+        if isinstance(child, Tree) and str(child.data) == "scalar_expression"
+    ]
+    op_node = next(
+        (
+            child
+            for child in node.children
+            if isinstance(child, Tree)
+            and str(child.data) == "comparison_operation"
+        ),
+        None,
+    )
 
-    if value_node is None or op_node is None:
+    if len(scalar_nodes) != 2 or op_node is None:
         raise ValueError("Invalid comparison")
 
-    target_comparison_node = find_node(node, "target_comparison_expr")
-
-    if target_comparison_node is not None:
-        left = TargetRefNode()
-    else:
-        attribute_node = find_node(node, "attribute")
-
-        if attribute_node is None:
-            raise ValueError("Invalid comparison")
-
-        left = parse_attribute(attribute_node)
-
+    left = parse_scalar_expression(scalar_nodes[0])
+    right = parse_scalar_expression(scalar_nodes[1])
     op = EnumComparisonOperator(get_token_value(op_node))
-    right = parse_value(value_node)
 
     return ComparisonNode(left=left, op=op, right=right)
 
@@ -151,3 +153,5 @@ def parse_assertion(node: Tree | Token | None) -> LogicalNode:
     # FALLBACK
     # ----------------------------------------------------------------------
     raise ValueError(f"Unhandled node: {t}")
+
+

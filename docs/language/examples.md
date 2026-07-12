@@ -2,7 +2,7 @@
 # Normative FORML Examples
 
 > Status: Accepted language baseline  
-> Scope: Explicit quantified bindings, typed domains and scalar arithmetic  
+> Scope: Explicit quantified bindings, typed domains, scalar arithmetic and specification constants  
 > Audience: users, compiler authors, test authors and backend authors
 
 ## Purpose
@@ -10,6 +10,8 @@
 The examples in this document are normative.
 
 Each example has a stable identifier and defines observable expectations across the compiler pipeline. Formatting may evolve, but the represented meaning must remain stable unless a later ADR supersedes it.
+
+Every normative source block is a complete `.forml` program. Test suites must pass that complete program through the public compiler entry point. Grammar fragments may appear only in explanatory tables and must not replace program-level fixtures.
 
 ```text
 source
@@ -377,6 +379,146 @@ target := score
 `check_at x0` denotes one concrete evaluation point. It is not equivalent to `forall x0` and does not use a domain to generate symbolic valuations.
 
 ---
+
+## SPC-001 — Reusable Business Thresholds
+
+```forml
+model := "credit-risk.joblib"
+target := default_risk
+
+max_risk := 0.20
+max_debt_ratio := 0.35
+minimum_income := 25000.0
+
+[LOGIC]:
+forall applicant
+    with domain(
+        applicant.income: [minimum_income, 200000.0],
+        applicant.debt: [0.0, 100000.0]
+    )
+    => target <= max_risk
+       AND applicant.debt <= max_debt_ratio * applicant.income
+    using Z3
+```
+
+Expected resolution:
+
+```text
+minimum_income  → specification constant FLOAT(25000.0)
+max_risk        → specification constant FLOAT(0.20)
+max_debt_ratio  → specification constant FLOAT(0.35)
+applicant.income → explicit feature
+applicant.debt   → explicit feature
+```
+
+## SPC-002 — Constant Name and Feature Name
+
+```forml
+model := "demo.joblib"
+target := score
+
+threshold := 7
+
+[LOGIC]: forall x0 => x0.threshold <= threshold
+```
+
+Expected resolution:
+
+```text
+x0.threshold → feature
+threshold    → specification constant INT(7)
+```
+
+Explicit qualification always selects the feature.
+
+## SPC-003 — Bare Feature Fallback
+
+```forml
+model := "demo.joblib"
+target := score
+
+minimum_age := 18
+
+[LOGIC]: forall applicant => age >= minimum_age
+```
+
+Expected resolution:
+
+```text
+minimum_age → specification constant INT(18)
+age        → implicit feature applicant.age
+```
+
+## SPC-004 — Constant in a Finite Set
+
+```forml
+model := "demo.joblib"
+target := score
+
+preferred_level := 7
+
+[LOGIC]:
+forall x0
+    with domain(
+        x0.level: {0, preferred_level}
+    )
+    => target >= 0
+```
+
+`preferred_level` resolves to the declared integer constant. An undeclared identifier in the same position remains a symbolic categorical literal.
+
+## SPC-005 — Constant Reused Across Properties
+
+```forml
+model := "credit-risk.joblib"
+target := default_risk
+
+max_risk := 0.20
+minimum_income := 25000.0
+
+[BOUND]:
+forall applicant
+    with domain(
+        applicant.income: [minimum_income, 200000.0]
+    )
+    => target <= max_risk
+    using Z3
+
+[LOGIC]:
+exists applicant
+    with domain(
+        applicant.income: [minimum_income, 200000.0]
+    )
+    => target == max_risk
+    using Z3
+```
+
+Both properties resolve `max_risk` and `minimum_income` from the same program-level specification-constant table. A property does not create a private copy or a new solver variable.
+
+## SPC-006 — String Constant in Finite-Set Value Position
+
+```forml
+model := "regional-risk.joblib"
+target := score
+
+preferred_region := "EU"
+
+[LOGIC]:
+forall applicant
+    with domain(
+        applicant.region: {preferred_region, US}
+    )
+    => target <= 7
+```
+
+Expected resolution:
+
+```text
+preferred_region → specification constant STRING("EU")
+US               → symbolic categorical literal
+```
+
+The source is language-valid. Backend acceptance still depends on categorical encoding capabilities.
 
 ## Golden-Sample Rule
 

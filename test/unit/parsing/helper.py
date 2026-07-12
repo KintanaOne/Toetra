@@ -129,15 +129,30 @@ def assert_neighborhood(neighborhood, metric: str, **expected_args) -> None:
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def assert_domain(domain, name: str, values: list[str]) -> None:
-    """
-    Assert domain structure and values.
-    """
+def assert_domain(
+    domain,
+    name: str,
+    values: list[object],
+    *,
+    entity: str = "x0",
+) -> None:
+    """Assert one finite-set typed domain entry."""
+
+    from dsl.ast.nodes.domain import FiniteSetDomainNode, SymbolLiteralNode
 
     assert domain is not None
+    assert len(domain.entries) == 1
 
-    assert domain.name == name
-    assert domain.values == values
+    entry = domain.entries[0]
+    assert entry.subject.entity == entity
+    assert entry.subject.feature == name
+    assert isinstance(entry.constraint, FiniteSetDomainNode)
+
+    actual_values = [
+        value.name if isinstance(value, SymbolLiteralNode) else value.value
+        for value in entry.constraint.values
+    ]
+    assert actual_values == values
 
 
 # ----------------------------------------------------------------------------------------------------------------------

@@ -167,12 +167,13 @@ The testing strategy is considered effective when:
 
 ## Language Evolution Freeze
 
-Before changing implementation, FORML freezes the expected behavior of explicit quantifiers, typed domains and scalar arithmetic through stable example and test identifiers.
+Before changing implementation, FORML freezes the expected behavior of explicit quantifiers, typed domains, scalar arithmetic and specification constants through stable example and test identifiers.
 
 The mandatory gate sequence is:
 
 ```text
-G1 parser
+G1 parser baseline
+→ G1.1 specification constants parser
 → G2 AST/builder
 → G3 semantic
 → G4 IR1
@@ -196,3 +197,6 @@ A test must distinguish:
 - vacuous universal result.
 
 The existing test suite remains a regression gate throughout the migration.
+
+
+Detailed specification-constant test ownership is defined in [Specification Constants Test Plan](specification-constants-tests.md).

@@ -170,6 +170,25 @@ The AST must not depend on semantic annotations before the semantic layer runs.
 
 ---
 
+## Specification Constant AST
+
+The target AST adds:
+
+```text
+SpecificationConstantDeclarationNode(name, value)
+NameRefNode(name)
+```
+
+`HeaderNode` preserves specification constants in source order.
+
+`NameRefNode` represents a bare scalar identifier whose meaning is intentionally unresolved at builder time. It is distinct from:
+
+- `AttributeNode`, which represents an explicit qualified feature or a semantic feature reference;
+- `TargetRefNode`, which represents the model output;
+- `SymbolLiteralNode`, which represents an unquoted categorical value in finite-set position.
+
+This distinction prevents the builder from silently interpreting every bare name as an implicit feature.
+
 ## AST Invariants
 
 The following invariants should hold for any builder-produced AST:

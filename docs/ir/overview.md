@@ -72,12 +72,12 @@ It currently represents verification tasks composed of:
 - logical query,
 - optional backend hint.
 
-IR1 currently provides the first backend-independent logical task/query representation. Implication handling, De Morgan transformations, and Negation Normal Form belong to the planned IR1-NNF subphase.
+IR1 is responsible for early logical normalization, including implication handling, De Morgan transformations, and Negation Normal Form where applicable.
 
 IR1 answers:
 
 ```text
-What is the backend-independent logical task to verify?
+What is the normalized logical task to verify?
 ```
 
 ---
@@ -165,8 +165,9 @@ What exactly is sent to the backend?
 | SemanticValidatedAST | implemented / stabilizing | Semantic annotations and binding exist. |
 | VerificationTask | implemented / stabilizing | Main IR1 execution unit. |
 | ScopeIR | implemented / stabilizing | Represents pointwise, local, pairwise, and quantifier contexts. |
-| LogicalIR | implemented / stabilizing | Represents comparisons, boolean operators, implications, and problem predicates. |
-| IR1-NNF | planned / critical | De Morgan / NNF logic is documented conceptually and must be implemented and tested. |
+| LogicalIR | implemented / stabilizing | Represents comparisons, boolean operators, implications, problem predicates, and target scalar-expression evolution. |
+| Specification constant lowering | accepted target / implementation pending | Constants become typed IR literals with declaration provenance. |
+| IR1-NNF | implemented / stabilizing | De Morgan / NNF logic exists conceptually and should be explicitly documented and tested. |
 | IR2-CNF/DNF | planned | Required after IR1 for backend preparation. |
 | AggregatedAssertionSet | planned | Required to combine DSL and model-derived constraints. |
 | LoweredQuery | planned | Required before backend-specific encoding. |

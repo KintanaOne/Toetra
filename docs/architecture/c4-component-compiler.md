@@ -37,13 +37,22 @@ flowchart TD
         --> AST[AST]
 
     AST
+        --> Constants[Specification Constant Collector]
+
+    Constants
+        --> ProgramSymbols[Program Symbol Table]
+
+    AST
         --> LHS[LHS Validator]
 
     LHS
         --> Context[SemanticContext]
 
     Context
-        --> Binding[Binding Validator]
+        --> Binding[Binding / Name Resolver]
+
+    ProgramSymbols
+        --> Binding
 
     Binding
         --> Logic[Logic Validator]
@@ -66,9 +75,10 @@ flowchart TD
 |---|---|---|---|
 | Language Grammar | Defines legal FORML syntax. | Grammar rules | Implemented / stabilizing |
 | Lark Parser | Parses source text. | CST | Implemented |
-| AST Builder | Converts CST into typed AST nodes. | AST | Implemented / stabilizing |
+| AST Builder | Converts CST into typed AST nodes, including declaration and bare-name nodes. | AST | Implemented / target evolution pending |
+| Specification Constant Collector | Registers immutable program-level declarations. | Program symbol table | Accepted target / implementation pending |
 | LHS Validator | Builds semantic scope and variables. | SemanticContext | Implemented / stabilizing |
-| Binding Validator | Resolves attributes and implicit entities. | Semantic annotations | Implemented / stabilizing |
+| Binding / Name Resolver | Resolves constants, explicit features and implicit features by context. | Semantic annotations | Implemented foundation / target evolution pending |
 | Logic Validator | Validates logical structure and problem/function compatibility. | Validated logic | Implemented / needs fixes |
 | Property Validator | Orchestrates semantic validation for one property. | SemanticValidatedAST | Implemented / stabilizing |
 | IR1 Translator | Translates validated AST into IR1 tasks. | VerificationTask list | Implemented / stabilizing |
@@ -81,6 +91,7 @@ flowchart TD
 Source
 → CST
 → AST
+→ Program-level specification constant symbols
 → SemanticContext
 → SemanticAnnotations
 → SemanticValidatedAST
@@ -97,6 +108,7 @@ The language grammar defines:
 
 - headers;
 - model and target declarations;
+- specification-constant declarations;
 - property sections;
 - scopes;
 - assertions;
@@ -127,7 +139,8 @@ The builder converts the CST into typed Python nodes.
 Responsibilities:
 
 - remove syntactic noise;
-- build `ProgramNode`, `PropertyNode`, scopes and assertions;
+- build `ProgramNode`, `HeaderNode`, specification-constant declarations, properties, scopes and assertions;
+- preserve bare names without semantic guessing;
 - preserve explicit user intent;
 - reject structurally invalid CST fragments.
 
@@ -139,14 +152,39 @@ Semantic validation is composed of several passes.
 
 | Pass | Purpose |
 |---|---|
+| Specification constant registration | Builds the global immutable declaration table before property validation. |
 | LHS validation | Defines scope, variables, default entity, domain and neighborhood. |
-| Binding validation | Resolves explicit and implicit attribute references. |
+| Binding/name resolution | Resolves constants, explicit features and implicit features according to context. |
 | Logic validation | Validates logical operators, comparisons, and problem-level predicates. |
 | Property compatibility | Ensures property type supports the selected semantic scope. |
 
 The output of semantic validation is not a new syntax tree type yet; it is the AST enriched with semantic annotations and validated context.
 
 ---
+
+## Specification Constant Components
+
+The compiler includes two additional conceptual responsibilities:
+
+| Component | Responsibility | Status |
+|---|---|---|
+| Specification Constant Collector | Build the program-level table of immutable declarations. | Accepted target / implementation pending |
+| Name Resolver | Resolve `NameRefNode` by context without guessing in the builder. | Accepted target / implementation pending |
+
+Target flow:
+
+```text
+Header declarations
+    → SpecificationConstantDeclarationNode list
+    → program-level constant symbols
+
+Property scalar expressions
+    → NameRefNode
+    → context-aware semantic resolution
+    → constant reference or implicit feature
+```
+
+The builder preserves ambiguity; the semantic layer owns lookup and collision diagnostics.
 
 ## IR1 translation
 
@@ -185,3 +223,4 @@ IR1 must not contain unresolved attributes.
 - `contracts/semantic-to-ir1.md`
 - `contracts/errors.md`
 - `contracts/type-normalization.md`
+- `contracts/specification-constants.md`

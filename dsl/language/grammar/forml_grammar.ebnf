@@ -3,8 +3,8 @@ CHAR = ? CHAR ?;
 string = ? escaped_string ? ;
 
 (* === BASIC VALUE TYPES === *)
-true  = "True" | "true" ;
-false = "False" | "false" ;
+true  = TRUE ;
+false = FALSE ;
 boolean = true | false ;
 
 (* === IDENTIFIERS === *)
@@ -25,7 +25,6 @@ arg_boolean         = boolean ;
 arg  = arg_identifier_eq | arg_identifier_only | arg_number | arg_boolean ;
 args = arg , { "," , arg } ;
 
-
 (* === NEWLINES === *)
 NEWLINE_SEQUENCE = NEWLINE , { NEWLINE } ;
 
@@ -33,7 +32,7 @@ NEWLINE_SEQUENCE = NEWLINE , { NEWLINE } ;
 padding = { NEWLINE_SEQUENCE } ;
 
 (* ========================================================= *)
-(* === LOGIC (NON-ROBUSTNESS) ============================== *)
+(* === LOGIC AND SCALAR EXPRESSIONS ======================== *)
 (* ========================================================= *)
 
 (* === LOGIC OPERATIONS === *)
@@ -47,12 +46,22 @@ problem_expr    = ( ? official_problems ? ) , "." , function_expr ;
 
 (* === ATTRIBUTES / MODEL OUTPUT === *)
 attribute = identifier , { "." , identifier } ;
+target_ref = TARGET ;
 
-target_comparison_expr = TARGET , comparison_operation , value ;
-attribute_comparison_expr = attribute , comparison_operation , value ;
+(* === SCALAR ARITHMETIC === *)
+additive_operator = ? arithmetic_additive_operators ? ;
+multiplicative_operator = ? arithmetic_multiplicative_operators ? ;
+unary_operator = ? arithmetic_unary_operators ? ;
+
+scalar_expression = additive_expr ;
+additive_expr = multiplicative_expr , { additive_operator , multiplicative_expr } ;
+multiplicative_expr = unary_expr , { multiplicative_operator , unary_expr } ;
+unary_expr = unary_operator , unary_expr | scalar_primary ;
+scalar_primary = value | target_ref | attribute | parenthesized_scalar ;
+parenthesized_scalar = "(" , scalar_expression , ")" ;
 
 logic_expr = attribute , logic_operation , value ;
-comparison_expr = target_comparison_expr | attribute_comparison_expr ;
+comparison_expr = scalar_expression , comparison_operation , scalar_expression ;
 
 (* === ASSERTION === *)
 
@@ -86,17 +95,13 @@ property_expr = quantifier_expr | at_expr | check_expr | pairwise_expr ;
 (* ========================================================= *)
 
 quantifier = ? official_quantifier ? ;
-
-quantifier_expr = quantifier , [ domain ] ;
-
+quantifier_expr = quantifier , identifier , [ padding , domain ] ;
 
 (* ========================================================= *)
-(* === AT (POINTWISE) ====================================== *)
+(* === AT (LOCAL) ========================================== *)
 (* ========================================================= *)
 
-at_expr = AT , identifier , [ neighborhood ] , [ domain ] ;
-
-(* Exemple : at x0 in hyperball(x0, L2, 0.01) *)
+at_expr = AT , identifier , [ padding , neighborhood ] , [ padding , domain ] ;
 
 (* ========================================================= *)
 (* === CHECK AT (POINTWISE) ================================ *)
@@ -109,25 +114,33 @@ check_expr = CHECK_AT , identifier ;
 (* ========================================================= *)
 
 pairwise_token = PAIRWISE ;
-pairwise_expr = pairwise_token , neighborhood , [ domain ] ;
-
-(* Exemple : x ~ x' in hyperball(x, L2, 0.01) *)
+pairwise_expr = pairwise_token , padding , neighborhood , [ padding , domain ] ;
 
 (* ========================================================= *)
 (* === DOMAIN / CONTEXT ==================================== *)
 (* ========================================================= *)
 
-domain = WITH , identifier , "(" , value , { "," , value } , ")" ;
+domain = WITH , DOMAIN , "(" , padding , domain_entry , { padding , "," , padding , domain_entry } , [ padding , "," ] , padding , ")" ;
+domain_entry = attribute , ":" , domain_constraint ;
+domain_constraint = interval_domain | finite_set_domain ;
+
+interval_domain = closed_closed_interval | open_closed_interval | closed_open_interval | open_open_interval ;
+closed_closed_interval = "[" , padding , scalar_expression , padding , "," , padding , scalar_expression , padding , "]" ;
+open_closed_interval = "]" , padding , scalar_expression , padding , "," , padding , scalar_expression , padding , "]" ;
+closed_open_interval = "[" , padding , scalar_expression , padding , "," , padding , scalar_expression , padding , "[" ;
+open_open_interval = "]" , padding , scalar_expression , padding , "," , padding , scalar_expression , padding , "[" ;
+
+symbolic_literal = identifier ;
+finite_set_value = value | symbolic_literal ;
+finite_set_domain = "{" , padding , finite_set_value , { padding , "," , padding , finite_set_value } , [ padding , "," ] , padding , "}" ;
 
 (* ========================================================= *)
 (* === PROPERTY DEFINITION ================================= *)
 (* ========================================================= *)
 
 property_imply = PROPERTY_IMPLY ;
-
 property_type = ? official_properties ? | ? uppercase_string ? ;
-
-property = "[" , property_type , "]" , ":" , padding , property_expr , padding , property_imply , padding , assertion , [ backend ] ;
+property = "[" , property_type , "]" , ":" , padding , property_expr , padding , property_imply , padding , assertion , [ padding , backend ] ;
 property_section = property ;
 
 (* ========================================================= *)
@@ -141,17 +154,11 @@ backend = USING , ( ? official_backends ? ) , [ "(" , args , ")" ] ;
 (* ========================================================= *)
 
 target_declaration = TARGET , ":=" , identifier ;
-
 model = quoted_identifier ;
-
 model_declaration = MODEL , ":=" , model ;
-
 dataset = quoted_identifier ;
-
 dataset_declaration = DATASET , ":=" , dataset ;
-
 variable_declaration = identifier , ":=" , value ;
-
 variables_declaration = variable_declaration , { ";" , variable_declaration } ;
 
 (* ========================================================= *)
@@ -159,7 +166,5 @@ variables_declaration = variable_declaration , { ";" , variable_declaration } ;
 (* ========================================================= *)
 
 header = padding , model_declaration , padding , target_declaration , padding , [ dataset_declaration , padding ] , [ variables_declaration , padding ] ;
-
 body = padding , property_section , { padding , property_section } , padding ;
-
 program = header , body ;

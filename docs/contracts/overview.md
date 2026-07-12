@@ -129,3 +129,11 @@ invalid mutation → rejected at the owning boundary
 wrong-boundary rejection → contract failure
 silent reinterpretation  → contract failure
 ```
+
+## Specification Constant Contract
+
+The cross-layer rules for immutable user declarations and bare-name resolution are defined in:
+
+- [Specification Constants Contract](specification-constants.md)
+
+This contract is authoritative for AST shape, semantic lookup order, type preservation, provenance and backend treatment.

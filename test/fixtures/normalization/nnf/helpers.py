@@ -151,26 +151,48 @@ def assert_quantifier_scope(task: VerificationTask) -> None:
     """
     Quantifier scope contract.
 
-    Semantic validation introduces the implicit symbolic entity `_x` for forall/exists.
-    IR1 must not lose that binding, otherwise the query can reference `_x.a` while
+    Semantic validation introduces the explicit symbolic entity declared by forall/exists.
+    IR1 must not lose that binding, otherwise the query can reference `x0.a` while
     the scope declares no variable.
     """
 
     assert task.scope.kind == "quantifier"
-    assert task.scope.variables == {"_x": "symbolic"}
+    assert task.scope.variables == {"x0": "symbolic"}
 
 
 def assert_scope_domain_values(
-    task: VerificationTask, name: str, values: list[str]
+    task: VerificationTask,
+    name: str,
+    values: list[object],
+    *,
+    entity: str = "x0",
 ) -> None:
-    assert task.scope.domain is not None
-    assert task.scope.domain.name == name
-    assert task.scope.domain.args == {"values": values}
+    """Assert one finite-set domain entry preserved in the IR1 scope."""
 
+    from dsl.ir.ir1.nodes import (
+        ConstantExpressionIR,
+        FiniteSetDomainIR,
+        SymbolLiteralIR,
+    )
 
-# -----------------------------------------------------------------------------
-# Canonical serialization for golden tests
-# -----------------------------------------------------------------------------
+    domain = task.scope.domain
+    assert domain is not None
+    assert len(domain.entries) == 1
+
+    entry = domain.entries[0]
+    assert entry.entity == entity
+    assert entry.feature == name
+    assert isinstance(entry.constraint, FiniteSetDomainIR)
+
+    actual_values = [
+        value.name
+        if isinstance(value, SymbolLiteralIR)
+        else value.value
+        if isinstance(value, ConstantExpressionIR)
+        else value
+        for value in entry.constraint.values
+    ]
+    assert actual_values == values
 
 
 def _enum_value(value: object) -> object:

@@ -153,8 +153,11 @@ def test_program_with_quantifier():
     assert prop.rule.assertion is not None
 
     assert domain is not None
-    assert domain.name == "gender"
-    assert domain.values == ["male", "female"]
+    assert len(domain.entries) == 1
+    entry = domain.entries[0]
+    assert entry.subject.entity == "x0"
+    assert entry.subject.feature == "gender"
+    assert [value.value for value in entry.constraint.values] == ["male", "female"]
 
     assert prop.backend is None
 
@@ -200,8 +203,11 @@ def test_program_with_domain_and_neighborhood():
     assert neighborhood.args[0].value == 0.01
 
     assert domain is not None
-    assert domain.name == "sex"
-    assert domain.values == ["male", "female"]
+    assert len(domain.entries) == 1
+    entry = domain.entries[0]
+    assert entry.subject.entity == "x0"
+    assert entry.subject.feature == "sex"
+    assert [value.value for value in entry.constraint.values] == ["male", "female"]
 
     assert prop.backend is None
 

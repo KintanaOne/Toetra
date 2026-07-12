@@ -136,3 +136,18 @@ FORML must not:
 - unresolved model-dependent type at backend boundary;
 - unsupported external dtype mapping;
 - ambiguous categorical encoding.
+
+## Specification Constant Type Normalization
+
+Specification-constant literal types are canonicalized at the builder/semantic boundary and preserved through IR:
+
+```text
+integer literal → INT
+real literal    → FLOAT
+boolean literal → BOOL
+quoted string   → STRING
+```
+
+A use may still be rejected when its type is incompatible with the surrounding arithmetic, comparison, feature schema or backend capabilities.
+
+FORML must not coerce a specification constant merely because a backend only supports a narrower sort family.

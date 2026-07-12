@@ -1,9 +1,11 @@
+
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any
 
 from dsl.language.vocabulary.backends import EnumBackend
+from dsl.language.vocabulary.domains import EnumBoundaryKind
 from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.problems import EnumProblem
@@ -75,13 +77,65 @@ class NeighborhoodIR:
 
 
 @dataclass
-class DomainIR:
-    """
-    Optional domain restriction (categorical, numeric bounds, etc.)
-    """
+class ScalarExpressionIR:
+    """Base class for scalar-valued IR expressions used by typed domains."""
 
+    pass
+
+
+@dataclass
+class ConstantExpressionIR(ScalarExpressionIR):
+    value: Any
+    dtype: EnumDataType
+
+
+@dataclass
+class AttributeExpressionIR(ScalarExpressionIR):
+    entity: str | None
+    feature: str
+
+
+@dataclass
+class TargetExpressionIR(ScalarExpressionIR):
+    name: str = "target"
+
+
+@dataclass
+class SymbolLiteralIR:
     name: str
-    args: dict[str, Any]
+
+
+DomainFiniteValueIR = ConstantExpressionIR | SymbolLiteralIR
+
+
+@dataclass
+class IntervalDomainIR:
+    lower: ScalarExpressionIR
+    upper: ScalarExpressionIR
+    lower_boundary: EnumBoundaryKind
+    upper_boundary: EnumBoundaryKind
+
+
+@dataclass
+class FiniteSetDomainIR:
+    values: tuple[DomainFiniteValueIR, ...]
+
+
+DomainConstraintIR = IntervalDomainIR | FiniteSetDomainIR
+
+
+@dataclass
+class DomainEntryIR:
+    entity: str | None
+    feature: str
+    constraint: DomainConstraintIR
+
+
+@dataclass
+class DomainIR:
+    """Typed domain restriction preserved independently from DSL syntax."""
+
+    entries: tuple[DomainEntryIR, ...]
 
 
 # =============================================================================
@@ -222,3 +276,5 @@ class ProblemIR(AtomicIR):
     problem: EnumProblem
     function: EnumFunction | None
     args: dict[str, Any] | None = None
+
+

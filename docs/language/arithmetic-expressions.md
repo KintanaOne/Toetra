@@ -63,12 +63,13 @@ A scalar expression may contain:
 
 | Leaf | Example | Meaning |
 |---|---|---|
-| Numeric constant | `3`, `0.5` | Typed numeric literal. |
+| Numeric literal | `3`, `0.5` | Typed numeric literal. |
+| Specification constant | `max_risk`, `tolerance` | Immutable scalar declared in the header. |
 | Input feature | `x0.a`, `a` | Explicit or implicitly bound feature reference. |
 | Model output | `target` | Output declared by the program header. |
 | Parenthesized expression | `(x0.a + x0.b)` | Explicit grouping. |
 
-String and boolean constants remain valid comparison operands for compatible equality checks, but they cannot participate in arithmetic operators.
+String and boolean literals or specification constants remain valid comparison operands for compatible equality checks, but they cannot participate in arithmetic operators.
 
 ```forml
 x0.segment == "A"
@@ -184,8 +185,8 @@ x0.a / 2
 
 Rules:
 
-- multiplication has at least one compile-time numeric constant operand;
-- division has a non-zero compile-time numeric constant denominator;
+- multiplication has at least one compile-time numeric constant operand, including a numeric specification constant;
+- division has a non-zero compile-time numeric constant denominator, including a numeric specification constant;
 - symbolic products such as `x0.a * x0.b` are outside the initial profile;
 - symbolic denominators such as `x0.a / x0.b` are outside the initial profile.
 
@@ -228,15 +229,19 @@ x0.a + x0.b AND target <= 7
 Numeric interval bounds may be arithmetic expressions:
 
 ```forml
+tolerance := 1.0
+minimum_b := 0.0
+maximum_b := 10.0
+
 with domain(
-    x0.a: [x0.b - 1.0, x0.b + 1.0],
-    x0.b: [0.0, 10.0]
+    x0.a: [x0.b - tolerance, x0.b + tolerance],
+    x0.b: [minimum_b, maximum_b]
 )
 ```
 
 Normative rules:
 
-1. Every input reference in a domain is explicitly qualified.
+1. Every input-feature reference in a domain is explicitly qualified; bare specification constants are allowed.
 2. Referenced entities must be declared by the enclosing scope.
 3. `target` is not allowed in a domain bound.
 4. Bounds are simultaneous logical constraints, not assignments evaluated top to bottom.
@@ -258,13 +263,15 @@ Mutually dependent constraints are allowed because the domain is a conjunction, 
 
 ## Binding Rules
 
-In assertions:
+In assertions, bare names resolve first to specification constants and then to implicit features:
 
 ```forml
-[LOGIC]: forall x0 => a + 1 <= target
+offset := 1
+
+[LOGIC]: forall x0 => a + offset <= target
 ```
 
-`a` resolves to `x0.a` because `x0` is the default entity.
+`offset` resolves to the specification constant, while `a` resolves to `x0.a` because `x0` is the default entity.
 
 In domains, references remain explicit:
 
@@ -274,11 +281,21 @@ with domain(
 )
 ```
 
-The following is rejected:
+The following is rejected when `b` is not a specification constant:
 
 ```forml
 with domain(
     x0.a: [b - 1, b + 1]
+)
+```
+
+A bare specification constant is valid:
+
+```forml
+tolerance := 1
+
+with domain(
+    x0.a: [x0.b - tolerance, x0.b + tolerance]
 )
 ```
 

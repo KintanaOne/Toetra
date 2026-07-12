@@ -166,6 +166,26 @@ The builder should preserve logical structure but should not rewrite it.
 
 ---
 
+## Building Specification Constants and Bare Names
+
+The builder:
+
+- creates one `SpecificationConstantDeclarationNode` per header declaration;
+- stores declarations on `HeaderNode` in source order;
+- builds typed `ConstantNode` values for declaration literals;
+- builds `NameRefNode` for bare scalar identifiers;
+- preserves explicit qualified features as `AttributeNode`;
+- does not perform constant lookup or implicit-feature fallback.
+
+The following two expressions must remain structurally distinguishable:
+
+```forml
+threshold
+x0.threshold
+```
+
+The first becomes `NameRefNode("threshold")`; the second becomes an explicit feature reference.
+
 ## Relation to Semantic Layer
 
 The semantic layer consumes the AST produced by the builder.

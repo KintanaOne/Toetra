@@ -1,3 +1,4 @@
+
 from dsl.semantic.context.context import SemanticContext
 from dsl.semantic.context.scope import SemanticScope
 from dsl.semantic.errors.errors import InvalidPropertyError
@@ -246,7 +247,10 @@ class LHSValidator:
         if quantifier not in {"forall", "exists"}:
             raise InvalidPropertyError(f"Unknown quantifier '{quantifier}'")
 
-        var = "_x"
+        var = lhs.variable
+
+        if not var:
+            raise InvalidPropertyError("Missing quantified identifier")
 
         context = SemanticContext(
             type=SemanticScope.QUANTIFIER,
@@ -268,3 +272,5 @@ class LHSValidator:
         )
 
         return context
+
+

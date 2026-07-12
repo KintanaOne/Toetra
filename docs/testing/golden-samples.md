@@ -59,6 +59,12 @@ Snapshots must:
 | ARI-004 | initial affine profile | parser → backend |
 | ARI-005 | nonlinear requirement classification | parser → routing |
 | PW-001 | pointwise scope distinct from quantification | parser → semantic |
+| SPC-001 | reusable business thresholds | parser → backend |
+| SPC-002 | feature and constant share a name | parser → semantic |
+| SPC-003 | constant-first resolution with implicit-feature fallback | parser → IR1 |
+| SPC-004 | constant in numeric finite set | parser → IR2 |
+| SPC-005 | one constant reused across properties | parser → aggregation |
+| SPC-006 | string constant plus symbolic finite-set literal | parser → routing |
 
 The source text and meaning of these IDs are defined in `docs/language/examples.md`.
 
@@ -70,6 +76,7 @@ The source text and meaning of these IDs are defined in `docs/language/examples.
 | `SEM-BIND-*` | semantic binding |
 | `SEM-DOM-*` | semantic domain validation |
 | `SEM-ARI-*` | semantic type/expression validation |
+| `SEM-SPC-*` | specification-constant registration, resolution and typing |
 | `UNSUP-*` | backend capability matching |
 
 Definitions live in `docs/language/invalid-examples.md`.

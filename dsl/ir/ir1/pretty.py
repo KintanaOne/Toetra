@@ -1,3 +1,4 @@
+
 # /dsl/ir/pretty.py
 
 from dsl.ir.ir1.nodes import (
@@ -11,6 +12,12 @@ from dsl.ir.ir1.nodes import (
     NotIR,
     ImplyIR,
     ProblemIR,
+    AttributeExpressionIR,
+    ConstantExpressionIR,
+    FiniteSetDomainIR,
+    IntervalDomainIR,
+    SymbolLiteralIR,
+    TargetExpressionIR,
 )
 
 # =============================================================================
@@ -78,18 +85,48 @@ def _pretty_scope(scope: ScopeIR) -> list[str]:
 
     # Domain
     if scope.domain:
-        d = scope.domain
         lines.append("\n  Domain :")
-        lines.append(f"    name   : {d.name}")
-
-        if hasattr(d, "args") and d.args:
-            for k, v in d.args.items():
-                lines.append(f"    {k:<6}: {v}")
-
-        if hasattr(d, "values"):
-            lines.append(f"    values : {d.args.values}")
+        for entry in scope.domain.entries:
+            subject = (
+                f"{entry.entity}.{entry.feature}"
+                if entry.entity is not None
+                else entry.feature
+            )
+            lines.append(f"    - {subject}: {_pretty_domain_constraint(entry.constraint)}")
 
     return lines
+
+
+
+
+def _pretty_scalar_expression(node) -> str:
+    if isinstance(node, ConstantExpressionIR):
+        return repr(node.value)
+    if isinstance(node, AttributeExpressionIR):
+        return (
+            f"{node.entity}.{node.feature}"
+            if node.entity is not None
+            else node.feature
+        )
+    if isinstance(node, TargetExpressionIR):
+        return node.name
+    if isinstance(node, SymbolLiteralIR):
+        return node.name
+    return repr(node)
+
+
+def _pretty_domain_constraint(constraint) -> str:
+    if isinstance(constraint, IntervalDomainIR):
+        left = "[" if constraint.lower_boundary.value == "closed" else "]"
+        right = "]" if constraint.upper_boundary.value == "closed" else "["
+        return (
+            f"{left}{_pretty_scalar_expression(constraint.lower)}, "
+            f"{_pretty_scalar_expression(constraint.upper)}{right}"
+        )
+    if isinstance(constraint, FiniteSetDomainIR):
+        values = ", ".join(_pretty_scalar_expression(value) for value in constraint.values)
+        return "{" + values + "}"
+    return repr(constraint)
 
 
 # =============================================================================
@@ -176,3 +213,5 @@ def _pretty_logical(node: LogicalIR, indent=0) -> list[str]:
     # -----------------------------
     lines.append(f"{space}UNKNOWN NODE: {node}")
     return lines
+
+

@@ -215,3 +215,30 @@ This helps test whether FORML detects invalid logic, preserves valid semantics, 
 Logical IR is the formal logical core of FORML.
 
 It is where user assertions stop being DSL text and become structured reasoning artifacts.
+
+## Specification Constants in Logical IR
+
+Specification constants do not introduce logical atoms by themselves.
+
+After semantic resolution they appear inside scalar expressions as known typed values with provenance. For example:
+
+```forml
+max_risk := 0.20
+[LOGIC]: forall x0 => target <= max_risk
+```
+
+becomes conceptually:
+
+```text
+ComparisonIR(
+    left=TargetExpressionIR(...),
+    op=LTE,
+    right=ConstantExpressionIR(
+        value=0.20,
+        dtype=FLOAT,
+        source_name="max_risk",
+    ),
+)
+```
+
+NNF, CNF and DNF treat the containing comparison as an atom. Constant provenance is orthogonal to logical polarity.

@@ -1,3 +1,4 @@
+
 # dsl/language/tools/constants.py
 
 """
@@ -15,6 +16,7 @@ from dsl.language.vocabulary.protected_words import protected_words
 from dsl.language.vocabulary.operators import (
     official_logic_operators,
     official_comparaison_operations,
+    official_arithmetic_operators,
 )
 
 # =========================
@@ -31,6 +33,7 @@ OFFICIAL_MAPS = {
     "metrics": official_metrics,
     "logic_operations": official_logic_operators,
     "comparison_operators": official_comparaison_operations,
+    "arithmetic_operators": official_arithmetic_operators,
 }
 
 # protected_words volontairement exclu du header rules
@@ -66,6 +69,7 @@ def build_header() -> list[str]:
         "%ignore COMMENT_LINE",
         "%ignore COMMENT_BLOCK",
         "%ignore NEWLINE",
+        "%ignore NEWLINE_SEQUENCE",
         "",
     ]
 

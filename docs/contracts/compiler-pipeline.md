@@ -158,3 +158,18 @@ Backend capability repair inside the parser
 ```
 
 Compatibility adapters may exist temporarily, but they must not redefine the target contract.
+
+## Specification Constant Pipeline Invariant
+
+Across the full compiler pipeline:
+
+```text
+header declaration
+→ typed declaration AST
+→ registered semantic symbol
+→ resolved bare-name occurrence
+→ typed constant IR with provenance
+→ backend literal
+```
+
+No stage may silently reinterpret a specification constant as a model feature or unconstrained backend variable.

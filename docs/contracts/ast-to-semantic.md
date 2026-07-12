@@ -194,3 +194,17 @@ This boundary owns:
 - missing model feature when schema-aware validation is active.
 
 Unsupported backend capability is not a semantic error when the expression is otherwise meaningful.
+
+## Specification Constant Resolution Addendum
+
+This boundary additionally guarantees:
+
+- all specification constants are registered before property binding;
+- duplicate and reserved declaration names are rejected;
+- scope/constant collisions are rejected;
+- every `NameRefNode` is resolved according to its syntactic context;
+- resolved constants expose value, type, symbol and provenance;
+- implicit-feature fallback occurs only where the language contract allows it;
+- finite-set symbolic literals are not mistaken for unresolved scalar names.
+
+A valid SemanticValidatedAST contains no semantically unclassified bare scalar reference.

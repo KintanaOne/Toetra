@@ -11,10 +11,10 @@ Assumptions   : 0
 Spec formula  :
   NNF
     OR
-      LITERAL[negative](_x.a <= 1)
-      LITERAL[positive](_x.b <= 2)
+      LITERAL[negative](x0.a <= 1)
+      LITERAL[positive](x0.b <= 2)
 Verification condition:
   DNF
     AND
-      LITERAL[positive](_x.a <= 1)
-      LITERAL[negative](_x.b <= 2)
+      LITERAL[positive](x0.a <= 1)
+      LITERAL[negative](x0.b <= 2)

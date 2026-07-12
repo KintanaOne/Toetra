@@ -1,3 +1,4 @@
+
 # dsl/utils/pretty_ast.py
 
 from typing import Any
@@ -23,7 +24,13 @@ from dsl.ast.nodes.expressions import (
 )
 
 from dsl.ast.nodes.neighborhood import NeighborhoodNode
-from dsl.ast.nodes.domain import DomainNode
+from dsl.ast.nodes.domain import (
+    DomainEntryNode,
+    DomainNode,
+    FiniteSetDomainNode,
+    IntervalDomainNode,
+    SymbolLiteralNode,
+)
 
 from dsl.ast.nodes.property import PropertyNode, PropertyRuleNode
 from dsl.ast.nodes.header import HeaderNode
@@ -97,7 +104,10 @@ def _expr(node):
         return ".".join(node.path)
 
     if isinstance(node, ConstantNode):
-        return str(node.value)
+        return repr(node.value)
+
+    if isinstance(node, SymbolLiteralNode):
+        return node.name
 
     return str(node)
 
@@ -172,7 +182,35 @@ def _pretty_arg(node: ArgNode, indent: int):
 @register(DomainNode)
 def _pretty_domain(node: DomainNode, indent: int):
     pad = _pad(indent)
-    return f"{pad}domain({node})"
+    lines = [f"{pad}domain"]
+    lines.extend(pretty(entry, indent + 1) for entry in node.entries)
+    return "\n".join(lines)
+
+
+@register(DomainEntryNode)
+def _pretty_domain_entry(node: DomainEntryNode, indent: int):
+    pad = _pad(indent)
+    return f"{pad}{_expr(node.subject)}: {pretty(node.constraint, 0).strip()}"
+
+
+@register(IntervalDomainNode)
+def _pretty_interval_domain(node: IntervalDomainNode, indent: int):
+    pad = _pad(indent)
+    left = "[" if node.lower_boundary.value == "closed" else "]"
+    right = "]" if node.upper_boundary.value == "closed" else "["
+    return f"{pad}{left}{_expr(node.lower)}, {_expr(node.upper)}{right}"
+
+
+@register(FiniteSetDomainNode)
+def _pretty_finite_set_domain(node: FiniteSetDomainNode, indent: int):
+    pad = _pad(indent)
+    values = ", ".join(_expr(value) for value in node.values)
+    return f"{pad}{{{values}}}"
+
+
+@register(SymbolLiteralNode)
+def _pretty_symbol_literal(node: SymbolLiteralNode, indent: int):
+    return _pad(indent) + node.name
 
 
 @register(NeighborhoodNode)
@@ -234,7 +272,7 @@ def _pretty_pairwise(node: PairwiseExprNode, indent: int):
 def _pretty_quantifier(node: QuantifierExprNode, indent: int):
     pad = _pad(indent)
 
-    lines = [f"{pad}{node.quantifier}"]
+    lines = [f"{pad}{node.quantifier} {node.variable}"]
 
     if node.domain:
         lines.append(f"{pad}  in {pretty(node.domain, 0).strip()}")
@@ -320,3 +358,5 @@ def _pretty_program(node: ProgramNode, indent: int):
         lines.append("")
 
     return "\n".join(lines).strip()
+
+

@@ -34,7 +34,7 @@ VALID_PROGRAM_WITH_BODY_MULTIPLE_PROPERTIES = """
     at x0 => CLASSIFICATION.EQUAL()
 
     [FAIRNESS]:
-    forall with gender("male","female") => CLASSIFICATION.EQUAL()
+    forall x0 with domain(x0.gender: {"male", "female"}) => CLASSIFICATION.EQUAL()
     """
 
 

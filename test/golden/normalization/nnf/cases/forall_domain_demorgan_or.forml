@@ -2,4 +2,4 @@ model := "model.onnx"
 target := MyTarget
 
 [LOGIC]:
-forall with Segment("A", "B") => NOT (a <= 1 OR b <= 2) using Z3
+forall x0 with domain(x0.Segment: {"A", "B"}) => NOT (a <= 1 OR b <= 2) using Z3

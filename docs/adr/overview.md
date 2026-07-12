@@ -20,7 +20,8 @@ The goal of the ADR section is to make explicit:
 - why Miova is used as an external mutation and contract validation framework,
 - why quantified variables are explicitly bound,
 - why comparisons relate general scalar expressions,
-- and why typed domains are lowered into provenanced assumptions.
+- why typed domains are lowered into provenanced assumptions,
+- and why specification constants use context-aware bare-name resolution.
 
 ## ADR format
 
@@ -55,6 +56,7 @@ Impact on FORML
 | ADR-0013 | Use explicitly bound quantified variables |
 | ADR-0014 | Represent comparisons as relations between scalar expressions |
 | ADR-0015 | Preserve typed domains and lower them into provenanced assumptions |
+| ADR-0016 | Use specification constants and context-aware bare-name resolution |
 
 ## Decision status vocabulary
 
