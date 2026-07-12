@@ -71,8 +71,8 @@ def _pretty_requirements(task: VerificationTaskIR2) -> str:
         active.append("problem_predicates")
     if req.requires_model_assertions:
         active.append("model_assertions")
-    if req.requires_quantifiers:
-        active.append("quantifiers")
+    if req.requires_native_quantifiers:
+        active.append("native_quantifiers")
     if req.requires_domains:
         active.append("domains")
     if req.requires_neighborhoods:
