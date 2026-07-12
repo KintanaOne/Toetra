@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from dsl.ir.ir2.enums import VerificationSemantics
 from dsl.ir.ir2.nodes import AssumptionIR2, VerificationTaskIR2
 from dsl.ir.ir2.pretty import pretty_formula
 
@@ -25,8 +26,16 @@ def explain_ir2_task(
     The regular pretty-printer focuses on the final IR2 object. This explainer
     focuses on the mental model used while debugging the FORML pipeline:
 
-        DSL spec P + assumptions Γ -> verification condition Γ ∧ ¬P
-        -> selected normal form.
+        DSL specification P
+        + assumptions Gamma
+        + verification semantics
+        -> verification condition
+        -> selected normal form
+
+    The verification condition depends on the task semantics:
+
+        REFUTATION   -> Gamma AND NOT P
+        SATISFACTION -> Gamma AND P
 
     It is intentionally backend-independent. It explains what IR2 built, not how
     a concrete backend such as Z3 will encode it.
@@ -41,7 +50,7 @@ def explain_ir2_task(
 
     lines.extend(_summary(task))
     lines.append("")
-    lines.extend(_semantics())
+    lines.extend(_semantics(task))
     lines.append("")
     lines.extend(_scope(task))
     lines.append("")
@@ -85,14 +94,28 @@ def _summary(task: VerificationTaskIR2) -> list[str]:
     ]
 
 
-def _semantics() -> list[str]:
-    return [
-        "🧭 Semantics",
-        "  FORML proves the user property P by checking the refutation VC:",
-        "  VC = Γ ∧ ¬P",
-        "  - UNSAT means no counterexample was found under Γ, so P holds.",
-        "  - SAT means the backend found a candidate counterexample.",
-    ]
+def _semantics(task: VerificationTaskIR2) -> list[str]:
+    if task.semantics is VerificationSemantics.REFUTATION:
+        return [
+            "🧭 Semantics",
+            "  FORML searches for a violation of the user property P:",
+            "  VC = Γ ∧ ¬P",
+            "  - UNSAT means no counterexample exists under Γ, so P is proved.",
+            "  - SAT means the backend found a candidate counterexample.",
+            "  - UNKNOWN means the backend could not conclude.",
+        ]
+
+    if task.semantics is VerificationSemantics.SATISFACTION:
+        return [
+            "🧭 Semantics",
+            "  FORML searches for a value satisfying the user property P:",
+            "  VC = Γ ∧ P",
+            "  - SAT means the backend found a witness.",
+            "  - UNSAT means no witness exists under Γ.",
+            "  - UNKNOWN means the backend could not conclude.",
+        ]
+
+    raise ValueError(f"Unsupported verification semantics: {task.semantics}")
 
 
 def _scope(task: VerificationTaskIR2) -> list[str]:
@@ -158,9 +181,16 @@ def _assumptions(
 
 
 def _verification_condition(task: VerificationTaskIR2) -> list[str]:
+    if task.semantics is VerificationSemantics.REFUTATION:
+        equation = "VC = Γ ∧ ¬P"
+    elif task.semantics is VerificationSemantics.SATISFACTION:
+        equation = "VC = Γ ∧ P"
+    else:
+        raise ValueError(f"Unsupported verification semantics: {task.semantics}")
+
     return [
         "🎯 Verification condition",
-        "  VC = Γ ∧ ¬P",
+        f"  {equation}",
         f"  selected normal form : {_enum_value(task.normal_form)}",
         _indent(pretty_formula(task.verification_condition), spaces=2),
     ]
@@ -168,20 +198,35 @@ def _verification_condition(task: VerificationTaskIR2) -> list[str]:
 
 def _requirements(task: VerificationTaskIR2) -> list[str]:
     requirements = task.requirements
+
     rows = [
         ("boolean_logic", requirements.requires_boolean_logic),
         ("numeric_comparisons", requirements.requires_numeric_comparisons),
         ("problem_predicates", requirements.requires_problem_predicates),
         ("model_assertions", requirements.requires_model_assertions),
-        ("quantifiers", requirements.requires_quantifiers),
+        (
+            "uses_quantified_scope",
+            requirements.uses_quantified_scope,
+        ),
+        (
+            "native_quantifiers",
+            requirements.requires_native_quantifiers,
+        ),
         ("domains", requirements.requires_domains),
         ("neighborhoods", requirements.requires_neighborhoods),
     ]
 
     lines = ["🧩 Backend-neutral requirements"]
+
     for name, enabled in rows:
         lines.append(f"  - {name}: {enabled}")
+
+    lines.append(
+        "  - verification_semantics: "
+        f"{_enum_value(requirements.required_verification_semantics)}"
+    )
     lines.append(f"  - normal_form: {_enum_value(requirements.normal_form)}")
+
     return lines
 
 

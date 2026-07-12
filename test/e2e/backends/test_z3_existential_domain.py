@@ -102,7 +102,6 @@ def test_z3_e2e_returns_witness_for_satisfiable_existential_property() -> None:
 
     assert task.requirements.uses_quantified_scope is True
     assert task.requirements.requires_native_quantifiers is False
-    assert task.requirements.requires_quantifiers is False
     assert task.requirements.requires_domains is True
 
     # NumericFeatureBounds emits one lower-bound assumption and one
@@ -146,7 +145,6 @@ def test_z3_e2e_returns_no_witness_for_unsatisfiable_existential_property() -> N
 
     assert task.requirements.uses_quantified_scope is True
     assert task.requirements.requires_native_quantifiers is False
-    assert task.requirements.requires_quantifiers is False
     assert task.requirements.requires_domains is True
 
     assert len(task.assumptions) == 2
