@@ -1,3 +1,4 @@
+
 # dsl/language/tools/registry.py
 
 from dsl.language.vocabulary.protected_words import protected_words
@@ -12,6 +13,15 @@ SPECIAL_SEQ = {
     "official_metrics": " | ".join(OFFICIAL_MAPS["metrics"].keys()),
     "official_logic_operators": " | ".join(OFFICIAL_MAPS["logic_operations"].keys()),
     "comparison_operators": " | ".join(OFFICIAL_MAPS["comparison_operators"].keys()),
+    "arithmetic_additive_operators": " | ".join(
+        key for key in OFFICIAL_MAPS["arithmetic_operators"] if key in {"PLUS", "MINUS"}
+    ),
+    "arithmetic_multiplicative_operators": " | ".join(
+        key for key in OFFICIAL_MAPS["arithmetic_operators"] if key in {"STAR", "SLASH"}
+    ),
+    "arithmetic_unary_operators": " | ".join(
+        key for key in OFFICIAL_MAPS["arithmetic_operators"] if key in {"PLUS", "MINUS"}
+    ),
 }
 
 

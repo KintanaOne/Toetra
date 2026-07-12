@@ -5,12 +5,13 @@
 
 ===== dsl\ast\nodes\assertion.py =====
 
+
 from __future__ import annotations
 
 from dataclasses import dataclass
 
 from dsl.ast.nodes.base import ASTNode
-from dsl.ast.nodes.primitives import AttributeNode, ConstantNode, TargetRefNode
+from dsl.ast.nodes.primitives import ScalarExpressionNode
 from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.problems import EnumProblem
@@ -41,9 +42,9 @@ class LogicalNode(ASTNode):
 
 @dataclass
 class ComparisonNode(LogicalNode):
-    left: AttributeNode | TargetRefNode
+    left: ScalarExpressionNode
     op: EnumComparisonOperator
-    right: ConstantNode
+    right: ScalarExpressionNode
 
 
 @dataclass
@@ -86,6 +87,8 @@ class ProblemNode(LogicalNode):
 @dataclass
 class UnknownNode(LogicalNode):
     raw: str
+
+
 
 
 ===== dsl\ast\nodes\backends.py =====
@@ -141,15 +144,56 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from dsl.ast.nodes.base import ASTNode
+from dsl.ast.nodes.primitives import (
+    AttributeNode,
+    ConstantNode,
+    ScalarExpressionNode,
+)
+from dsl.language.vocabulary.domains import EnumBoundaryKind
+
+
+class DomainConstraintNode(ASTNode):
+    """Base class for constraints attached to one domain subject."""
+
+    pass
+
+
+@dataclass
+class SymbolLiteralNode(ASTNode):
+    """Unquoted symbolic category literal used inside a finite set."""
+
+    name: str
+
+
+DomainFiniteValueNode = ConstantNode | SymbolLiteralNode
+
+
+@dataclass
+class IntervalDomainNode(DomainConstraintNode):
+    lower: ScalarExpressionNode
+    upper: ScalarExpressionNode
+    lower_boundary: EnumBoundaryKind
+    upper_boundary: EnumBoundaryKind
+
+
+@dataclass
+class FiniteSetDomainNode(DomainConstraintNode):
+    values: list[DomainFiniteValueNode]
+
+
+@dataclass
+class DomainEntryNode(ASTNode):
+    subject: AttributeNode
+    constraint: DomainConstraintNode
 
 
 @dataclass
 class DomainNode(ASTNode):
-    name: str
-    values: list[str]
+    entries: list[DomainEntryNode]
 
 
 ===== dsl\ast\nodes\expressions.py =====
+
 
 from __future__ import annotations
 
@@ -199,7 +243,10 @@ class CheckAtExprNode(ExpressionNode):
 @dataclass
 class QuantifierExprNode(ExpressionNode):
     quantifier: str
+    variable: str
     domain: DomainNode | None
+
+
 
 
 ===== dsl\ast\nodes\header.py =====
@@ -242,6 +289,12 @@ from dsl.semantic.types.enums import EnumDataType
 PrimitiveValue = Union[str, int, float, bool, None]
 
 
+class ScalarExpressionNode(ASTNode):
+    """Base class for scalar-valued expressions used in comparisons."""
+
+    pass
+
+
 @dataclass
 class ArgNode(ASTNode):
     key: str
@@ -249,13 +302,13 @@ class ArgNode(ASTNode):
 
 
 @dataclass
-class ConstantNode(ASTNode):
+class ConstantNode(ScalarExpressionNode):
     value: PrimitiveValue
     dtype: EnumDataType
 
 
 @dataclass
-class AttributeNode(ASTNode):
+class AttributeNode(ScalarExpressionNode):
     """
     Semantic attribute access node.
 
@@ -263,34 +316,16 @@ class AttributeNode(ASTNode):
         x.age
         x'.salary
         a            (implicit entity)
-
-    During semantic binding:
-        - semantic.resolved_entity is populated
-        - semantic.resolved_path is populated
-        - semantic.resolved_symbol may be populated
-        - semantic.resolved_type may be populated later by schema-aware validation
     """
 
-    # Raw parsed entity
     entity: str | None
-
-    # Feature name
     feature: str
-
-    # Full parsed path
     path: list[str]
 
 
 @dataclass
-class TargetRefNode(ASTNode):
-    """
-    Reference to the model output declared in the FORML header.
-
-    Example:
-        target <= 10
-
-    This is not an input feature. It refers to the model target/output.
-    """
+class TargetRefNode(ScalarExpressionNode):
+    """Reference to the model output declared in the FORML header."""
 
     name: str = "target"
 
@@ -923,6 +958,7 @@ class Z3Translator:
 
 ===== dsl\builder\assertion.py =====
 
+
 from typing import List
 
 from lark import Tree, Token
@@ -938,11 +974,11 @@ from dsl.ast.nodes.assertion import (
 )
 
 from dsl.builder.core.utils import find_node, get_token_value
-from dsl.builder.core.ast_utils import parse_attribute, node_value, parse_value
+from dsl.builder.core.ast_utils import node_value
 from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.problems import EnumProblem
-from dsl.ast.nodes.primitives import TargetRefNode
+from dsl.builder.scalar import parse_scalar_expression
 
 # ============================================================================
 # COMPARISON
@@ -950,26 +986,27 @@ from dsl.ast.nodes.primitives import TargetRefNode
 
 
 def build_comparison_expr(node: Tree) -> ComparisonNode:
-    value_node = find_node(node, "value")
-    op_node = find_node(node, "comparison_operation")
+    scalar_nodes = [
+        child
+        for child in node.children
+        if isinstance(child, Tree) and str(child.data) == "scalar_expression"
+    ]
+    op_node = next(
+        (
+            child
+            for child in node.children
+            if isinstance(child, Tree)
+            and str(child.data) == "comparison_operation"
+        ),
+        None,
+    )
 
-    if value_node is None or op_node is None:
+    if len(scalar_nodes) != 2 or op_node is None:
         raise ValueError("Invalid comparison")
 
-    target_comparison_node = find_node(node, "target_comparison_expr")
-
-    if target_comparison_node is not None:
-        left = TargetRefNode()
-    else:
-        attribute_node = find_node(node, "attribute")
-
-        if attribute_node is None:
-            raise ValueError("Invalid comparison")
-
-        left = parse_attribute(attribute_node)
-
+    left = parse_scalar_expression(scalar_nodes[0])
+    right = parse_scalar_expression(scalar_nodes[1])
     op = EnumComparisonOperator(get_token_value(op_node))
-    right = parse_value(value_node)
 
     return ComparisonNode(left=left, op=op, right=right)
 
@@ -1076,6 +1113,8 @@ def parse_assertion(node: Tree | Token | None) -> LogicalNode:
     # FALLBACK
     # ----------------------------------------------------------------------
     raise ValueError(f"Unhandled node: {t}")
+
+
 
 
 ===== dsl\builder\backends.py =====
@@ -1446,6 +1485,7 @@ def pretty(node: Any, indent: int = 0) -> str:
 
 ===== dsl\builder\core\pretty_ast.py =====
 
+
 # dsl/utils/pretty_ast.py
 
 from typing import Any
@@ -1471,7 +1511,13 @@ from dsl.ast.nodes.expressions import (
 )
 
 from dsl.ast.nodes.neighborhood import NeighborhoodNode
-from dsl.ast.nodes.domain import DomainNode
+from dsl.ast.nodes.domain import (
+    DomainEntryNode,
+    DomainNode,
+    FiniteSetDomainNode,
+    IntervalDomainNode,
+    SymbolLiteralNode,
+)
 
 from dsl.ast.nodes.property import PropertyNode, PropertyRuleNode
 from dsl.ast.nodes.header import HeaderNode
@@ -1545,7 +1591,10 @@ def _expr(node):
         return ".".join(node.path)
 
     if isinstance(node, ConstantNode):
-        return str(node.value)
+        return repr(node.value)
+
+    if isinstance(node, SymbolLiteralNode):
+        return node.name
 
     return str(node)
 
@@ -1620,7 +1669,35 @@ def _pretty_arg(node: ArgNode, indent: int):
 @register(DomainNode)
 def _pretty_domain(node: DomainNode, indent: int):
     pad = _pad(indent)
-    return f"{pad}domain({node})"
+    lines = [f"{pad}domain"]
+    lines.extend(pretty(entry, indent + 1) for entry in node.entries)
+    return "\n".join(lines)
+
+
+@register(DomainEntryNode)
+def _pretty_domain_entry(node: DomainEntryNode, indent: int):
+    pad = _pad(indent)
+    return f"{pad}{_expr(node.subject)}: {pretty(node.constraint, 0).strip()}"
+
+
+@register(IntervalDomainNode)
+def _pretty_interval_domain(node: IntervalDomainNode, indent: int):
+    pad = _pad(indent)
+    left = "[" if node.lower_boundary.value == "closed" else "]"
+    right = "]" if node.upper_boundary.value == "closed" else "["
+    return f"{pad}{left}{_expr(node.lower)}, {_expr(node.upper)}{right}"
+
+
+@register(FiniteSetDomainNode)
+def _pretty_finite_set_domain(node: FiniteSetDomainNode, indent: int):
+    pad = _pad(indent)
+    values = ", ".join(_expr(value) for value in node.values)
+    return f"{pad}{{{values}}}"
+
+
+@register(SymbolLiteralNode)
+def _pretty_symbol_literal(node: SymbolLiteralNode, indent: int):
+    return _pad(indent) + node.name
 
 
 @register(NeighborhoodNode)
@@ -1682,7 +1759,7 @@ def _pretty_pairwise(node: PairwiseExprNode, indent: int):
 def _pretty_quantifier(node: QuantifierExprNode, indent: int):
     pad = _pad(indent)
 
-    lines = [f"{pad}{node.quantifier}"]
+    lines = [f"{pad}{node.quantifier} {node.variable}"]
 
     if node.domain:
         lines.append(f"{pad}  in {pretty(node.domain, 0).strip()}")
@@ -1768,6 +1845,8 @@ def _pretty_program(node: ProgramNode, indent: int):
         lines.append("")
 
     return "\n".join(lines).strip()
+
+
 
 
 ===== dsl\builder\core\pretty_tree.py =====
@@ -2134,51 +2213,155 @@ def debug_tree(tree: LarkTree) -> None:
 
 ===== dsl\builder\domain.py =====
 
+from __future__ import annotations
+
 from lark import Tree
+
+from dsl.ast.nodes.domain import (
+    DomainConstraintNode,
+    DomainEntryNode,
+    DomainNode,
+    FiniteSetDomainNode,
+    IntervalDomainNode,
+    SymbolLiteralNode,
+)
+from dsl.builder.core.ast_utils import node_value, parse_attribute, parse_value
 from dsl.builder.core.strict import require_node, require_value
-from dsl.builder.core.utils import find_child, find_all_nodes, find_node
-from dsl.builder.core.ast_utils import node_value, clean_string
-from dsl.ast.nodes.domain import DomainNode
-
-# ============================================================================
-# DOMAIN PARSER
-# ============================================================================
-# This parser builds a strict DomainNode from a Lark tree.
-# All missing or invalid nodes are rejected immediately to enforce AST integrity.
-# ============================================================================
+from dsl.builder.core.utils import find_child, find_node
+from dsl.builder.scalar import parse_scalar_expression
+from dsl.language.vocabulary.domains import EnumBoundaryKind
 
 
-def parse_domain(node: Tree) -> DomainNode:
-    # ------------------------------------------------------------------------
-    # Retrieve domain node (must exist)
-    # ------------------------------------------------------------------------
-    domain = require_node(find_node(node, "domain"), "Domain node not found")
+_INTERVAL_BOUNDARIES: dict[
+    str,
+    tuple[EnumBoundaryKind, EnumBoundaryKind],
+] = {
+    "closed_closed_interval": (
+        EnumBoundaryKind.CLOSED,
+        EnumBoundaryKind.CLOSED,
+    ),
+    "open_closed_interval": (
+        EnumBoundaryKind.OPEN,
+        EnumBoundaryKind.CLOSED,
+    ),
+    "closed_open_interval": (
+        EnumBoundaryKind.CLOSED,
+        EnumBoundaryKind.OPEN,
+    ),
+    "open_open_interval": (
+        EnumBoundaryKind.OPEN,
+        EnumBoundaryKind.OPEN,
+    ),
+}
 
-    # ------------------------------------------------------------------------
-    # Extract domain identifier (must exist and be valid string)
-    # ------------------------------------------------------------------------
-    identifier_node = find_child(domain, "identifier")
 
-    name = require_value(node_value(identifier_node), "Missing domain name")
-
-    # ------------------------------------------------------------------------
-    # Extract and sanitize domain values
-    # ------------------------------------------------------------------------
-    values = [
-        require_value(clean_string(node_value(v)), "Invalid domain value")
-        for v in find_all_nodes(domain, "value")
+def _direct_children(node: Tree, rule: str) -> list[Tree]:
+    return [
+        child
+        for child in node.children
+        if isinstance(child, Tree) and str(child.data) == rule
     ]
 
-    # ------------------------------------------------------------------------
-    # Build AST node
-    # ------------------------------------------------------------------------
-    return DomainNode(
-        name=name,
-        values=values,
+
+def _parse_interval(node: Tree) -> IntervalDomainNode:
+    concrete: Tree | None = None
+
+    for rule in _INTERVAL_BOUNDARIES:
+        concrete = find_child(node, rule)
+        if concrete is not None:
+            break
+
+    if concrete is None:
+        raise ValueError("Unsupported interval-domain shape")
+
+    scalar_nodes = _direct_children(concrete, "scalar_expression")
+    if len(scalar_nodes) != 2:
+        raise ValueError("Interval domain requires exactly two bounds")
+
+    lower_boundary, upper_boundary = _INTERVAL_BOUNDARIES[str(concrete.data)]
+
+    return IntervalDomainNode(
+        lower=parse_scalar_expression(scalar_nodes[0]),
+        upper=parse_scalar_expression(scalar_nodes[1]),
+        lower_boundary=lower_boundary,
+        upper_boundary=upper_boundary,
     )
 
 
+def _parse_finite_set_value(node: Tree):
+    symbolic = find_child(node, "symbolic_literal")
+    if symbolic is not None:
+        identifier = require_node(
+            find_child(symbolic, "identifier"),
+            "Symbolic domain literal requires an identifier",
+        )
+        name = require_value(
+            node_value(identifier),
+            "Symbolic domain literal cannot be empty",
+        )
+        return SymbolLiteralNode(name=name)
+
+    value = require_node(
+        find_child(node, "value"),
+        "Finite-set domain value is invalid",
+    )
+    return parse_value(value)
+
+
+def _parse_finite_set(node: Tree) -> FiniteSetDomainNode:
+    values = [
+        _parse_finite_set_value(value)
+        for value in _direct_children(node, "finite_set_value")
+    ]
+
+    if not values:
+        raise ValueError("Finite-set domain cannot be empty")
+
+    return FiniteSetDomainNode(values=values)
+
+
+def _parse_constraint(node: Tree) -> DomainConstraintNode:
+    interval = find_child(node, "interval_domain")
+    if interval is not None:
+        return _parse_interval(interval)
+
+    finite_set = find_child(node, "finite_set_domain")
+    if finite_set is not None:
+        return _parse_finite_set(finite_set)
+
+    raise ValueError("Unsupported domain constraint")
+
+
+def _parse_entry(node: Tree) -> DomainEntryNode:
+    subject_node = require_node(
+        find_child(node, "attribute"),
+        "Domain entry requires an attribute subject",
+    )
+    constraint_node = require_node(
+        find_child(node, "domain_constraint"),
+        "Domain entry requires a constraint",
+    )
+
+    return DomainEntryNode(
+        subject=parse_attribute(subject_node),
+        constraint=_parse_constraint(constraint_node),
+    )
+
+
+def parse_domain(node: Tree) -> DomainNode:
+    """Build a typed domain AST without performing semantic validation."""
+
+    domain = require_node(find_node(node, "domain"), "Domain node not found")
+    entries = [_parse_entry(entry) for entry in _direct_children(domain, "domain_entry")]
+
+    if not entries:
+        raise ValueError("Domain requires at least one entry")
+
+    return DomainNode(entries=entries)
+
+
 ===== dsl\builder\expressions.py =====
+
 
 from lark import Tree
 from dsl.ast.nodes.expressions import (
@@ -2338,12 +2521,22 @@ def parse_quantifier(prop: Tree) -> QuantifierExprNode:
 
     quantifier = require_value(quantifier, "quantifier is missing or invalid")
 
+    identifier_node = require_node(
+        find_child(node, "identifier"), "quantified identifier not found"
+    )
+    variable = require_value(
+        node_value(identifier_node), "quantified identifier is missing or invalid"
+    )
+
     domain = optional(node, "domain", parse_domain)
 
     return QuantifierExprNode(
         quantifier=quantifier,
+        variable=variable,
         domain=domain,
     )
+
+
 
 
 ===== dsl\builder\header.py =====
@@ -2778,11 +2971,77 @@ def parse_property(prop: Tree) -> PropertyNode:
     )
 
 
+===== dsl\builder\scalar.py =====
+
+from __future__ import annotations
+
+from lark import Tree
+
+from dsl.ast.nodes.primitives import ScalarExpressionNode, TargetRefNode
+from dsl.builder.core.ast_utils import parse_attribute, parse_value
+
+
+_SINGLE_CHILD_WRAPPERS = {
+    "scalar_expression",
+    "additive_expr",
+    "multiplicative_expr",
+    "unary_expr",
+    "scalar_primary",
+    "parenthesized_scalar",
+}
+
+_OPERATOR_RULES = {
+    "additive_operator",
+    "multiplicative_operator",
+    "unary_operator",
+}
+
+
+def _tree_children(node: Tree) -> list[Tree]:
+    return [child for child in node.children if isinstance(child, Tree)]
+
+
+def parse_scalar_expression(node: Tree) -> ScalarExpressionNode:
+    """Build the leaf subset of the scalar-expression AST.
+
+    G2-A intentionally supports constants, attributes, target references, and
+    parenthesized leaf expressions. Arithmetic operators are parsed by G1 but
+    remain a later builder sub-gate.
+    """
+
+    rule = str(node.data)
+
+    if rule == "value":
+        return parse_value(node)
+
+    if rule == "attribute":
+        return parse_attribute(node)
+
+    if rule == "target_ref":
+        return TargetRefNode()
+
+    if rule in _SINGLE_CHILD_WRAPPERS:
+        children = _tree_children(node)
+        operator_children = [
+            child for child in children if str(child.data) in _OPERATOR_RULES
+        ]
+
+        if operator_children or len(children) != 1:
+            raise NotImplementedError(
+                "Arithmetic scalar expressions are not implemented in G2-A."
+            )
+
+        return parse_scalar_expression(children[0])
+
+    raise ValueError(f"Unsupported scalar-expression node: {rule}")
+
+
 ===== dsl\ir\ir1\__init__.py =====
 
 
 
 ===== dsl\ir\ir1\nodes.py =====
+
 
 from __future__ import annotations
 
@@ -2790,6 +3049,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from dsl.language.vocabulary.backends import EnumBackend
+from dsl.language.vocabulary.domains import EnumBoundaryKind
 from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.problems import EnumProblem
@@ -2861,13 +3121,65 @@ class NeighborhoodIR:
 
 
 @dataclass
-class DomainIR:
-    """
-    Optional domain restriction (categorical, numeric bounds, etc.)
-    """
+class ScalarExpressionIR:
+    """Base class for scalar-valued IR expressions used by typed domains."""
 
+    pass
+
+
+@dataclass
+class ConstantExpressionIR(ScalarExpressionIR):
+    value: Any
+    dtype: EnumDataType
+
+
+@dataclass
+class AttributeExpressionIR(ScalarExpressionIR):
+    entity: str | None
+    feature: str
+
+
+@dataclass
+class TargetExpressionIR(ScalarExpressionIR):
+    name: str = "target"
+
+
+@dataclass
+class SymbolLiteralIR:
     name: str
-    args: dict[str, Any]
+
+
+DomainFiniteValueIR = ConstantExpressionIR | SymbolLiteralIR
+
+
+@dataclass
+class IntervalDomainIR:
+    lower: ScalarExpressionIR
+    upper: ScalarExpressionIR
+    lower_boundary: EnumBoundaryKind
+    upper_boundary: EnumBoundaryKind
+
+
+@dataclass
+class FiniteSetDomainIR:
+    values: tuple[DomainFiniteValueIR, ...]
+
+
+DomainConstraintIR = IntervalDomainIR | FiniteSetDomainIR
+
+
+@dataclass
+class DomainEntryIR:
+    entity: str | None
+    feature: str
+    constraint: DomainConstraintIR
+
+
+@dataclass
+class DomainIR:
+    """Typed domain restriction preserved independently from DSL syntax."""
+
+    entries: tuple[DomainEntryIR, ...]
 
 
 # =============================================================================
@@ -3010,7 +3322,10 @@ class ProblemIR(AtomicIR):
     args: dict[str, Any] | None = None
 
 
+
+
 ===== dsl\ir\ir1\pretty.py =====
+
 
 # /dsl/ir/pretty.py
 
@@ -3025,6 +3340,12 @@ from dsl.ir.ir1.nodes import (
     NotIR,
     ImplyIR,
     ProblemIR,
+    AttributeExpressionIR,
+    ConstantExpressionIR,
+    FiniteSetDomainIR,
+    IntervalDomainIR,
+    SymbolLiteralIR,
+    TargetExpressionIR,
 )
 
 # =============================================================================
@@ -3092,18 +3413,48 @@ def _pretty_scope(scope: ScopeIR) -> list[str]:
 
     # Domain
     if scope.domain:
-        d = scope.domain
         lines.append("\n  Domain :")
-        lines.append(f"    name   : {d.name}")
-
-        if hasattr(d, "args") and d.args:
-            for k, v in d.args.items():
-                lines.append(f"    {k:<6}: {v}")
-
-        if hasattr(d, "values"):
-            lines.append(f"    values : {d.args.values}")
+        for entry in scope.domain.entries:
+            subject = (
+                f"{entry.entity}.{entry.feature}"
+                if entry.entity is not None
+                else entry.feature
+            )
+            lines.append(f"    - {subject}: {_pretty_domain_constraint(entry.constraint)}")
 
     return lines
+
+
+
+
+def _pretty_scalar_expression(node) -> str:
+    if isinstance(node, ConstantExpressionIR):
+        return repr(node.value)
+    if isinstance(node, AttributeExpressionIR):
+        return (
+            f"{node.entity}.{node.feature}"
+            if node.entity is not None
+            else node.feature
+        )
+    if isinstance(node, TargetExpressionIR):
+        return node.name
+    if isinstance(node, SymbolLiteralIR):
+        return node.name
+    return repr(node)
+
+
+def _pretty_domain_constraint(constraint) -> str:
+    if isinstance(constraint, IntervalDomainIR):
+        left = "[" if constraint.lower_boundary.value == "closed" else "]"
+        right = "]" if constraint.upper_boundary.value == "closed" else "["
+        return (
+            f"{left}{_pretty_scalar_expression(constraint.lower)}, "
+            f"{_pretty_scalar_expression(constraint.upper)}{right}"
+        )
+    if isinstance(constraint, FiniteSetDomainIR):
+        values = ", ".join(_pretty_scalar_expression(value) for value in constraint.values)
+        return "{" + values + "}"
+    return repr(constraint)
 
 
 # =============================================================================
@@ -3190,6 +3541,8 @@ def _pretty_logical(node: LogicalIR, indent=0) -> list[str]:
     # -----------------------------
     lines.append(f"{space}UNKNOWN NODE: {node}")
     return lines
+
+
 
 
 ===== dsl\ir\ir1\query_translator.py =====
@@ -3491,21 +3844,35 @@ if __name__ == "__main__":
 
 ===== dsl\ir\ir1\scope_translator.py =====
 
+
 from __future__ import annotations
 
 from typing import Any
 
+from dsl.ast.nodes.domain import (
+    FiniteSetDomainNode,
+    IntervalDomainNode,
+    SymbolLiteralNode,
+)
 from dsl.ast.nodes.expressions import (
     AtExprNode,
     CheckAtExprNode,
     PairwiseExprNode,
     QuantifierExprNode,
 )
+from dsl.ast.nodes.primitives import AttributeNode, ConstantNode, TargetRefNode
 
 from dsl.ir.ir1.nodes import (
-    ScopeIR,
-    NeighborhoodIR,
+    AttributeExpressionIR,
+    ConstantExpressionIR,
+    DomainEntryIR,
     DomainIR,
+    FiniteSetDomainIR,
+    IntervalDomainIR,
+    NeighborhoodIR,
+    ScopeIR,
+    SymbolLiteralIR,
+    TargetExpressionIR,
 )
 
 
@@ -3585,10 +3952,7 @@ class ScopeTranslator:
     def _translate_quantifier(self, scope: QuantifierExprNode) -> ScopeIR:
         return ScopeIR(
             kind="quantifier",
-            # Keep the semantic binding introduced by LHSValidator.
-            # Quantified formulas bind implicit feature access such as `a <= 1`
-            # to `_x.a`, so IR must declare the `_x` symbolic variable.
-            variables={"_x": "symbolic"},
+            variables={scope.variable: "symbolic"},
             neighborhood=None,
             domain=self._translate_domain(scope.domain),
         )
@@ -3624,9 +3988,55 @@ class ScopeTranslator:
             return None
 
         return DomainIR(
-            name=domain.name,
-            args={"values": domain.values},
+            entries=tuple(
+                DomainEntryIR(
+                    entity=entry.subject.entity,
+                    feature=entry.subject.feature,
+                    constraint=self._translate_domain_constraint(entry.constraint),
+                )
+                for entry in domain.entries
+            )
         )
+
+    def _translate_domain_constraint(self, constraint):
+        if isinstance(constraint, IntervalDomainNode):
+            return IntervalDomainIR(
+                lower=self._translate_scalar_leaf(constraint.lower),
+                upper=self._translate_scalar_leaf(constraint.upper),
+                lower_boundary=constraint.lower_boundary,
+                upper_boundary=constraint.upper_boundary,
+            )
+
+        if isinstance(constraint, FiniteSetDomainNode):
+            return FiniteSetDomainIR(
+                values=tuple(
+                    SymbolLiteralIR(value.name)
+                    if isinstance(value, SymbolLiteralNode)
+                    else self._translate_scalar_leaf(value)
+                    for value in constraint.values
+                )
+            )
+
+        raise TypeError(
+            f"Unsupported domain constraint: {type(constraint).__name__}"
+        )
+
+    def _translate_scalar_leaf(self, node):
+        if isinstance(node, ConstantNode):
+            return ConstantExpressionIR(value=node.value, dtype=node.dtype)
+
+        if isinstance(node, AttributeNode):
+            entity = node.entity
+            if node.semantic is not None and node.semantic.resolved_entity is not None:
+                entity = node.semantic.resolved_entity
+            return AttributeExpressionIR(entity=entity, feature=node.feature)
+
+        if isinstance(node, TargetRefNode):
+            return TargetExpressionIR(name=node.name)
+
+        raise TypeError(f"Unsupported scalar domain leaf: {type(node).__name__}")
+
+
 
 
 ===== dsl\ir\ir1\translator.py =====
@@ -4602,19 +5012,20 @@ model := "model.onnx"
 target := MyTarget
 
 [LOGIC]:
-forall => a <= 1 -> b <= 2 using Z3
+forall x0 => a <= 1 -> b <= 2 using Z3
 """
 
 REAL_LINEAR_MODEL_SAMPLE = """
-model := "demo-linear-regression"
+model := "model.joblib"
 target := MyTarget
 
-[LOGIC]:
-check_at x0 => x0.a <= 10 using Z3
+[BOUND]:
+check_at x0 => target <= 10 using Z3
 """
 
 
 ===== dsl\ir\ir2\explain.py =====
+
 
 from __future__ import annotations
 
@@ -4729,9 +5140,13 @@ def _scope(task: VerificationTaskIR2) -> list[str]:
 
     if scope.domain is not None:
         lines.append("  domain:")
-        lines.append(f"    name : {scope.domain.name}")
-        for key, value in scope.domain.args.items():
-            lines.append(f"    {key} : {value}")
+        for entry in scope.domain.entries:
+            subject = (
+                f"{entry.entity}.{entry.feature}"
+                if entry.entity is not None
+                else entry.feature
+            )
+            lines.append(f"    - {subject} : {entry.constraint}")
 
     return lines
 
@@ -4824,6 +5239,8 @@ def _enum_value(value: object) -> object:
 def _indent(text: str, spaces: int) -> str:
     prefix = " " * spaces
     return "\n".join(prefix + line if line else line for line in text.splitlines())
+
+
 
 
 ===== dsl\ir\ir2\guard.py =====
@@ -6112,7 +6529,7 @@ model := "model.onnx"
 target := MyTarget
 
 [LOGIC]:
-forall => NOT (a <= 1 AND b <= 2) using Z3
+forall x0 => NOT (a <= 1 AND b <= 2) using Z3
 """
 
 
@@ -6140,6 +6557,7 @@ if __name__ == "__main__":
 
 ===== dsl\language\tools\constants.py =====
 
+
 # dsl/language/tools/constants.py
 
 """
@@ -6157,6 +6575,7 @@ from dsl.language.vocabulary.protected_words import protected_words
 from dsl.language.vocabulary.operators import (
     official_logic_operators,
     official_comparaison_operations,
+    official_arithmetic_operators,
 )
 
 # =========================
@@ -6173,6 +6592,7 @@ OFFICIAL_MAPS = {
     "metrics": official_metrics,
     "logic_operations": official_logic_operators,
     "comparison_operators": official_comparaison_operations,
+    "arithmetic_operators": official_arithmetic_operators,
 }
 
 # protected_words volontairement exclu du header rules
@@ -6208,6 +6628,7 @@ def build_header() -> list[str]:
         "%ignore COMMENT_LINE",
         "%ignore COMMENT_BLOCK",
         "%ignore NEWLINE",
+        "%ignore NEWLINE_SEQUENCE",
         "",
     ]
 
@@ -6442,6 +6863,7 @@ if __name__ == "__main__":
 
 ===== dsl\language\tools\registry.py =====
 
+
 # dsl/language/tools/registry.py
 
 from dsl.language.vocabulary.protected_words import protected_words
@@ -6456,6 +6878,15 @@ SPECIAL_SEQ = {
     "official_metrics": " | ".join(OFFICIAL_MAPS["metrics"].keys()),
     "official_logic_operators": " | ".join(OFFICIAL_MAPS["logic_operations"].keys()),
     "comparison_operators": " | ".join(OFFICIAL_MAPS["comparison_operators"].keys()),
+    "arithmetic_additive_operators": " | ".join(
+        key for key in OFFICIAL_MAPS["arithmetic_operators"] if key in {"PLUS", "MINUS"}
+    ),
+    "arithmetic_multiplicative_operators": " | ".join(
+        key for key in OFFICIAL_MAPS["arithmetic_operators"] if key in {"STAR", "SLASH"}
+    ),
+    "arithmetic_unary_operators": " | ".join(
+        key for key in OFFICIAL_MAPS["arithmetic_operators"] if key in {"PLUS", "MINUS"}
+    ),
 }
 
 
@@ -6773,6 +7204,18 @@ class EnumDistance(EnumMixin, Enum):
     euclidian = "euclidian"
 
 
+===== dsl\language\vocabulary\domains.py =====
+
+from enum import Enum
+
+
+class EnumBoundaryKind(str, Enum):
+    """Interval endpoint inclusion kind used by typed domain nodes."""
+
+    OPEN = "open"
+    CLOSED = "closed"
+
+
 ===== dsl\language\vocabulary\functions.py =====
 
 # /forml/grammar/official_contents/functions.py
@@ -6815,6 +7258,7 @@ class EnumMetric(EnumMixin, Enum):
 
 ===== dsl\language\vocabulary\operators.py =====
 
+
 # /forml/grammar/official_contents/quantifiers.py
 
 from enum import Enum
@@ -6826,6 +7270,14 @@ official_logic_operators = {
     "NOT": '"not"',
     "XOR": '"xor"',
     "IMPLY": '"->"',
+}
+
+
+official_arithmetic_operators = {
+    "PLUS": '"+"',
+    "MINUS": '"-"',
+    "STAR": '"*"',
+    "SLASH": '"/"',
 }
 
 official_comparaison_operations = {
@@ -6852,6 +7304,19 @@ class EnumLogicalOperator(EnumMixin, Enum):
     OR = "or"
     NOT = "not"
     IMPLY = "->"
+
+
+class EnumArithmeticOperator(EnumMixin, Enum):
+    ADD = "+"
+    SUB = "-"
+    MUL = "*"
+    DIV = "/"
+
+
+class EnumUnaryOperator(EnumMixin, Enum):
+    PLUS = "+"
+    MINUS = "-"
+
 
 
 ===== dsl\language\vocabulary\problems.py =====
@@ -6908,6 +7373,7 @@ class EnumProperty(EnumMixin, Enum):
 
 ===== dsl\language\vocabulary\protected_words.py =====
 
+
 # /forml/grammar/official_contents/protected_words.py
 
 from enum import Enum
@@ -6916,6 +7382,7 @@ from dsl.language.vocabulary.utils import EnumMixin
 protected_words = {
     "IN.10": r"/in(?![A-Za-z0-9_])/",
     "WITH.10": r"/with(?![A-Za-z0-9_])/",
+    "DOMAIN.10": r"/domain(?![A-Za-z0-9_])/",
     "AT.10": r"/at(?![A-Za-z0-9_])/",
     "CHECK_AT.10": r"/check_at(?![A-Za-z0-9_])/",
     "USING.10": r"/using(?![A-Za-z0-9_])/",
@@ -6923,12 +7390,15 @@ protected_words = {
     "TARGET.10": r"/target(?![A-Za-z0-9_])/",
     "NEIGHBORHOOD.10": r"/neighborhood(?![A-Za-z0-9_])/",
     "DATASET.10": r"/dataset(?![A-Za-z0-9_])/",
+    "TRUE.10": r"/(?:True|true)(?![A-Za-z0-9_])/",
+    "FALSE.10": r"/(?:False|false)(?![A-Za-z0-9_])/",
 }
 
 
 class EnumProtectedWord(EnumMixin, Enum):
     IN = "in"
     WITH = "with"
+    DOMAIN = "domain"
     AT = "at"
     CHECK_AT = "check_at"
     USING = "using"
@@ -6936,6 +7406,8 @@ class EnumProtectedWord(EnumMixin, Enum):
     TARGET = "target"
     NEIGHBORHOOD = "neighborhood"
     DATASET = "dataset"
+    TRUE = "true"
+    FALSE = "false"
 
 
 ===== dsl\language\vocabulary\quantifiers.py =====
@@ -7678,6 +8150,7 @@ class BindingValidator:
 
 ===== dsl\semantic\core\lhs.py =====
 
+
 from dsl.semantic.context.context import SemanticContext
 from dsl.semantic.context.scope import SemanticScope
 from dsl.semantic.errors.errors import InvalidPropertyError
@@ -7926,7 +8399,10 @@ class LHSValidator:
         if quantifier not in {"forall", "exists"}:
             raise InvalidPropertyError(f"Unknown quantifier '{quantifier}'")
 
-        var = "_x"
+        var = lhs.variable
+
+        if not var:
+            raise InvalidPropertyError("Missing quantified identifier")
 
         context = SemanticContext(
             type=SemanticScope.QUANTIFIER,
@@ -7948,6 +8424,8 @@ class LHSValidator:
         )
 
         return context
+
+
 
 
 ===== dsl\semantic\core\logic.py =====

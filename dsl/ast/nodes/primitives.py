@@ -9,6 +9,12 @@ from dsl.semantic.types.enums import EnumDataType
 PrimitiveValue = Union[str, int, float, bool, None]
 
 
+class ScalarExpressionNode(ASTNode):
+    """Base class for scalar-valued expressions used in comparisons."""
+
+    pass
+
+
 @dataclass
 class ArgNode(ASTNode):
     key: str
@@ -16,13 +22,13 @@ class ArgNode(ASTNode):
 
 
 @dataclass
-class ConstantNode(ASTNode):
+class ConstantNode(ScalarExpressionNode):
     value: PrimitiveValue
     dtype: EnumDataType
 
 
 @dataclass
-class AttributeNode(ASTNode):
+class AttributeNode(ScalarExpressionNode):
     """
     Semantic attribute access node.
 
@@ -30,33 +36,15 @@ class AttributeNode(ASTNode):
         x.age
         x'.salary
         a            (implicit entity)
-
-    During semantic binding:
-        - semantic.resolved_entity is populated
-        - semantic.resolved_path is populated
-        - semantic.resolved_symbol may be populated
-        - semantic.resolved_type may be populated later by schema-aware validation
     """
 
-    # Raw parsed entity
     entity: str | None
-
-    # Feature name
     feature: str
-
-    # Full parsed path
     path: list[str]
 
 
 @dataclass
-class TargetRefNode(ASTNode):
-    """
-    Reference to the model output declared in the FORML header.
-
-    Example:
-        target <= 10
-
-    This is not an input feature. It refers to the model target/output.
-    """
+class TargetRefNode(ScalarExpressionNode):
+    """Reference to the model output declared in the FORML header."""
 
     name: str = "target"

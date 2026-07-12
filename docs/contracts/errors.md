@@ -123,3 +123,16 @@ Requested backend Z3 profile declares affine arithmetic only.
 | Internal failure | Unclassified exception, assertion crash or corrupted state. |
 
 Miova campaigns should distinguish all five.
+
+## Specification Constant Diagnostics
+
+The semantic/type boundary owns diagnostics for:
+
+- duplicate specification-constant declarations;
+- reserved declaration names;
+- collisions with scope variables;
+- unresolved bare names;
+- incompatible constant uses;
+- unsupported declaration literal kinds.
+
+A parser error is appropriate only when declaration syntax is malformed. A backend-capability diagnostic is appropriate when the constant is semantically valid but its type cannot be encoded by the selected backend profile.

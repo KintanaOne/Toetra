@@ -60,7 +60,7 @@ model := "model.onnx"
 target := MyTarget
 
 [LOGIC]:
-forall => NOT (a <= 1 AND b <= 2) using Z3
+forall x0 => NOT (a <= 1 AND b <= 2) using Z3
 """
 
     run_nnf = import_run_nnf()
@@ -70,8 +70,8 @@ forall => NOT (a <= 1 AND b <= 2) using Z3
     task = tasks[0]
 
     assert task.scope.kind == "quantifier"
-    assert task.scope.variables == {"_x": "symbolic"}
+    assert task.scope.variables == {"x0": "symbolic"}
     assert sexpr(task.query.expression) == (
-        "OR(NOT(CMP(_x.a <= 1)), NOT(CMP(_x.b <= 2)))"
+        "OR(NOT(CMP(x0.a <= 1)), NOT(CMP(x0.b <= 2)))"
     )
     assert_is_nnf(task.query.expression)

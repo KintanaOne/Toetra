@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -46,4 +47,7 @@ class CheckAtExprNode(ExpressionNode):
 @dataclass
 class QuantifierExprNode(ExpressionNode):
     quantifier: str
+    variable: str
     domain: DomainNode | None
+
+

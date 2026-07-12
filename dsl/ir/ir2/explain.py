@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -111,9 +112,13 @@ def _scope(task: VerificationTaskIR2) -> list[str]:
 
     if scope.domain is not None:
         lines.append("  domain:")
-        lines.append(f"    name : {scope.domain.name}")
-        for key, value in scope.domain.args.items():
-            lines.append(f"    {key} : {value}")
+        for entry in scope.domain.entries:
+            subject = (
+                f"{entry.entity}.{entry.feature}"
+                if entry.entity is not None
+                else entry.feature
+            )
+            lines.append(f"    - {subject} : {entry.constraint}")
 
     return lines
 
@@ -206,3 +211,5 @@ def _enum_value(value: object) -> object:
 def _indent(text: str, spaces: int) -> str:
     prefix = " " * spaces
     return "\n".join(prefix + line if line else line for line in text.splitlines())
+
+

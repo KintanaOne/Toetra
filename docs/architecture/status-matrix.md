@@ -17,7 +17,6 @@ FORML intentionally documents both current implementation and target architectur
 | `partially implemented` | Some components exist, but the subsystem is not complete. |
 | `planned / critical` | Not implemented yet but required for end-to-end FORML verification. |
 | `planned` | Intended future layer, but not the immediate blocker. |
-| `post-V1 / planned` | Intended after the first Z3-based V1 path is functional. |
 | `research-direction` | Long-term idea, not a current implementation claim. |
 | `external` | Handled by another project or external system. |
 
@@ -28,22 +27,24 @@ FORML intentionally documents both current implementation and target architectur
 | Subsystem | Status | Implementation evidence | Target role | Priority |
 |---|---|---|---|---:|
 | DSL grammar | implemented / stabilizing | Lark grammar and generated grammar exist. | Stable source language for `.forml` specifications. | P1 |
+| Specification constants syntax | accepted target / implementation pending | Language contract and declaration grammar direction are documented. | Reusable immutable business values in the header. | P0 |
+| Bare-name resolution | accepted target / implementation pending | ADR-0016 and cross-layer contract define context-aware lookup. | Resolve constants and implicit features deterministically. | P0 |
 | Parser | implemented | Parser produces CST from `.forml` source. | Strict source-to-CST boundary. | P0 |
 | AST builder | implemented / stabilizing | Builder modules construct `ProgramNode`, `PropertyNode`, expressions, assertions, backend nodes. | Strict CST-to-AST contract. | P0 |
-| AST model | implemented / stabilizing | AST dataclasses exist, but semantic attachment strategy needs cleanup. | Stable typed syntax tree. | P0 |
+| AST model | implemented / stabilizing | AST dataclasses exist; `SpecificationConstantDeclarationNode` and `NameRefNode` remain target additions. | Stable typed syntax tree. | P0 |
 | Semantic context | implemented / stabilizing | `SemanticContext`, `SemanticScope`, `SymbolTable` exist. | Meaning context for scopes, variables, domains, neighborhoods. | P0 |
-| Binding validation | implemented / stabilizing | Explicit and implicit attribute resolution exists. | Resolve RHS references to semantic entities. | P0 |
+| Binding validation | implemented / stabilizing | Explicit and implicit attribute resolution exists; specification-constant lookup is pending. | Resolve constants, explicit features and implicit features deterministically. | P0 |
 | Logic validation | implemented / stabilizing | Logical nodes and problem validation exist. | Validate logical structure and semantic compatibility. | P0 |
 | Property/scope compatibility | implemented / stabilizing | Compatibility tables exist. | Prevent invalid property/scope combinations. | P0 |
 | Semantic annotations | implemented / stabilizing | `SemanticAnnotations` exists. | Cache semantic resolution for IR lowering. | P0 |
-| IR1 structural translator | implemented / stabilizing | `VerificationTask`, `ScopeIR`, `QueryIR`, `LogicalIR` nodes exist. | First backend-independent logical representation. | P0 |
-| IR1 NNF / De Morgan | planned / critical | ADR and contracts define the target, but the current translator is still structural. | Normalize negations, eliminate/prepare implication, and enforce NNF invariants. | P0 |
+| IR1 | implemented / stabilizing | `VerificationTask`, `ScopeIR`, `QueryIR`, `LogicalIR` nodes exist. | First backend-independent logical representation. | P0 |
+| IR1 NNF / De Morgan | implemented / stabilizing | Current architecture intent places De Morgan and NNF in IR1. | Normalize negations and logical structure. | P0 |
 | IR2 CNF / DNF | planned / critical | Not implemented yet. | Clause/case-oriented normal forms for backend preparation. | P0 |
 | Assertion aggregation | planned / critical | Not implemented yet. | Combine DSL, semantic, model, and backend constraints. | P0 |
 | Lowering / minimization | planned / critical | Not implemented yet. | Simplify and prepare aggregated assertions for backend query generation. | P0 |
 | Backend query | planned / critical | Not implemented yet. | First backend-specific executable/query artifact. | P0 |
-| Backend orchestration | post-V1 / planned | Architecture view exists conceptually. | Select backend strategy based on capabilities and constraints after the Z3 V1 path works. | P1 |
-| Z3 backend | planned / critical | Not implemented in current snapshot. | Minimal and only intended backend for the first functional V1. | P0 |
+| Backend orchestration | planned | Architecture view exists conceptually. | Select backend strategy based on capabilities and constraints. | P1 |
+| Z3 backend | planned / critical | Not implemented in current snapshot. | First likely solver backend. | P1 |
 | Runtime verification | planned | Conceptual target. | Execute backend queries and produce results. | P2 |
 | Runtime monitoring | research-direction | Conceptual target. | Observe behavior after deployment or runtime execution. | P2 |
 | Model loading | implemented / stabilizing | Loader factory and pkl/joblib/json loaders exist. | Load model artifacts. | P0 |
@@ -69,9 +70,7 @@ AST
     ↓ implemented / stabilizing
 SemanticValidatedAST
     ↓ implemented / stabilizing
-IR1 structural logical IR
-    ↓ planned / critical
-IR1 NNF / De Morgan subphase
+IR1 / NNF
     ↓ planned / critical
 IR2 / CNF-DNF
     ↓ planned / critical
@@ -89,8 +88,7 @@ Backend Query
 | Source → CST | Source can be parsed by Lark grammar. | Grammar/token casing and vocabulary alignment need cleanup. |
 | CST → AST | CST can be transformed into structured AST nodes. | AST invariants and error boundaries need formal contracts. |
 | AST → Semantic | LHS context, binding, and logic validation exist. | Semantic errors are not yet cleanly separated from parser errors in all paths. |
-| Semantic → IR1 | IR1 tasks can be generated. | IR must consume resolved semantic annotations consistently and must not fall back to raw unresolved attribute entities. |
-| IR1 → NNF | Not implemented. | De Morgan, implication normalization, and NNF invariant tests required. |
+| Semantic → IR1 | IR1 tasks can be generated. | IR should consume resolved semantic annotations consistently. |
 | IR1 → IR2 | Not implemented. | CNF/DNF contract required. |
 | IR2 → Aggregation | Not implemented. | Aggregated assertion artifact required. |
 | Aggregation → Lowering | Not implemented. | Simplification/minimization contract required. |

@@ -308,6 +308,30 @@ The semantic layer must guarantee:
 
 ---
 
+## Program-Level Specification Constant Resolution
+
+Before validating properties, the semantic layer builds a program-level table of specification constants.
+
+For each declaration it records:
+
+- name;
+- canonical scalar type;
+- literal value;
+- declaration provenance;
+- symbol kind `SPECIFICATION_CONSTANT`.
+
+Property-level scopes are then registered. A scope variable that collides with a specification constant is rejected.
+
+Bare `NameRefNode` resolution is context-aware:
+
+| Context | Resolution order |
+|---|---|
+| Assertion scalar expression | specification constant → implicit feature → error |
+| Domain interval bound | specification constant → error; feature references must be explicit |
+| Finite-set value | specification constant → symbolic categorical literal |
+
+After successful validation, no unresolved `NameRefNode` may remain semantically unclassified.
+
 ## Relation to IR1
 
 IR1 must consume semantic resolution.

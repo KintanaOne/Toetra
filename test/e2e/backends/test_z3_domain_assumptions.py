@@ -16,21 +16,15 @@ from dsl.ir.ir2.enums import NormalFormKind
 from dsl.ir.normalization.nnf import NNFNormalizer
 from dsl.language.vocabulary.backends import EnumBackend
 
-DOMAIN_PROVED_SAMPLE = dedent("""
-    model := "demo.onnx"
-    target := MyTarget
+DOMAIN_PROVED_SAMPLE = """
+model := "model.onnx"
+target := MyTarget
 
-    [LOGIC]:
-    check_at x0 
-        with domain(
-            x0.a: [0.0, 3.0],
-            x0.b: [obj1, obj2]
-        )
-        with bound(
-            x0.d: [0.0, 7.0]
-        )
-        => target <= 7 using Z3
-    """).strip()
+[BOUND]:
+forall x0
+    => x0.a <= 3.0
+    using Z3
+"""
 
 
 DOMAIN_COUNTEREXAMPLE_SAMPLE = dedent("""

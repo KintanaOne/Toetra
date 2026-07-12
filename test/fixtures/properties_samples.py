@@ -30,7 +30,9 @@ VALID_AT_WITH_DOMAIN = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    at x0 with sex("male","female") => CLASSIFICATION.EQUAL()
+    at x0 with domain(
+        x0.sex: {"male", "female"}
+    ) => CLASSIFICATION.EQUAL()
     """
 
 # AT with neighborhood and domain
@@ -39,7 +41,11 @@ VALID_AT_WITH_NEIGHBORHOOD_AND_DOMAIN = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    at x0 in neighborhood(L2, eps=0.01) with sex("male","female") => CLASSIFICATION.EQUAL()
+    at x0 in neighborhood(L2, eps=0.01)
+        with domain(
+            x0.sex: {"male", "female"}
+        )
+        => CLASSIFICATION.EQUAL()
     """
 
 # AT with neighborhood and domain and USING clause
@@ -48,7 +54,12 @@ VALID_AT_WITH_NEIGHBORHOOD_AND_DOMAIN_AND_USING = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    at x0 in neighborhood(L2, eps=0.01) with sex("male","female") => CLASSIFICATION.EQUAL() using Z3
+    at x0 in neighborhood(L2, eps=0.01)
+        with domain(
+            x0.sex: {"male", "female"}
+        )
+        => CLASSIFICATION.EQUAL()
+        using Z3
     """
 
 # -------------------------------------------- CHECK_AT ---------------------------------------------#
@@ -86,7 +97,7 @@ VALID_MINIMAL_FORALL = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    forall => target == 0
+    forall x0 => target == 0
     """
 
 
@@ -95,7 +106,11 @@ VALID_FORALL_WITH_DOMAIN = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    forall with gender("male", "female") => target == 0
+    forall x0
+        with domain(
+            x0.gender: {"male", "female"}
+        )
+        => target == 0
     """
 
 
@@ -106,7 +121,7 @@ VALID_MINIMAL_EXISTS = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    exists => target == 0
+    exists x0 => target == 0
     """
 
 
@@ -115,7 +130,11 @@ VALID_EXISTS_WITH_DOMAIN = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    exists with gender("male", "female") => target == 0
+    exists x0
+        with domain(
+            x0.gender: {"male", "female"}
+        )
+        => target == 0
     """
 
 

@@ -15,7 +15,8 @@ A FORML specification connects three concerns:
 
 1. **The model under verification** — declared in the header.
 2. **The target or output of interest** — declared in the header.
-3. **The properties to verify** — expressed as scoped assertions.
+3. **Reusable specification constants** — optional immutable values naming business thresholds.
+4. **The properties to verify** — expressed as scoped assertions.
 
 The language is intentionally designed to be compiled through a sequence of progressively more formal representations:
 
@@ -45,7 +46,7 @@ The FORML language aims to provide:
 | Formal structure | Every expression must compile into structured AST and IR artifacts. |
 | Explicit scope | Each property must define where it is evaluated. |
 | Backend independence | The DSL should not encode backend-specific constraints directly. |
-| Semantic binding | Implicit and explicit variables must be resolved before IR lowering. |
+| Semantic binding | Specification constants, implicit features and explicit variables must be resolved before IR lowering. |
 | Mutation testability | Language artifacts must be suitable for Miova and Hypothesis campaigns. |
 
 ---
@@ -66,6 +67,13 @@ model := "model.joblib"
 target := prediction
 ```
 
+The header may also declare reusable immutable specification constants:
+
+```forml
+max_risk := 0.20
+minimum_income := 25000.0
+```
+
 The body contains one or more property sections:
 
 ```forml
@@ -83,6 +91,24 @@ A property has:
 | Optional backend | Suggests or selects a verification backend. |
 
 ---
+
+## Specification Constants
+
+Specification constants name immutable scalar values used by domains and assertions:
+
+```forml
+max_risk := 0.20
+max_ratio := 0.35
+
+[LOGIC]:
+forall applicant
+    => target <= max_risk
+       AND applicant.debt <= max_ratio * applicant.income
+```
+
+Bare identifiers remain user-friendly. In assertions, a name resolves first to a matching specification constant and otherwise to an implicit feature of the scope's default entity. Explicitly qualified references such as `applicant.max_risk` always denote features. Domain subjects and feature references inside domain bounds remain explicit, while constants may be used by bare name.
+
+See [Specification Constants](specification-constants.md).
 
 ## Typed Domains
 
@@ -202,10 +228,11 @@ Language documentation must therefore describe not only valid syntax, but also e
 
 | Area | Status | Notes |
 |---|---|---|
-| Header syntax | Implemented / stabilizing | `model`, `target`, optional `dataset`, optional variables. |
+| Header syntax | Implemented / stabilizing | `model`, `target`, optional `dataset`; specification constants are the accepted target evolution of the former generic variable declarations. |
 | Property sections | Implemented / stabilizing | Property type, scope, implication, assertion, optional backend. |
 | Scopes | Implemented / stabilizing | `at`, `check_at`, `pairwise`, quantifiers. |
 | Typed domains | Target contract defined / implementation pending | Explicit subjects, interval boundaries, finite sets, arithmetic interval bounds. |
+| Specification constants | Target contract defined / implementation pending | Immutable scalar declarations with context-sensitive bare-name resolution. |
 | Assertions | Target contract defined / implementation pending | Expression-to-expression comparisons, arithmetic, boolean operators, problem predicates. |
 | Logic casing | Needs stabilization | Grammar currently mixes lowercase tokens and uppercase literal operators. |
 | Vocabulary enums | Needs normalization | Some enum/string boundaries should be stabilized. |
@@ -222,8 +249,10 @@ Language documentation must therefore describe not only valid syntax, but also e
 - [Properties](properties.md)
 - [Scopes](scopes.md)
 - [Domains](domains.md)
+- [Specification Constants](specification-constants.md)
 - [Assertions](assertions.md)
 - [Arithmetic Expressions](arithmetic-expressions.md)
+- [Specification Constants](specification-constants.md)
 - [Backends Syntax](backends.md)
 - [Examples](examples.md)
 
@@ -237,6 +266,7 @@ The accepted language evolution is defined by:
 - typed domains with bracket-only open/closed interval notation;
 - finite sets with numeric or symbolic members;
 - scalar expression comparisons;
+- specification constants with user-friendly bare-name resolution;
 - exact semantic binding and capability-driven backend rejection.
 
 The normative behavioral references are:
@@ -245,7 +275,9 @@ The normative behavioral references are:
 - [Invalid and Unsupported Examples](invalid-examples.md)
 - [Quantified Bindings](quantified-bindings.md)
 - [Domains](domains.md)
+- [Specification Constants](specification-constants.md)
 - [Arithmetic Expressions](arithmetic-expressions.md)
+- [Specification Constants](specification-constants.md)
 - [Language Evolution Test Matrix](../testing/language-evolution-test-matrix.md)
 
 Implementation must follow these documents rather than infer intended behavior from the current code snapshot.

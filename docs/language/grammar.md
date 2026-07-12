@@ -57,7 +57,7 @@ header = padding,
          target_declaration,
          padding,
          [ dataset_declaration, padding ],
-         [ variables_declaration, padding ] ;
+         { specification_constant_declaration, padding } ;
 ```
 
 ### Required declarations
@@ -72,9 +72,25 @@ header = padding,
 | Declaration | Example | Status |
 |---|---|---|
 | `dataset` | `dataset := "data.csv"` | grammar-level support |
-| variables | `eps := 0.1` | grammar-level support |
+| specification constant | `max_risk := 0.20` | target grammar contract |
 
 ---
+
+### Specification-constant declarations
+
+The target declaration grammar is:
+
+```ebnf
+specification_constant_declaration = identifier, ":=", scalar_literal ;
+
+scalar_literal = signed_numeric_literal
+               | boolean_literal
+               | string_literal ;
+```
+
+A specification constant is a header declaration, not an assignment statement. The initial grammar accepts literal right-hand sides only. Derived expressions such as `annual_limit := monthly_limit * 12` remain outside the initial profile.
+
+The parser preserves an unqualified identifier in a scalar expression without deciding whether it denotes a specification constant or an implicit feature. That decision belongs to semantic name resolution.
 
 ## Property Grammar
 
@@ -205,9 +221,12 @@ unary_expression = [ "+" | "-" ], scalar_primary ;
 scalar_primary = numeric_literal
                | boolean_literal
                | string_literal
-               | attribute
+               | qualified_attribute
+               | bare_name
                | "target"
                | "(", scalar_expression, ")" ;
+
+bare_name = identifier ;
 
 assertion = logic_imply ;
 logic_imply = logic_or | logic_or, "->", logic_imply ;
@@ -223,6 +242,7 @@ Normative consequences:
 
 - comparisons accept expressions on both sides;
 - `target` is a scalar leaf distinct from an input attribute;
+- a bare name remains unresolved in the CST and may later become a specification-constant reference or an implicit feature;
 - arithmetic precedence is encoded structurally;
 - comparison operators are non-associative;
 - chained comparisons are invalid;
@@ -303,6 +323,7 @@ Grammar tests should include:
 | Full valid programs | Cover all syntax branches. |
 | Invalid syntax samples | Ensure correct parse failure. |
 | Operator precedence samples | Validate logical and arithmetic tree structure. |
+| Specification-constant samples | Cover scalar literal declarations, multiple declarations, reserved names and malformed right-hand sides. |
 | Arithmetic samples | Cover unary/binary precedence, symmetric comparisons, interval bounds, and chained-comparison rejection. |
 | Scope samples | Cover `at`, `check_at`, `pairwise`, `forall <identifier>`, and `exists <identifier>`. |
 | Domain samples | Cover four interval forms, finite sets, symbolic literals, trailing commas, and malformed domains. |
@@ -321,4 +342,5 @@ Grammar tests should include:
 - [Quantified Variable Bindings](quantified-bindings.md)
 - [Domains](domains.md)
 - [Arithmetic Expressions](arithmetic-expressions.md)
+- [Specification Constants](specification-constants.md)
 - [Examples](examples.md)

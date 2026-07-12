@@ -127,3 +127,15 @@ The AST must not contain:
 - expanded domain boolean formulas;
 - guessed entity bindings;
 - silent arithmetic approximations.
+
+## Specification Constant Invariants
+
+The target AST satisfies:
+
+- `HeaderNode` preserves all specification-constant declarations;
+- declaration values are typed literal nodes;
+- bare scalar names use `NameRefNode` until semantic resolution;
+- explicit qualified features remain structurally distinct;
+- `target` remains a dedicated output reference;
+- no declaration is represented as a backend variable;
+- no implicit-feature guess is stored in raw AST.

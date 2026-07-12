@@ -126,6 +126,40 @@ The tokens normalize to `forall` or `exists`, while the declared identifier rema
 
 ---
 
+## Specification Constants and Names
+
+A header declaration such as:
+
+```forml
+max_risk := 0.20
+```
+
+defines an immutable **specification constant**. The public vocabulary must not describe these declarations as mutable variables or runtime parameters.
+
+A bare identifier in a scalar-expression position is a context-sensitive name. Semantic resolution uses the following priority in assertions:
+
+```text
+specification constant
+→ implicit feature of the default entity
+→ unbound-name error
+```
+
+An explicitly qualified name such as `applicant.max_risk` always denotes a feature. `target` remains a reserved model-output reference.
+
+In domain bounds, bare names may resolve to specification constants, but feature references remain explicitly qualified. In finite-set member position, a matching specification constant has priority; otherwise the identifier remains a symbolic categorical literal.
+
+Recommended semantic name kinds include:
+
+```text
+SPECIFICATION_CONSTANT
+SCOPE_VARIABLE
+FEATURE
+MODEL_OUTPUT
+SYMBOLIC_LITERAL
+```
+
+See [Specification Constants](specification-constants.md).
+
 ## Domain Vocabulary
 
 | Vocabulary | Example | Meaning |
@@ -228,7 +262,7 @@ EnumUnaryArithmeticOperator.POS
 EnumUnaryArithmeticOperator.NEG
 ```
 
-The same surface token may have unary or binary meaning according to CST position. The builder must normalize it into the corresponding canonical enum.
+Specification constants may appear as numeric operands after semantic resolution. The same surface token may have unary or binary meaning according to CST position. The builder must normalize it into the corresponding canonical enum.
 
 The initial verification profile permits only affine multiplication/division shapes. This is a capability rule, not a token-normalization rule.
 

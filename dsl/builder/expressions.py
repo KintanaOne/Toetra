@@ -1,3 +1,4 @@
+
 from lark import Tree
 from dsl.ast.nodes.expressions import (
     AtExprNode,
@@ -156,9 +157,19 @@ def parse_quantifier(prop: Tree) -> QuantifierExprNode:
 
     quantifier = require_value(quantifier, "quantifier is missing or invalid")
 
+    identifier_node = require_node(
+        find_child(node, "identifier"), "quantified identifier not found"
+    )
+    variable = require_value(
+        node_value(identifier_node), "quantified identifier is missing or invalid"
+    )
+
     domain = optional(node, "domain", parse_domain)
 
     return QuantifierExprNode(
         quantifier=quantifier,
+        variable=variable,
         domain=domain,
     )
+
+

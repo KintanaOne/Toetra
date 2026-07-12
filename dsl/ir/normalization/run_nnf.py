@@ -9,7 +9,7 @@ model := "model.onnx"
 target := MyTarget
 
 [LOGIC]:
-forall => NOT (a <= 1 AND b <= 2) using Z3
+forall x0 => NOT (a <= 1 AND b <= 2) using Z3
 """
 
 

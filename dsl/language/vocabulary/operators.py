@@ -1,3 +1,4 @@
+
 # /forml/grammar/official_contents/quantifiers.py
 
 from enum import Enum
@@ -9,6 +10,14 @@ official_logic_operators = {
     "NOT": '"not"',
     "XOR": '"xor"',
     "IMPLY": '"->"',
+}
+
+
+official_arithmetic_operators = {
+    "PLUS": '"+"',
+    "MINUS": '"-"',
+    "STAR": '"*"',
+    "SLASH": '"/"',
 }
 
 official_comparaison_operations = {
@@ -35,3 +44,16 @@ class EnumLogicalOperator(EnumMixin, Enum):
     OR = "or"
     NOT = "not"
     IMPLY = "->"
+
+
+class EnumArithmeticOperator(EnumMixin, Enum):
+    ADD = "+"
+    SUB = "-"
+    MUL = "*"
+    DIV = "/"
+
+
+class EnumUnaryOperator(EnumMixin, Enum):
+    PLUS = "+"
+    MINUS = "-"
+

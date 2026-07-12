@@ -24,7 +24,7 @@ model := "model.onnx"
 target := MyTarget
 
 [LOGIC]:
-forall => NOT (a <= 1 AND b <= 2) using Z3
+forall x0 => NOT (a <= 1 AND b <= 2) using Z3
 """
 
     tasks = _run_ir1_then_nnf(source)
@@ -34,7 +34,7 @@ forall => NOT (a <= 1 AND b <= 2) using Z3
 
     assert_quantifier_scope(task)
     assert sexpr(task.query.expression) == (
-        "OR(NOT(CMP(_x.a <= 1)), NOT(CMP(_x.b <= 2)))"
+        "OR(NOT(CMP(x0.a <= 1)), NOT(CMP(x0.b <= 2)))"
     )
     assert_is_nnf(task.query.expression)
 
@@ -45,7 +45,7 @@ model := "model.onnx"
 target := MyTarget
 
 [LOGIC]:
-exists => a <= 1 -> b <= 2 using Z3
+exists x0 => a <= 1 -> b <= 2 using Z3
 """
 
     tasks = _run_ir1_then_nnf(source)
@@ -54,7 +54,7 @@ exists => a <= 1 -> b <= 2 using Z3
     task = tasks[0]
 
     assert_quantifier_scope(task)
-    assert sexpr(task.query.expression) == "OR(NOT(CMP(_x.a <= 1)), CMP(_x.b <= 2))"
+    assert sexpr(task.query.expression) == "OR(NOT(CMP(x0.a <= 1)), CMP(x0.b <= 2))"
     assert_is_nnf(task.query.expression)
 
 
@@ -64,7 +64,7 @@ model := "model.onnx"
 target := MyTarget
 
 [LOGIC]:
-forall with Segment("A", "B") => NOT (a <= 1 OR b <= 2) using Z3
+forall x0 with domain(x0.Segment: {"A", "B"}) => NOT (a <= 1 OR b <= 2) using Z3
 """
 
     tasks = _run_ir1_then_nnf(source)
@@ -75,7 +75,7 @@ forall with Segment("A", "B") => NOT (a <= 1 OR b <= 2) using Z3
     assert_quantifier_scope(task)
     assert_scope_domain_values(task, "Segment", ["A", "B"])
     assert sexpr(task.query.expression) == (
-        "AND(NOT(CMP(_x.a <= 1)), NOT(CMP(_x.b <= 2)))"
+        "AND(NOT(CMP(x0.a <= 1)), NOT(CMP(x0.b <= 2)))"
     )
     assert_is_nnf(task.query.expression)
 
@@ -83,8 +83,8 @@ forall with Segment("A", "B") => NOT (a <= 1 OR b <= 2) using Z3
 @pytest.mark.parametrize(
     "token, expected_query",
     [
-        ("∀", "OR(NOT(CMP(_x.a <= 1)), NOT(CMP(_x.b <= 2)))"),
-        ("∃", "OR(NOT(CMP(_x.a <= 1)), NOT(CMP(_x.b <= 2)))"),
+        ("∀", "OR(NOT(CMP(x0.a <= 1)), NOT(CMP(x0.b <= 2)))"),
+        ("∃", "OR(NOT(CMP(x0.a <= 1)), NOT(CMP(x0.b <= 2)))"),
     ],
 )
 def test_pipeline_unicode_quantifiers_are_supported_if_grammar_exposes_them(
@@ -96,7 +96,7 @@ model := "model.onnx"
 target := MyTarget
 
 [LOGIC]:
-{token} => NOT (a <= 1 AND b <= 2) using Z3
+{token} x0 => NOT (a <= 1 AND b <= 2) using Z3
 """
 
     tasks = _run_ir1_then_nnf(source)

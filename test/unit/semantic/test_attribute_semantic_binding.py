@@ -106,7 +106,7 @@ def test_quantifier_attribute_receives_symbolic_entity():
     target := MyTarget
 
     [ROBUSTNESS]:
-    forall => age <= 30
+    forall x0 => age <= 30
     """
 
     ast = _build_and_validate(source)
@@ -116,8 +116,8 @@ def test_quantifier_attribute_receives_symbolic_entity():
     attr = _left_attribute(comparison)
     semantic = _semantic(attr)
 
-    assert semantic.resolved_entity == "_x"
-    assert semantic.resolved_path == ["_x", "age"]
+    assert semantic.resolved_entity == "x0"
+    assert semantic.resolved_path == ["x0", "age"]
 
 
 def test_nested_logic_attributes_receive_semantic_annotations():

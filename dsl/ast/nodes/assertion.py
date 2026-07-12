@@ -1,9 +1,10 @@
+
 from __future__ import annotations
 
 from dataclasses import dataclass
 
 from dsl.ast.nodes.base import ASTNode
-from dsl.ast.nodes.primitives import AttributeNode, ConstantNode, TargetRefNode
+from dsl.ast.nodes.primitives import ScalarExpressionNode
 from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.problems import EnumProblem
@@ -34,9 +35,9 @@ class LogicalNode(ASTNode):
 
 @dataclass
 class ComparisonNode(LogicalNode):
-    left: AttributeNode | TargetRefNode
+    left: ScalarExpressionNode
     op: EnumComparisonOperator
-    right: ConstantNode
+    right: ScalarExpressionNode
 
 
 @dataclass
@@ -79,3 +80,5 @@ class ProblemNode(LogicalNode):
 @dataclass
 class UnknownNode(LogicalNode):
     raw: str
+
+

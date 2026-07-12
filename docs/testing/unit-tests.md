@@ -204,6 +204,32 @@ The migration is not complete without isolated unit tests for:
 - literal division-by-zero detection;
 - domain-to-assumption operator selection;
 - requirements computation;
-- solver-result interpretation by verification semantics.
+- solver-result interpretation by verification semantics;
+- specification-constant declaration extraction and literal typing;
+- `NameRefNode` construction without premature binding;
+- constant-first bare-name resolution;
+- scope-variable collision and duplicate declaration rejection;
+- constant provenance preservation through IR1/IR2;
+- backend literal encoding without solver-variable creation.
 
 A unit test should target one responsibility. Full source-to-solver behavior belongs to end-to-end tests.
+
+
+## Language-Evolution File Split
+
+The parser portion should remain split as:
+
+```text
+test/unit/parser/
+├── conftest.py
+├── test_grammar_generation.py
+├── test_quantified_scopes.py
+├── test_typed_domains.py
+├── test_arithmetic_expressions.py
+├── test_specification_constants.py
+└── test_parser_regressions.py
+```
+
+Do not recreate a monolithic `test_language_evolution_g1.py`. The same feature-oriented split applies downstream.
+
+Parser and source-driven tests use complete programs. Tests of pure helpers may use isolated nodes or fragments when the test name and fixture make that boundary explicit.

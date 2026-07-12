@@ -154,3 +154,25 @@ The builder rejects CST shapes that are syntactically accepted but structurally 
 - arithmetic operator with missing operand;
 - comparison with fewer or more than two scalar operands;
 - unrecognized protected vocabulary after normalization.
+
+## Specification Constant Addendum
+
+For header declarations and bare scalar names, the builder must produce:
+
+```text
+identifier := literal
+    → SpecificationConstantDeclarationNode
+
+bare identifier in scalar expression
+    → NameRefNode
+```
+
+It must not:
+
+- substitute declaration values;
+- resolve names against declarations;
+- apply implicit-feature fallback;
+- reject declaration/scope collisions;
+- create backend constants or variables.
+
+Those responsibilities belong to semantic validation and IR lowering.

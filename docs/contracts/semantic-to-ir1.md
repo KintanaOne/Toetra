@@ -163,3 +163,22 @@ IR1 lowering rejects an allegedly validated input when:
 - target resolution is inconsistent with the program header.
 
 These are compiler-contract failures, not user backend-capability errors.
+
+## Specification Constant Lowering Addendum
+
+A resolved specification constant becomes a typed constant-valued scalar IR node.
+
+The lowering preserves:
+
+- canonical value;
+- canonical dtype;
+- declaration name;
+- source kind `SPECIFICATION_CONSTANT`;
+- source provenance when available.
+
+It must not become:
+
+- `AttributeIR`;
+- model output IR;
+- an unconstrained solver variable;
+- an unresolved symbolic name.

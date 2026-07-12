@@ -53,7 +53,7 @@ def test_ir_uses_symbolic_entity_for_quantifier_with_schema():
     comparison = tasks[0].query.expression
 
     assert isinstance(comparison, ComparisonIR)
-    assert comparison.entity == "_x"
+    assert comparison.entity == "x0"
     assert comparison.feature == "age"
     assert comparison.feature_dtype is EnumDataType.INT
     assert comparison.value_dtype is EnumDataType.INT

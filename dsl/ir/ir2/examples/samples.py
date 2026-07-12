@@ -5,13 +5,13 @@ model := "model.onnx"
 target := MyTarget
 
 [LOGIC]:
-forall => a <= 1 -> b <= 2 using Z3
+forall x0 => a <= 1 -> b <= 2 using Z3
 """
 
 REAL_LINEAR_MODEL_SAMPLE = """
-model := "demo-linear-regression"
+model := "model.joblib"
 target := MyTarget
 
-[LOGIC]:
-check_at x0 => x0.a <= 10 using Z3
+[BOUND]:
+check_at x0 => target <= 10 using Z3
 """

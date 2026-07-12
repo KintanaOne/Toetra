@@ -283,6 +283,25 @@ IR1 must guarantee:
 
 ---
 
+## Specification Constant Lowering
+
+A semantically resolved specification constant lowers to a typed constant scalar expression with provenance.
+
+Conceptually:
+
+```text
+ConstantExpressionIR(
+    value=0.20,
+    dtype=FLOAT,
+    source_kind=SPECIFICATION_CONSTANT,
+    source_name="max_risk",
+)
+```
+
+IR1 must not create an input feature or symbolic solver variable for the declaration.
+
+The declaration name remains available for pretty printing, diagnostics and traceability even when the backend receives only the canonical literal value.
+
 ## Stabilization Requirements
 
 | Topic | Required Action |

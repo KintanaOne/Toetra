@@ -38,7 +38,7 @@ The initial typed-domain language follows these rules:
 7. Multiple entries in one domain are combined by logical conjunction.
 8. Duplicate subjects in the same domain are rejected.
 9. Interval bounds may be numeric arithmetic expressions.
-10. Every feature reference inside a bound is explicitly qualified.
+10. Every input-feature reference inside a bound is explicitly qualified; bare specification constants are allowed.
 11. `target` cannot be used as a domain subject or bound expression.
 
 ---
@@ -261,7 +261,8 @@ with domain(
 
 Normative rules:
 
-- every feature reference in a domain bound is explicitly qualified;
+- every input-feature reference in a domain bound is explicitly qualified;
+- bare identifiers in bounds may resolve to specification constants;
 - every referenced entity is introduced by the enclosing scope;
 - `target` is prohibited in domain bounds;
 - arithmetic operands must be numeric;
@@ -278,7 +279,7 @@ AND x0.b >= 0.0
 AND x0.b <= 10.0
 ```
 
-Arithmetic expressions are not introduced as finite-set members in this patch. See [Arithmetic Expressions](arithmetic-expressions.md).
+Arithmetic expressions are not introduced as finite-set members in this patch. Scalar specification constants may be used as members. See [Arithmetic Expressions](arithmetic-expressions.md).
 
 ## Finite Sets
 
@@ -336,7 +337,7 @@ The initial finite-set syntax supports:
 | quoted string | `"north region"`, `"A"` | string |
 | symbolic category | `obj1`, `EU`, `premium` | categorical symbol |
 
-Unquoted identifiers inside a finite set are categorical literals, not variable references.
+Unquoted identifiers inside a finite set are never input-variable references. A matching specification constant is resolved first; otherwise the identifier is a symbolic categorical literal.
 
 ```forml
 x0.region: {EU, US}
@@ -347,6 +348,31 @@ must preserve `EU` and `US` as symbolic category values.
 The AST should distinguish symbolic category literals from quoted strings until schema-aware semantic validation decides whether and how they normalize to model values.
 
 ---
+
+### Specification constants in domains
+
+Specification constants may be used in interval bounds:
+
+```forml
+minimum_age := 18
+maximum_age := 65
+
+with domain(
+    x0.age: [minimum_age, maximum_age]
+)
+```
+
+They may also be finite-set members:
+
+```forml
+preferred_level := 7
+
+with domain(
+    x0.level: {0, preferred_level}
+)
+```
+
+Domain subjects remain explicit features and cannot be specification constants. Bare input-feature fallback is not used in domain bounds.
 
 ## Type Compatibility
 

@@ -43,11 +43,15 @@ model := "model.joblib"
 target := prediction
 ```
 
-Optional declarations may include:
+Optional declarations may include a dataset and specification constants:
 
 ```forml
 dataset := "data.csv"
-eps := 0.1
+
+max_risk := 0.20
+minimum_income := 25000.0
+strict_mode := true
+region_name := "EU"
 ```
 
 ### Header Fields
@@ -57,7 +61,39 @@ eps := 0.1
 | `model` | yes | `model := "model.joblib"` | Model artifact to verify. |
 | `target` | yes | `target := prediction` | Output or target of interest. |
 | `dataset` | no | `dataset := "data.csv"` | Dataset used for schema inference. |
-| variables | no | `eps := 0.1` | Reusable values. |
+| specification constants | no | `max_risk := 0.20` | Reusable immutable scalar values. |
+
+### Specification constants
+
+A specification constant uses the declaration form:
+
+```forml
+identifier := scalar_literal
+```
+
+Canonical formatting places one declaration on each line. Initial values are integer, real, boolean or quoted-string literals. Declarations are global to the specification, immutable and must appear before the first property.
+
+```forml
+max_risk := 0.20
+max_ratio := 0.35
+
+[LOGIC]:
+forall applicant
+    => target <= max_risk
+       AND applicant.debt <= max_ratio * applicant.income
+```
+
+In assertions, a bare name resolves first to a matching specification constant, otherwise to an implicit feature. An explicitly qualified name always denotes a feature:
+
+```forml
+max_risk := 0.20
+
+[LOGIC]:
+forall applicant
+    => applicant.max_risk <= max_risk
+```
+
+See [Specification Constants](specification-constants.md).
 
 ---
 
@@ -253,16 +289,20 @@ age: [18, 65]
 | `[a, b[` | closed | open |
 | `]a, b[` | open | open |
 
-Bounds may be arithmetic expressions:
+Bounds may be arithmetic expressions and may reference specification constants:
 
 ```forml
+tolerance := 1.0
+minimum_b := 0.0
+maximum_b := 10.0
+
 with domain(
-    x0.a: [x0.b - 1.0, x0.b + 1.0],
-    x0.b: [0.0, 10.0]
+    x0.a: [x0.b - tolerance, x0.b + tolerance],
+    x0.b: [minimum_b, maximum_b]
 )
 ```
 
-All input references inside a domain are explicit. `target` is not permitted in a domain bound.
+All input-feature references inside a domain are explicit. Bare names in bounds may denote declared specification constants. `target` is not permitted in a domain bound.
 
 ### Finite sets
 

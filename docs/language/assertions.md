@@ -75,7 +75,7 @@ ComparisonIR(
 
 ## Scalar Expressions
 
-Comparison operands may contain constants, explicit or implicit input features, `target`, unary arithmetic, binary arithmetic, and parentheses.
+Comparison operands may contain literals, specification constants, explicit or implicit input features, `target`, unary arithmetic, binary arithmetic, and parentheses.
 
 Arithmetic typing and profile restrictions are defined in [Arithmetic Expressions](arithmetic-expressions.md).
 
@@ -110,6 +110,36 @@ x0.age + 1 <= _model.<declared-target>
 `target` is a model-output reference, not an input feature.
 
 ---
+
+## Specification-Constant References
+
+Specification constants may appear anywhere a compatible scalar literal could appear:
+
+```forml
+max_risk := 0.20
+max_ratio := 0.35
+
+[LOGIC]:
+forall applicant
+    => target <= max_risk
+       AND applicant.debt <= max_ratio * applicant.income
+```
+
+Bare-name resolution in assertions is:
+
+1. matching specification constant;
+2. otherwise implicit feature of the scope's default entity;
+3. otherwise unbound-name error.
+
+Explicit qualification bypasses this ambiguity:
+
+```forml
+threshold := 7
+
+[LOGIC]: forall x0 => x0.threshold <= threshold
+```
+
+The left side denotes a feature; the right side denotes the specification constant. See [Specification Constants](specification-constants.md).
 
 ## Comparison Typing
 

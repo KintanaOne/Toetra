@@ -19,7 +19,7 @@ model := "model.onnx"
 target := MyTarget
 
 [ROBUSTNESS]:
-forall => age <= 30
+forall x0 => age <= 30
 """
 
 CHECK_AT_BOOL_FEATURE = """

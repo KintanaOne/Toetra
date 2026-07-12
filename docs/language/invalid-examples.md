@@ -1,8 +1,7 @@
-
 # Invalid and Unsupported Examples
 
 > Status: Accepted diagnostic baseline  
-> Scope: Explicit quantified bindings, typed domains and scalar arithmetic
+> Scope: Explicit quantified bindings, typed domains, scalar arithmetic and specification constants
 
 ## Purpose
 
@@ -12,16 +11,7 @@ This document distinguishes invalid source, invalid semantics, unsupported backe
 invalid syntax ≠ invalid semantics ≠ unsupported capability ≠ violated property
 ```
 
-Every example has a stable identifier suitable for tests and diagnostics.
-
-Unless a complete header is shown, property-only snippets assume this valid common header:
-
-```forml
-model := "demo.joblib"
-target := score
-```
-
-Tests must assemble a complete program so that rejection occurs at the intended boundary.
+Every example has a stable identifier suitable for tests and diagnostics. Every `forml` block below is a complete program. Tests must send the complete program to the public parser/compiler entry point so that failures occur at the documented boundary.
 
 ---
 
@@ -36,23 +26,18 @@ target := score
 [LOGIC]: forall => target <= 7
 ```
 
-Expected boundary:
-
-```text
-Source → CST
-```
-
-Expected diagnostic family:
+Expected boundary: `Source → CST`.
 
 ```text
 PARSER_QUANTIFIER_IDENTIFIER_REQUIRED
 ```
 
-The default target grammar requires an identifier after `forall` and `exists`.
-
 ### SYN-DOM-001 — Empty Domain Block
 
 ```forml
+model := "demo.joblib"
+target := score
+
 [LOGIC]: forall x0 with domain() => target <= 7
 ```
 
@@ -65,6 +50,9 @@ PARSER_DOMAIN_REQUIRES_ENTRY
 ### SYN-DOM-002 — Empty Finite Set
 
 ```forml
+model := "demo.joblib"
+target := score
+
 [LOGIC]:
 forall x0
     with domain(x0.region: {})
@@ -80,6 +68,9 @@ PARSER_FINITE_SET_REQUIRES_VALUE
 ### SYN-DOM-003 — Unsupported Parenthesis Interval Notation
 
 ```forml
+model := "demo.joblib"
+target := score
+
 [LOGIC]:
 forall x0
     with domain(x0.age: (18, 65])
@@ -97,6 +88,26 @@ FORML uses bracket-only French interval notation:
 ```text
 PARSER_INVALID_INTERVAL_DELIMITER
 ```
+
+### SYN-SPC-001 — Non-Literal Declaration Value
+
+```forml
+model := "demo.joblib"
+target := score
+
+monthly_limit := 100
+annual_limit := monthly_limit * 12
+
+[LOGIC]: forall x0 => target <= annual_limit
+```
+
+Expected boundary: parser under the initial specification-constant profile.
+
+```text
+PARSER_SPECIFICATION_CONSTANT_LITERAL_REQUIRED
+```
+
+Derived declaration expressions are reserved for a later language extension.
 
 ---
 
@@ -122,6 +133,9 @@ The compiler must not alias `candidate` to `x0` merely because only one variable
 ### SEM-DOM-001 — Implicit Domain Subject
 
 ```forml
+model := "demo.joblib"
+target := score
+
 [LOGIC]:
 forall x0
     with domain(age: [18, 65])
@@ -139,13 +153,14 @@ Assertions may use an implicit default entity. Domain subjects may not.
 ### SEM-DOM-002 — Subject Bound to Another Entity
 
 ```forml
+model := "demo.joblib"
+target := score
+
 [LOGIC]:
 forall x0
     with domain(y.age: [18, 65])
     => target >= 0
 ```
-
-Expected diagnostic:
 
 ```text
 SEMANTIC_DOMAIN_ENTITY_MISMATCH
@@ -154,6 +169,9 @@ SEMANTIC_DOMAIN_ENTITY_MISMATCH
 ### SEM-DOM-003 — Duplicate Domain Subject
 
 ```forml
+model := "demo.joblib"
+target := score
+
 [LOGIC]:
 forall x0
     with domain(
@@ -163,8 +181,6 @@ forall x0
     => target >= 0
 ```
 
-Expected diagnostic:
-
 ```text
 SEMANTIC_DUPLICATE_DOMAIN_SUBJECT
 ```
@@ -172,13 +188,14 @@ SEMANTIC_DUPLICATE_DOMAIN_SUBJECT
 ### SEM-DOM-004 — Reversed Numeric Interval
 
 ```forml
+model := "demo.joblib"
+target := score
+
 [LOGIC]:
 forall x0
     with domain(x0.age: [65, 18])
     => target >= 0
 ```
-
-Expected diagnostic:
 
 ```text
 SEMANTIC_INVALID_INTERVAL_ORDER
@@ -187,13 +204,16 @@ SEMANTIC_INVALID_INTERVAL_ORDER
 ### SEM-DOM-005 — Empty Open Interval
 
 ```forml
+model := "demo.joblib"
+target := score
+
 [LOGIC]:
 forall x0
     with domain(x0.age: ]18, 18[)
     => target >= 0
 ```
 
-The `[` closes the open interval and the final `)` closes the `domain(...)` call. The syntax is valid, but the represented interval is empty and is rejected semantically:
+The `[` closes the interval and the final `)` closes `domain(...)`. The syntax is valid, but the represented interval is empty.
 
 ```text
 SEMANTIC_EMPTY_INTERVAL
@@ -202,27 +222,29 @@ SEMANTIC_EMPTY_INTERVAL
 ### SEM-DOM-006 — Target in Domain Bound
 
 ```forml
+model := "demo.joblib"
+target := score
+
 [LOGIC]:
 forall x0
     with domain(x0.a: [0, target])
     => target >= 0
 ```
 
-Expected diagnostic:
-
 ```text
 SEMANTIC_TARGET_NOT_ALLOWED_IN_DOMAIN
 ```
 
-Domain assumptions constrain model inputs. They must not depend on the model output in the initial language contract.
-
 ### SEM-ARI-001 — Non-Numeric Arithmetic
 
 ```forml
+model := "demo.joblib"
+target := score
+
 [LOGIC]: forall x0 => x0.region + 1 <= target
 ```
 
-Assuming `region` is categorical/string-valued, expected diagnostic:
+Assuming `region` is categorical/string-valued:
 
 ```text
 SEMANTIC_NON_NUMERIC_ARITHMETIC
@@ -231,24 +253,117 @@ SEMANTIC_NON_NUMERIC_ARITHMETIC
 ### SEM-ARI-002 — Literal Division by Zero
 
 ```forml
+model := "demo.joblib"
+target := score
+
 [LOGIC]: forall x0 => x0.a / 0 <= target
 ```
 
-Expected diagnostic:
-
 ```text
 SEMANTIC_DIVISION_BY_ZERO
+```
+
+### SEM-SPC-001 — Duplicate Specification Constant
+
+```forml
+model := "demo.joblib"
+target := score
+
+max_risk := 0.20
+max_risk := 0.30
+
+[LOGIC]: forall x0 => target <= max_risk
+```
+
+```text
+SEMANTIC_DUPLICATE_SPECIFICATION_CONSTANT
+```
+
+### SEM-SPC-002 — Scope Variable Collision
+
+```forml
+model := "demo.joblib"
+target := score
+
+applicant := 7
+
+[LOGIC]: forall applicant => target <= 1
+```
+
+```text
+SEMANTIC_SPECIFICATION_CONSTANT_SCOPE_COLLISION
+```
+
+FORML rejects this collision rather than silently shadowing either declaration.
+
+### SEM-SPC-003 — Incompatible Constant Use
+
+```forml
+model := "demo.joblib"
+target := score
+
+max_score := "high"
+
+[LOGIC]: forall x0 => target <= max_score
+```
+
+Assuming a numeric target:
+
+```text
+SEMANTIC_INCOMPATIBLE_SPECIFICATION_CONSTANT_TYPE
+```
+
+### SEM-SPC-004 — Bare Domain Feature Is Not Implicit
+
+```forml
+model := "demo.joblib"
+target := score
+
+[LOGIC]:
+forall x0
+    with domain(
+        x0.a: [b - 1, b + 1]
+    )
+    => target >= 0
+```
+
+When no specification constant named `b` exists:
+
+```text
+SEMANTIC_UNBOUND_DOMAIN_NAME
+```
+
+Domain bounds do not fall back to implicit feature resolution. Write `x0.b` explicitly.
+
+### SEM-SPC-005 — Reserved Specification-Constant Name
+
+```forml
+model := "demo.joblib"
+target := score
+
+domain := 7
+
+[LOGIC]: forall x0 => target <= 7
+```
+
+Depending on tokenization, this may be rejected at the parser boundary; otherwise semantic registration must reject it. The canonical diagnostic family is:
+
+```text
+SPECIFICATION_CONSTANT_RESERVED_NAME
 ```
 
 ---
 
 ## Valid but Backend-Unsupported Requests
 
-These examples must pass parser, builder and semantic validation.
+These complete programs must pass parser, builder and semantic validation before capability matching rejects them.
 
 ### UNSUP-ARI-001 — Symbolic Product
 
 ```forml
+model := "demo.joblib"
+target := score
+
 [LOGIC]: forall x0 => x0.a * x0.b <= target using Z3
 ```
 
@@ -261,26 +376,23 @@ BACKEND_UNSUPPORTED_NONLINEAR_ARITHMETIC
 ### UNSUP-ARI-002 — Symbolic Denominator
 
 ```forml
+model := "demo.joblib"
+target := score
+
 [LOGIC]: forall x0 => x0.a / x0.b <= target using Z3
 ```
 
-Expected capability requirement:
-
 ```text
 requires_symbolic_division = true
-```
-
-Possible diagnostic:
-
-```text
 BACKEND_UNSUPPORTED_SYMBOLIC_DIVISION
 ```
-
-The initial affine profile rejects symbolic denominators before execution; it does not approximate their semantics.
 
 ### UNSUP-DOM-001 — Symbolic Categories Without Encoding Capability
 
 ```forml
+model := "demo.joblib"
+target := score
+
 [LOGIC]:
 forall x0
     with domain(x0.region: {EU, US})
@@ -288,7 +400,26 @@ forall x0
     using Z3
 ```
 
-If the registered Z3 profile supports numeric variables only:
+```text
+BACKEND_UNSUPPORTED_CATEGORICAL_DOMAIN
+```
+
+### UNSUP-SPC-001 — String Constant Reaches Numeric-Only Categorical Backend
+
+```forml
+model := "demo.joblib"
+target := score
+
+preferred_region := "EU"
+
+[LOGIC]:
+forall x0
+    with domain(x0.region: {preferred_region, US})
+    => target <= 7
+    using Z3
+```
+
+The language and semantic layers accept the request. A backend without string/categorical encoding reports:
 
 ```text
 BACKEND_UNSUPPORTED_CATEGORICAL_DOMAIN
@@ -300,59 +431,23 @@ BACKEND_UNSUPPORTED_CATEGORICAL_DOMAIN
 
 ### Universal SAT
 
-For universal refutation:
-
-```text
-Γ ∧ ¬P = SAT
-```
-
-Meaning:
-
-```text
-counterexample found
-```
+For universal refutation, `Γ ∧ ¬P = SAT` means `COUNTEREXAMPLE`.
 
 ### Universal UNSAT
 
-```text
-Γ ∧ ¬P = UNSAT
-```
-
-Meaning:
-
-```text
-property verified, subject to non-vacuity checks
-```
+`Γ ∧ ¬P = UNSAT` means `VERIFIED`, subject to non-vacuity checks.
 
 ### Existential SAT
 
-```text
-Γ ∧ P = SAT
-```
-
-Meaning:
-
-```text
-witness found
-```
+`Γ ∧ P = SAT` means `WITNESS`.
 
 ### Existential UNSAT
 
-```text
-Γ ∧ P = UNSAT
-```
-
-Meaning:
-
-```text
-no admissible witness exists
-```
+`Γ ∧ P = UNSAT` means `NO_WITNESS`.
 
 ### Empty Admissible Domain
 
-A universal property can appear proved because `Γdomain ∧ Γmodel` is unsatisfiable.
-
-FORML should emit a distinct warning such as:
+A universal property can appear proved because `Γdomain ∧ Γmodel` is unsatisfiable. FORML should emit:
 
 ```text
 VERIFICATION_VACUOUS_EMPTY_DOMAIN
@@ -361,6 +456,7 @@ VERIFICATION_VACUOUS_EMPTY_DOMAIN
 ## Related Documents
 
 - [Normative Examples](examples.md)
+- [Specification Constants](specification-constants.md)
 - [Domains](domains.md)
 - [Arithmetic Expressions](arithmetic-expressions.md)
 - [Backend Diagnostics](../backends/diagnostics.md)

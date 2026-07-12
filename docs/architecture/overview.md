@@ -294,6 +294,35 @@ It is responsible for:
 
 The semantic layer is also where future ModelSchema-aware validation will be integrated.
 
+## Specification Constants and Name Resolution
+
+Specification constants are program-level immutable values declared in the `.forml` header.
+
+```forml
+max_risk := 0.20
+minimum_income := 25000.0
+```
+
+They participate in the compiler as a separate symbol kind:
+
+```text
+header declaration
+→ SpecificationConstantDeclarationNode
+→ program-level symbol registration
+→ context-aware NameRef resolution
+→ typed constant IR with provenance
+```
+
+The raw AST preserves a bare scalar name as `NameRefNode`. The semantic layer resolves it according to context:
+
+- in assertions: specification constant first, otherwise implicit feature;
+- in domain bounds: specification constant first, while features must remain explicit;
+- in finite sets: specification constant first, otherwise symbolic categorical literal.
+
+An explicitly qualified reference always denotes a feature. Specification constants are lowered as known literal values, not backend solver variables.
+
+This design keeps the DSL concise while preserving deterministic compiler semantics.
+
 ## Backend-agnostic design
 
 FORML separates:
