@@ -5,7 +5,6 @@
 
 ===== dsl\ast\nodes\assertion.py =====
 
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -87,8 +86,6 @@ class ProblemNode(LogicalNode):
 @dataclass
 class UnknownNode(LogicalNode):
     raw: str
-
-
 
 
 ===== dsl\ast\nodes\backends.py =====
@@ -194,7 +191,6 @@ class DomainNode(ASTNode):
 
 ===== dsl\ast\nodes\expressions.py =====
 
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -245,8 +241,6 @@ class QuantifierExprNode(ExpressionNode):
     quantifier: str
     variable: str
     domain: DomainNode | None
-
-
 
 
 ===== dsl\ast\nodes\header.py =====
@@ -425,7 +419,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from dsl.ir.ir2.enums import NormalFormKind
+from dsl.ir.ir2.enums import NormalFormKind, VerificationSemantics
 from dsl.ir.ir2.requirements import IR2Requirements
 from dsl.language.vocabulary.backends import EnumBackend
 
@@ -434,8 +428,24 @@ from dsl.language.vocabulary.backends import EnumBackend
 class BackendCapabilities:
     """Backend-neutral capability declaration.
 
-    The router compares this object with IR2Requirements. This avoids hard-coded
-    checks such as ``if backend == Z3`` inside IR2.
+    The router compares these capabilities with ``IR2Requirements``.
+
+    Quantifier distinction
+    ----------------------
+    ``supports_native_quantifiers`` explicitly means that the backend adapter
+    can receive and encode native quantified expressions such as ``ForAll`` or
+    ``Exists``.
+
+    A FORML specification may use a quantified scope without requiring native
+    backend quantifiers. For example::
+
+        forall x0 => P(x0)
+
+    can be lowered by IR2 to the refutation condition::
+
+        Gamma(x0) AND NOT P(x0)
+
+    In that case, the backend only needs to support refutation semantics.
     """
 
     backend: EnumBackend
@@ -443,37 +453,59 @@ class BackendCapabilities:
     supports_numeric_comparisons: bool
     supports_problem_predicates: bool
     supports_model_assertions: bool
-    supports_quantifiers: bool
     supports_domains: bool
     supports_neighborhoods: bool
     supported_normal_forms: tuple[NormalFormKind, ...]
 
+    # New explicit backend contracts.
+    supports_native_quantifiers: bool = False
+    supported_verification_semantics: tuple[VerificationSemantics, ...] = (
+        VerificationSemantics.REFUTATION,
+    )
+
     def supports(self, requirements: IR2Requirements) -> bool:
         if requirements.requires_boolean_logic and not self.supports_boolean_logic:
             return False
+
         if (
             requirements.requires_numeric_comparisons
             and not self.supports_numeric_comparisons
         ):
             return False
+
         if (
             requirements.requires_problem_predicates
             and not self.supports_problem_predicates
         ):
             return False
+
         if (
             requirements.requires_model_assertions
             and not self.supports_model_assertions
         ):
             return False
-        if requirements.requires_quantifiers and not self.supports_quantifiers:
+
+        if (
+            requirements.requires_native_quantifiers
+            and not self.supports_native_quantifiers
+        ):
             return False
+
+        if (
+            requirements.required_verification_semantics
+            not in self.supported_verification_semantics
+        ):
+            return False
+
         if requirements.requires_domains and not self.supports_domains:
             return False
+
         if requirements.requires_neighborhoods and not self.supports_neighborhoods:
             return False
+
         if requirements.normal_form not in self.supported_normal_forms:
             return False
+
         return True
 
 
@@ -641,7 +673,10 @@ __all__ = [
 from __future__ import annotations
 
 from dsl.backends.capabilities import BackendCapabilities
-from dsl.ir.ir2.enums import NormalFormKind
+from dsl.ir.ir2.enums import (
+    NormalFormKind,
+    VerificationSemantics,
+)
 from dsl.language.vocabulary.backends import EnumBackend
 
 Z3_CAPABILITIES = BackendCapabilities(
@@ -650,13 +685,17 @@ Z3_CAPABILITIES = BackendCapabilities(
     supports_numeric_comparisons=True,
     supports_problem_predicates=False,
     supports_model_assertions=True,
-    supports_quantifiers=False,
     supports_domains=True,
     supports_neighborhoods=False,
     supported_normal_forms=(
         NormalFormKind.NNF,
         NormalFormKind.CNF,
         NormalFormKind.DNF,
+    ),
+    supports_native_quantifiers=False,
+    supported_verification_semantics=(
+        VerificationSemantics.REFUTATION,
+        VerificationSemantics.SATISFACTION,
     ),
 )
 
@@ -677,58 +716,103 @@ from dsl.ir.ir2.nodes import VerificationTaskIR2
 
 
 class VerificationStatus(str, Enum):
+    """Interpreted result of a FORML verification task."""
+
     PROVED = "proved"
     COUNTEREXAMPLE = "counterexample"
+    WITNESS = "witness"
+    NO_WITNESS = "no_witness"
     UNKNOWN = "unknown"
 
 
 @dataclass(frozen=True)
 class Z3VerificationResult:
+    """Normalized result returned by the Z3 backend."""
+
     status: VerificationStatus
     solver_status: str
     model: dict[str, Any] | None = None
 
 
 class Z3Runner:
+    """Execute a translated IR2 verification condition with Z3.
+
+    The interpretation of SAT and UNSAT depends on the verification semantics:
+
+    REFUTATION
+        SAT     -> COUNTEREXAMPLE
+        UNSAT   -> PROVED
+
+    SATISFACTION
+        SAT     -> WITNESS
+        UNSAT   -> NO_WITNESS
+    """
+
     def __init__(self, translator: Z3Translator | None = None) -> None:
         self.translator = translator or Z3Translator()
 
     def run(self, task: VerificationTaskIR2) -> Z3VerificationResult:
-        if task.semantics != VerificationSemantics.REFUTATION:
-            raise NotImplementedError(
-                "Minimal Z3Runner only supports refutation semantics."
-            )
-
         translation = self.translator.translate(task)
 
         solver = z3.Solver()
         solver.add(translation.expression)
 
-        result = solver.check()
+        solver_result = solver.check()
 
-        if result == z3.unsat:
+        if solver_result == z3.unknown:
             return Z3VerificationResult(
-                status=VerificationStatus.PROVED,
+                status=VerificationStatus.UNKNOWN,
+                solver_status="unknown",
+                model=None,
+            )
+
+        if solver_result == z3.sat:
+            model = solver.model()
+
+            return Z3VerificationResult(
+                status=self._status_for_sat(task.semantics),
+                solver_status="sat",
+                model={
+                    name: model.eval(
+                        variable,
+                        model_completion=True,
+                    )
+                    for name, variable in translation.variables.items()
+                },
+            )
+
+        if solver_result == z3.unsat:
+            return Z3VerificationResult(
+                status=self._status_for_unsat(task.semantics),
                 solver_status="unsat",
                 model=None,
             )
 
-        if result == z3.sat:
-            model = solver.model()
-            return Z3VerificationResult(
-                status=VerificationStatus.COUNTEREXAMPLE,
-                solver_status="sat",
-                model={
-                    name: model.eval(var, model_completion=True)
-                    for name, var in translation.variables.items()
-                },
-            )
+        raise RuntimeError(f"Unsupported Z3 solver result: {solver_result}")
 
-        return Z3VerificationResult(
-            status=VerificationStatus.UNKNOWN,
-            solver_status="unknown",
-            model=None,
-        )
+    def _status_for_sat(
+        self,
+        semantics: VerificationSemantics,
+    ) -> VerificationStatus:
+        if semantics is VerificationSemantics.REFUTATION:
+            return VerificationStatus.COUNTEREXAMPLE
+
+        if semantics is VerificationSemantics.SATISFACTION:
+            return VerificationStatus.WITNESS
+
+        raise ValueError(f"Unsupported verification semantics: {semantics}")
+
+    def _status_for_unsat(
+        self,
+        semantics: VerificationSemantics,
+    ) -> VerificationStatus:
+        if semantics is VerificationSemantics.REFUTATION:
+            return VerificationStatus.PROVED
+
+        if semantics is VerificationSemantics.SATISFACTION:
+            return VerificationStatus.NO_WITNESS
+
+        raise ValueError(f"Unsupported verification semantics: {semantics}")
 
 
 ===== dsl\backends\z3_backend\translator.py =====
@@ -958,7 +1042,6 @@ class Z3Translator:
 
 ===== dsl\builder\assertion.py =====
 
-
 from typing import List
 
 from lark import Tree, Token
@@ -973,7 +1056,7 @@ from dsl.ast.nodes.assertion import (
     LogicalNode,
 )
 
-from dsl.builder.core.utils import find_node, get_token_value
+from dsl.builder.core.utils import get_token_value
 from dsl.builder.core.ast_utils import node_value
 from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.operators import EnumComparisonOperator
@@ -995,8 +1078,7 @@ def build_comparison_expr(node: Tree) -> ComparisonNode:
         (
             child
             for child in node.children
-            if isinstance(child, Tree)
-            and str(child.data) == "comparison_operation"
+            if isinstance(child, Tree) and str(child.data) == "comparison_operation"
         ),
         None,
     )
@@ -1113,8 +1195,6 @@ def parse_assertion(node: Tree | Token | None) -> LogicalNode:
     # FALLBACK
     # ----------------------------------------------------------------------
     raise ValueError(f"Unhandled node: {t}")
-
-
 
 
 ===== dsl\builder\backends.py =====
@@ -1485,7 +1565,6 @@ def pretty(node: Any, indent: int = 0) -> str:
 
 ===== dsl\builder\core\pretty_ast.py =====
 
-
 # dsl/utils/pretty_ast.py
 
 from typing import Any
@@ -1845,8 +1924,6 @@ def _pretty_program(node: ProgramNode, indent: int):
         lines.append("")
 
     return "\n".join(lines).strip()
-
-
 
 
 ===== dsl\builder\core\pretty_tree.py =====
@@ -2231,7 +2308,6 @@ from dsl.builder.core.utils import find_child, find_node
 from dsl.builder.scalar import parse_scalar_expression
 from dsl.language.vocabulary.domains import EnumBoundaryKind
 
-
 _INTERVAL_BOUNDARIES: dict[
     str,
     tuple[EnumBoundaryKind, EnumBoundaryKind],
@@ -2352,7 +2428,9 @@ def parse_domain(node: Tree) -> DomainNode:
     """Build a typed domain AST without performing semantic validation."""
 
     domain = require_node(find_node(node, "domain"), "Domain node not found")
-    entries = [_parse_entry(entry) for entry in _direct_children(domain, "domain_entry")]
+    entries = [
+        _parse_entry(entry) for entry in _direct_children(domain, "domain_entry")
+    ]
 
     if not entries:
         raise ValueError("Domain requires at least one entry")
@@ -2361,7 +2439,6 @@ def parse_domain(node: Tree) -> DomainNode:
 
 
 ===== dsl\builder\expressions.py =====
-
 
 from lark import Tree
 from dsl.ast.nodes.expressions import (
@@ -2535,8 +2612,6 @@ def parse_quantifier(prop: Tree) -> QuantifierExprNode:
         variable=variable,
         domain=domain,
     )
-
-
 
 
 ===== dsl\builder\header.py =====
@@ -2980,7 +3055,6 @@ from lark import Tree
 from dsl.ast.nodes.primitives import ScalarExpressionNode, TargetRefNode
 from dsl.builder.core.ast_utils import parse_attribute, parse_value
 
-
 _SINGLE_CHILD_WRAPPERS = {
     "scalar_expression",
     "additive_expr",
@@ -3042,7 +3116,6 @@ def parse_scalar_expression(node: Tree) -> ScalarExpressionNode:
 
 ===== dsl\ir\ir1\nodes.py =====
 
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -3086,26 +3159,32 @@ class VerificationTask:
 
 @dataclass
 class ScopeIR:
-    """
-    Semantic context extracted from the LHS of a FORML property.
+    """Semantic context extracted from the left-hand side of a property.
 
-    Defines:
-        - variables (anchor, perturbation, symbolic variables)
-        - neighborhood constraints (e.g. L2 epsilon ball)
-        - optional domain constraints
+    ``kind`` identifies the general scope family:
+
+        pointwise
+        local
+        pairwise
+        quantifier
+
+    ``quantifier`` preserves the precise source-level intent for quantified
+    scopes:
+
+        forall
+        exists
+
+    It remains ``None`` for non-quantified scopes.
     """
 
-    kind: str  # "local", "pairwise", "quantifier", "pointwise"
+    kind: str
 
     variables: dict[str, str]
-    # Example:
-    # {
-    #   "x": "anchor",
-    #   "x'": "perturbation"
-    # }
 
     neighborhood: NeighborhoodIR | None
     domain: DomainIR | None
+
+    quantifier: str | None = None
 
 
 @dataclass
@@ -3322,10 +3401,7 @@ class ProblemIR(AtomicIR):
     args: dict[str, Any] | None = None
 
 
-
-
 ===== dsl\ir\ir1\pretty.py =====
-
 
 # /dsl/ir/pretty.py
 
@@ -3420,11 +3496,11 @@ def _pretty_scope(scope: ScopeIR) -> list[str]:
                 if entry.entity is not None
                 else entry.feature
             )
-            lines.append(f"    - {subject}: {_pretty_domain_constraint(entry.constraint)}")
+            lines.append(
+                f"    - {subject}: {_pretty_domain_constraint(entry.constraint)}"
+            )
 
     return lines
-
-
 
 
 def _pretty_scalar_expression(node) -> str:
@@ -3432,9 +3508,7 @@ def _pretty_scalar_expression(node) -> str:
         return repr(node.value)
     if isinstance(node, AttributeExpressionIR):
         return (
-            f"{node.entity}.{node.feature}"
-            if node.entity is not None
-            else node.feature
+            f"{node.entity}.{node.feature}" if node.entity is not None else node.feature
         )
     if isinstance(node, TargetExpressionIR):
         return node.name
@@ -3452,7 +3526,9 @@ def _pretty_domain_constraint(constraint) -> str:
             f"{_pretty_scalar_expression(constraint.upper)}{right}"
         )
     if isinstance(constraint, FiniteSetDomainIR):
-        values = ", ".join(_pretty_scalar_expression(value) for value in constraint.values)
+        values = ", ".join(
+            _pretty_scalar_expression(value) for value in constraint.values
+        )
         return "{" + values + "}"
     return repr(constraint)
 
@@ -3543,8 +3619,6 @@ def _pretty_logical(node: LogicalIR, indent=0) -> list[str]:
     return lines
 
 
-
-
 ===== dsl\ir\ir1\query_translator.py =====
 
 from __future__ import annotations
@@ -3559,7 +3633,12 @@ from dsl.ast.nodes.assertion import (
     ProblemNode,
 )
 
-from dsl.ast.nodes.primitives import AttributeNode, TargetRefNode
+from dsl.ast.nodes.primitives import (
+    AttributeNode,
+    ConstantNode,
+    TargetRefNode,
+)
+
 from dsl.ir.ir1.nodes import (
     QueryIR,
     LogicalIR,
@@ -3665,23 +3744,55 @@ class QueryTranslator:
     # LEAVES
     # ------------------------------------------------------------------
 
-    def _translate_comparison(self, node: ComparisonNode) -> ComparisonIR:
-        """
-        Translate a semantically resolved comparison into IR.
+    def _translate_comparison(
+        self,
+        node: ComparisonNode,
+    ) -> ComparisonIR:
+        """Translate the scalar-leaf subset currently supported by IR1.
 
-        IMPORTANT:
-        This must use semantic annotations, not raw parsed attributes.
+        The AST accepts general scalar expressions on both sides so that the
+        language can evolve toward arithmetic expressions.
+
+        The current IR1 comparison representation remains intentionally
+        asymmetric:
+
+            attribute | target-reference
+                operator
+            constant
+
+        Other scalar combinations must be lowered by a future arithmetic IR gate.
         """
 
-        entity, feature, feature_dtype = self._resolve_ir_operand(node.left)
+        left = node.left
+        right = node.right
+
+        if not isinstance(
+            left,
+            (
+                AttributeNode,
+                TargetRefNode,
+            ),
+        ):
+            raise NotImplementedError(
+                "IR1 comparison lowering currently requires an attribute "
+                "or target reference on the left-hand side."
+            )
+
+        if not isinstance(right, ConstantNode):
+            raise NotImplementedError(
+                "IR1 comparison lowering currently requires a constant "
+                "on the right-hand side."
+            )
+
+        entity, feature, feature_dtype = self._resolve_ir_operand(left)
 
         return ComparisonIR(
             entity=entity,
             feature=feature,
             op=node.op,
-            value=node.right.value,
+            value=right.value,
             feature_dtype=feature_dtype,
-            value_dtype=node.right.dtype,
+            value_dtype=right.dtype,
         )
 
     def _resolve_ir_operand(
@@ -3844,7 +3955,6 @@ if __name__ == "__main__":
 
 ===== dsl\ir\ir1\scope_translator.py =====
 
-
 from __future__ import annotations
 
 from typing import Any
@@ -3866,6 +3976,7 @@ from dsl.ir.ir1.nodes import (
     AttributeExpressionIR,
     ConstantExpressionIR,
     DomainEntryIR,
+    DomainFiniteValueIR,
     DomainIR,
     FiniteSetDomainIR,
     IntervalDomainIR,
@@ -3950,16 +4061,40 @@ class ScopeTranslator:
     # ------------------------------------------------------------------
 
     def _translate_quantifier(self, scope: QuantifierExprNode) -> ScopeIR:
+        quantifier = self._normalize_quantifier(scope.quantifier)
+
         return ScopeIR(
             kind="quantifier",
             variables={scope.variable: "symbolic"},
             neighborhood=None,
             domain=self._translate_domain(scope.domain),
+            quantifier=quantifier,
         )
 
     # ------------------------------------------------------------------
     # HELPERS
     # ------------------------------------------------------------------
+
+    @staticmethod
+    def _normalize_quantifier(quantifier: str) -> str:
+        """Normalize a source quantifier to its canonical IR representation."""
+
+        raw_quantifier = quantifier.strip()
+
+        normalized = {
+            "∀": "forall",
+            "∃": "exists",
+        }.get(
+            raw_quantifier,
+            raw_quantifier.lower(),
+        )
+
+        if normalized not in {"forall", "exists"}:
+            raise ValueError(
+                f"Unsupported quantifier during IR1 translation: " f"{quantifier!r}"
+            )
+
+        return normalized
 
     def _translate_neighborhood(self, neighborhood) -> NeighborhoodIR | None:
         if neighborhood is None:
@@ -4010,16 +4145,37 @@ class ScopeTranslator:
         if isinstance(constraint, FiniteSetDomainNode):
             return FiniteSetDomainIR(
                 values=tuple(
-                    SymbolLiteralIR(value.name)
-                    if isinstance(value, SymbolLiteralNode)
-                    else self._translate_scalar_leaf(value)
-                    for value in constraint.values
+                    self._translate_finite_value(value) for value in constraint.values
                 )
             )
 
-        raise TypeError(
-            f"Unsupported domain constraint: {type(constraint).__name__}"
-        )
+        raise TypeError(f"Unsupported domain constraint: {type(constraint).__name__}")
+
+    def _translate_finite_value(
+        self,
+        node: ConstantNode | SymbolLiteralNode,
+    ) -> DomainFiniteValueIR:
+        """Translate one finite-set value to its restricted IR representation.
+
+        Finite sets intentionally accept only:
+
+            - scalar constants;
+            - unquoted symbolic category literals.
+
+        Attribute and target expressions are valid scalar expressions for other
+        constructs, such as interval bounds, but are not finite-set values.
+        """
+
+        if isinstance(node, SymbolLiteralNode):
+            return SymbolLiteralIR(name=node.name)
+
+        if isinstance(node, ConstantNode):
+            return ConstantExpressionIR(
+                value=node.value,
+                dtype=node.dtype,
+            )
+
+        raise TypeError(f"Unsupported finite-set value: {type(node).__name__}")
 
     def _translate_scalar_leaf(self, node):
         if isinstance(node, ConstantNode):
@@ -4035,8 +4191,6 @@ class ScopeTranslator:
             return TargetExpressionIR(name=node.name)
 
         raise TypeError(f"Unsupported scalar domain leaf: {type(node).__name__}")
-
-
 
 
 ===== dsl\ir\ir1\translator.py =====
@@ -4298,22 +4452,34 @@ class IR2Builder:
         assumptions: tuple[AssumptionIR2, ...] | list[AssumptionIR2] | None = None,
         context: IR2BuildContext | None = None,
     ) -> VerificationTaskIR2:
-        context = context or IR2BuildContext(backend_hint=task_nnf.backend)
+        context = context or IR2BuildContext(
+            backend_hint=task_nnf.backend,
+        )
 
         NNFGuard.assert_task_is_nnf(task_nnf)
 
-        collected_assumptions = self.assumption_collector.collect(assumptions)
+        collected_assumptions = self.assumption_collector.collect(
+            assumptions,
+        )
 
         spec_formula = NNFFormulaIR2(
             expression=task_nnf.query.expression,
         )
 
-        vc_nnf = self.vc_builder.build_refutation_condition(
-            spec_formula=spec_formula,
-            assumptions=collected_assumptions,
+        semantics = self._resolve_verification_semantics(
+            task_nnf,
         )
 
-        selected_form = self.selector.select(vc_nnf, context=context)
+        vc_nnf = self.vc_builder.build_condition(
+            spec_formula=spec_formula,
+            assumptions=collected_assumptions,
+            semantics=semantics,
+        )
+
+        selected_form = self.selector.select(
+            vc_nnf,
+            context=context,
+        )
 
         verification_condition, actual_form = self._convert(
             vc_nnf,
@@ -4326,6 +4492,14 @@ class IR2Builder:
             verification_condition=verification_condition,
             assumptions=collected_assumptions,
             normal_form=actual_form,
+            semantics=semantics,
+            # The current quantified scopes are eliminated into either:
+            #
+            #   Gamma AND NOT P
+            #   Gamma AND P
+            #
+            # No native ForAll/Exists reaches the backend.
+            requires_native_quantifiers=False,
         )
 
         task_ir2 = VerificationTaskIR2(
@@ -4335,12 +4509,13 @@ class IR2Builder:
             assumptions=collected_assumptions,
             spec_formula=spec_formula,
             verification_condition=verification_condition,
-            semantics=VerificationSemantics.REFUTATION,
+            semantics=semantics,
             normal_form=actual_form,
             requirements=requirements,
             metadata={
                 "source_ir": "ir1_nnf",
                 "builder": "IR2Builder",
+                "verification_semantics": semantics.value,
             },
         )
 
@@ -4352,6 +4527,47 @@ class IR2Builder:
             task_ir2,
             diagnostics=diagnostics,
         )
+
+    @staticmethod
+    def _resolve_verification_semantics(
+        task: VerificationTask,
+    ) -> VerificationSemantics:
+        """Select verification semantics from the preserved IR1 scope.
+
+        Non-quantified scopes and universal scopes use refutation:
+
+            Gamma AND NOT P
+
+        Existential scopes use satisfaction:
+
+            Gamma AND P
+        """
+
+        scope = task.scope
+
+        if scope.kind != "quantifier":
+            return VerificationSemantics.REFUTATION
+
+        quantifier = scope.quantifier
+
+        if quantifier is None:
+            raise ValueError("Quantified IR1 scope is missing its quantifier.")
+
+        normalized = {
+            "∀": "forall",
+            "∃": "exists",
+        }.get(
+            quantifier.strip(),
+            quantifier.strip().lower(),
+        )
+
+        if normalized == "forall":
+            return VerificationSemantics.REFUTATION
+
+        if normalized == "exists":
+            return VerificationSemantics.SATISFACTION
+
+        raise ValueError(f"Unsupported IR1 quantifier: {quantifier!r}")
 
     def build_tasks(
         self,
@@ -4410,36 +4626,104 @@ class IR2Builder:
 
 from __future__ import annotations
 
-from dsl.ir.ir1.nodes import AndIR, NotIR, QueryIR
+from dsl.ir.ir1.nodes import AndIR, LogicalIR, NotIR, QueryIR
+from dsl.ir.ir2.enums import VerificationSemantics
 from dsl.ir.ir2.nodes import AssumptionIR2, NNFFormulaIR2
 from dsl.ir.normalization.nnf import NNFNormalizer
 
 
 class VerificationConditionBuilder:
-    """Builds the backend-neutral verification condition Γ ∧ ¬P.
+    """Build backend-neutral verification conditions.
 
-    The DSL property P remains the spec formula. The verification condition is
-    derived internally using refutation semantics.
+    The DSL property remains stored unchanged in ``spec_formula``.
+
+    The verification condition depends on the selected semantics:
+
+    REFUTATION
+        Search for a violation of P:
+
+            Gamma AND NOT P
+
+    SATISFACTION
+        Search for a value satisfying P:
+
+            Gamma AND P
     """
 
     def __init__(self, normalizer: NNFNormalizer | None = None):
         self.normalizer = normalizer or NNFNormalizer()
+
+    def build_condition(
+        self,
+        spec_formula: NNFFormulaIR2,
+        assumptions: tuple[AssumptionIR2, ...] = (),
+        *,
+        semantics: VerificationSemantics,
+    ) -> NNFFormulaIR2:
+        """Build and normalize the verification condition."""
+
+        property_expression = self._property_expression(
+            spec_formula,
+            semantics,
+        )
+
+        pieces: list[LogicalIR] = [
+            assumption.formula.expression for assumption in assumptions
+        ]
+        pieces.append(property_expression)
+
+        if len(pieces) == 1:
+            raw_expression = pieces[0]
+        else:
+            raw_expression = AndIR(operands=pieces)
+
+        normalized = self.normalizer.normalize_query(QueryIR(expression=raw_expression))
+
+        return NNFFormulaIR2(
+            expression=normalized.expression,
+        )
 
     def build_refutation_condition(
         self,
         spec_formula: NNFFormulaIR2,
         assumptions: tuple[AssumptionIR2, ...] = (),
     ) -> NNFFormulaIR2:
-        pieces = [assumption.formula.expression for assumption in assumptions]
-        pieces.append(NotIR(spec_formula.expression))
+        """Build Gamma AND NOT P.
 
-        if len(pieces) == 1:
-            raw_expr = pieces[0]
-        else:
-            raw_expr = AndIR(operands=pieces)
+        Retained as a compatibility entry point for existing callers.
+        """
 
-        normalized = self.normalizer.normalize_query(QueryIR(expression=raw_expr))
-        return NNFFormulaIR2(expression=normalized.expression)
+        return self.build_condition(
+            spec_formula,
+            assumptions,
+            semantics=VerificationSemantics.REFUTATION,
+        )
+
+    def build_satisfaction_condition(
+        self,
+        spec_formula: NNFFormulaIR2,
+        assumptions: tuple[AssumptionIR2, ...] = (),
+    ) -> NNFFormulaIR2:
+        """Build Gamma AND P."""
+
+        return self.build_condition(
+            spec_formula,
+            assumptions,
+            semantics=VerificationSemantics.SATISFACTION,
+        )
+
+    def _property_expression(
+        self,
+        spec_formula: NNFFormulaIR2,
+        semantics: VerificationSemantics,
+    ) -> LogicalIR:
+        if semantics is VerificationSemantics.REFUTATION:
+            return NotIR(spec_formula.expression)
+
+        if semantics is VerificationSemantics.SATISFACTION:
+            return spec_formula.expression
+
+        raise ValueError(f"Unsupported verification semantics: {semantics}")
 
 
 ===== dsl\ir\ir2\context.py =====
@@ -4938,14 +5222,35 @@ class NormalFormKind(str, Enum):
 
 
 class VerificationSemantics(str, Enum):
-    """How the verification condition must be interpreted.
+    """How a verification condition must be interpreted.
 
-    REFUTATION means FORML proves a property P by checking whether Γ ∧ ¬P is
-    satisfiable. If it is impossible, then P holds under assumptions Γ.
+    REFUTATION
+        FORML searches for a violation of a property P by solving:
+
+            Gamma AND NOT P
+
+        Solver interpretation:
+            SAT     -> a counterexample exists
+            UNSAT   -> the property is proved under Gamma
+            UNKNOWN -> no conclusion can be drawn
+
+    SATISFACTION
+        FORML searches for a value satisfying a property P by solving:
+
+            Gamma AND P
+
+        Solver interpretation:
+            SAT     -> a witness exists
+            UNSAT   -> no witness exists
+            UNKNOWN -> no conclusion can be drawn
+
+    These semantics describe the meaning of the backend query. They are
+    distinct from the source-level FORML quantifier and from the final
+    verification status.
     """
 
     REFUTATION = "refutation"
-    DIRECT = "direct"
+    SATISFACTION = "satisfaction"
 
 
 class Polarity(str, Enum):
@@ -5026,11 +5331,11 @@ check_at x0 => target <= 10 using Z3
 
 ===== dsl\ir\ir2\explain.py =====
 
-
 from __future__ import annotations
 
 from dataclasses import dataclass
 
+from dsl.ir.ir2.enums import VerificationSemantics
 from dsl.ir.ir2.nodes import AssumptionIR2, VerificationTaskIR2
 from dsl.ir.ir2.pretty import pretty_formula
 
@@ -5054,8 +5359,16 @@ def explain_ir2_task(
     The regular pretty-printer focuses on the final IR2 object. This explainer
     focuses on the mental model used while debugging the FORML pipeline:
 
-        DSL spec P + assumptions Γ -> verification condition Γ ∧ ¬P
-        -> selected normal form.
+        DSL specification P
+        + assumptions Gamma
+        + verification semantics
+        -> verification condition
+        -> selected normal form
+
+    The verification condition depends on the task semantics:
+
+        REFUTATION   -> Gamma AND NOT P
+        SATISFACTION -> Gamma AND P
 
     It is intentionally backend-independent. It explains what IR2 built, not how
     a concrete backend such as Z3 will encode it.
@@ -5070,7 +5383,7 @@ def explain_ir2_task(
 
     lines.extend(_summary(task))
     lines.append("")
-    lines.extend(_semantics())
+    lines.extend(_semantics(task))
     lines.append("")
     lines.extend(_scope(task))
     lines.append("")
@@ -5114,14 +5427,28 @@ def _summary(task: VerificationTaskIR2) -> list[str]:
     ]
 
 
-def _semantics() -> list[str]:
-    return [
-        "🧭 Semantics",
-        "  FORML proves the user property P by checking the refutation VC:",
-        "  VC = Γ ∧ ¬P",
-        "  - UNSAT means no counterexample was found under Γ, so P holds.",
-        "  - SAT means the backend found a candidate counterexample.",
-    ]
+def _semantics(task: VerificationTaskIR2) -> list[str]:
+    if task.semantics is VerificationSemantics.REFUTATION:
+        return [
+            "🧭 Semantics",
+            "  FORML searches for a violation of the user property P:",
+            "  VC = Γ ∧ ¬P",
+            "  - UNSAT means no counterexample exists under Γ, so P is proved.",
+            "  - SAT means the backend found a candidate counterexample.",
+            "  - UNKNOWN means the backend could not conclude.",
+        ]
+
+    if task.semantics is VerificationSemantics.SATISFACTION:
+        return [
+            "🧭 Semantics",
+            "  FORML searches for a value satisfying the user property P:",
+            "  VC = Γ ∧ P",
+            "  - SAT means the backend found a witness.",
+            "  - UNSAT means no witness exists under Γ.",
+            "  - UNKNOWN means the backend could not conclude.",
+        ]
+
+    raise ValueError(f"Unsupported verification semantics: {task.semantics}")
 
 
 def _scope(task: VerificationTaskIR2) -> list[str]:
@@ -5187,9 +5514,16 @@ def _assumptions(
 
 
 def _verification_condition(task: VerificationTaskIR2) -> list[str]:
+    if task.semantics is VerificationSemantics.REFUTATION:
+        equation = "VC = Γ ∧ ¬P"
+    elif task.semantics is VerificationSemantics.SATISFACTION:
+        equation = "VC = Γ ∧ P"
+    else:
+        raise ValueError(f"Unsupported verification semantics: {task.semantics}")
+
     return [
         "🎯 Verification condition",
-        "  VC = Γ ∧ ¬P",
+        f"  {equation}",
         f"  selected normal form : {_enum_value(task.normal_form)}",
         _indent(pretty_formula(task.verification_condition), spaces=2),
     ]
@@ -5197,20 +5531,35 @@ def _verification_condition(task: VerificationTaskIR2) -> list[str]:
 
 def _requirements(task: VerificationTaskIR2) -> list[str]:
     requirements = task.requirements
+
     rows = [
         ("boolean_logic", requirements.requires_boolean_logic),
         ("numeric_comparisons", requirements.requires_numeric_comparisons),
         ("problem_predicates", requirements.requires_problem_predicates),
         ("model_assertions", requirements.requires_model_assertions),
-        ("quantifiers", requirements.requires_quantifiers),
+        (
+            "uses_quantified_scope",
+            requirements.uses_quantified_scope,
+        ),
+        (
+            "native_quantifiers",
+            requirements.requires_native_quantifiers,
+        ),
         ("domains", requirements.requires_domains),
         ("neighborhoods", requirements.requires_neighborhoods),
     ]
 
     lines = ["🧩 Backend-neutral requirements"]
+
     for name, enabled in rows:
         lines.append(f"  - {name}: {enabled}")
+
+    lines.append(
+        "  - verification_semantics: "
+        f"{_enum_value(requirements.required_verification_semantics)}"
+    )
     lines.append(f"  - normal_form: {_enum_value(requirements.normal_form)}")
+
     return lines
 
 
@@ -5239,8 +5588,6 @@ def _enum_value(value: object) -> object:
 def _indent(text: str, spaces: int) -> str:
     prefix = " " * spaces
     return "\n".join(prefix + line if line else line for line in text.splitlines())
-
-
 
 
 ===== dsl\ir\ir2\guard.py =====
@@ -5893,8 +6240,8 @@ def _pretty_requirements(task: VerificationTaskIR2) -> str:
         active.append("problem_predicates")
     if req.requires_model_assertions:
         active.append("model_assertions")
-    if req.requires_quantifiers:
-        active.append("quantifiers")
+    if req.requires_native_quantifiers:
+        active.append("native_quantifiers")
     if req.requires_domains:
         active.append("domains")
     if req.requires_neighborhoods:
@@ -6080,27 +6427,59 @@ from dsl.ir.ir2.dsl.nodes import (
     LiteralIR2,
     NNFFormulaIR2,
 )
-from dsl.ir.ir2.enums import AssumptionSource, NormalFormKind
+from dsl.ir.ir2.enums import (
+    AssumptionSource,
+    NormalFormKind,
+    VerificationSemantics,
+)
 from dsl.ir.ir2.model.affine import AffineOutputConstraintIR2
 from dsl.ir.ir2.model.base import ModelConstraintIR2
 
 
 @dataclass(frozen=True)
 class IR2Requirements:
-    """Backend-neutral capabilities required by a VerificationTaskIR2."""
+    """Backend-neutral capabilities required by a VerificationTaskIR2.
+
+    Important distinction
+    ---------------------
+    ``uses_quantified_scope`` describes the original FORML specification.
+
+    ``requires_native_quantifiers`` describes the representation that reaches
+    the backend after IR2 lowering.
+
+    A specification such as::
+
+        forall x0 => P(x0)
+
+    uses a quantified scope, but it does not require native backend
+    quantifiers when FORML lowers it to the refutation condition::
+
+        Γ(x0) AND NOT P(x0)
+    """
 
     requires_boolean_logic: bool
     requires_numeric_comparisons: bool
     requires_problem_predicates: bool
     requires_model_assertions: bool
-    requires_quantifiers: bool
+
     requires_domains: bool
     requires_neighborhoods: bool
     normal_form: NormalFormKind
 
+    # New explicit contract.
+    uses_quantified_scope: bool = False
+    requires_native_quantifiers: bool = False
+    required_verification_semantics: VerificationSemantics = (
+        VerificationSemantics.REFUTATION
+    )
+
 
 class RequirementsAnalyzer:
-    """Computes IR2 requirements for future backend routing."""
+    """Compute backend requirements from an already lowered IR2 task.
+
+    The analyzer must describe what the backend actually receives, not merely
+    reproduce the syntax originally written by the user.
+    """
 
     def analyze(
         self,
@@ -6109,35 +6488,57 @@ class RequirementsAnalyzer:
         verification_condition: FormulaIR2,
         assumptions: tuple[AssumptionIR2, ...],
         normal_form: NormalFormKind,
+        semantics: VerificationSemantics = VerificationSemantics.REFUTATION,
+        requires_native_quantifiers: bool = False,
     ) -> IR2Requirements:
         literals = list(self._iter_literals_or_atoms(verification_condition))
-        assumption_literals = []
+
+        assumption_literals: list[AtomicIR] = []
         for assumption in assumptions:
             assumption_literals.extend(self._iter_literals_or_atoms(assumption.formula))
 
         all_items = literals + assumption_literals
+        uses_quantified_scope = scope.kind == "quantifier"
 
         return IR2Requirements(
             requires_boolean_logic=True,
             requires_numeric_comparisons=any(
-                isinstance(item, (ComparisonIR, AffineOutputConstraintIR2))
+                isinstance(
+                    item,
+                    (
+                        ComparisonIR,
+                        AffineOutputConstraintIR2,
+                    ),
+                )
                 for item in all_items
             ),
             requires_problem_predicates=any(
                 isinstance(item, ProblemIR) for item in all_items
             ),
             requires_model_assertions=any(
-                a.source == AssumptionSource.MODEL for a in assumptions
+                assumption.source == AssumptionSource.MODEL
+                for assumption in assumptions
             )
             or any(isinstance(item, ModelConstraintIR2) for item in all_items),
-            requires_quantifiers=scope.kind == "quantifier",
+            # Compatibility field: it now reflects a backend-native need,
+            # not the mere presence of a quantified FORML scope.
             requires_domains=scope.domain is not None
-            or any(a.source == AssumptionSource.DOMAIN for a in assumptions),
+            or any(
+                assumption.source == AssumptionSource.DOMAIN
+                for assumption in assumptions
+            ),
             requires_neighborhoods=scope.neighborhood is not None,
             normal_form=normal_form,
+            # New explicit information.
+            uses_quantified_scope=uses_quantified_scope,
+            requires_native_quantifiers=requires_native_quantifiers,
+            required_verification_semantics=semantics,
         )
 
-    def _iter_literals_or_atoms(self, formula: FormulaIR2) -> Iterable[AtomicIR]:
+    def _iter_literals_or_atoms(
+        self,
+        formula: FormulaIR2,
+    ) -> Iterable[AtomicIR]:
         if isinstance(formula, NNFFormulaIR2):
             yield from self._iter_atoms_from_logical(formula.expression)
             return
@@ -6154,10 +6555,18 @@ class RequirementsAnalyzer:
                     yield from self._iter_atom_from_literal(literal)
             return
 
-    def _iter_atom_from_literal(self, literal: LiteralIR2) -> Iterable[AtomicIR]:
+        raise TypeError(f"Unsupported IR2 formula type: {type(formula).__name__}")
+
+    def _iter_atom_from_literal(
+        self,
+        literal: LiteralIR2,
+    ) -> Iterable[AtomicIR]:
         yield literal.atom
 
-    def _iter_atoms_from_logical(self, node: LogicalIR) -> Iterable[AtomicIR]:
+    def _iter_atoms_from_logical(
+        self,
+        node: LogicalIR,
+    ) -> Iterable[AtomicIR]:
         if isinstance(node, AtomicIR):
             yield node
             return
@@ -6165,11 +6574,20 @@ class RequirementsAnalyzer:
         if isinstance(node, NotIR):
             if isinstance(node.operand, AtomicIR):
                 yield node.operand
+                return
+
+            yield from self._iter_atoms_from_logical(node.operand)
             return
 
         if isinstance(node, (AndIR, OrIR)):
             for operand in node.operands:
                 yield from self._iter_atoms_from_logical(operand)
+            return
+
+        raise TypeError(
+            f"Unsupported logical IR node while computing requirements: "
+            f"{type(node).__name__}"
+        )
 
 
 ===== dsl\ir\ir2\run_ir2.py =====
@@ -6557,7 +6975,6 @@ if __name__ == "__main__":
 
 ===== dsl\language\tools\constants.py =====
 
-
 # dsl/language/tools/constants.py
 
 """
@@ -6862,7 +7279,6 @@ if __name__ == "__main__":
 
 
 ===== dsl\language\tools\registry.py =====
-
 
 # dsl/language/tools/registry.py
 
@@ -7258,7 +7674,6 @@ class EnumMetric(EnumMixin, Enum):
 
 ===== dsl\language\vocabulary\operators.py =====
 
-
 # /forml/grammar/official_contents/quantifiers.py
 
 from enum import Enum
@@ -7318,7 +7733,6 @@ class EnumUnaryOperator(EnumMixin, Enum):
     MINUS = "-"
 
 
-
 ===== dsl\language\vocabulary\problems.py =====
 
 # /forml/grammar/official_contents/problems.py
@@ -7372,7 +7786,6 @@ class EnumProperty(EnumMixin, Enum):
 
 
 ===== dsl\language\vocabulary\protected_words.py =====
-
 
 # /forml/grammar/official_contents/protected_words.py
 
@@ -8150,7 +8563,6 @@ class BindingValidator:
 
 ===== dsl\semantic\core\lhs.py =====
 
-
 from dsl.semantic.context.context import SemanticContext
 from dsl.semantic.context.scope import SemanticScope
 from dsl.semantic.errors.errors import InvalidPropertyError
@@ -8424,8 +8836,6 @@ class LHSValidator:
         )
 
         return context
-
-
 
 
 ===== dsl\semantic\core\logic.py =====

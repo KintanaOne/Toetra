@@ -64,7 +64,7 @@ if __name__ == "__main__":
     concat_files_in_folder(
         "model",
         recursive=True,
-        output_file="context/model/model.txt",
+        output_file="context/model.txt",
     )
 
     # test

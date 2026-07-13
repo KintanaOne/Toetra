@@ -1,0 +1,1368 @@
+
+===== model\detector\detector.py =====
+
+from model.detector.model_framework import (
+    EnumModelFramework,
+)
+
+from model.errors.detection import (
+    UnsupportedModelError,
+)
+
+# ==================================================
+# Optional dependencies
+# ==================================================
+
+try:
+    from xgboost import XGBModel  # pyright: ignore[reportMissingImports]
+except ImportError:
+    XGBModel = None
+
+try:
+    from sklearn.base import BaseEstimator
+except ImportError:
+    BaseEstimator = None
+
+
+class ModelDetector:
+    """
+    Detect the framework associated with a loaded model.
+    """
+
+    def detect(self, model):
+        """
+        Detect the model framework.
+
+        Returns:
+            EnumModelFramework
+
+        Raises:
+            UnsupportedModelError
+        """
+
+        # -----------------------------------------
+        # XGBoost
+        # -----------------------------------------
+
+        if XGBModel is not None and isinstance(model, XGBModel):
+            return EnumModelFramework.XGBOOST
+
+        # -----------------------------------------
+        # Scikit-learn
+        # -----------------------------------------
+
+        if BaseEstimator is not None and isinstance(model, BaseEstimator):
+            return EnumModelFramework.SKLEARN
+
+        # -----------------------------------------
+        # Unsupported
+        # -----------------------------------------
+
+        raise UnsupportedModelError(f"Unsupported model type: {type(model)}")
+
+
+===== model\detector\model_framework.py =====
+
+from enum import Enum
+
+
+class EnumModelFramework(Enum):
+    """
+    A class representing the supported machine learning frameworks.
+    """
+
+    SKLEARN = "sklearn"
+    TENSORFLOW = "tensorflow"
+    PYTORCH = "pytorch"
+    XGBOOST = "xgboost"
+
+
+===== model\encoder\__init__.py =====
+
+from model.encoder.base import ModelEncoder, validate_model_assumptions
+from model.encoder.context import ModelEncodingContext
+from model.encoder.defaults import create_default_model_encoder_registry
+from model.encoder.errors import (
+    InvalidModelAssumptionError,
+    MissingModelParameterError,
+    ModelEncoderError,
+    UnsupportedModelEncoderError,
+    UnsupportedModelParameterError,
+)
+from model.encoder.factory import ModelEncoderFactory
+from model.encoder.registry import (
+    ModelEncoderKey,
+    ModelEncoderRegistration,
+    ModelEncoderRegistry,
+)
+from model.encoder.sklearn import SklearnLinearRegressorEncoder
+
+__all__ = [
+    "InvalidModelAssumptionError",
+    "MissingModelParameterError",
+    "ModelEncoder",
+    "ModelEncoderError",
+    "ModelEncoderFactory",
+    "ModelEncoderKey",
+    "ModelEncoderRegistration",
+    "ModelEncoderRegistry",
+    "ModelEncodingContext",
+    "SklearnLinearRegressorEncoder",
+    "UnsupportedModelEncoderError",
+    "UnsupportedModelParameterError",
+    "create_default_model_encoder_registry",
+    "validate_model_assumptions",
+]
+
+
+===== model\encoder\base.py =====
+
+from __future__ import annotations
+
+from collections.abc import Iterable
+from typing import Protocol
+
+from dsl.ir.ir1.nodes import ScopeIR
+from dsl.ir.ir2.enums import AssumptionSource
+from dsl.ir.ir2.errors import InvalidIR2InputError
+from dsl.ir.ir2.guard import NNFGuard
+from dsl.ir.ir2.nodes import AssumptionIR2, NNFFormulaIR2
+from model.encoder.context import ModelEncodingContext
+from model.encoder.errors import InvalidModelAssumptionError
+from model.schema.model_schema import ModelSchema
+
+
+class ModelEncoder(Protocol):
+    """Backend-independent model-to-IR2 assumption encoder.
+
+    Implementations translate a normalized ModelSchema into MODEL assumptions
+    expressed as IR2 NNF formulas. They must not create Z3 expressions, select
+    a backend, or decide the final CNF/DNF/NNF form of the full verification
+    condition.
+    """
+
+    def encode(
+        self,
+        schema: ModelSchema,
+        scope: ScopeIR,
+        *,
+        context: ModelEncodingContext | None = None,
+    ) -> tuple[AssumptionIR2, ...]:
+        """Return MODEL assumptions in NNF form."""
+        ...
+
+
+def validate_model_assumptions(
+    assumptions: Iterable[AssumptionIR2],
+) -> tuple[AssumptionIR2, ...]:
+    """Validate and freeze assumptions emitted by a ModelEncoder.
+
+    The encoder boundary is intentionally strict:
+    - every emitted assumption must be tagged as MODEL,
+    - every emitted formula must be NNFFormulaIR2,
+    - the wrapped IR1 expression must satisfy the NNF contract.
+    """
+
+    frozen = tuple(assumptions)
+
+    for assumption in frozen:
+        if assumption.source != AssumptionSource.MODEL:
+            raise InvalidModelAssumptionError(
+                "ModelEncoder may only emit assumptions with source=MODEL."
+            )
+
+        if not isinstance(assumption.formula, NNFFormulaIR2):
+            raise InvalidModelAssumptionError(
+                "ModelEncoder assumptions must wrap NNFFormulaIR2 formulas."
+            )
+
+        try:
+            NNFGuard.assert_expr_is_nnf(assumption.formula.expression)
+        except InvalidIR2InputError as exc:
+            raise InvalidModelAssumptionError(
+                "ModelEncoder emitted a formula that does not satisfy NNF."
+            ) from exc
+
+    return frozen
+
+
+===== model\encoder\context.py =====
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Any, Mapping
+
+
+@dataclass(frozen=True)
+class ModelEncodingContext:
+    """Options controlling model-to-IR2 assumption encoding.
+
+    This context is backend-independent. It controls which families of model
+    assumptions should be emitted, but it must never mention a concrete solver
+    such as Z3.
+    """
+
+    strict: bool = True
+    include_feature_domains: bool = True
+    include_model_constraints: bool = True
+    include_output_constraints: bool = True
+    metadata: Mapping[str, Any] = field(default_factory=dict)
+
+
+===== model\encoder\defaults.py =====
+
+from __future__ import annotations
+
+from model.detector.model_framework import EnumModelFramework
+from model.encoder.registry import ModelEncoderRegistry
+from model.encoder.sklearn.linear import SklearnLinearRegressorEncoder
+
+
+def create_default_model_encoder_registry() -> ModelEncoderRegistry:
+    """Create the default registry of built-in backend-independent encoders."""
+
+    registry = ModelEncoderRegistry()
+    registry.register(
+        EnumModelFramework.SKLEARN,
+        SklearnLinearRegressorEncoder(),
+        model_type="LinearRegression",
+    )
+    return registry
+
+
+===== model\encoder\errors.py =====
+
+from __future__ import annotations
+
+
+class ModelEncoderError(Exception):
+    """Base error for model assumption encoding."""
+
+
+class UnsupportedModelEncoderError(ModelEncoderError):
+    """Raised when no encoder is registered for a model schema."""
+
+
+class InvalidModelAssumptionError(ModelEncoderError):
+    """Raised when an encoder emits invalid IR2 assumptions."""
+
+
+class MissingModelParameterError(ModelEncoderError):
+    """Raised when a schema does not expose parameters required by an encoder."""
+
+
+class UnsupportedModelParameterError(ModelEncoderError):
+    """Raised when model parameters are present but outside the encoder scope."""
+
+
+===== model\encoder\factory.py =====
+
+from __future__ import annotations
+
+from dsl.ir.ir1.nodes import ScopeIR
+from dsl.ir.ir2.nodes import AssumptionIR2
+from model.encoder.base import ModelEncoder, validate_model_assumptions
+from model.encoder.context import ModelEncodingContext
+from model.encoder.defaults import create_default_model_encoder_registry
+from model.encoder.registry import ModelEncoderRegistry
+from model.schema.model_schema import ModelSchema
+
+
+class ModelEncoderFactory:
+    """Select and execute a ModelEncoder for a ModelSchema."""
+
+    def __init__(self, registry: ModelEncoderRegistry | None = None):
+        self.registry = registry or create_default_model_encoder_registry()
+
+    def create(self, schema: ModelSchema) -> ModelEncoder:
+        """Return the encoder matching a schema framework/model_type."""
+        return self.registry.require(
+            schema.framework,
+            model_type=schema.model_type,
+        )
+
+    def encode(
+        self,
+        schema: ModelSchema,
+        scope: ScopeIR,
+        *,
+        context: ModelEncodingContext | None = None,
+    ) -> tuple[AssumptionIR2, ...]:
+        """Encode model assumptions and validate the encoder boundary."""
+        encoder = self.create(schema)
+        assumptions = encoder.encode(schema, scope, context=context)
+        return validate_model_assumptions(assumptions)
+
+
+===== model\encoder\registry.py =====
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+
+from model.detector.model_framework import EnumModelFramework
+from model.encoder.base import ModelEncoder
+from model.encoder.errors import UnsupportedModelEncoderError
+
+
+@dataclass(frozen=True)
+class ModelEncoderKey:
+    """Registry key for model encoders.
+
+    model_type=None means framework-level fallback.
+    """
+
+    framework: EnumModelFramework
+    model_type: str | None = None
+
+
+@dataclass(frozen=True)
+class ModelEncoderRegistration:
+    key: ModelEncoderKey
+    encoder: ModelEncoder
+
+
+@dataclass
+class ModelEncoderRegistry:
+    """Registry of backend-independent model encoders.
+
+    Resolution order:
+    1. exact match: framework + model_type
+    2. fallback match: framework + None
+    """
+
+    _encoders: dict[ModelEncoderKey, ModelEncoder] = field(default_factory=dict)
+
+    def register(
+        self,
+        framework: EnumModelFramework,
+        encoder: ModelEncoder,
+        *,
+        model_type: str | None = None,
+    ) -> None:
+        self._encoders[ModelEncoderKey(framework, model_type)] = encoder
+
+    def get(
+        self,
+        framework: EnumModelFramework,
+        *,
+        model_type: str | None = None,
+    ) -> ModelEncoder | None:
+        exact = self._encoders.get(ModelEncoderKey(framework, model_type))
+        if exact is not None:
+            return exact
+
+        return self._encoders.get(ModelEncoderKey(framework, None))
+
+    def require(
+        self,
+        framework: EnumModelFramework,
+        *,
+        model_type: str | None = None,
+    ) -> ModelEncoder:
+        encoder = self.get(framework, model_type=model_type)
+        if encoder is None:
+            model_label = model_type if model_type is not None else "<any>"
+            raise UnsupportedModelEncoderError(
+                f"No model encoder registered for "
+                f"framework={framework.value}, model_type={model_label}."
+            )
+        return encoder
+
+    def all(self) -> tuple[ModelEncoderRegistration, ...]:
+        return tuple(
+            ModelEncoderRegistration(key=key, encoder=encoder)
+            for key, encoder in self._encoders.items()
+        )
+
+    def clear(self) -> None:
+        self._encoders.clear()
+
+
+===== model\encoder\sklearn\__init__.py =====
+
+from model.encoder.sklearn.linear import SklearnLinearRegressorEncoder
+
+__all__ = ["SklearnLinearRegressorEncoder"]
+
+
+===== model\encoder\sklearn\linear.py =====
+
+from __future__ import annotations
+
+from typing import Any, Sequence, cast
+
+from dsl.ir.ir1.nodes import ScopeIR
+from dsl.ir.ir2.enums import AssumptionSource
+from dsl.ir.ir2.dsl.nodes import AssumptionIR2, NNFFormulaIR2
+from dsl.ir.ir2.model.affine import (
+    AffineExpressionIR2,
+    AffineOutputConstraintIR2,
+    AffineTermIR2,
+)
+from dsl.language.vocabulary.operators import EnumComparisonOperator
+from model.encoder.context import ModelEncodingContext
+from model.encoder.errors import (
+    MissingModelParameterError,
+    UnsupportedModelParameterError,
+)
+from model.schema.model_schema import ModelSchema
+
+
+class SklearnLinearRegressorEncoder:
+    """Encode a simple single-output sklearn LinearRegression schema.
+
+    The encoder emits one backend-independent MODEL assumption:
+
+        _model.<target> == w1*x.f1 + ... + wn*x.fn + b
+
+    It deliberately does not build solver expressions. The returned assumption is
+    NNF and can be aggregated by IR2 before CNF/DNF/NNF adaptation.
+    """
+
+    supported_model_types = frozenset({"LinearRegression"})
+
+    def encode(
+        self,
+        schema: ModelSchema,
+        scope: ScopeIR,
+        *,
+        context: ModelEncodingContext | None = None,
+    ) -> tuple[AssumptionIR2, ...]:
+        context = context or ModelEncodingContext()
+
+        if (
+            not context.include_model_constraints
+            or not context.include_output_constraints
+        ):
+            return ()
+
+        if schema.model_type not in self.supported_model_types:
+            raise UnsupportedModelParameterError(
+                f"SklearnLinearRegressorEncoder does not support model_type="
+                f"{schema.model_type!r}."
+            )
+
+        if schema.task != "regression":
+            raise UnsupportedModelParameterError(
+                "SklearnLinearRegressorEncoder only supports regression schemas."
+            )
+
+        linear_metadata = self._linear_metadata(schema)
+        feature_names = self._feature_names(schema, linear_metadata)
+        coefficients = self._single_output_coefficients(linear_metadata)
+        intercept = self._single_output_intercept(linear_metadata)
+
+        if len(coefficients) != len(feature_names):
+            raise UnsupportedModelParameterError(
+                "Linear coefficient count does not match schema feature count: "
+                f"{len(coefficients)} coefficients for {len(feature_names)} features."
+            )
+
+        input_entity = self._select_input_entity(scope)
+
+        terms = tuple(
+            AffineTermIR2(
+                entity=input_entity,
+                feature=feature_name,
+                coefficient=float(coefficient),
+            )
+            for feature_name, coefficient in zip(feature_names, coefficients)
+        )
+
+        expression = AffineExpressionIR2(
+            terms=terms,
+            bias=float(intercept),
+        )
+
+        atom = AffineOutputConstraintIR2(
+            output_entity="_model",
+            output_feature=schema.target,
+            op=EnumComparisonOperator.EQ,
+            expression=expression,
+            metadata={
+                "framework": schema.framework.value,
+                "model_type": schema.model_type,
+                "task": schema.task,
+            },
+        )
+
+        return (
+            AssumptionIR2(
+                source=AssumptionSource.MODEL,
+                formula=NNFFormulaIR2(expression=atom),
+                description="sklearn linear regression output equation",
+                metadata={
+                    "encoder": self.__class__.__name__,
+                    "model_type": schema.model_type,
+                    "target": schema.target,
+                },
+            ),
+        )
+
+    def _linear_metadata(self, schema: ModelSchema) -> dict[str, Any]:
+        raw = schema.metadata.get("linear")
+
+        if not isinstance(raw, dict):
+            raise MissingModelParameterError(
+                "ModelSchema.metadata['linear'] is required for linear encoding."
+            )
+
+        if "coef" not in raw or "intercept" not in raw:
+            raise MissingModelParameterError(
+                "Linear metadata must contain 'coef' and 'intercept'."
+            )
+
+        return raw
+
+    def _feature_names(
+        self,
+        schema: ModelSchema,
+        linear_metadata: dict[str, Any],
+    ) -> tuple[str, ...]:
+        raw_feature_names = linear_metadata.get("feature_names")
+
+        if raw_feature_names is not None:
+            if not isinstance(raw_feature_names, Sequence) or isinstance(
+                raw_feature_names, str
+            ):
+                raise UnsupportedModelParameterError(
+                    "linear.feature_names must be a sequence of strings."
+                )
+
+            return tuple(str(name) for name in raw_feature_names)
+
+        return tuple(schema.features.keys())
+
+    def _single_output_coefficients(
+        self,
+        linear_metadata: dict[str, Any],
+    ) -> tuple[float, ...]:
+        coef = linear_metadata["coef"]
+
+        if not isinstance(coef, Sequence) or isinstance(coef, (str, bytes)):
+            raise UnsupportedModelParameterError("linear.coef must be a sequence.")
+
+        if (
+            coef
+            and isinstance(coef[0], Sequence)
+            and not isinstance(coef[0], (str, bytes))
+        ):
+            rows = cast(Sequence[Sequence[Any]], coef)
+            if len(rows) != 1:
+                raise UnsupportedModelParameterError(
+                    "Only single-output linear regression is supported for now."
+                )
+            coef = rows[0]
+
+        return tuple(float(value) for value in cast(Sequence[Any], coef))
+
+    def _single_output_intercept(self, linear_metadata: dict[str, Any]) -> float:
+        intercept = linear_metadata["intercept"]
+
+        if isinstance(intercept, Sequence) and not isinstance(intercept, (str, bytes)):
+            if len(intercept) != 1:
+                raise UnsupportedModelParameterError(
+                    "Only single-output intercepts are supported for now."
+                )
+            intercept = intercept[0]
+
+        return float(intercept)
+
+    def _select_input_entity(self, scope: ScopeIR) -> str:
+        for variable, role in scope.variables.items():
+            if role == "perturbation":
+                return variable
+
+        for variable, role in scope.variables.items():
+            if role in {"anchor", "symbolic"}:
+                return variable
+
+        if scope.variables:
+            return next(iter(scope.variables.keys()))
+
+        raise UnsupportedModelParameterError(
+            "Cannot encode model without scope variables."
+        )
+
+
+===== model\errors\base.py =====
+
+class ModelError(Exception):
+    """
+    Base exception for model subsystem.
+    """
+
+    pass
+
+
+===== model\errors\detection.py =====
+
+from model.errors.base import ModelError
+
+
+class ModelDetectionError(ModelError):
+    pass
+
+
+class UnsupportedModelError(ModelError):
+    pass
+
+
+===== model\errors\introspection.py =====
+
+from model.errors.base import ModelError
+
+
+class ModelIntrospectionError(ModelError):
+    pass
+
+
+class MissingFeatureMetadataError(ModelIntrospectionError):
+    pass
+
+
+class UnsupportedIntrospectorError(ModelIntrospectionError):
+    pass
+
+
+===== model\errors\loading.py =====
+
+# errors/loading.py
+
+from model.errors.base import ModelError
+
+
+class ModelLoadingError(ModelError):
+    """Base exception for model loading."""
+
+
+class UnsupportedModelFormatError(ModelLoadingError):
+    """Raised when the model format is unsupported."""
+
+
+class ModelFileNotFoundError(ModelLoadingError):
+    """Raised when the model file cannot be found."""
+
+
+class ModelDeserializationError(ModelLoadingError):
+    """Raised when model deserialization fails."""
+
+
+===== model\introspector\base_introspector.py =====
+
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from model.schema.model_schema import ModelSchema
+
+
+class BaseIntrospector(ABC):
+    """
+    Base class for model introspection.
+
+    Responsibilities
+    ----------------
+    - expose a unified introspection API
+    - provide shared utilities
+    - normalize metadata extraction
+    - enforce implementation contracts
+
+    Subclasses are responsible for:
+    - framework-specific introspection
+    - task detection
+    - metadata extraction
+    """
+
+    def __init__(
+        self,
+        model,
+        source_path: str | Path | None = None,
+        schema=None,
+        serialization_format: str | None = None,
+        target_name: str | None = None,
+    ):
+        self.model = model
+        self.source_path = Path(source_path) if source_path is not None else None
+        self.input_schema = schema
+        self.serialization_format = serialization_format
+        self.target_name = target_name if target_name is not None else None
+
+    @abstractmethod
+    def introspect(self) -> ModelSchema:
+        """
+        Produce a normalized ModelSchema.
+        """
+        raise NotImplementedError
+
+    def _safe_getattr(self, name, default=None):
+        """
+        Safe attribute access helper.
+        """
+        return getattr(self.model, name, default)
+
+    def _has_attr(self, name) -> bool:
+        """
+        Check whether the model exposes an attribute.
+        """
+        return hasattr(self.model, name)
+
+    def _build_base_metadata(self) -> dict:
+        """
+        Common metadata shared across frameworks.
+        """
+        return {
+            "serialization_format": self.serialization_format,
+            "model_class": type(self.model).__name__,
+            "module": type(self.model).__module__,
+            "target_name": self.target_name,
+        }
+
+
+===== model\introspector\introspector_factory.py =====
+
+from model.detector.model_framework import EnumModelFramework
+
+from model.introspector.base_introspector import BaseIntrospector
+
+from model.introspector.sklearn_introspector import (
+    SklearnIntrospector,
+)
+
+from model.introspector.xgboost_introspector import (
+    XGBoostIntrospector,
+)
+
+from model.errors.introspection import (
+    UnsupportedIntrospectorError,
+)
+
+
+class IntrospectorFactory:
+    """
+    Factory responsible for selecting the correct
+    introspector implementation depending on the
+    detected ML framework.
+    """
+
+    INTROSPECTORS: dict[EnumModelFramework, type[BaseIntrospector]] = {
+        EnumModelFramework.SKLEARN: SklearnIntrospector,
+        EnumModelFramework.XGBOOST: XGBoostIntrospector,
+    }
+
+    @classmethod
+    def create(
+        cls,
+        framework,
+        model,
+        dataset_path,
+        schema=None,
+        serialization_format=None,
+        target_name: str | None = None,
+    ) -> BaseIntrospector:
+        """
+        Create the appropriate introspector instance.
+        """
+
+        introspector_class = cls.INTROSPECTORS.get(framework)
+
+        if introspector_class is None:
+
+            raise UnsupportedIntrospectorError(
+                f"No introspector available for framework '{framework}'"
+            )
+
+        return introspector_class(
+            model=model,
+            source_path=dataset_path,
+            schema=schema,
+            serialization_format=serialization_format,
+            target_name=target_name,
+        )
+
+
+===== model\introspector\sklearn_introspector.py =====
+
+from typing import Any
+
+import pandas as pd
+
+from sklearn.base import (
+    ClassifierMixin,
+    RegressorMixin,
+)
+
+from dsl.semantic.types.enums import EnumDataType
+
+from model.detector.model_framework import EnumModelFramework
+from model.introspector.base_introspector import BaseIntrospector
+from model.schema.feature_schema import FeatureSchema
+from model.schema.model_schema import ModelSchema
+
+from model.errors.introspection import MissingFeatureMetadataError
+
+
+class SklearnIntrospector(BaseIntrospector):
+
+    # ======================================================
+    # Public API
+    # ======================================================
+
+    def introspect(self) -> ModelSchema:
+        """
+        Build a normalized schema representation
+        from a scikit-learn model.
+        """
+
+        features = (
+            self.input_schema.features
+            if self.input_schema is not None
+            else self._detect_features()
+        )
+
+        return ModelSchema(
+            framework=EnumModelFramework.SKLEARN,
+            model_type=type(self.model).__name__,
+            features=features,
+            task=self._detect_task(),
+            target=self._detect_target(),
+            metadata=self._build_metadata(),
+        )
+
+    # ======================================================
+    # Feature detection
+    # ======================================================
+
+    def _detect_features(self) -> dict[str, FeatureSchema]:
+        """
+        Infer feature schema from the dataset.
+
+        The target column is excluded from features when known.
+        """
+
+        if self.source_path is None:
+            raise MissingFeatureMetadataError(
+                "Feature detection requires a dataset source path "
+                "or an explicit input schema."
+            )
+
+        data = pd.read_csv(self.source_path)
+
+        target = self._detect_target()
+
+        features: dict[str, FeatureSchema] = {}
+
+        for column, dtype in data.dtypes.items():
+            column_name = str(column)
+
+            if column_name == target:
+                continue
+
+            enum_dtype = self._map_dtype(dtype)
+
+            features[column_name] = FeatureSchema(
+                name=column_name,
+                dtype=enum_dtype,
+                nullable=bool(data[column].isnull().any()),
+            )
+
+        return features
+
+    # ======================================================
+    # Pandas → FORML type mapping
+    # ======================================================
+
+    def _map_dtype(self, dtype) -> EnumDataType:
+        """
+        Map pandas dtypes to FORML semantic types.
+        """
+
+        dtype_str = str(dtype)
+
+        if "int" in dtype_str:
+            return EnumDataType.INT
+
+        if "float" in dtype_str:
+            return EnumDataType.FLOAT
+
+        if "bool" in dtype_str:
+            return EnumDataType.BOOL
+
+        return EnumDataType.STRING
+
+    # ======================================================
+    # Task detection
+    # ======================================================
+
+    def _detect_task(self) -> str:
+        """
+        Detect ML task type.
+        """
+
+        if isinstance(self.model, ClassifierMixin):
+            return "classification"
+
+        if isinstance(self.model, RegressorMixin):
+            return "regression"
+
+        return "unknown"
+
+    # ======================================================
+    # Target detection
+    # ======================================================
+
+    def _detect_target(self) -> str:
+        """
+        Detect prediction target.
+
+        Priority:
+            1. external schema target
+            2. explicit FORML target_name
+            3. conventional default: "target"
+        """
+
+        if self.input_schema is not None and self.input_schema.target is not None:
+            return self.input_schema.target
+
+        if self.target_name is not None:
+            return self.target_name
+
+        return "target"
+
+    # ======================================================
+    # Metadata extraction
+    # ======================================================
+
+    def _build_metadata(self) -> dict:
+        """
+        Extract sklearn-specific metadata.
+        """
+
+        metadata = self._build_base_metadata()
+
+        feature_names_in = self._safe_getattr("feature_names_in_")
+
+        metadata.update(
+            {
+                "n_features_in": self._safe_getattr("n_features_in_"),
+                "classes": self._safe_getattr("classes_"),
+                "feature_names_in": feature_names_in,
+            }
+        )
+
+        linear_metadata = self._extract_linear_metadata(feature_names_in)
+
+        if linear_metadata is not None:
+            metadata["linear"] = linear_metadata
+
+        return metadata
+
+    def _extract_linear_metadata(self, feature_names_in: Any) -> dict[str, Any] | None:
+        """Extract generic coef/intercept metadata for linear sklearn estimators."""
+
+        if not self._has_attr("coef_") or not self._has_attr("intercept_"):
+            return None
+
+        feature_names = None
+
+        if feature_names_in is not None:
+            feature_names = self._to_python(feature_names_in)
+
+        return {
+            "coef": self._to_python(self._safe_getattr("coef_")),
+            "intercept": self._to_python(self._safe_getattr("intercept_")),
+            "feature_names": feature_names,
+        }
+
+    def _to_python(self, value: Any) -> Any:
+        """Convert numpy/pandas values to plain Python structures when possible."""
+
+        if hasattr(value, "tolist"):
+            return value.tolist()
+
+        return value
+
+
+===== model\introspector\xgboost_introspector.py =====
+
+from model.detector.model_framework import EnumModelFramework
+
+from model.introspector.base_introspector import BaseIntrospector
+from model.introspector.sklearn_introspector import (
+    SklearnIntrospector,
+)
+
+from model.schema.model_schema import ModelSchema
+
+
+class XGBoostIntrospector(BaseIntrospector):
+    """
+    XGBoost introspector.
+
+    XGBoost models expose a sklearn-compatible API,
+    so we reuse the sklearn introspection layer and
+    enrich it with XGBoost-specific metadata.
+    """
+
+    def introspect(self) -> ModelSchema:
+
+        # --------------------------------------------------
+        # Reuse sklearn introspection
+        # --------------------------------------------------
+
+        sklearn_schema = SklearnIntrospector(
+            model=self.model,
+            source_path=self.source_path,
+            schema=self.input_schema,
+            serialization_format=self.serialization_format,
+            target_name=self.target_name,
+        ).introspect()
+
+        # --------------------------------------------------
+        # Override framework
+        # --------------------------------------------------
+
+        sklearn_schema.framework = EnumModelFramework.XGBOOST
+
+        # --------------------------------------------------
+        # Inject XGBoost-specific metadata
+        # --------------------------------------------------
+
+        sklearn_schema.metadata.update({"xgboost": self._extract_xgb_metadata()})
+
+        return sklearn_schema
+
+    # ======================================================
+    # XGBoost metadata
+    # ======================================================
+
+    def _extract_xgb_metadata(self) -> dict:
+        """
+        Extract XGBoost-specific metadata.
+        """
+
+        metadata = {}
+
+        metadata["n_estimators"] = self._safe_getattr("n_estimators")
+
+        metadata["max_depth"] = self._safe_getattr("max_depth")
+
+        metadata["objective"] = self._safe_getattr("objective")
+
+        metadata["booster"] = self._safe_getattr("booster")
+
+        return metadata
+
+
+===== model\loader\base_loader.py =====
+
+from pathlib import Path
+
+
+class BaseModelLoader:
+    def __init__(self, path: str | Path) -> None:
+        """Base class for model loaders."""
+        self.path = Path(path)
+
+    def load(self):
+        """Load the model."""
+        raise NotImplementedError("Subclasses must implement this method.")
+
+
+===== model\loader\joblib_loader.py =====
+
+import joblib
+
+from model.errors.loading import ModelDeserializationError, ModelFileNotFoundError
+from model.loader.base_loader import BaseModelLoader
+
+
+class JoblibModelLoader(BaseModelLoader):
+
+    def load(self):
+        """Load the model using joblib."""
+
+        try:
+
+            return joblib.load(self.path)
+
+        except FileNotFoundError as e:
+            raise ModelFileNotFoundError(str(self.path)) from e
+
+        except Exception as e:
+            raise ModelDeserializationError(
+                f"Failed to deserialize joblib model: {self.path}"
+            ) from e
+
+
+===== model\loader\json_loader.py =====
+
+import json
+
+from model.errors.loading import (
+    ModelDeserializationError,
+    ModelFileNotFoundError,
+)
+from model.loader.base_loader import BaseModelLoader
+
+
+class JsonModelLoader(BaseModelLoader):
+    """
+    Load a JSON artifact.
+
+    Note:
+        This loader only deserializes JSON.
+        It does not imply that the loaded object is a supported ML model.
+    """
+
+    def load(self):
+        try:
+            with open(self.path, "r", encoding="utf-8") as f:
+                return json.load(f)
+
+        except FileNotFoundError as e:
+            raise ModelFileNotFoundError(str(self.path)) from e
+
+        except json.JSONDecodeError as e:
+            raise ModelDeserializationError(
+                f"Failed to decode JSON model artifact: {self.path}"
+            ) from e
+
+        except OSError as e:
+            raise ModelDeserializationError(
+                f"Failed to read JSON model artifact: {self.path}"
+            ) from e
+
+
+===== model\loader\loader_factory.py =====
+
+from pathlib import Path
+from typing import Type
+
+from model.loader.base_loader import BaseModelLoader
+from model.loader.joblib_loader import JoblibModelLoader
+from model.loader.pkl_loader import PklModelLoader
+from model.loader.json_loader import JsonModelLoader
+
+from model.errors.loading import UnsupportedModelFormatError
+
+
+class LoaderFactory:
+
+    LOADERS: dict[str, Type[BaseModelLoader]] = {
+        ".pkl": PklModelLoader,
+        ".joblib": JoblibModelLoader,
+        ".json": JsonModelLoader,
+    }
+
+    @classmethod
+    def get_loader(cls, path: str | Path) -> BaseModelLoader:
+
+        model_path = Path(path)
+
+        extension: str = model_path.suffix.lower()
+
+        loader_class = cls.LOADERS.get(extension)
+
+        if loader_class is None:
+            raise UnsupportedModelFormatError(f"Unsupported model format: {extension}")
+
+        return loader_class(model_path)
+
+
+===== model\loader\pkl_loader.py =====
+
+import pickle
+
+from model.errors.loading import (
+    ModelDeserializationError,
+    ModelFileNotFoundError,
+)
+from model.loader.base_loader import BaseModelLoader
+
+
+class PklModelLoader(BaseModelLoader):
+
+    def load(self):
+
+        try:
+            with open(self.path, "rb") as f:
+                return pickle.load(f)
+
+        except FileNotFoundError as e:
+            raise ModelFileNotFoundError(str(self.path)) from e
+
+        except Exception as e:
+            raise ModelDeserializationError(
+                f"Failed to deserialize pickle model: {self.path}"
+            ) from e
+
+
+===== model\runtime\manager.py =====
+
+from pathlib import Path
+
+from model.detector.detector import ModelDetector
+
+from model.detector.model_framework import EnumModelFramework
+from model.introspector.introspector_factory import (
+    IntrospectorFactory,
+)
+
+from model.loader.loader_factory import LoaderFactory
+
+from model.schema.model_schema import ModelSchema
+
+
+class ModelManager:
+    """
+    Central orchestration layer for model handling.
+
+    Responsibilities
+    ----------------
+    - load serialized models
+    - detect ML framework
+    - introspect model metadata
+    - expose normalized ModelSchema
+    """
+
+    def __init__(
+        self,
+        model_path: str | Path,
+        dataset_path: str | Path | None = None,
+        schema=None,
+        target_name: str | None = None,
+    ):
+
+        # --------------------------------------------------
+        # Input artifacts
+        # --------------------------------------------------
+
+        self.model_path = Path(model_path)
+
+        self.dataset_path = Path(dataset_path) if dataset_path is not None else None
+
+        self.schema = schema
+
+        self.target_name = target_name
+
+        # --------------------------------------------------
+        # Runtime artifacts
+        # --------------------------------------------------
+
+        self.model = None
+        self.framework: EnumModelFramework | None = None
+        self.model_schema: ModelSchema | None = None
+
+    # ======================================================
+    # Public API
+    # ======================================================
+
+    def build_schema(self) -> ModelSchema:
+        """
+        Main orchestration pipeline.
+        """
+
+        # --------------------------------------------------
+        # 1. Select loader
+        # --------------------------------------------------
+
+        loader = LoaderFactory.get_loader(self.model_path)
+
+        # --------------------------------------------------
+        # 2. Load serialized model
+        # --------------------------------------------------
+
+        self.model = loader.load()
+
+        # --------------------------------------------------
+        # 3. Detect ML framework
+        # --------------------------------------------------
+
+        self.framework = ModelDetector().detect(self.model)
+
+        # --------------------------------------------------
+        # 4. Select introspector
+        # --------------------------------------------------
+
+        introspector = IntrospectorFactory.create(
+            framework=self.framework,
+            model=self.model,
+            dataset_path=self.dataset_path,
+            schema=self.schema,
+            serialization_format=self.model_path.suffix,
+            target_name=self.target_name,
+        )
+
+        # --------------------------------------------------
+        # 5. Produce normalized schema
+        # --------------------------------------------------
+
+        self.model_schema = introspector.introspect()
+        assert self.model_schema is not None
+        return self.model_schema
+
+
+===== model\schema\feature_schema.py =====
+
+from dataclasses import dataclass
+
+from dsl.semantic.types.enums import EnumDataType
+
+
+@dataclass
+class FeatureSchema:
+
+    name: str
+    dtype: EnumDataType
+    nullable: bool = False
+
+
+===== model\schema\model_schema.py =====
+
+from dataclasses import dataclass, field
+from typing import Any
+
+from model.detector.model_framework import EnumModelFramework
+from model.schema.feature_schema import FeatureSchema
+
+
+@dataclass
+class ModelSchema:
+    """Normalized FORML model representation.
+    This schema acts as the semantic bridge between:
+        - ML frameworks
+        - DSL semantic validation
+        - backend lowering
+    """
+
+    # ======================================================
+    # Core model identity
+    # ======================================================
+
+    framework: EnumModelFramework
+    model_type: str
+
+    # ======================================================
+    # Dataset Schema
+    # ======================================================
+
+    features: dict[str, FeatureSchema]
+    target: str
+
+    # ======================================================
+    # ML task metadata
+    # ======================================================
+
+    task: str
+
+    # ======================================================
+    # Optional framework-specific metadata
+    # ======================================================
+
+    metadata: dict[str, Any] = field(default_factory=dict)
