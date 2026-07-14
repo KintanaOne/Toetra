@@ -8,7 +8,7 @@ NOTEBOOK_PATH = (
 )
 
 
-def test_credit_risk_notebook_is_clean_and_uses_public_api() -> None:
+def test_credit_risk_notebook_uses_public_api() -> None:
     notebook = json.loads(NOTEBOOK_PATH.read_text(encoding="utf-8"))
     source = "\n".join(
         "".join(cell.get("source", []))
@@ -17,15 +17,20 @@ def test_credit_risk_notebook_is_clean_and_uses_public_api() -> None:
     )
 
     assert notebook["nbformat"] == 4
-    assert all(
-        not cell.get("outputs")
-        for cell in notebook["cells"]
-        if cell.get("cell_type") == "code"
+    assert "from forml import verify" in source
+    assert "sys.path.insert(0, _repository_root_text)" in source
+    assert source.index("sys.path.insert(0, _repository_root_text)") < source.index(
+        "from forml import verify"
     )
-    assert "from dsl.runtime import verify" in source
     assert "session = verify(" in source
-    assert "session.write_json" in source
-    assert "session.write_html" in source
-    assert "model.predict" in source
+    assert "session.write_artifacts" in source
+    assert "session.to_dataframe" in source
+    assert "session.first_counterexample" in source
+    assert "counterexample.replay" in source
     assert "IR2BuildContext" not in source
     assert "Z3Runner" not in source
+    assert "Fraction" not in source
+    assert "solver_number_to_float" not in source
+    assert "find_repository_root" not in source
+    assert "display_name.split" not in source
+    assert "from dsl." not in source

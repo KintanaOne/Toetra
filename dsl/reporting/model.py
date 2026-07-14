@@ -5,6 +5,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
+from dsl.reporting.values import exact_report_value, python_report_value
+
 from dsl.backends.diagnostics import BackendResultDiagnostic
 from dsl.backends.results import VerificationStatus
 from dsl.ir.ir2.enums import VerificationSemantics
@@ -28,6 +30,26 @@ class ReportAssignment:
     display_name: str
     value: Any
     kind: ReportAssignmentKind
+
+    @property
+    def exact_value(self) -> Any:
+        """Return the exact backend value using standard Python numeric types."""
+
+        return exact_report_value(self.value)
+
+    @property
+    def python_value(self) -> Any:
+        """Return a convenient Python value for notebooks and application code."""
+
+        return python_report_value(self.value)
+
+    @property
+    def field_name(self) -> str:
+        """Return the unqualified feature or output name."""
+
+        if self.kind is ReportAssignmentKind.INPUT and "." in self.display_name:
+            return self.display_name.split(".", 1)[1]
+        return self.display_name
 
 
 @dataclass(frozen=True)
@@ -90,6 +112,32 @@ class VerificationReport:
             for item in self.assignments
             if item.kind is ReportAssignmentKind.AUXILIARY
         )
+
+    @property
+    def qualified_input_values(self) -> dict[str, Any]:
+        """Return input assignments keyed by their qualified FORML names."""
+
+        return {item.display_name: item.python_value for item in self.inputs}
+
+    @property
+    def input_values(self) -> dict[str, Any]:
+        """Return input assignments keyed by unqualified feature names."""
+
+        values: dict[str, Any] = {}
+        for item in self.inputs:
+            if item.field_name in values:
+                raise ValueError(
+                    "Input feature names are ambiguous without their scope entity: "
+                    f"{item.field_name!r}. Use 'qualified_input_values' instead."
+                )
+            values[item.field_name] = item.python_value
+        return values
+
+    @property
+    def output_values(self) -> dict[str, Any]:
+        """Return model outputs keyed by their public target names."""
+
+        return {item.field_name: item.python_value for item in self.outputs}
 
     @property
     def has_failure(self) -> bool:

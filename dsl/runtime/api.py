@@ -24,6 +24,14 @@ from model.schema.model_schema import ModelSchema
 
 
 @dataclass(frozen=True)
+class _ResolvedModel:
+    schema: ModelSchema
+    model: object | None
+    model_path: Path | None
+    dataset_path: Path | None
+
+
+@dataclass(frozen=True)
 class _LoadedSpecification:
     source: str
     path: Path | None
@@ -53,19 +61,19 @@ def verify(
     """
 
     loaded = _load_specification(specification)
-    resolved_schema = _resolve_schema(
+    resolved = _resolve_model(
         loaded,
         model=model,
         dataset=dataset,
         target=target,
         schema=schema,
     )
-    _validate_target_contract(loaded.target, resolved_schema.target)
+    _validate_target_contract(loaded.target, resolved.schema.target)
 
     context = ir2_context or IR2BuildContext(preferred_normal_form=NormalFormKind.NNF)
     tasks = run_ir2_with_model_schema(
         loaded.source,
-        schema=resolved_schema,
+        schema=resolved.schema,
         model_context=model_context,
         ir2_context=context,
     )
@@ -95,8 +103,11 @@ def verify(
     return VerificationSession(
         source=loaded.source,
         specification_path=loaded.path,
-        schema=resolved_schema,
+        schema=resolved.schema,
         executions=tuple(executions),
+        model=resolved.model,
+        model_path=resolved.model_path,
+        dataset_path=resolved.dataset_path,
     )
 
 
@@ -136,14 +147,14 @@ def _specification_path(specification: str | Path) -> Path | None:
     return None
 
 
-def _resolve_schema(
+def _resolve_model(
     loaded: _LoadedSpecification,
     *,
     model: str | Path | None,
     dataset: str | Path | None,
     target: str | None,
     schema: ModelSchema | None,
-) -> ModelSchema:
+) -> _ResolvedModel:
     if schema is not None:
         if model is not None or dataset is not None:
             raise VerificationConfigurationError(
@@ -154,7 +165,12 @@ def _resolve_schema(
                 f"Explicit target '{target}' does not match schema target "
                 f"'{schema.target}'"
             )
-        return schema
+        return _ResolvedModel(
+            schema=schema,
+            model=None,
+            model_path=None,
+            dataset_path=None,
+        )
 
     resolved_target = target or loaded.target
     if resolved_target != loaded.target:
@@ -175,11 +191,18 @@ def _resolve_schema(
     if dataset_path is not None and not dataset_path.is_file():
         raise FileNotFoundError(f"Reference dataset not found: {dataset_path}")
 
-    return ModelManager(
+    manager = ModelManager(
         model_path=model_path,
         dataset_path=dataset_path,
         target_name=resolved_target,
-    ).build_schema()
+    )
+    resolved_schema = manager.build_schema()
+    return _ResolvedModel(
+        schema=resolved_schema,
+        model=manager.model,
+        model_path=model_path.resolve(),
+        dataset_path=(dataset_path.resolve() if dataset_path is not None else None),
+    )
 
 
 def _resolve_header_model_path(loaded: _LoadedSpecification) -> Path:

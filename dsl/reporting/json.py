@@ -1,15 +1,12 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Iterable, Mapping
-from dataclasses import asdict, is_dataclass
-from decimal import Decimal
-from enum import Enum
-from fractions import Fraction
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Callable, cast
+from typing import Any
 
 from dsl.reporting.model import ReportAssignment, VerificationReport
+from dsl.reporting.values import json_safe_report_value
 
 REPORT_SCHEMA = "forml.verification-report"
 REPORT_COLLECTION_SCHEMA = "forml.verification-report-collection"
@@ -131,57 +128,7 @@ def _assignment_to_dict(assignment: ReportAssignment) -> dict[str, Any]:
         "name": assignment.display_name,
         "raw_name": assignment.raw_name,
         "kind": assignment.kind.value,
-        "value": _json_safe_value(assignment.value),
-    }
-
-
-def _json_safe_value(value: Any) -> Any:
-    if value is None or isinstance(value, (bool, int, float, str)):
-        return value
-
-    if isinstance(value, Enum):
-        return _json_safe_value(value.value)
-
-    if isinstance(value, Decimal):
-        return str(value)
-
-    if isinstance(value, Fraction):
-        return _rational_value(value.numerator, value.denominator)
-
-    numerator = getattr(value, "numerator_as_long", None)
-    denominator = getattr(value, "denominator_as_long", None)
-    if callable(numerator) and callable(denominator):
-        numerator_fn = cast(Callable[[], int], numerator)
-        denominator_fn = cast(Callable[[], int], denominator)
-        return _rational_value(numerator_fn(), denominator_fn())
-
-    as_long = getattr(value, "as_long", None)
-    if callable(as_long):
-        try:
-            return as_long()
-        except (ArithmeticError, ValueError):
-            pass
-
-    if isinstance(value, Mapping):
-        return {str(key): _json_safe_value(item) for key, item in value.items()}
-
-    if isinstance(value, (list, tuple, set, frozenset)):
-        return [_json_safe_value(item) for item in value]
-
-    if is_dataclass(value) and not isinstance(value, type):
-        return _json_safe_value(asdict(value))
-
-    return str(value)
-
-
-def _rational_value(numerator: int, denominator: int) -> int | dict[str, Any]:
-    if denominator == 1:
-        return numerator
-    return {
-        "kind": "rational",
-        "numerator": numerator,
-        "denominator": denominator,
-        "text": f"{numerator}/{denominator}",
+        "value": json_safe_report_value(assignment.value),
     }
 
 

@@ -7,10 +7,7 @@ import joblib
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 
-from dsl.backends.results import VerificationStatus
-from dsl.ir.ir2.context import IR2BuildContext
-from dsl.ir.ir2.enums import NormalFormKind
-from dsl.runtime import VerificationSession, verify
+from forml import VerificationSession, VerificationStatus, verify
 from model.runtime.manager import ModelManager
 from model.schema.model_schema import ModelSchema
 
@@ -56,7 +53,6 @@ def execute_demo(source: str, schema: ModelSchema) -> VerificationSession:
     return verify(
         source,
         schema=schema,
-        ir2_context=IR2BuildContext(preferred_normal_form=NormalFormKind.NNF),
     )
 
 

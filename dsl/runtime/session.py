@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import sys
-from collections.abc import Iterator, Sequence
-from dataclasses import dataclass
+from collections.abc import Iterable, Iterator, Sequence
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, TextIO, overload
 
@@ -20,6 +20,7 @@ from dsl.reporting import (
     write_verification_reports_html,
     write_verification_reports_json,
 )
+from dsl.runtime.replay import CounterexampleReplay, replay_verification_report
 from model.schema.model_schema import ModelSchema
 
 _FAILURE_STATUSES = frozenset(
@@ -47,6 +48,63 @@ class VerificationExecution:
 
 
 @dataclass(frozen=True)
+class VerificationFinding:
+    """Ergonomic user view over one completed verification property."""
+
+    report: VerificationReport
+    schema: ModelSchema = field(compare=False)
+    _model: object | None = field(default=None, repr=False, compare=False)
+
+    @property
+    def status(self) -> VerificationStatus:
+        return self.report.status
+
+    @property
+    def input_values(self) -> dict[str, Any]:
+        return self.report.input_values
+
+    @property
+    def qualified_input_values(self) -> dict[str, Any]:
+        return self.report.qualified_input_values
+
+    @property
+    def output_values(self) -> dict[str, Any]:
+        return self.report.output_values
+
+    def replay(
+        self,
+        model: object | None = None,
+        *,
+        tolerance: float = 1e-9,
+    ) -> CounterexampleReplay:
+        """Replay this assignment on the original or explicitly supplied model."""
+
+        resolved_model = model if model is not None else self._model
+        if resolved_model is None:
+            from dsl.runtime.errors import ReplayUnavailableError
+
+            raise ReplayUnavailableError(
+                "No model instance is attached to this session. Pass model=... "
+                "or call verify(...) with serialized model artifacts."
+            )
+        return replay_verification_report(
+            self.report,
+            schema=self.schema,
+            model=resolved_model,
+            tolerance=tolerance,
+        )
+
+    def to_text(self) -> str:
+        return self.report.to_text()
+
+    def to_html(self) -> str:
+        return self.report.to_html()
+
+    def _repr_html_(self) -> str:
+        return self.to_html()
+
+
+@dataclass(frozen=True)
 class VerificationSession(Sequence[VerificationExecution]):
     """Complete result of one high-level ``verify(...)`` invocation."""
 
@@ -54,6 +112,9 @@ class VerificationSession(Sequence[VerificationExecution]):
     specification_path: Path | None
     schema: ModelSchema
     executions: tuple[VerificationExecution, ...]
+    model: object | None = field(default=None, repr=False, compare=False)
+    model_path: Path | None = None
+    dataset_path: Path | None = None
 
     def __len__(self) -> int:
         return len(self.executions)
@@ -80,6 +141,41 @@ class VerificationSession(Sequence[VerificationExecution]):
     @property
     def results(self) -> tuple[VerificationResult, ...]:
         return tuple(execution.result for execution in self.executions)
+
+    @property
+    def findings(self) -> tuple[VerificationFinding, ...]:
+        return tuple(
+            VerificationFinding(report=report, schema=self.schema, _model=self.model)
+            for report in self.reports
+        )
+
+    @property
+    def proved(self) -> tuple[VerificationFinding, ...]:
+        return self._findings_with_status(VerificationStatus.PROVED)
+
+    @property
+    def counterexamples(self) -> tuple[VerificationFinding, ...]:
+        return self._findings_with_status(VerificationStatus.COUNTEREXAMPLE)
+
+    @property
+    def witnesses(self) -> tuple[VerificationFinding, ...]:
+        return self._findings_with_status(VerificationStatus.WITNESS)
+
+    @property
+    def no_witnesses(self) -> tuple[VerificationFinding, ...]:
+        return self._findings_with_status(VerificationStatus.NO_WITNESS)
+
+    @property
+    def unknown(self) -> tuple[VerificationFinding, ...]:
+        return self._findings_with_status(VerificationStatus.UNKNOWN)
+
+    @property
+    def first_counterexample(self) -> VerificationFinding | None:
+        return self.counterexamples[0] if self.counterexamples else None
+
+    @property
+    def first_witness(self) -> VerificationFinding | None:
+        return self.witnesses[0] if self.witnesses else None
 
     @property
     def has_failures(self) -> bool:
@@ -112,6 +208,31 @@ class VerificationSession(Sequence[VerificationExecution]):
         if self.has_unknown:
             return 2
         return 0
+
+    def to_records(self) -> list[dict[str, Any]]:
+        """Return one neutral summary record per property."""
+
+        return [
+            {
+                "property": report.property_index + 1,
+                "type": report.property_type.value,
+                "status": report.status.value,
+                "semantics": report.semantics.value,
+                "specification": report.specification,
+                "backend": report.backend.value,
+                "backend_status": report.backend_status,
+                "inputs": report.input_values,
+                "outputs": report.output_values,
+            }
+            for report in self.reports
+        ]
+
+    def to_dataframe(self) -> Any:
+        """Return the session summary as a pandas data frame."""
+
+        import pandas as pd
+
+        return pd.DataFrame(self.to_records())
 
     def to_text(self, *, options: TextRenderOptions | None = None) -> str:
         """Render all reports using the shared terminal representation."""
@@ -174,6 +295,36 @@ class VerificationSession(Sequence[VerificationExecution]):
             path,
             options=resolved,
         )
+
+    def write_artifacts(
+        self,
+        directory: str | Path,
+        *,
+        formats: Iterable[str] = ("json", "html"),
+        stem: str = "forml-verification-report",
+    ) -> dict[str, Path]:
+        """Write several user-facing report formats into one directory."""
+
+        output_directory = Path(directory)
+        requested = tuple(dict.fromkeys(item.lower() for item in formats))
+        unsupported = set(requested) - {"json", "html"}
+        if unsupported:
+            raise ValueError(
+                "Unsupported report formats: " + ", ".join(sorted(unsupported))
+            )
+
+        written: dict[str, Path] = {}
+        if "json" in requested:
+            written["json"] = self.write_json(output_directory / f"{stem}.json")
+        if "html" in requested:
+            written["html"] = self.write_html(output_directory / f"{stem}.html")
+        return written
+
+    def _findings_with_status(
+        self,
+        status: VerificationStatus,
+    ) -> tuple[VerificationFinding, ...]:
+        return tuple(item for item in self.findings if item.status is status)
 
     def _repr_html_(self) -> str:
         """Return the rich representation automatically displayed by Jupyter."""

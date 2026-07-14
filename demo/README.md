@@ -20,10 +20,10 @@ This demo is self-contained. It:
 5. compiles `demo/affine_specification_constants.forml`;
 6. injects the affine model equation and the typed DSL domains into IR2;
 7. routes each task to Z3 according to backend capabilities;
-8. invokes the public `dsl.runtime.verify(...)` API;
+8. invokes the public `forml.verify(...)` API;
 9. builds backend-neutral `VerificationReport` objects;
 10. renders a proof, a counterexample and an existential witness through the
-    shared `dsl.reporting` text renderer;
+    shared FORML reporting layer;
 11. deletes the generated model and dataset automatically.
 
 The trained model is:
@@ -129,11 +129,16 @@ demo/notebooks/credit_risk_validation.ipynb
 ```
 
 It trains a small affine credit-risk score from transformed numerical features,
-executes `demo/notebooks/credit_risk_policy.forml`, displays the session through
-its native Jupyter HTML representation, replays the generated counterexample on
-the original sklearn model, and exports both JSON and standalone HTML reports.
+loads a packaged example policy, displays the session through its native Jupyter
+HTML representation, selects `session.first_counterexample`, replays it with
+`finding.replay()`, and exports JSON and standalone HTML with
+`session.write_artifacts(...)`. No solver-value conversion or feature-name
+parsing is written by the notebook user.
 
-Launch Jupyter from the repository root and open the notebook. The notebook is
+Open the notebook from the repository root or directly from `demo/notebooks/`.
+Its first code cell locates the source checkout before importing the public
+`forml` package. This bootstrap is specific to the repository demo; installed
+users can begin directly with `from forml import verify`. The notebook is
 self-contained and creates model/data artifacts in a temporary directory.
 Preprocessing remains explicitly outside the current V1 contract.
 

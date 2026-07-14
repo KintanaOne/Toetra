@@ -2,7 +2,7 @@
 # FORML - Makefile minimal
 # =========================
 
-.PHONY: install test test-wip test-all lint format format-check type ci demo-affine demo-user clean
+.PHONY: install test test-wip test-all lint format format-check type notebooks-clean notebooks-check ci demo-affine demo-user clean
 
 # Install dev environment
 install:
@@ -24,12 +24,20 @@ test-all:
 lint:
 	ruff check .
 
-# Format code
-format:
+# Remove transient Jupyter outputs
+notebooks-clean:
+	python scripts/clean_notebooks.py demo/notebooks
+
+# Verify notebook hygiene without modifying files
+notebooks-check:
+	python scripts/clean_notebooks.py --check demo/notebooks
+
+# Format code and notebooks
+format: notebooks-clean
 	black .
 
 # Verify formatting
-format-check:
+format-check: notebooks-check
 	black --check .
 
 # Type checking
@@ -37,7 +45,7 @@ type:
 	pyright dsl/
 
 # Full local CI
-ci:
+ci: notebooks-clean
 	python -m ruff check .
 	python -m black .
 	python -m black --check .
