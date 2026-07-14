@@ -1,0 +1,32 @@
+model := "credit_risk.joblib"
+target := risk_score
+
+maximum_score := 1.11
+manual_review_score := 1.0
+
+[BOUND]:
+forall applicant
+    with domain(
+        applicant.debt_ratio: [0.0, 1.0],
+        applicant.late_payments: [0.0, 5.0]
+    )
+    => target <= maximum_score
+    using Z3
+
+[LOGIC]:
+forall applicant
+    with domain(
+        applicant.debt_ratio: [0.0, 1.0],
+        applicant.late_payments: [0.0, 5.0]
+    )
+    => target < manual_review_score
+    using Z3
+
+[LOGIC]:
+exists applicant
+    with domain(
+        applicant.debt_ratio: [0.0, 1.0],
+        applicant.late_payments: [0.0, 5.0]
+    )
+    => target >= manual_review_score
+    using Z3

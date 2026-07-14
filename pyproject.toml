@@ -26,11 +26,12 @@ docs = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["dsl*", "model*"]
+include = ["forml*", "dsl*", "model*"]
 exclude = ["test*", "tests*", "docs*"]
 
 [tool.setuptools.package-data]
 "dsl.language.grammar" = ["*.lark", "*.ebnf"]
+"forml.examples" = ["*.forml"]
 
 [tool.black]
 line-length = 88
@@ -65,6 +66,7 @@ norecursedirs = [
 [tool.pyright]
 pythonVersion = "3.11"
 include = [
+    "forml",
     "dsl",
     "model",
     "test/unit",

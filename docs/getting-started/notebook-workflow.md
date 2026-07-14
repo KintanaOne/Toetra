@@ -1,19 +1,19 @@
 # Notebook Model-Review Workflow
 
 > Status: Implemented  
-> Scope: Public `verify(...)` API, HTML reports and counterexample replay
+> Scope: Public `forml.verify(...)` API, rich reports and automatic replay
 
 ## Purpose
 
-A notebook user should not need to manipulate IR2, a backend router or Z3
-objects. The supported workflow is:
+A notebook user should not manipulate IR2, backend routers, Z3 objects or solver
+number representations. The supported workflow is:
 
 ```text
-serialized model + reference dataset + .forml policy
+serialized model + reference dataset + FORML policy
 → verify(...)
 → VerificationSession
 → rich notebook report
-→ optional counterexample replay
+→ optional replay
 → JSON / HTML artifacts
 ```
 
@@ -23,12 +23,10 @@ The executable example is:
 demo/notebooks/credit_risk_validation.ipynb
 ```
 
-Run Jupyter from the repository root and open that file.
-
 ## Minimal notebook usage
 
 ```python
-from dsl.runtime import verify
+from forml import verify
 
 session = verify(
     "policy.forml",
@@ -40,41 +38,55 @@ session
 ```
 
 Because `VerificationSession` implements `_repr_html_()`, Jupyter displays a
-summary and one visual card per property. The same report data remains
-available as ordinary Python objects:
+summary and one card per property. Common inspection helpers are direct:
 
 ```python
-session.reports
-session.results
+session.to_dataframe()
+session.proved
+session.counterexamples
+session.witnesses
 session.exit_code
 ```
+
+## Replaying a counterexample
+
+Artifact-based sessions retain the loaded estimator. Replaying a formal
+counterexample therefore requires no solver parsing or feature-name surgery:
+
+```python
+counterexample = session.first_counterexample
+assert counterexample is not None
+
+replay = counterexample.replay()
+replay.to_dataframe()
+```
+
+The replay:
+
+1. converts exact backend values to standard Python values;
+2. reconstructs the model input in schema feature order;
+3. calls the original estimator's `predict(...)`;
+4. compares the model output with the FORML backend output;
+5. reports the absolute error and consistency result.
+
+When `verify(...)` is called with a `ModelSchema` only, no estimator is attached.
+An estimator can then be supplied explicitly with `finding.replay(model)`.
 
 ## Export artifacts
 
 ```python
-session.write_json("artifacts/forml-report.json")
-session.write_html("artifacts/forml-report.html")
+paths = session.write_artifacts(
+    "artifacts/",
+    formats={"json", "html"},
+)
 ```
 
-The JSON contract is versioned and intended for CI or downstream automation.
-The HTML document is self-contained, escaped and does not require JavaScript or
-external stylesheets.
-
-## Replaying a counterexample
-
-The credit-risk notebook demonstrates the recommended validation step:
-
-1. select the report whose status is `COUNTEREXAMPLE`;
-2. convert exact solver rationals to numeric feature values;
-3. reconstruct a pandas row in the model feature order;
-4. call the original sklearn model;
-5. compare its prediction with the model output encoded by FORML.
-
-This checks that the formal counterexample is connected to the serialized model
-that was actually reviewed.
+The JSON contract is versioned for CI and automation. The HTML document is
+self-contained and does not require JavaScript or external stylesheets.
 
 ## Current V1 boundary
 
-The notebook operates on transformed numerical features and a supported affine
-model. The current V1 does not encode preprocessing pipelines, symbolic
-categories, nonlinear model families or nested/multiple quantifier semantics.
+Replay operates on transformed numerical features and estimators exposing a
+`predict(...)` method. Preprocessing pipelines, symbolic categories, nonlinear
+model families and nested/multiple quantifier semantics remain outside the
+current executable profile.

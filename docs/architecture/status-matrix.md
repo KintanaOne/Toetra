@@ -35,12 +35,13 @@
 
 | Component | Status | Current guarantee | Remaining boundary |
 |---|---|---|---|
-| Public `verify(...)` API | implemented | Model loading or supplied schema, compilation, routing, execution and report construction are exposed through one call. | Timeout and execution-policy configuration remain future work. |
-| `VerificationSession` | implemented | Multiple properties expose reports, JSON/HTML export and CI-friendly exit codes. | Persistence and cross-run comparison are post-V1 concerns. |
+| Public `forml.verify(...)` API | implemented | Model loading or supplied schema, compilation, routing, execution and report construction are exposed through a stable top-level facade. | Timeout and execution-policy configuration remain future work. |
+| `VerificationSession` | implemented | Multiple properties expose filtered findings, records/data frames, grouped artifact export and CI-friendly exit codes. | Persistence and cross-run comparison are post-V1 concerns. |
 | Text reporting | implemented | Backend-neutral terminal output groups inputs, outputs and diagnostics. | Optional localization and richer explanations may be added later. |
 | JSON reporting | implemented | Versioned report and collection schemas preserve exact rational values. | Schema evolution requires explicit future versions. |
 | HTML/Jupyter reporting | implemented | Escaped, dependency-free status cards and standalone HTML documents are generated from the same report model. | Interactive widgets are intentionally outside the current V1. |
-| Notebook workflow | implemented | A credit-risk example trains a real sklearn affine model, verifies it and replays a counterexample. | The example uses transformed numerical features; preprocessing is not encoded. |
+| Notebook workflow | implemented | A credit-risk example uses only the `forml` facade, rich sessions and automatic estimator replay. | The example uses transformed numerical features; preprocessing is not encoded. |
+| Counterexample replay | implemented | Numeric backend assignments are normalized, reconstructed in schema feature order and compared with the original estimator output. | V1 expects an estimator exposing `predict(...)`; preprocessing remains external. |
 
 ## ModelBridge
 

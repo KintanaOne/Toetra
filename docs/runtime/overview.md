@@ -1,7 +1,8 @@
 # Runtime Overview
 
 > Status: High-level Z3 runtime implemented  
-> Implementation: `dsl.runtime`, backend routing, execution and reporting
+> Public facade: `forml`  
+> Internal implementation: `dsl.runtime`, backend routing, execution and reporting
 
 ## Purpose
 
@@ -25,7 +26,7 @@ Low-level compiler functions remain available, but a normal user should start
 with:
 
 ```python
-from dsl.runtime import verify
+from forml import verify
 ```
 
 ## High-Level API
@@ -60,8 +61,9 @@ to different outputs.
 
 ```python
 session.reports
-session.results
-session.executions
+session.proved
+session.counterexamples
+session.witnesses
 ```
 
 The session is also a read-only sequence:
@@ -87,7 +89,7 @@ Convenience properties support scripts and CI jobs:
 session.print()
 text = session.to_text()
 json_text = session.to_json()
-session.write_json("artifacts/forml-report.json")
+session.write_artifacts("artifacts/", formats={"json", "html"})
 ```
 
 All output is produced by `dsl.reporting`. The runtime and backend never format
@@ -119,10 +121,22 @@ numeric affine properties
 → PROVED / COUNTEREXAMPLE / WITNESS / NO_WITNESS / UNKNOWN
 ```
 
+## Finding and Replay Helpers
+
+```python
+finding = session.first_counterexample
+if finding is not None:
+    replay = finding.replay()
+    replay.to_dataframe()
+```
+
+Backend numbers are normalized before application code sees them. Input and
+output dictionaries do not expose `_model.*` or require splitting quantified
+feature names manually.
+
 ## Remaining Runtime Work
 
-- HTML and notebook representation;
 - solver timeout and resource options;
 - persistent trace identifiers;
 - multi-backend execution and comparison;
-- richer replay helpers for counterexamples.
+- replay adapters for estimators without a conventional `predict(...)` method.

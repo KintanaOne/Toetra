@@ -6,7 +6,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from demo.affine_specification_constants_z3 import build_demo_artifacts
-from dsl.runtime import VerificationConfigurationError, VerificationSession, verify
+from forml import VerificationConfigurationError, VerificationSession, verify
 
 DEMO_SPEC_PATH = Path(__file__).with_name("user_verify_policy.forml")
 

@@ -11,3 +11,7 @@ class VerificationConfigurationError(VerificationRuntimeError, ValueError):
 
 class BackendRunnerNotRegisteredError(VerificationRuntimeError):
     """Raised when routing succeeds but no executor exists for the backend."""
+
+
+class ReplayUnavailableError(VerificationRuntimeError):
+    """Raised when a formal assignment cannot be replayed on a model."""

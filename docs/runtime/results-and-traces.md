@@ -74,7 +74,17 @@ AUXILIARY  backend-introduced names
 ```
 
 This distinction lets all renderers display a counterexample without exposing
-backend naming conventions.
+backend naming conventions. Application code can also access normalized values:
+
+```python
+assignment.exact_value   # Fraction(1, 3)
+assignment.python_value  # 0.3333333333333333
+report.input_values      # {"a": 3.0}
+report.output_values     # {"score": 7.0}
+```
+
+The original backend object remains available as `assignment.value` for advanced
+diagnostics only.
 
 ## Text Rendering
 
@@ -206,10 +216,11 @@ Z3 native status
 High-level runtime integration:
 
 ```text
-verify(...)
+forml.verify(...)
 → VerificationSession
-→ collection of reports
-→ print / JSON helpers
+→ filtered findings and reports
+→ text / JSON / HTML / data-frame helpers
+→ optional estimator replay
 ```
 
 The user-facing presentation layer is complete for terminal, automation and

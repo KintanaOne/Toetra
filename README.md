@@ -56,7 +56,7 @@ A normal script can execute a policy without manipulating IR2, the backend
 router or Z3 directly:
 
 ```python
-from dsl.runtime import verify
+from forml import verify
 
 session = verify(
     "policies/credit-risk.forml",
@@ -65,7 +65,7 @@ session = verify(
 )
 
 session.print()
-session.write_json("artifacts/forml-report.json")
+session.write_artifacts("artifacts/")
 raise SystemExit(session.exit_code)
 ```
 
@@ -86,7 +86,22 @@ python -m demo.user_verify_script --demo
 ```
 
 For a real project, replace the paths in the Python example above with files
-that exist in your repository.
+that exist in your repository. The public package is deliberately small: normal
+application code should import from `forml`, not from `dsl.*`, `model.*`, IR2 or
+backend modules.
+
+Counterexamples and witnesses are directly accessible:
+
+```python
+counterexample = session.first_counterexample
+if counterexample is not None:
+    replay = counterexample.replay()
+    print(replay.to_text())
+```
+
+The replay uses the estimator loaded by `verify(...)`, reconstructs the input
+features, evaluates the original model and compares its output with the formal
+backend assignment.
 
 ## Jupyter and HTML reports
 
@@ -107,7 +122,7 @@ session
 A self-contained HTML artifact can be written without Jupyter:
 
 ```python
-session.write_html("artifacts/forml-report.html")
+session.write_artifacts("artifacts/", formats={"json", "html"})
 ```
 
 See

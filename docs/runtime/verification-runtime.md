@@ -1,12 +1,12 @@
 # Verification Runtime
 
 > Status: Implemented for the numerical-affine Z3 profile  
-> Public API: `dsl.runtime.verify`
+> Public API: `forml.verify`
 
 ## User Entry Point
 
 ```python
-from dsl.runtime import verify
+from forml import verify
 
 session = verify(
     "credit-risk.forml",
@@ -83,8 +83,44 @@ VerificationExecution(
 )
 ```
 
-The task and route remain available for advanced inspection. Normal application
-code should consume `execution.report` or the session-level output helpers.
+The task and route remain available for advanced inspection through the
+internal runtime layer. Normal application code should consume the session, its
+`VerificationFinding` helpers and the report renderers exported by `forml`.
+
+
+## User Findings and Replay
+
+The session groups results by meaning:
+
+```python
+session.proved
+session.counterexamples
+session.witnesses
+session.no_witnesses
+session.unknown
+```
+
+The first common findings are available directly:
+
+```python
+finding = session.first_counterexample
+replay = finding.replay() if finding is not None else None
+```
+
+`VerificationFinding` exposes normalized `input_values`,
+`qualified_input_values` and `output_values`. A replay compares the backend
+assignment with the original estimator loaded from the serialized artifact.
+
+## Summary Tables and Artifacts
+
+```python
+session.to_records()
+session.to_dataframe()
+session.write_artifacts("artifacts/", formats={"json", "html"})
+```
+
+The neutral records API avoids imposing pandas on lower reporting layers, while
+`to_dataframe()` is a convenience for notebook users.
 
 ## Runner Registry
 
@@ -138,4 +174,4 @@ It does not yet provide:
 - parallel property execution;
 - multi-backend comparison;
 - persistent execution traces;
-- automatic replay of counterexamples on the original estimator.
+- replay for estimators without a conventional `predict(...)` interface.
