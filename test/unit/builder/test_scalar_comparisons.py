@@ -1,12 +1,13 @@
-import pytest
-
 from dsl.ast.nodes.assertion import ComparisonNode
 from dsl.ast.nodes.primitives import (
     AttributeNode,
+    BinaryArithmeticNode,
     ConstantNode,
+    NameRefNode,
     TargetRefNode,
 )
 from dsl.builder.program import parse_program
+from dsl.language.vocabulary.operators import EnumArithmeticOperator
 from dsl.parser.parser import parse_forml_code
 
 
@@ -37,7 +38,7 @@ def test_builds_target_to_constant_comparison_from_scalar_cst():
     assert comparison.right.value == 10
 
 
-def test_builds_implicit_attribute_to_constant_comparison():
+def test_builds_bare_name_as_unresolved_name_reference():
     comparison = _build_comparison("""
         model := "model.onnx"
         target := MyTarget
@@ -46,9 +47,7 @@ def test_builds_implicit_attribute_to_constant_comparison():
         forall x0 => age <= 30
         """)
 
-    assert isinstance(comparison.left, AttributeNode)
-    assert comparison.left.entity is None
-    assert comparison.left.feature == "age"
+    assert comparison.left == NameRefNode(name="age")
 
     assert isinstance(comparison.right, ConstantNode)
 
@@ -69,7 +68,7 @@ def test_builder_preserves_symmetric_attribute_to_target_comparison():
     assert isinstance(comparison.right, TargetRefNode)
 
 
-def test_arithmetic_is_parsed_by_g1_but_deferred_by_g2a_builder():
+def test_builder_preserves_arithmetic_precedence():
     source = """
     model := "model.onnx"
     target := MyTarget
@@ -78,5 +77,25 @@ def test_arithmetic_is_parsed_by_g1_but_deferred_by_g2a_builder():
     forall x0 => x0.a + 2 * x0.b <= target
     """
 
-    with pytest.raises(NotImplementedError, match="G2-A"):
-        _build(source)
+    comparison = _build_comparison(source)
+
+    assert isinstance(comparison.left, BinaryArithmeticNode)
+    assert comparison.left.operator is EnumArithmeticOperator.ADD
+    assert comparison.left.left == AttributeNode(
+        entity="x0",
+        feature="a",
+        path=["x0", "a"],
+    )
+
+    multiplication = comparison.left.right
+    assert isinstance(multiplication, BinaryArithmeticNode)
+    assert multiplication.operator is EnumArithmeticOperator.MUL
+    assert isinstance(multiplication.left, ConstantNode)
+    assert multiplication.left.value == 2
+    assert multiplication.right == AttributeNode(
+        entity="x0",
+        feature="b",
+        path=["x0", "b"],
+    )
+
+    assert isinstance(comparison.right, TargetRefNode)

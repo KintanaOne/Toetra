@@ -2,7 +2,11 @@ from __future__ import annotations
 
 import pytest
 
-from dsl.ir.ir1.nodes import ComparisonIR
+from dsl.ir.ir1.nodes import (
+    AttributeExpressionIR,
+    ComparisonIR,
+    ConstantExpressionIR,
+)
 from dsl.ir.ir2.domain_assumptions import (
     DomainAssumptionEncoder,
     NumericFeatureBounds,
@@ -37,15 +41,22 @@ def test_domain_assumption_encoder_emits_lower_and_upper_bounds() -> None:
     assert isinstance(lower.formula.expression, ComparisonIR)
     assert isinstance(upper.formula.expression, ComparisonIR)
 
-    assert lower.formula.expression.entity == "x0"
-    assert lower.formula.expression.feature == "a"
-    assert lower.formula.expression.op == EnumComparisonOperator.GTE
-    assert lower.formula.expression.value == 0.0
+    lower_atom = lower.formula.expression
+    upper_atom = upper.formula.expression
 
-    assert upper.formula.expression.entity == "x0"
-    assert upper.formula.expression.feature == "a"
-    assert upper.formula.expression.op == EnumComparisonOperator.LTE
-    assert upper.formula.expression.value == 3.0
+    assert isinstance(lower_atom.left, AttributeExpressionIR)
+    assert lower_atom.left.entity == "x0"
+    assert lower_atom.left.feature == "a"
+    assert lower_atom.op == EnumComparisonOperator.GTE
+    assert isinstance(lower_atom.right, ConstantExpressionIR)
+    assert lower_atom.right.value == 0.0
+
+    assert isinstance(upper_atom.left, AttributeExpressionIR)
+    assert upper_atom.left.entity == "x0"
+    assert upper_atom.left.feature == "a"
+    assert upper_atom.op == EnumComparisonOperator.LTE
+    assert isinstance(upper_atom.right, ConstantExpressionIR)
+    assert upper_atom.right.value == 3.0
 
 
 def test_domain_assumption_encoder_emits_only_lower_bound() -> None:
@@ -65,7 +76,8 @@ def test_domain_assumption_encoder_emits_only_lower_bound() -> None:
 
     assert isinstance(atom, ComparisonIR)
     assert atom.op == EnumComparisonOperator.GTE
-    assert atom.value == 0.0
+    assert isinstance(atom.right, ConstantExpressionIR)
+    assert atom.right.value == 0.0
 
 
 def test_domain_assumption_encoder_emits_only_upper_bound() -> None:
@@ -85,7 +97,8 @@ def test_domain_assumption_encoder_emits_only_upper_bound() -> None:
 
     assert isinstance(atom, ComparisonIR)
     assert atom.op == EnumComparisonOperator.LTE
-    assert atom.value == 3.0
+    assert isinstance(atom.right, ConstantExpressionIR)
+    assert atom.right.value == 3.0
 
 
 def test_domain_assumption_encoder_rejects_empty_bounds() -> None:

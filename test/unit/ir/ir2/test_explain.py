@@ -1,22 +1,31 @@
-from dsl.ir.ir1.nodes import ComparisonIR, ScopeIR
+from dsl.ir.ir1.nodes import (
+    AttributeExpressionIR,
+    ComparisonIR,
+    ConstantExpressionIR,
+    ScopeIR,
+)
 from dsl.ir.ir2.enums import (
     AssumptionSource,
     NormalFormKind,
     VerificationSemantics,
 )
 from dsl.ir.ir2.explain import IR2ExplainOptions, explain_ir2_task
+from dsl.ir.ir2.guardrails.diagnostics import (
+    DiagnosticSeverity,
+    IR2Diagnostic,
+)
 from dsl.ir.ir2.nodes import AssumptionIR2, NNFFormulaIR2, VerificationTaskIR2
 from dsl.ir.ir2.requirements import IR2Requirements
 from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.properties import EnumProperty
+from dsl.semantic.types.enums import EnumDataType
 
 
 def _comparison(feature: str, value: int) -> ComparisonIR:
     return ComparisonIR(
-        entity="_x",
-        feature=feature,
+        left=AttributeExpressionIR(entity="_x", feature=feature),
         op=EnumComparisonOperator.LTE,
-        value=value,
+        right=ConstantExpressionIR(value=value, dtype=EnumDataType.INT),
     )
 
 
@@ -52,6 +61,16 @@ def _task() -> VerificationTaskIR2:
             requires_domains=False,
             requires_neighborhoods=False,
             normal_form=NormalFormKind.NNF,
+            requires_affine_arithmetic=True,
+            requires_domain_assumptions=True,
+            required_scalar_sorts=frozenset({EnumDataType.FLOAT}),
+        ),
+        diagnostics=(
+            IR2Diagnostic(
+                code="IR2_TEST_WARNING",
+                severity=DiagnosticSeverity.WARNING,
+                message="test diagnostic",
+            ),
         ),
     )
 
@@ -66,6 +85,10 @@ def test_explain_ir2_task_shows_intersection_between_spec_assumptions_and_vc():
     assert "VC = Γ ∧ ¬P" in text
     assert "fake model assumption" in text
     assert "model_assertions: True" in text
+    assert "affine_arithmetic: True" in text
+    assert "domain_assumptions: True" in text
+    assert "scalar_sorts: float" in text
+    assert "IR2_TEST_WARNING" in text
 
 
 def test_explain_ir2_task_can_include_mermaid_view():

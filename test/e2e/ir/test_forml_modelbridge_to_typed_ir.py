@@ -1,5 +1,9 @@
 from dsl.builder.program import parse_program
-from dsl.ir.ir1.nodes import ComparisonIR
+from dsl.ir.ir1.nodes import (
+    AttributeExpressionIR,
+    ComparisonIR,
+    ConstantExpressionIR,
+)
 from dsl.ir.ir1.translator import IRTranslator
 from dsl.parser.parser import parse_forml_code
 from dsl.semantic.core.validator import FORMLValidator
@@ -38,10 +42,13 @@ def test_forml_modelbridge_schema_validation_to_typed_ir(tmp_path):
     comparison = tasks[0].query.expression
 
     assert isinstance(comparison, ComparisonIR)
-    assert comparison.entity == "x0"
-    assert comparison.feature == "income"
-    assert comparison.feature_dtype is EnumDataType.FLOAT
-    assert comparison.value_dtype is EnumDataType.INT
+    assert isinstance(comparison.left, AttributeExpressionIR)
+    assert comparison.left.entity == "x0"
+    assert comparison.left.feature == "income"
+    assert comparison.left.dtype is EnumDataType.FLOAT
+
+    assert isinstance(comparison.right, ConstantExpressionIR)
+    assert comparison.right.dtype is EnumDataType.INT
 
 
 def test_forml_modelbridge_rejects_unknown_feature_before_ir(tmp_path):

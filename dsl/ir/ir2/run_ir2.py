@@ -57,7 +57,7 @@ def run_ir2_with_model_schema(
 
     from model.encoder.factory import ModelEncoderFactory
 
-    ir1_tasks = run_ir(source)
+    ir1_tasks = run_ir(source, model_schema=schema)
     nnf_tasks = NNFNormalizer().normalize_tasks(ir1_tasks)
 
     builder = IR2Builder()

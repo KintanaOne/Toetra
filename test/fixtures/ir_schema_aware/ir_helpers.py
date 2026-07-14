@@ -3,14 +3,21 @@ from __future__ import annotations
 from dsl.builder.program import parse_program
 from dsl.ir.ir1.nodes import (
     AndIR,
+    AttributeExpressionIR,
+    BinaryArithmeticExpressionIR,
     ComparisonIR,
+    ConstantExpressionIR,
     ImplyIR,
     LogicalIR,
     NotIR,
     OrIR,
     ProblemIR,
+    ScalarExpressionIR,
+    TargetExpressionIR,
+    UnaryArithmeticExpressionIR,
     VerificationTask,
 )
+from dsl.ir.ir1.scalar import iter_scalar_expressions
 from dsl.ir.ir1.translator import IRTranslator
 from dsl.parser.parser import parse_forml_code
 from dsl.semantic.core.validator import FORMLValidator
@@ -58,24 +65,80 @@ def collect_comparisons(node: LogicalIR) -> list[ComparisonIR]:
 
 
 def comparison_by_feature(task: VerificationTask) -> dict[str, ComparisonIR]:
-    comparisons = collect_comparisons(task.query.expression)
-    return {comparison.feature: comparison for comparison in comparisons}
+    result: dict[str, ComparisonIR] = {}
+
+    for comparison in collect_comparisons(task.query.expression):
+        for scalar in iter_scalar_expressions(comparison.left):
+            if isinstance(scalar, AttributeExpressionIR):
+                result[scalar.feature] = comparison
+                break
+
+    return result
+
+
+def serialize_scalar(node: ScalarExpressionIR):
+    if isinstance(node, ConstantExpressionIR):
+        return {
+            "type": "constant",
+            "value": node.value,
+            "dtype": node.dtype.value,
+            "source_kind": node.source_kind.value,
+            "source_name": node.source_name,
+        }
+
+    if isinstance(node, AttributeExpressionIR):
+        return {
+            "type": "attribute",
+            "entity": node.entity,
+            "feature": node.feature,
+            "dtype": node.dtype.value if node.dtype is not None else None,
+        }
+
+    if isinstance(node, TargetExpressionIR):
+        return {
+            "type": "target",
+            "entity": node.entity,
+            "feature": node.feature,
+            "dtype": node.dtype.value if node.dtype is not None else None,
+        }
+
+    if isinstance(node, UnaryArithmeticExpressionIR):
+        return {
+            "type": "unary",
+            "operator": node.operator.value,
+            "operand": serialize_scalar(node.operand),
+            "dtype": node.dtype.value if node.dtype is not None else None,
+            "arithmetic_class": (
+                node.arithmetic_class.value
+                if node.arithmetic_class is not None
+                else None
+            ),
+        }
+
+    if isinstance(node, BinaryArithmeticExpressionIR):
+        return {
+            "type": "binary",
+            "left": serialize_scalar(node.left),
+            "operator": node.operator.value,
+            "right": serialize_scalar(node.right),
+            "dtype": node.dtype.value if node.dtype is not None else None,
+            "arithmetic_class": (
+                node.arithmetic_class.value
+                if node.arithmetic_class is not None
+                else None
+            ),
+        }
+
+    raise TypeError(f"Unsupported scalar IR node type: {type(node)}")
 
 
 def serialize_logical(node: LogicalIR):
     if isinstance(node, ComparisonIR):
         return {
             "type": "comparison",
-            "entity": node.entity,
-            "feature": node.feature,
+            "left": serialize_scalar(node.left),
             "op": node.op.value,
-            "value": node.value,
-            "feature_dtype": (
-                node.feature_dtype.value if node.feature_dtype is not None else None
-            ),
-            "value_dtype": (
-                node.value_dtype.value if node.value_dtype is not None else None
-            ),
+            "right": serialize_scalar(node.right),
         }
 
     if isinstance(node, AndIR):

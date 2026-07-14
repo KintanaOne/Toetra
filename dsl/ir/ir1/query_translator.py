@@ -10,12 +10,6 @@ from dsl.ast.nodes.assertion import (
     ProblemNode,
 )
 
-from dsl.ast.nodes.primitives import (
-    AttributeNode,
-    ConstantNode,
-    TargetRefNode,
-)
-
 from dsl.ir.ir1.nodes import (
     QueryIR,
     LogicalIR,
@@ -27,9 +21,9 @@ from dsl.ir.ir1.nodes import (
     ProblemIR,
 )
 
-from dsl.language.vocabulary.problems import EnumProblem
+from dsl.ir.ir1.scalar_translator import ScalarExpressionTranslator
 from dsl.language.vocabulary.functions import EnumFunction
-from dsl.semantic.types.enums import EnumDataType
+from dsl.language.vocabulary.problems import EnumProblem
 
 
 class QueryTranslator:
@@ -41,6 +35,12 @@ class QueryTranslator:
 
     This class does not translate scopes or properties.
     """
+
+    def __init__(
+        self,
+        scalar_translator: ScalarExpressionTranslator | None = None,
+    ) -> None:
+        self.scalar_translator = scalar_translator or ScalarExpressionTranslator()
 
     # ------------------------------------------------------------------
     # ENTRY POINT
@@ -125,86 +125,13 @@ class QueryTranslator:
         self,
         node: ComparisonNode,
     ) -> ComparisonIR:
-        """Translate the scalar-leaf subset currently supported by IR1.
-
-        The AST accepts general scalar expressions on both sides so that the
-        language can evolve toward arithmetic expressions.
-
-        The current IR1 comparison representation remains intentionally
-        asymmetric:
-
-            attribute | target-reference
-                operator
-            constant
-
-        Other scalar combinations must be lowered by a future arithmetic IR gate.
-        """
-
-        left = node.left
-        right = node.right
-
-        if not isinstance(
-            left,
-            (
-                AttributeNode,
-                TargetRefNode,
-            ),
-        ):
-            raise NotImplementedError(
-                "IR1 comparison lowering currently requires an attribute "
-                "or target reference on the left-hand side."
-            )
-
-        if not isinstance(right, ConstantNode):
-            raise NotImplementedError(
-                "IR1 comparison lowering currently requires a constant "
-                "on the right-hand side."
-            )
-
-        entity, feature, feature_dtype = self._resolve_ir_operand(left)
+        """Preserve both scalar operands as backend-independent IR1 trees."""
 
         return ComparisonIR(
-            entity=entity,
-            feature=feature,
+            left=self.scalar_translator.translate(node.left),
             op=node.op,
-            value=right.value,
-            feature_dtype=feature_dtype,
-            value_dtype=right.dtype,
+            right=self.scalar_translator.translate(node.right),
         )
-
-    def _resolve_ir_operand(
-        self,
-        node: AttributeNode | TargetRefNode,
-    ) -> tuple[str, str, EnumDataType | None]:
-        if isinstance(node, AttributeNode):
-            return self._resolve_ir_attribute(node)
-
-        if isinstance(node, TargetRefNode):
-            return self._resolve_ir_target_ref(node)
-
-        raise TypeError(f"Unsupported comparison left operand: {type(node)}")
-
-    def _resolve_ir_target_ref(
-        self,
-        node: TargetRefNode,
-    ) -> tuple[str, str, EnumDataType | None]:
-        semantic = node.semantic
-
-        if semantic is None:
-            raise ValueError("Cannot lower unbound target reference to IR")
-
-        if semantic.resolved_entity != "_model":
-            raise ValueError(
-                f"Invalid target reference binding: expected '_model', "
-                f"got {semantic.resolved_entity!r}"
-            )
-
-        if not semantic.resolved_path or len(semantic.resolved_path) < 2:
-            raise ValueError(
-                f"Invalid target reference path: {semantic.resolved_path!r}"
-            )
-
-        return "_model", semantic.resolved_path[-1], None
 
     def _translate_problem(self, node: ProblemNode) -> ProblemIR:
         problem = (
@@ -227,56 +154,3 @@ class QueryTranslator:
             function=function,
             args={},
         )
-
-    def _resolve_ir_attribute(
-        self,
-        attr: AttributeNode,
-    ) -> tuple[str, str, EnumDataType | None]:
-        """
-        Convert a semantically resolved AttributeNode into IR coordinates.
-
-        The IR layer must rely on semantic annotations, not on raw parsed fields.
-
-        Examples:
-            age      -> x'.age   depending on semantic scope
-            x.age    -> x.age
-            x'.age   -> x'.age
-            _x.age   -> _x.age
-
-        If schema-aware validation was enabled, the feature dtype is also
-        propagated into IR.
-        """
-
-        semantic = getattr(attr, "semantic", None)
-
-        if semantic is None:
-            raise ValueError(
-                f"Attribute '{attr.feature}' has no semantic annotations. "
-                "Run semantic validation before IR translation."
-            )
-
-        if not semantic.resolved_entity:
-            raise ValueError(
-                f"Attribute '{attr.feature}' has no resolved entity. "
-                "Binding validation probably did not run."
-            )
-
-        entity = semantic.resolved_entity
-
-        if semantic.resolved_path and len(semantic.resolved_path) >= 2:
-            feature = ".".join(semantic.resolved_path[1:])
-        else:
-            feature = attr.feature
-
-        feature_dtype = None
-
-        if semantic.resolved_type is not None:
-            try:
-                feature_dtype = EnumDataType(semantic.resolved_type)
-            except ValueError as e:
-                raise ValueError(
-                    f"Unsupported resolved dtype '{semantic.resolved_type}' "
-                    f"for attribute '{feature}'"
-                ) from e
-
-        return entity, feature, feature_dtype

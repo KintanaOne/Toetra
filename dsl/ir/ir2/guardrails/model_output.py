@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from dsl.ir.ir1.nodes import AndIR, ComparisonIR, ImplyIR, NotIR, OrIR
+from dsl.ir.ir1.scalar import references_model_output
 from dsl.ir.ir2.enums import AssumptionSource
 from dsl.ir.ir2.guardrails.diagnostics import DiagnosticSeverity, IR2Diagnostic
 
@@ -60,7 +61,9 @@ def _formula_references_model_output(formula: Any) -> bool:
 
 def _expression_references_model_output(expression: Any) -> bool:
     if isinstance(expression, ComparisonIR):
-        return expression.entity == "_model"
+        return references_model_output(expression.left) or references_model_output(
+            expression.right
+        )
 
     if isinstance(expression, AndIR):
         return any(

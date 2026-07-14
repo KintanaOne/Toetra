@@ -12,3 +12,15 @@ class BackendNotRegisteredError(BackendRoutingError):
 
 class NoCompatibleBackendError(BackendRoutingError):
     """Raised when registered backends do not satisfy IR2 requirements."""
+
+
+class BackendTranslationError(BackendError):
+    """Raised when an IR task cannot be translated soundly."""
+
+
+class UnsupportedBackendRequirementsError(BackendTranslationError):
+    """Raised when direct translation bypasses routing capability checks."""
+
+
+class UnsupportedScalarExpressionError(BackendTranslationError):
+    """Raised when a scalar expression is outside the backend profile."""

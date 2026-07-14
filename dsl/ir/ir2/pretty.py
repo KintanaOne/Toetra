@@ -9,6 +9,7 @@ from dsl.ir.ir1.nodes import (
     OrIR,
     ProblemIR,
 )
+from dsl.ir.ir1.scalar import format_scalar_expression
 from dsl.ir.ir2.dsl.nodes import (
     CNFFormulaIR2,
     DNFFormulaIR2,
@@ -192,7 +193,9 @@ def _pretty_atom(atom: AtomicIR) -> str:
 
 def _pretty_comparison(atom: ComparisonIR) -> str:
     op = getattr(atom.op, "value", atom.op)
-    return f"{atom.entity}.{atom.feature} {op} {atom.value}"
+    left = format_scalar_expression(atom.left)
+    right = format_scalar_expression(atom.right)
+    return f"{left} {op} {right}"
 
 
 def _pretty_problem(atom: ProblemIR) -> str:

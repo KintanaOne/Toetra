@@ -44,9 +44,12 @@ class BackendRouter:
                 f"Requested backend '{backend.value}' is not registered"
             )
 
-        if not capabilities.supports(task.requirements):
+        incompatibilities = capabilities.incompatibilities(task.requirements)
+        if incompatibilities:
+            details = "; ".join(incompatibilities)
             raise NoCompatibleBackendError(
-                f"Requested backend '{backend.value}' does not satisfy IR2 requirements"
+                f"Requested backend '{backend.value}' does not satisfy IR2 "
+                f"requirements: {details}"
             )
 
         return BackendRoute(

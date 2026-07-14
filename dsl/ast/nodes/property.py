@@ -4,12 +4,13 @@ from dataclasses import dataclass
 
 from dsl.ast.nodes.assertion import AssertionNode
 from dsl.ast.nodes.backends import BackendNode
+from dsl.ast.nodes.base import ASTNode
 from dsl.ast.nodes.expressions import ExpressionNode
 from dsl.language.vocabulary.properties import EnumProperty
 
 
 @dataclass
-class PropertyNode:
+class PropertyNode(ASTNode):
     type: EnumProperty
     rule: PropertyRuleNode
     backend: BackendNode | None

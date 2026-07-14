@@ -4,6 +4,7 @@ from typing import Any
 from dsl.semantic.context.context import SemanticContext
 from dsl.semantic.symbols.symbol import Symbol
 from dsl.semantic.symbols.table import SymbolTable
+from dsl.semantic.types.enums import EnumArithmeticClass, EnumDataType
 
 
 @dataclass
@@ -79,13 +80,17 @@ class SemanticAnnotations:
 
     resolved_type: str | None = None
     """
-    Semantic role/type inferred during resolution.
+    Backward-compatible normalized semantic type label.
 
-    Examples:
-        anchor
-        perturbation
-        symbolic
+    New code should prefer ``inferred_dtype`` for scalar typing. The string
+    field remains available because existing IR1 and diagnostics consume it.
     """
+
+    inferred_dtype: EnumDataType | None = None
+    """Scalar data type inferred during semantic validation, when known."""
+
+    arithmetic_class: EnumArithmeticClass | None = None
+    """Structural arithmetic family required by this scalar expression."""
 
     resolved_symbol: Symbol | None = None
     """

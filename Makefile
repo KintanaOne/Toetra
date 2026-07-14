@@ -2,7 +2,7 @@
 # FORML - Makefile minimal
 # =========================
 
-.PHONY: install test test-wip test-all lint format format-check type ci clean
+.PHONY: install test test-wip test-all lint format format-check type ci demo-affine demo-user clean
 
 # Install dev environment
 install:
@@ -43,6 +43,14 @@ ci:
 	python -m black --check .
 	python -m pyright
 	python -m pytest -q
+
+# Run the canonical affine end-to-end demo
+demo-affine:
+	python -m demo.affine_specification_constants_z3
+
+# Run the self-contained public verify(...) script example
+demo-user:
+	python -m demo.user_verify_script --demo
 
 # Clean caches
 clean:

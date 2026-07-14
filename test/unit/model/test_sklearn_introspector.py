@@ -1,4 +1,6 @@
+import pandas as pd
 import pytest
+from sklearn.linear_model import LinearRegression
 
 from dsl.semantic.types.enums import EnumDataType
 from model.detector.model_framework import EnumModelFramework
@@ -26,6 +28,7 @@ def test_sklearn_introspector_builds_classification_schema_with_explicit_target(
     assert schema.model_type == "LogisticRegression"
     assert schema.task == "classification"
     assert schema.target == "MyTarget"
+    assert schema.target_dtype is EnumDataType.INT
     assert "MyTarget" not in schema.features
     assert set(schema.features) == {"age", "income", "score"}
     assert schema.features["age"].dtype is EnumDataType.INT
@@ -33,6 +36,31 @@ def test_sklearn_introspector_builds_classification_schema_with_explicit_target(
     assert schema.metadata["serialization_format"] == ".joblib"
     assert schema.metadata["model_class"] == "LogisticRegression"
     assert schema.metadata["n_features_in"] == 3
+
+
+def test_sklearn_introspector_preserves_integer_target_dtype_for_regression(
+    tmp_path,
+):
+    data = pd.DataFrame(
+        {
+            "feature": [1.0, 2.0, 3.0],
+            "SalePrice": [100, 200, 300],
+        }
+    )
+    dataset = tmp_path / "integer_regression_target.csv"
+    data.to_csv(dataset, index=False)
+
+    model = LinearRegression()
+    model.fit(data[["feature"]], data["SalePrice"])
+
+    schema = SklearnIntrospector(
+        model=model,
+        source_path=dataset,
+        target_name="SalePrice",
+    ).introspect()
+
+    assert schema.task == "regression"
+    assert schema.target_dtype is EnumDataType.INT
 
 
 def test_sklearn_introspector_detects_nullable_columns():
@@ -62,6 +90,7 @@ def test_sklearn_introspector_uses_external_schema_before_target_name():
         },
         target="ExternalTarget",
         task="classification",
+        target_dtype=EnumDataType.STRING,
     )
 
     schema = SklearnIntrospector(
@@ -71,6 +100,7 @@ def test_sklearn_introspector_uses_external_schema_before_target_name():
     ).introspect()
 
     assert schema.target == "ExternalTarget"
+    assert schema.target_dtype is EnumDataType.STRING
     assert set(schema.features) == {"external_feature"}
 
 

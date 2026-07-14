@@ -6,6 +6,7 @@ from dsl.ast.nodes.base import ASTNode
 from dsl.ast.nodes.primitives import (
     AttributeNode,
     ConstantNode,
+    NameRefNode,
     ScalarExpressionNode,
 )
 from dsl.language.vocabulary.domains import EnumBoundaryKind
@@ -24,7 +25,7 @@ class SymbolLiteralNode(ASTNode):
     name: str
 
 
-DomainFiniteValueNode = ConstantNode | SymbolLiteralNode
+DomainFiniteValueNode = ConstantNode | NameRefNode | SymbolLiteralNode
 
 
 @dataclass

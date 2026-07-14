@@ -9,7 +9,12 @@ from dsl.backends.errors import (
 )
 from dsl.backends.registry import BackendRegistry
 from dsl.backends.router import BackendRouter
-from dsl.ir.ir1.nodes import ComparisonIR, ScopeIR
+from dsl.ir.ir1.nodes import (
+    AttributeExpressionIR,
+    ComparisonIR,
+    ConstantExpressionIR,
+    ScopeIR,
+)
 from dsl.ir.ir2.enums import NormalFormKind, VerificationSemantics
 from dsl.ir.ir2.nodes import (
     CNFFormulaIR2,
@@ -25,6 +30,7 @@ from dsl.ir.ir2.requirements import IR2Requirements
 from dsl.language.vocabulary.backends import EnumBackend
 from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.properties import EnumProperty
+from dsl.semantic.types.enums import EnumDataType
 
 
 def _requirements(
@@ -67,10 +73,9 @@ def _scope(*, quantified: bool = False) -> ScopeIR:
 
 def _atom() -> ComparisonIR:
     return ComparisonIR(
-        entity="x0",
-        feature="a",
+        left=AttributeExpressionIR(entity="x0", feature="a"),
         op=EnumComparisonOperator.LTE,
-        value=1,
+        right=ConstantExpressionIR(value=1, dtype=EnumDataType.INT),
     )
 
 

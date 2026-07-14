@@ -272,7 +272,7 @@ Current grammar-level backend names include:
 
 | Backend | Status |
 |---|---|
-| `z3` / `Z3` | planned critical backend |
+| `z3` / `Z3` | implemented numeric-affine backend profile |
 | `eran` / `ERAN` | planned backend |
 | `zonotope` / `ZONOTOPE` | planned abstraction/backend mode |
 | `box` / `BOX` | planned abstraction/backend mode |

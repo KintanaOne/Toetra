@@ -1,179 +1,141 @@
 # Verification Runtime
 
-> Status: Planned  
-> Implementation: Not yet implemented  
-> Scope: Execution of backend-ready verification artifacts
+> Status: Implemented for the numerical-affine Z3 profile  
+> Public API: `dsl.runtime.verify`
 
-## Purpose
-
-The verification runtime is the execution layer that receives a `BackendQuery`, invokes a verification backend, and returns a normalized `VerificationResult`.
-
-It is the final stage of the first functional FORML end-to-end path.
-
-## Runtime Position
-
-```text
-LoweredQuery
-→ BackendQuery
-→ VerificationRuntime
-→ VerificationResult
-```
-
-The runtime should not be coupled to the DSL syntax, AST structure, or semantic validation internals.
-
-## Minimal V1 Execution Path
-
-The minimal V1 execution path is Z3-based:
-
-```text
-BackendQuery[Z3]
-→ Z3RuntimeAdapter
-→ z3.Solver()
-→ native Z3 result
-→ VerificationResult
-```
-
-Z3 is the reference backend for V1.
-
-Other backends must not be required for the first complete FORML execution.
-
-## Runtime Inputs
-
-The runtime consumes backend-specific artifacts.
-
-### BackendQuery
-
-A `BackendQuery` represents the final backend-specific form of a FORML verification problem.
-
-It should contain:
-
-- backend identifier,
-- symbolic variables,
-- assertions,
-- solver configuration,
-- traceability metadata,
-- optional model constraints,
-- optional expected property metadata.
-
-### Runtime Options
-
-Runtime options may include:
-
-- timeout,
-- solver mode,
-- determinism settings,
-- diagnostic level,
-- counterexample extraction,
-- trace verbosity.
-
-For V1, runtime options should remain minimal.
-
-## Runtime Output
-
-The runtime should produce a normalized `VerificationResult`.
-
-Possible fields:
-
-```text
-VerificationResult
-    status
-    property_id
-    backend
-    satisfied
-    counterexample
-    diagnostics
-    raw_backend_summary
-    trace
-```
-
-## Suggested Result Statuses
-
-| Status | Meaning |
-|---|---|
-| `SATISFIED` | The property was verified or no counterexample was found under the backend semantics |
-| `VIOLATED` | A counterexample or violation was found |
-| `UNKNOWN` | The backend could not determine the result |
-| `TIMEOUT` | Execution exceeded limits |
-| `UNSUPPORTED` | The query requires unsupported backend features |
-| `ERROR` | Runtime or backend execution failed unexpectedly |
-
-## Z3 Runtime Adapter
-
-The Z3 adapter should be responsible for:
-
-- constructing a `z3.Solver`,
-- declaring symbolic variables,
-- adding assertions,
-- executing solver checks,
-- extracting models/counterexamples,
-- mapping native Z3 statuses to FORML statuses,
-- returning a normalized `VerificationResult`.
-
-## Adapter Boundary
-
-The runtime should expose a clear adapter boundary:
+## User Entry Point
 
 ```python
-class VerificationBackendAdapter:
-    def execute(self, query: BackendQuery, options: RuntimeOptions) -> VerificationResult:
-        ...
+from dsl.runtime import verify
+
+session = verify(
+    "credit-risk.forml",
+    model="credit-risk.joblib",
+    dataset="credit-risk-reference.csv",
+)
 ```
 
-For V1, one concrete implementation is enough:
+The runtime performs the complete orchestration:
+
+```text
+load specification
+→ resolve or build ModelSchema
+→ compile to IR2
+→ route each property
+→ execute its backend runner
+→ build VerificationReport objects
+→ return VerificationSession
+```
+
+A caller does not need to instantiate `IR2BuildContext`, `BackendRouter` or
+`Z3Runner` for the standard path.
+
+## Inputs
+
+### Specification
+
+`specification` accepts either:
+
+- a `Path` to a `.forml` file;
+- a string path ending in `.forml`;
+- raw FORML source text.
+
+A missing string ending in `.forml` raises `FileNotFoundError` rather than being
+misinterpreted as source code.
+
+### Model metadata
+
+Two modes are supported.
+
+Artifact mode:
 
 ```python
-class Z3BackendAdapter(VerificationBackendAdapter):
-    ...
+verify(
+    "policy.forml",
+    model="model.joblib",
+    dataset="reference.csv",
+)
 ```
 
-## Error Handling
+Schema mode:
 
-Runtime errors must preserve the layer where the error occurred.
+```python
+verify(source, schema=model_schema)
+```
 
-Examples:
+In artifact mode, `ModelManager` loads and introspects the serialized model.
+The dataset is optional but may be required to recover input and target dtypes.
+If the model path is omitted, the header model reference is resolved relative
+to the `.forml` file.
 
-| Error | Layer |
+The header target and schema target must match exactly.
+
+## Execution Model
+
+For every compiled property, the runtime creates:
+
+```python
+VerificationExecution(
+    task=task,
+    route=route,
+    result=result,
+    report=report,
+)
+```
+
+The task and route remain available for advanced inspection. Normal application
+code should consume `execution.report` or the session-level output helpers.
+
+## Runner Registry
+
+Capability registration and execution registration are intentionally separate.
+A backend may be known to the router but unavailable in the current process.
+In that case the runtime raises `BackendRunnerNotRegisteredError` instead of
+silently selecting another executor.
+
+```python
+from dsl.runtime import BackendRunnerRegistry
+
+runners = BackendRunnerRegistry()
+runners.register(...)
+verify(source, schema=schema, runner_registry=runners)
+```
+
+## CI Usage
+
+```python
+session = verify(...)
+session.print()
+session.write_json("artifacts/forml-report.json")
+raise SystemExit(session.exit_code)
+```
+
+Exit codes are stable:
+
+| Code | Meaning |
 |---|---|
-| malformed `BackendQuery` | backend-boundary |
-| unsupported symbolic operator | backend-adapter |
-| solver timeout | runtime |
-| native backend crash | backend-runtime |
-| inconsistent result mapping | result-normalization |
+| `0` | Every property was positively concluded |
+| `1` | A property failed |
+| `2` | At least one result is inconclusive |
 
-Runtime errors should not be reclassified as parser or semantic errors.
+## Error Boundaries
 
-## Traceability
+The runtime preserves the original compiler and backend errors. It adds
+configuration-specific errors only for ambiguous or disconnected inputs, such
+as:
 
-A runtime result should be traceable back to:
+- supplying both a schema and model artifacts;
+- a header target that differs from the model schema target;
+- a routed backend without a registered runner;
+- missing specification, model or dataset files.
 
-- the FORML property,
-- the generated IR task,
-- the aggregated assertion set,
-- the lowered query,
-- the backend query,
-- the backend execution result.
+## Current Constraints
 
-This traceability is critical for diagnostics, debugging, and future Miova campaigns.
+The public runtime currently executes the default Z3 numerical-affine profile.
+It does not yet provide:
 
-## V1 Constraints
-
-For V1, the verification runtime should intentionally avoid:
-
-- automatic backend selection,
-- runtime monitoring,
-- distributed execution,
-- multi-backend comparison,
-- complex optimization at runtime.
-
-Those concerns belong to post-V1 work.
-
-## Target V1 Definition of Done
-
-A minimal runtime is acceptable when:
-
-- a valid FORML property reaches a Z3 `BackendQuery`,
-- the Z3 adapter executes it,
-- a normalized `VerificationResult` is returned,
-- failures are layer-specific,
-- at least one counterexample path is supported,
-- the flow is covered by golden end-to-end test.
+- timeouts;
+- parallel property execution;
+- multi-backend comparison;
+- persistent execution traces;
+- automatic replay of counterexamples on the original estimator.

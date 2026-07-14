@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from dsl.ast.nodes.domain import (
+    DomainFiniteValueNode,
     FiniteSetDomainNode,
     IntervalDomainNode,
     SymbolLiteralNode,
@@ -13,7 +14,7 @@ from dsl.ast.nodes.expressions import (
     PairwiseExprNode,
     QuantifierExprNode,
 )
-from dsl.ast.nodes.primitives import AttributeNode, ConstantNode, TargetRefNode
+from dsl.ast.nodes.primitives import ConstantNode, NameRefNode
 
 from dsl.ir.ir1.nodes import (
     AttributeExpressionIR,
@@ -26,8 +27,8 @@ from dsl.ir.ir1.nodes import (
     NeighborhoodIR,
     ScopeIR,
     SymbolLiteralIR,
-    TargetExpressionIR,
 )
+from dsl.ir.ir1.scalar_translator import ScalarExpressionTranslator
 
 
 class ScopeTranslator:
@@ -39,6 +40,12 @@ class ScopeTranslator:
 
     This class does not translate logical assertions.
     """
+
+    def __init__(
+        self,
+        scalar_translator: ScalarExpressionTranslator | None = None,
+    ) -> None:
+        self.scalar_translator = scalar_translator or ScalarExpressionTranslator()
 
     def translate(self, scope) -> ScopeIR:
         if isinstance(scope, AtExprNode):
@@ -165,22 +172,29 @@ class ScopeTranslator:
         if domain is None:
             return None
 
-        return DomainIR(
-            entries=tuple(
+        entries: list[DomainEntryIR] = []
+
+        for entry in domain.entries:
+            subject = self.scalar_translator.translate(entry.subject)
+            if not isinstance(subject, AttributeExpressionIR):
+                raise TypeError("Domain subject did not lower to an attribute IR")
+
+            entries.append(
                 DomainEntryIR(
-                    entity=entry.subject.entity,
-                    feature=entry.subject.feature,
+                    entity=subject.entity,
+                    feature=subject.feature,
                     constraint=self._translate_domain_constraint(entry.constraint),
+                    dtype=subject.dtype,
                 )
-                for entry in domain.entries
             )
-        )
+
+        return DomainIR(entries=tuple(entries))
 
     def _translate_domain_constraint(self, constraint):
         if isinstance(constraint, IntervalDomainNode):
             return IntervalDomainIR(
-                lower=self._translate_scalar_leaf(constraint.lower),
-                upper=self._translate_scalar_leaf(constraint.upper),
+                lower=self.scalar_translator.translate(constraint.lower),
+                upper=self.scalar_translator.translate(constraint.upper),
                 lower_boundary=constraint.lower_boundary,
                 upper_boundary=constraint.upper_boundary,
             )
@@ -196,7 +210,7 @@ class ScopeTranslator:
 
     def _translate_finite_value(
         self,
-        node: ConstantNode | SymbolLiteralNode,
+        node: DomainFiniteValueNode,
     ) -> DomainFiniteValueIR:
         """Translate one finite-set value to its restricted IR representation.
 
@@ -213,24 +227,14 @@ class ScopeTranslator:
             return SymbolLiteralIR(name=node.name)
 
         if isinstance(node, ConstantNode):
-            return ConstantExpressionIR(
-                value=node.value,
-                dtype=node.dtype,
+            translated = self.scalar_translator.translate(node)
+            if not isinstance(translated, ConstantExpressionIR):
+                raise TypeError("Finite-set constant did not lower to a constant IR")
+            return translated
+
+        if isinstance(node, NameRefNode):
+            raise TypeError(
+                f"Unresolved finite-set name reached IR1 translation: {node.name!r}"
             )
 
         raise TypeError(f"Unsupported finite-set value: {type(node).__name__}")
-
-    def _translate_scalar_leaf(self, node):
-        if isinstance(node, ConstantNode):
-            return ConstantExpressionIR(value=node.value, dtype=node.dtype)
-
-        if isinstance(node, AttributeNode):
-            entity = node.entity
-            if node.semantic is not None and node.semantic.resolved_entity is not None:
-                entity = node.semantic.resolved_entity
-            return AttributeExpressionIR(entity=entity, feature=node.feature)
-
-        if isinstance(node, TargetRefNode):
-            return TargetExpressionIR(name=node.name)
-
-        raise TypeError(f"Unsupported scalar domain leaf: {type(node).__name__}")

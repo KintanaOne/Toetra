@@ -81,6 +81,7 @@ nav:
       - First FORML Property: getting-started/first-property.md
       - First Model Schema: getting-started/first-model-schema.md
       - End-to-End Preview: getting-started/end-to-end-preview.md
+      - Notebook Workflow: getting-started/notebook-workflow.md
 
   - Architecture:
       - Overview: architecture/overview.md

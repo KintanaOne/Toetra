@@ -1,4 +1,10 @@
-from dsl.ir.ir1.nodes import AndIR, ComparisonIR, NotIR
+from dsl.ir.ir1.nodes import (
+    AndIR,
+    ComparisonIR,
+    ConstantExpressionIR,
+    NotIR,
+    TargetExpressionIR,
+)
 from dsl.ir.ir2.context import IR2BuildContext
 from dsl.ir.ir2.enums import AssumptionSource, NormalFormKind
 from dsl.ir.ir2.model.affine import AffineOutputConstraintIR2
@@ -52,10 +58,12 @@ def test_target_ref_connects_to_model_output_assumption():
     spec = task.spec_formula.expression
 
     assert isinstance(spec, ComparisonIR)
-    assert spec.entity == "_model"
-    assert spec.feature == "MyTarget"
+    assert isinstance(spec.left, TargetExpressionIR)
+    assert spec.left.entity == "_model"
+    assert spec.left.feature == "MyTarget"
     assert spec.op == EnumComparisonOperator.LTE
-    assert spec.value == 10
+    assert isinstance(spec.right, ConstantExpressionIR)
+    assert spec.right.value == 10
 
     assert len(task.assumptions) == 1
 
@@ -69,8 +77,8 @@ def test_target_ref_connects_to_model_output_assumption():
     assert model_constraint.output_entity == "_model"
     assert model_constraint.output_feature == "MyTarget"
 
-    assert model_constraint.output_entity == spec.entity
-    assert model_constraint.output_feature == spec.feature
+    assert model_constraint.output_entity == spec.left.entity
+    assert model_constraint.output_feature == spec.left.feature
 
     assert len(model_constraint.expression.terms) == 1
 
@@ -144,7 +152,9 @@ def test_target_ref_and_model_assumption_build_refutation_vc():
 
     spec = negated_spec.operand
 
-    assert spec.entity == "_model"
-    assert spec.feature == "MyTarget"
+    assert isinstance(spec.left, TargetExpressionIR)
+    assert spec.left.entity == "_model"
+    assert spec.left.feature == "MyTarget"
     assert spec.op == EnumComparisonOperator.LTE
-    assert spec.value == 10
+    assert isinstance(spec.right, ConstantExpressionIR)
+    assert spec.right.value == 10

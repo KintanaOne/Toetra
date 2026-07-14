@@ -1,5 +1,10 @@
 from dsl.semantic.errors.errors import InvalidPropertyError
 from dsl.semantic.core.problem import ProblemValidator
+from dsl.semantic.core.scalar_typing import (
+    ScalarTypeAnalyzer,
+    combine_arithmetic_classes,
+)
+from dsl.semantic.runtime.annotations import SemanticAnnotations
 from dsl.semantic.runtime.tracer import ValidationTracer
 
 from dsl.ast.nodes.assertion import (
@@ -13,8 +18,11 @@ from dsl.ast.nodes.assertion import (
 
 from dsl.ast.nodes.primitives import (
     AttributeNode,
+    BinaryArithmeticNode,
     ConstantNode,
+    NameRefNode,
     TargetRefNode,
+    UnaryArithmeticNode,
 )
 
 
@@ -33,6 +41,7 @@ class LogicValidator:
     def __init__(self, tracer=None, model_schema=None):
         self.tracer = tracer or ValidationTracer()
         self.model_schema = model_schema
+        self.scalar_analyzer = ScalarTypeAnalyzer(model_schema=model_schema)
 
     # ─────────────────────────────
     # ENTRY POINT
@@ -76,6 +85,22 @@ class LogicValidator:
 
         self._validate_operand(node.left, context)
         self._validate_operand(node.right, context)
+
+        left_analysis = self.scalar_analyzer.analyze(node.left)
+        right_analysis = self.scalar_analyzer.analyze(node.right)
+        self.scalar_analyzer.validate_comparison_types(
+            left_analysis,
+            right_analysis,
+            node.op,
+        )
+
+        if node.semantic is None:
+            node.semantic = SemanticAnnotations()
+
+        node.semantic.arithmetic_class = combine_arithmetic_classes(
+            left_analysis.arithmetic_class,
+            right_analysis.arithmetic_class,
+        )
 
     # ─────────────────────────────
     # AND
@@ -165,6 +190,18 @@ class LogicValidator:
 
         if isinstance(node, ConstantNode):
             return
+
+        if isinstance(node, UnaryArithmeticNode):
+            self._validate_operand(node.operand, context)
+            return
+
+        if isinstance(node, BinaryArithmeticNode):
+            self._validate_operand(node.left, context)
+            self._validate_operand(node.right, context)
+            return
+
+        if isinstance(node, NameRefNode):
+            raise InvalidPropertyError(f"Unresolved scalar name '{node.name}'")
 
         raise InvalidPropertyError(f"Invalid operand type: {type(node)}")
 

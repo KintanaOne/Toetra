@@ -1,216 +1,102 @@
 # IR2 Layer
 
-> Status: P0 / Planned / Architecturally Required  
-> Scope: IR1 to clause-oriented or case-oriented normal forms  
-> Implementation: Not yet implemented  
-> Audience: IR authors, backend authors, solver integration authors
+> Status: Implemented / stabilizing  
+> Scope: Backend-neutral aggregation, normal forms, requirements and diagnostics
 
 ## Purpose
 
-IR2 is the planned logical representation layer after IR1.
+IR2 converts an NNF IR1 task into a backend-neutral verification task containing:
 
-It answers the question:
+- the user specification `P`;
+- provenanced assumptions `Γ`;
+- verification semantics;
+- a selected NNF, CNF or DNF verification condition;
+- backend requirements;
+- non-blocking diagnostics.
 
-```text
-Which normal form should this verification task use before aggregation and backend preparation?
-```
+## Verification semantics
 
-IR2 is responsible for CNF, DNF, and future normal forms depending on verification needs.
-
----
-
-## Position in the Pipeline
-
-```text
-IR1 / NNF
-    ↓
-IR2 / CNF-DNF
-    ↓
-Assertion Aggregation
-```
-
-IR1 performs early logical normalization, including De Morgan and NNF.
-
-IR2 selects and produces forms such as CNF or DNF.
-
----
-
-## Why IR2 Exists
-
-IR1 is a normalized logical tree.
-
-That is not always the best representation for solving, minimization, counterexample search, or backend lowering.
-
-IR2 exists to prepare the logical structure for downstream needs.
-
----
-
-## Target Normal Forms
-
-### CNF
-
-Conjunctive Normal Form represents logic as a conjunction of clauses.
-
-Conceptually:
+Universal and non-existential scopes use refutation:
 
 ```text
-(A OR B) AND (C OR D) AND ...
+VC = Γ ∧ ¬P
 ```
 
-CNF is useful for:
-
-- SAT/SMT-style solving;
-- global consistency checking;
-- clause-level simplification;
-- unsat core analysis;
-- backend preparation for solvers that prefer conjunctive constraints.
-
----
-
-### DNF
-
-Disjunctive Normal Form represents logic as a disjunction of cases.
-
-Conceptually:
+Existential scopes use satisfaction:
 
 ```text
-(A AND B) OR (C AND D) OR ...
+VC = Γ ∧ P
 ```
 
-DNF is useful for:
+No native quantifier currently reaches the backend. The quantified scope is preserved as metadata while the verification condition is quantifier-free.
 
-- scenario exploration;
-- case splitting;
-- counterexample search;
-- mutation-driven boundary analysis;
-- explaining alternative satisfaction paths.
+## Assumption aggregation
 
----
+IR2 currently aggregates:
 
-## Normal Form Selection
+- domain assumptions generated from `ScopeIR.domain`;
+- model assumptions produced by a `ModelEncoder`;
+- externally supplied backend-neutral assumptions.
 
-IR2 may be selected by:
+Each assumption carries:
 
-- explicit user configuration;
-- property type;
-- backend capability;
-- solver strategy;
-- query complexity;
-- counterexample generation mode;
-- Miova campaign objective.
+- a source enum;
+- an NNF formula;
+- a description;
+- provenance metadata.
 
-Example:
+## Domain lowering
 
-| Need | Likely IR2 Form |
-|---|---|
-| SMT solving | CNF or solver-native conjunctions |
-| Counterexample exploration | DNF |
-| Boundary discovery | DNF or hybrid form |
-| Global constraint consistency | CNF |
-| Human explanation | DNF or structured original form |
+Intervals expand into one or two comparisons with exact boundary operators. Numeric finite sets become membership disjunctions. Symbolic finite-set members remain explicit and trigger a symbolic-category requirement.
 
----
+## Normal forms
 
-## Equivalence Policy
+IR2 supports:
 
-IR2 transformations must declare their preservation semantics.
+- `NNFFormulaIR2`;
+- `CNFFormulaIR2`;
+- `DNFFormulaIR2`.
 
-| Transformation Type | Required Guarantee |
-|---|---|
-| Simple De Morgan / distribution | Logical equivalence |
-| Tseitin-style encoding | Equisatisfiability, not strict equivalence |
-| Simplification | Logical equivalence or explicit approximation |
-| Backend-specific normalization | Backend result preservation |
+Boolean conversion changes grouping and literal polarity but treats each scalar comparison as an atomic predicate. Recursive scalar structure and specification-constant provenance are preserved.
 
-The distinction between logical equivalence and equisatisfiability is important and must be visible in IR2 metadata.
+## Requirements
 
----
+`IR2Requirements` reports, among other fields:
 
-## Proposed IR2 Artifact
+- boolean and comparison needs;
+- model and domain assumptions;
+- verification semantics;
+- normal form;
+- affine, nonlinear and symbolic-division arithmetic;
+- required scalar sorts;
+- finite-set membership;
+- symbolic categories;
+- native quantifier needs.
 
-The exact implementation is open, but IR2 should likely expose an artifact similar to:
+The backend router compares these requirements with a concrete capability declaration before translation.
 
-```text
-NormalizedVerificationTask
-    property_type
-    scope
-    normal_form
-    clauses_or_cases
-    preservation_mode
-    traceability
-    backend_hint
-```
+## Diagnostics
 
-Where `normal_form` may be:
+IR2 diagnostics are non-blocking structural warnings. For example, model assumptions combined with a property that never references a model output produce `IR2_MODEL_OUTPUT_NOT_REFERENCED`.
 
-```text
-NNF
-CNF
-DNF
-HYBRID
-BACKEND_NATIVE
-```
+Backend result diagnostics are separate because they depend on solver execution. Vacuity detection therefore belongs to the Z3 runner rather than IR2 construction.
 
----
-
-## Traceability Requirement
-
-IR2 must preserve traceability to IR1.
-
-Every generated clause or case should be traceable back to:
-
-- original property;
-- original assertion;
-- original IR1 node;
-- semantic entity or feature;
-- transformation rule.
-
-This is critical for diagnostics, explanations, minimization, and Miova validation.
-
----
-
-## What IR2 Must Not Do
+## Invariants
 
 IR2 must not:
 
-- load ML models;
-- inspect raw sklearn/XGBoost objects;
-- produce Z3 expressions directly;
-- execute verification;
-- hide lossy transformations;
-- drop traceability.
+- import or construct solver-native expressions;
+- lose scalar-expression or constant provenance;
+- silently approximate unsupported arithmetic;
+- select a backend by mutating the task;
+- treat an unsupported capability as a parser error.
 
----
+## Remaining work
 
-## Relation to Assertion Aggregation
+Future IR2 work includes:
 
-IR2 produces normalized logical forms that are ready to be aggregated with:
-
-- other property assertions;
-- semantic constraints;
-- model-derived constraints;
-- backend capability constraints.
-
-Aggregation should consume IR2, not raw AST and preferably not raw IR1 when clause/case structure is needed.
-
----
-
-## Relation to Miova
-
-Miova can challenge IR2 by mutating:
-
-- clauses;
-- cases;
-- normal form metadata;
-- preservation mode;
-- traceability links;
-- operators;
-- atomic predicates.
-
-Expected checks include:
-
-- CNF shape validity;
-- DNF shape validity;
-- equivalence/equisatisfiability contract;
-- no orphaned generated clauses;
-- no backend object leakage.
+- richer simplification and redundancy analysis;
+- explicit equivalence/equisatisfiability metadata for advanced transformations;
+- unsat-core and proof-trace mappings;
+- additional assumption sources;
+- optimizer policies for large CNF/DNF expansions.

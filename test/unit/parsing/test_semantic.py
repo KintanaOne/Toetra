@@ -10,6 +10,7 @@ from dsl.ast.nodes.expressions import (
     PairwiseExprNode,
     QuantifierExprNode,
 )
+from dsl.ast.nodes.primitives import NameRefNode
 from dsl.builder.program import parse_program
 from dsl.language.vocabulary.backends import EnumBackend
 from dsl.language.vocabulary.properties import EnumProperty
@@ -165,7 +166,11 @@ def test_program_with_quantifier():
     assert isinstance(constraint, FiniteSetDomainNode)
 
     actual_values = [
-        value.name if isinstance(value, SymbolLiteralNode) else value.value
+        (
+            value.name
+            if isinstance(value, (NameRefNode, SymbolLiteralNode))
+            else value.value
+        )
         for value in constraint.values
     ]
 
@@ -226,7 +231,11 @@ def test_program_with_domain_and_neighborhood():
     assert isinstance(constraint, FiniteSetDomainNode)
 
     actual_values = [
-        value.name if isinstance(value, SymbolLiteralNode) else value.value
+        (
+            value.name
+            if isinstance(value, (NameRefNode, SymbolLiteralNode))
+            else value.value
+        )
         for value in constraint.values
     ]
 
