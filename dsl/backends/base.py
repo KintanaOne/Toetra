@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, Protocol
 
 from dsl.backends.capabilities import BackendCapabilities
+from dsl.backends.results import VerificationResult
 from dsl.ir.ir2.nodes import VerificationTaskIR2
 from dsl.language.vocabulary.backends import EnumBackend
 
@@ -19,3 +20,9 @@ class BackendTranslator(Protocol):
     capabilities: BackendCapabilities
 
     def translate(self, task: VerificationTaskIR2) -> Any: ...
+
+
+class BackendRunner(Protocol):
+    """Protocol implemented by backend executors exposed to the runtime."""
+
+    def run(self, task: VerificationTaskIR2) -> VerificationResult: ...

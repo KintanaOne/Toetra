@@ -60,6 +60,10 @@ def explain_ir2_task(
     lines.append("")
     lines.extend(_verification_condition(task))
 
+    if task.diagnostics:
+        lines.append("")
+        lines.extend(_diagnostics(task))
+
     if options.include_requirements:
         lines.append("")
         lines.extend(_requirements(task))
@@ -213,6 +217,12 @@ def _requirements(task: VerificationTaskIR2) -> list[str]:
             requirements.requires_native_quantifiers,
         ),
         ("domains", requirements.requires_domains),
+        ("domain_assumptions", requirements.requires_domain_assumptions),
+        ("finite_set_membership", requirements.requires_finite_set_membership),
+        ("symbolic_categories", requirements.requires_symbolic_categories),
+        ("affine_arithmetic", requirements.requires_affine_arithmetic),
+        ("nonlinear_arithmetic", requirements.requires_nonlinear_arithmetic),
+        ("symbolic_division", requirements.requires_symbolic_division),
         ("neighborhoods", requirements.requires_neighborhoods),
     ]
 
@@ -226,7 +236,22 @@ def _requirements(task: VerificationTaskIR2) -> list[str]:
         f"{_enum_value(requirements.required_verification_semantics)}"
     )
     lines.append(f"  - normal_form: {_enum_value(requirements.normal_form)}")
+    scalar_sorts = ", ".join(
+        sorted(dtype.value for dtype in requirements.required_scalar_sorts)
+    )
+    lines.append(f"  - scalar_sorts: {scalar_sorts or '<none>'}")
 
+    return lines
+
+
+def _diagnostics(task: VerificationTaskIR2) -> list[str]:
+    lines = ["⚠️ IR2 diagnostics"]
+    for diagnostic in task.diagnostics:
+        lines.append(
+            "  - "
+            f"[{_enum_value(diagnostic.severity)}] {diagnostic.code}: "
+            f"{diagnostic.message}"
+        )
     return lines
 
 

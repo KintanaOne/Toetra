@@ -149,6 +149,15 @@ value : value_number
     | value_boolean
     | string
 
+# Specification constants accept signed numeric literals only.
+
+numeric_literal_sign : PLUS
+    | MINUS
+signed_number_literal : (numeric_literal_sign)? NUMBER
+specification_constant_literal : signed_number_literal
+    | value_boolean
+    | string
+
 # === ARGUMENTS ===
 
 arg_identifier_eq : quoted_identifier "=" value
@@ -348,13 +357,13 @@ model : quoted_identifier
 model_declaration : MODEL ":=" model
 dataset : quoted_identifier
 dataset_declaration : DATASET ":=" dataset
-variable_declaration : identifier ":=" value
-variables_declaration : variable_declaration (";" variable_declaration)*
+specification_constant_declaration : identifier ":=" specification_constant_literal
+specification_constants : specification_constant_declaration ((";")? specification_constant_declaration)* (";")?
 
 # =========================================================
 # === PROGRAM STRUCTURE ===================================
 # =========================================================
 
-header : padding model_declaration padding target_declaration padding (dataset_declaration padding)? (variables_declaration padding)?
+header : padding model_declaration padding target_declaration padding (dataset_declaration padding)? (specification_constants padding)?
 body : padding property_section (padding property_section)* padding
 program : header body

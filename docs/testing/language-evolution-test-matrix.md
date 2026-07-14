@@ -1,6 +1,6 @@
 # Language Evolution Test Matrix
 
-> Status: Accepted implementation gate  
+> Status: Implemented and regression-locked through G7  
 > Scope: Explicit quantifiers, typed domains, scalar arithmetic and specification constants  
 > Rule: No implementation gate is complete until its mandatory tests pass
 
@@ -205,7 +205,7 @@ Capability mismatch is reported before solver execution, and immutable specifica
 
 | ID | Semantics | Solver result | Expected FORML result |
 |---|---|---|---|
-| E2E-FORALL-001 | universal refutation | UNSAT | VERIFIED |
+| E2E-FORALL-001 | universal refutation | UNSAT | PROVED |
 | E2E-FORALL-002 | universal refutation | SAT | COUNTEREXAMPLE with valuation |
 | E2E-FORALL-003 | universal refutation | UNKNOWN | UNKNOWN |
 | E2E-EXISTS-001 | existential witness | SAT | WITNESS with valuation |
@@ -250,3 +250,14 @@ The fixture must prove that `minimum_a`, `maximum_a` and `max_score` are substit
 ```
 
 At every step, previous suites remain green. Exact specification-constant file organization is defined in [Specification Constants Test Plan](specification-constants-tests.md).
+
+## Completion Record
+
+Patches 01 through 08 implement and test all gates in this matrix for the initial numeric-affine Z3 profile. `UNKNOWN` interpretation is tested through the runner contract because a deterministic end-to-end source fixture cannot force Z3 to return `unknown` without backend resource controls. Vacuity is tested with inconsistent aggregated assumptions and produces the structured `Z3_VACUOUS_PROOF` warning.
+
+The mandatory affine fixture is frozen as a golden contract under:
+
+```text
+test/fixtures/end_to_end/cases/affine_specification_constants.forml
+test/fixtures/end_to_end/expected/affine_specification_constants.json
+```

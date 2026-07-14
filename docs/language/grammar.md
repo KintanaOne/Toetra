@@ -143,7 +143,7 @@ Target AST shape:
 QuantifierExprNode(quantifier, variable, domain)
 ```
 
-The current implementation does not yet satisfy this target contract and must be updated only after the documentation patches are accepted.
+The current implementation satisfies this initial contract and is regression-locked by parser, builder and semantic tests.
 
 | Scope | Example | Meaning |
 |---|---|---|

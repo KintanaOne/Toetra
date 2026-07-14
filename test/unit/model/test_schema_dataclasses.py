@@ -28,5 +28,19 @@ def test_model_schema_stores_core_contract():
 
     assert schema.framework is EnumModelFramework.SKLEARN
     assert schema.target == "MyTarget"
+    assert schema.target_dtype is None
     assert schema.features == features
     assert schema.metadata["model_class"] == "LogisticRegression"
+
+
+def test_model_schema_stores_optional_target_dtype():
+    schema = ModelSchema(
+        framework=EnumModelFramework.SKLEARN,
+        model_type="LinearRegression",
+        features={},
+        target="SalePrice",
+        task="regression",
+        target_dtype=EnumDataType.FLOAT,
+    )
+
+    assert schema.target_dtype is EnumDataType.FLOAT

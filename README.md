@@ -30,6 +30,91 @@ at x0 in hyperball(L2, 0.01) := CLASSIFICATION.EQUAL()
 ```
 The model must predict the same class for all small perturbations around x0.
 
+## Executable end-to-end demo
+
+The canonical demo trains and serializes a small affine scikit-learn model,
+introspects it, compiles a FORML specification, injects typed domains and model
+constraints into IR2, then executes the resulting tasks with Z3.
+
+```bash
+make demo-affine
+```
+
+Equivalent direct command:
+
+```bash
+python -m demo.affine_specification_constants_z3
+```
+
+The demo produces a proof, a counterexample and an existential witness without
+leaving generated model or dataset files in the repository. See
+[`demo/README.md`](demo/README.md) for details.
+
+## Python verification API
+
+A normal script can execute a policy without manipulating IR2, the backend
+router or Z3 directly:
+
+```python
+from dsl.runtime import verify
+
+session = verify(
+    "policies/credit-risk.forml",
+    model="models/credit-risk.joblib",
+    dataset="data/reference.csv",
+)
+
+session.print()
+session.write_json("artifacts/forml-report.json")
+raise SystemExit(session.exit_code)
+```
+
+When `model` is omitted, the model declared in the FORML header is resolved
+relative to the `.forml` file. See `demo/user_verify_script.py` for a complete
+command-line example.
+
+Run that script without preparing any files first:
+
+```bash
+make demo-user
+```
+
+Equivalent direct command:
+
+```bash
+python -m demo.user_verify_script --demo
+```
+
+For a real project, replace the paths in the Python example above with files
+that exist in your repository.
+
+## Jupyter and HTML reports
+
+`VerificationSession` and `VerificationReport` expose a rich Jupyter
+representation. Returning either object as the final cell expression displays
+status cards, the normalized scope, the specification, counterexamples or
+witnesses, and structured diagnostics:
+
+```python
+session = verify(
+    "policy.forml",
+    model="model.joblib",
+    dataset="reference.csv",
+)
+session
+```
+
+A self-contained HTML artifact can be written without Jupyter:
+
+```python
+session.write_html("artifacts/forml-report.html")
+```
+
+See
+[`demo/notebooks/credit_risk_validation.ipynb`](demo/notebooks/credit_risk_validation.ipynb)
+for a complete model-review workflow, including replay of a formal
+counterexample on the original sklearn model.
+
 ## Key Ideas
 
 - FORML is declarative: you specify what must hold, not how to verify it

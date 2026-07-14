@@ -12,7 +12,9 @@ from dsl.semantic.runtime.tracer import ValidationTracer
 
 from dsl.semantic.core.lhs import LHSValidator
 from dsl.semantic.core.binding import BindingValidator
+from dsl.semantic.core.domain import DomainValidator
 from dsl.semantic.core.logic import LogicValidator
+from dsl.semantic.core.specification_constants import register_specification_constants
 
 
 class PropertyValidator:
@@ -56,7 +58,13 @@ class PropertyValidator:
     # ENTRY POINT
     # ─────────────────────────────────────────────
 
-    def validate(self, prop, model_schema=None, model_target=None):
+    def validate(
+        self,
+        prop,
+        model_schema=None,
+        model_target=None,
+        specification_constants=(),
+    ):
 
         self.tracer.log(f"Validating Property: {prop.type}")
 
@@ -105,6 +113,11 @@ class PropertyValidator:
 
             context.model_target = model_target
 
+            register_specification_constants(
+                context,
+                specification_constants,
+            )
+
             prop.semantic.context = context
 
             # --------------------------------------------------
@@ -131,7 +144,13 @@ class PropertyValidator:
             #
             # ==================================================
 
-            BindingValidator(tracer=self.tracer).validate(context, root)
+            root = BindingValidator(tracer=self.tracer).validate(context, root)
+            assertion.root = root
+
+            DomainValidator(model_schema=model_schema).validate(
+                context.domain,
+                context,
+            )
 
             # ==================================================
             # 3. LOGIC VALIDATION

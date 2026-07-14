@@ -1,7 +1,12 @@
 from __future__ import annotations
 
 from dsl.backends.z3_backend.runner import VerificationStatus, Z3Runner
-from dsl.ir.ir1.nodes import ComparisonIR, ScopeIR
+from dsl.ir.ir1.nodes import (
+    AttributeExpressionIR,
+    ComparisonIR,
+    ConstantExpressionIR,
+    ScopeIR,
+)
 from dsl.ir.ir2.enums import NormalFormKind, Polarity, VerificationSemantics
 from dsl.ir.ir2.nodes import (
     ClauseIR2,
@@ -17,14 +22,14 @@ from dsl.ir.ir2.requirements import IR2Requirements
 from dsl.language.vocabulary.backends import EnumBackend
 from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.properties import EnumProperty
+from dsl.semantic.types.enums import EnumDataType
 
 
 def _atom() -> ComparisonIR:
     return ComparisonIR(
-        entity="x",
-        feature="a",
+        left=AttributeExpressionIR(entity="x", feature="a"),
         op=EnumComparisonOperator.LTE,
-        value=1.0,
+        right=ConstantExpressionIR(value=1.0, dtype=EnumDataType.FLOAT),
     )
 
 

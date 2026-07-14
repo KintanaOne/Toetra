@@ -53,7 +53,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
-
 # -----------------------------------------------------------------------------
 # Périmètre d'inclusion
 # -----------------------------------------------------------------------------
@@ -282,8 +281,7 @@ def is_sensitive(path: Path) -> bool:
     """Détecte les noms et extensions potentiellement sensibles."""
     name_lower = path.name.lower()
     return (
-        name_lower in SENSITIVE_FILE_NAMES
-        or path.suffix.lower() in SENSITIVE_SUFFIXES
+        name_lower in SENSITIVE_FILE_NAMES or path.suffix.lower() in SENSITIVE_SUFFIXES
     )
 
 
@@ -343,9 +341,7 @@ def iter_candidate_files(repo_root: Path) -> Iterable[Path]:
         for current_root, dir_names, file_names in os.walk(source_root):
             # Élagage en place : os.walk ne descendra pas dans ces dossiers.
             dir_names[:] = sorted(
-                name
-                for name in dir_names
-                if name not in EXCLUDED_DIR_NAMES
+                name for name in dir_names if name not in EXCLUDED_DIR_NAMES
             )
 
             current_path = Path(current_root)
@@ -356,10 +352,7 @@ def iter_candidate_files(repo_root: Path) -> Iterable[Path]:
                     candidates.append(candidate)
 
     # Déduplication et tri par chemin relatif.
-    unique = {
-        path.relative_to(repo_root).as_posix(): path
-        for path in candidates
-    }
+    unique = {path.relative_to(repo_root).as_posix(): path for path in candidates}
     for relative_name in sorted(unique):
         yield unique[relative_name]
 
@@ -658,10 +651,7 @@ def main() -> int:
 
     print(f"Bundle créé : {output}")
     print(f"Fichiers : {len(records)}")
-    print(
-        "Taille source : "
-        f"{sum(record.size_bytes for record in records):,} octets"
-    )
+    print("Taille source : " f"{sum(record.size_bytes for record in records):,} octets")
 
     if missing_critical:
         print("Attention : fichiers critiques absents :")

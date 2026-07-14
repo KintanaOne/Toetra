@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from model.detector.model_framework import EnumModelFramework
+from dsl.semantic.types.enums import EnumDataType
 from model.schema.feature_schema import FeatureSchema
 
 
@@ -33,6 +34,7 @@ class ModelSchema:
     # ======================================================
 
     task: str
+    target_dtype: EnumDataType | None = None
 
     # ======================================================
     # Optional framework-specific metadata

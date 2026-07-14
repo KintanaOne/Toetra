@@ -1,15 +1,20 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 from typing import Any
 
 from dsl.language.vocabulary.backends import EnumBackend
 from dsl.language.vocabulary.domains import EnumBoundaryKind
 from dsl.language.vocabulary.functions import EnumFunction
-from dsl.language.vocabulary.operators import EnumComparisonOperator
+from dsl.language.vocabulary.operators import (
+    EnumArithmeticOperator,
+    EnumComparisonOperator,
+    EnumUnaryOperator,
+)
 from dsl.language.vocabulary.problems import EnumProblem
 from dsl.language.vocabulary.properties import EnumProperty
-from dsl.semantic.types.enums import EnumDataType
+from dsl.semantic.types.enums import EnumArithmeticClass, EnumDataType
 
 # =============================================================================
 # ROOT EXECUTION UNIT
@@ -81,9 +86,16 @@ class NeighborhoodIR:
     args: dict[str, Any]
 
 
+class ScalarValueSource(str, Enum):
+    """Origin of a scalar constant preserved for diagnostics and proofs."""
+
+    LITERAL = "literal"
+    SPECIFICATION_CONSTANT = "specification_constant"
+
+
 @dataclass
 class ScalarExpressionIR:
-    """Base class for scalar-valued IR expressions used by typed domains."""
+    """Base class for backend-independent scalar expression trees."""
 
     pass
 
@@ -92,21 +104,45 @@ class ScalarExpressionIR:
 class ConstantExpressionIR(ScalarExpressionIR):
     value: Any
     dtype: EnumDataType
+    source_kind: ScalarValueSource = ScalarValueSource.LITERAL
+    source_name: str | None = None
 
 
 @dataclass
 class AttributeExpressionIR(ScalarExpressionIR):
-    entity: str | None
+    entity: str
     feature: str
+    dtype: EnumDataType | None = None
 
 
 @dataclass
 class TargetExpressionIR(ScalarExpressionIR):
-    name: str = "target"
+    feature: str
+    entity: str = "_model"
+    dtype: EnumDataType | None = None
 
 
 @dataclass
-class SymbolLiteralIR:
+class UnaryArithmeticExpressionIR(ScalarExpressionIR):
+    operator: EnumUnaryOperator
+    operand: ScalarExpressionIR
+    dtype: EnumDataType | None = None
+    arithmetic_class: EnumArithmeticClass | None = None
+
+
+@dataclass
+class BinaryArithmeticExpressionIR(ScalarExpressionIR):
+    left: ScalarExpressionIR
+    operator: EnumArithmeticOperator
+    right: ScalarExpressionIR
+    dtype: EnumDataType | None = None
+    arithmetic_class: EnumArithmeticClass | None = None
+
+
+@dataclass
+class SymbolLiteralIR(ScalarExpressionIR):
+    """Symbolic categorical literal preserved for domain membership."""
+
     name: str
 
 
@@ -134,6 +170,7 @@ class DomainEntryIR:
     entity: str | None
     feature: str
     constraint: DomainConstraintIR
+    dtype: EnumDataType | None = None
 
 
 @dataclass
@@ -200,24 +237,16 @@ class AtomicIR(LogicalIR):
 
 @dataclass
 class ComparisonIR(AtomicIR):
-    """
-    Atomic predicate:
-        x'.age <= 30
+    """Atomic relation between two scalar expression trees.
 
-    Represents a leaf condition in the logical tree.
-
-    The dtype fields are optional because IR1 can still exist without
-    ModelSchema-aware validation, but when schema validation is enabled,
-    they become the bridge toward backend typing.
+    The entire comparison remains one logical atom for NNF, CNF and DNF.
+    Scalar arithmetic is preserved structurally and is never rewritten by
+    boolean normalization passes.
     """
 
-    entity: str
-    feature: str
+    left: ScalarExpressionIR
     op: EnumComparisonOperator
-    value: Any
-
-    feature_dtype: EnumDataType | None = None
-    value_dtype: EnumDataType | None = None
+    right: ScalarExpressionIR
 
 
 # =============================================================================

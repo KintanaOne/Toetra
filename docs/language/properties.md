@@ -229,8 +229,8 @@ Current compatibility examples:
 | Builder | Build `PropertyNode`. | Fully canonical AST property nodes. |
 | Semantic layer | Validate scope and compatibility. | Model-aware property validation. |
 | IR1 | Represent backend-independent logical task. | NNF-normalized task representation. |
-| IR2 | planned | CNF/DNF and backend-preparation forms. |
-| Backend lowering | planned | Generate backend-specific queries. |
+| IR2 | implemented / stabilizing | NNF/CNF/DNF, assumptions, requirements and verification conditions. |
+| Backend lowering | implemented for Z3 affine profile | Capability-checked numeric-affine translation and execution. |
 
 ---
 

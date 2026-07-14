@@ -1,209 +1,91 @@
-# Architecture Status Matrix
+# FORML Implementation Status Matrix
 
-> Status: P0 documentation baseline  
-> Scope: Implementation status across FORML subsystems  
-> Purpose: Distinguish implemented, stabilizing, planned, and research-direction components
+> Status date: July 2026  
+> Purpose: Separate implemented behavior from stabilizing or future work
 
-This document tracks the state of the FORML architecture.
-
-FORML intentionally documents both current implementation and target architecture. This matrix prevents ambiguity by making the status of each subsystem explicit.
-
-## Status legend
+## Status vocabulary
 
 | Status | Meaning |
 |---|---|
-| `implemented` | Exists in code and is usable. |
-| `stabilizing` | Exists but needs cleanup, stronger contracts, tests, naming normalization, or API refinement. |
-| `partially implemented` | Some components exist, but the subsystem is not complete. |
-| `planned / critical` | Not implemented yet but required for end-to-end FORML verification. |
-| `planned` | Intended future layer, but not the immediate blocker. |
-| `research-direction` | Long-term idea, not a current implementation claim. |
-| `external` | Handled by another project or external system. |
+| `implemented` | Executable behavior exists and is covered by tests. |
+| `implemented / stabilizing` | Executable behavior exists; contracts and ergonomics may still evolve. |
+| `partial` | A useful subset exists, but the subsystem is intentionally incomplete. |
+| `planned` | Documented direction without an executable implementation. |
+| `research direction` | Long-term investigation, not a committed V1 capability. |
 
----
+## Compiler and verification pipeline
 
-# Global subsystem matrix
+| Component | Status | Current guarantee | Remaining boundary |
+|---|---|---|---|
+| EBNF and generated Lark grammar | implemented | Explicit quantifiers, typed domains, scalar arithmetic and specification constants parse from complete programs. | Future syntax must remain generator-driven. |
+| CST → AST builder | implemented | Structured scalar trees, ordered declarations and typed domain nodes are produced without semantic binding. | Additional property families may require new AST nodes. |
+| Semantic binding | implemented / stabilizing | Constants, implicit features, explicit features and target references are resolved deterministically. | Public error taxonomy still wraps several semantic failures as `ParserError`. |
+| Schema-aware typing | implemented | Input and target dtypes are read from `ModelSchema`; arithmetic is typed and classified. | Richer categorical and tensor types are future work. |
+| IR1 | implemented | Symmetric scalar comparisons, recursive arithmetic, typed domains and constant provenance are preserved. | Optional affine canonicalization is not implemented. |
+| NNF normalization | implemented | De Morgan and implication normalization preserve scalar atoms. | Additional simplification passes are optional future work. |
+| IR2 NNF/CNF/DNF | implemented / stabilizing | Normal-form selection, conversion, guardrails and task validation exist. | Explosion-control and optimization policies can be enriched. |
+| Assertion aggregation | implemented | DSL domains, model assumptions and user properties are combined into `Γ ∧ ¬P` or `Γ ∧ P`. | Additional assumption sources may be added. |
+| Domain lowering | implemented | Open/closed intervals and numeric finite sets become provenanced IR2 assumptions. | Symbolic categories are represented but not encoded by Z3. |
+| Backend capability routing | implemented | Unsupported arithmetic, sorts and domain features are rejected before execution. | Multi-backend policy and fallback remain future work. |
+| Z3 numeric-affine backend | implemented / stabilizing | Numeric comparisons, affine arithmetic, numeric domains, finite sets, model equations and result interpretation execute end to end. | Nonlinear arithmetic, symbolic division and categorical encoding are explicitly unsupported. |
+| Result interpretation | implemented | Universal and existential SAT/UNSAT/UNKNOWN outcomes map to FORML statuses with messages. | Timeouts and resource limits need a dedicated configuration contract. |
+| Vacuity diagnostics | implemented | Inconsistent assumptions are detected after UNSAT and reported as a structured warning. | More advanced vacuity and redundancy analysis is future work. |
 
-| Subsystem | Status | Implementation evidence | Target role | Priority |
-|---|---|---|---|---:|
-| DSL grammar | implemented / stabilizing | Lark grammar and generated grammar exist. | Stable source language for `.forml` specifications. | P1 |
-| Specification constants syntax | accepted target / implementation pending | Language contract and declaration grammar direction are documented. | Reusable immutable business values in the header. | P0 |
-| Bare-name resolution | accepted target / implementation pending | ADR-0016 and cross-layer contract define context-aware lookup. | Resolve constants and implicit features deterministically. | P0 |
-| Parser | implemented | Parser produces CST from `.forml` source. | Strict source-to-CST boundary. | P0 |
-| AST builder | implemented / stabilizing | Builder modules construct `ProgramNode`, `PropertyNode`, expressions, assertions, backend nodes. | Strict CST-to-AST contract. | P0 |
-| AST model | implemented / stabilizing | AST dataclasses exist; `SpecificationConstantDeclarationNode` and `NameRefNode` remain target additions. | Stable typed syntax tree. | P0 |
-| Semantic context | implemented / stabilizing | `SemanticContext`, `SemanticScope`, `SymbolTable` exist. | Meaning context for scopes, variables, domains, neighborhoods. | P0 |
-| Binding validation | implemented / stabilizing | Explicit and implicit attribute resolution exists; specification-constant lookup is pending. | Resolve constants, explicit features and implicit features deterministically. | P0 |
-| Logic validation | implemented / stabilizing | Logical nodes and problem validation exist. | Validate logical structure and semantic compatibility. | P0 |
-| Property/scope compatibility | implemented / stabilizing | Compatibility tables exist. | Prevent invalid property/scope combinations. | P0 |
-| Semantic annotations | implemented / stabilizing | `SemanticAnnotations` exists. | Cache semantic resolution for IR lowering. | P0 |
-| IR1 | implemented / stabilizing | `VerificationTask`, `ScopeIR`, `QueryIR`, `LogicalIR` nodes exist. | First backend-independent logical representation. | P0 |
-| IR1 NNF / De Morgan | implemented / stabilizing | Current architecture intent places De Morgan and NNF in IR1. | Normalize negations and logical structure. | P0 |
-| IR2 CNF / DNF | planned / critical | Not implemented yet. | Clause/case-oriented normal forms for backend preparation. | P0 |
-| Assertion aggregation | planned / critical | Not implemented yet. | Combine DSL, semantic, model, and backend constraints. | P0 |
-| Lowering / minimization | planned / critical | Not implemented yet. | Simplify and prepare aggregated assertions for backend query generation. | P0 |
-| Backend query | planned / critical | Not implemented yet. | First backend-specific executable/query artifact. | P0 |
-| Backend orchestration | planned | Architecture view exists conceptually. | Select backend strategy based on capabilities and constraints. | P1 |
-| Z3 backend | planned / critical | Not implemented in current snapshot. | First likely solver backend. | P1 |
-| Runtime verification | planned | Conceptual target. | Execute backend queries and produce results. | P2 |
-| Runtime monitoring | research-direction | Conceptual target. | Observe behavior after deployment or runtime execution. | P2 |
-| Model loading | implemented / stabilizing | Loader factory and pkl/joblib/json loaders exist. | Load model artifacts. | P0 |
-| Model detection | implemented / stabilizing | Detector supports sklearn/XGBoost foundations. | Identify model framework. | P0 |
-| Model introspection | implemented / stabilizing | Sklearn and XGBoost introspectors exist. | Extract model metadata. | P0 |
-| ModelSchema | implemented / stabilizing | `ModelSchema` and `FeatureSchema` exist. | Bridge model metadata to semantic validation and backend lowering. | P0 |
-| Model constraints | planned / critical | Not implemented yet. | Generate constraints from ModelSchema and model metadata. | P0 |
-| Schema-aware semantic validation | planned / critical | Not implemented yet. | Validate DSL feature references against model schema. | P0 |
-| Miova integration | external / planned integration | Miova exists as independent mutation framework. | Challenge FORML artifacts with mutation campaigns. | P0 |
-| Golden samples | planned / critical | Not formalized yet. | Freeze expected outputs across the pipeline. | P0 |
-| Contract tests | planned / critical | Not formalized yet. | Make layer contracts executable. | P0 |
+## Runtime and user-facing output
 
----
+| Component | Status | Current guarantee | Remaining boundary |
+|---|---|---|---|
+| Public `verify(...)` API | implemented | Model loading or supplied schema, compilation, routing, execution and report construction are exposed through one call. | Timeout and execution-policy configuration remain future work. |
+| `VerificationSession` | implemented | Multiple properties expose reports, JSON/HTML export and CI-friendly exit codes. | Persistence and cross-run comparison are post-V1 concerns. |
+| Text reporting | implemented | Backend-neutral terminal output groups inputs, outputs and diagnostics. | Optional localization and richer explanations may be added later. |
+| JSON reporting | implemented | Versioned report and collection schemas preserve exact rational values. | Schema evolution requires explicit future versions. |
+| HTML/Jupyter reporting | implemented | Escaped, dependency-free status cards and standalone HTML documents are generated from the same report model. | Interactive widgets are intentionally outside the current V1. |
+| Notebook workflow | implemented | A credit-risk example trains a real sklearn affine model, verifies it and replays a counterexample. | The example uses transformed numerical features; preprocessing is not encoded. |
 
-# Compiler pipeline status
+## ModelBridge
+
+| Component | Status | Current guarantee | Remaining boundary |
+|---|---|---|---|
+| Loading and framework detection | implemented / stabilizing | Existing sklearn/XGBoost foundations remain available. | Unsupported frameworks require continued diagnostic cleanup. |
+| `ModelSchema` | implemented | Feature dtypes, target name and optional target dtype cross the compiler boundary. | Preprocessing remains explicitly outside V1. |
+| Schema-aware semantic validation | implemented | Unknown features are rejected and scalar dtypes reach IR1 when a schema is supplied. | Structured shapes and richer target schemas are future work. |
+| LinearRegression encoder | implemented | A single-output affine output equation is emitted as a backend-neutral MODEL assumption. | Other linear/classification families and preprocessing are not encoded. |
+| Rich model encoders | planned | Trees, ensembles and neural encodings have architectural placeholders only. | Implement per-family sound encoders and tests. |
+
+## Testing
+
+| Testing layer | Status | Evidence |
+|---|---|---|
+| Parser, AST, builder and semantic unit tests | implemented | Gate-specific acceptance, rejection and invariant tests. |
+| IR1 and IR2 contract tests | implemented | Recursive scalar IR, domains, provenance, normal forms and requirements. |
+| Backend capability tests | implemented | Accepted affine profile and explicit rejection paths. |
+| Z3 execution tests | implemented | Universal proof/counterexample, existential witness/no-witness and UNKNOWN interpretation. |
+| Golden samples | implemented / stabilizing | Parser/IR/normalization/model and final affine end-to-end contracts. |
+| Vacuity tests | implemented | Contradictory assumptions emit structured result diagnostics. |
+| Miova mutation campaigns | planned integration | Mutation boundaries are documented but not part of this language-evolution chantier. |
+
+## Current end-to-end profile
 
 ```text
 .forml source
-    ↓ implemented
-CST
-    ↓ implemented / stabilizing
-AST
-    ↓ implemented / stabilizing
-SemanticValidatedAST
-    ↓ implemented / stabilizing
-IR1 / NNF
-    ↓ planned / critical
-IR2 / CNF-DNF
-    ↓ planned / critical
-Aggregated Assertion Set
-    ↓ planned / critical
-Lowering / Minimization
-    ↓ planned / critical
-Backend Query
+    → CST
+    → AST
+    → semantic binding and schema-aware typing
+    → IR1 recursive scalar logic
+    → NNF
+    → IR2 + domain/model assumptions
+    → capability routing
+    → Z3 numeric-affine translation
+    → PROVED / COUNTEREXAMPLE / WITNESS / NO_WITNESS / UNKNOWN
 ```
 
-## Current compiler guarantees
+The profile is intentionally narrow but real. It supports numeric affine properties over a supported model encoding. It does not imply support for arbitrary ML models, preprocessing pipelines, nonlinear formulas or symbolic categories.
 
-| Layer | Current guarantee | Gap |
-|---|---|---|
-| Source → CST | Source can be parsed by Lark grammar. | Grammar/token casing and vocabulary alignment need cleanup. |
-| CST → AST | CST can be transformed into structured AST nodes. | AST invariants and error boundaries need formal contracts. |
-| AST → Semantic | LHS context, binding, and logic validation exist. | Semantic errors are not yet cleanly separated from parser errors in all paths. |
-| Semantic → IR1 | IR1 tasks can be generated. | IR should consume resolved semantic annotations consistently. |
-| IR1 → IR2 | Not implemented. | CNF/DNF contract required. |
-| IR2 → Aggregation | Not implemented. | Aggregated assertion artifact required. |
-| Aggregation → Lowering | Not implemented. | Simplification/minimization contract required. |
-| Lowering → Backend Query | Not implemented. | Backend-specific boundary required. |
+## Immediate next engineering priorities
 
----
-
-# ModelBridge status
-
-```text
-model artifact
-    ↓ implemented / stabilizing
-loader
-    ↓ implemented / stabilizing
-loaded model
-    ↓ implemented / stabilizing
-framework detection
-    ↓ implemented / stabilizing
-introspector
-    ↓ implemented / stabilizing
-ModelSchema
-    ↓ planned / critical
-model constraints
-    ↓ planned / critical
-assertion aggregation
-```
-
-## Current ModelBridge guarantees
-
-| Layer | Current guarantee | Gap |
-|---|---|---|
-| Model path → loader | Loader is selected by file extension. | Loader error taxonomy needs cleanup. |
-| Loader → loaded model | Pickle/joblib loading exists. | JSON loader error naming needs stabilization. |
-| Loaded model → framework | sklearn and XGBoost-style detection exists. | PyTorch/TensorFlow are enum values but not implemented. |
-| Framework → introspector | Factory selects sklearn/XGBoost introspectors. | Unsupported frameworks need explicit diagnostics. |
-| Introspector → ModelSchema | Schema can be produced from model/dataset/schema metadata. | Schema-aware semantic validation is not connected yet. |
-| ModelSchema → model constraints | Not implemented. | Required for real backend query generation. |
-
----
-
-# Logical representation status
-
-| Artifact | Status | Role | Required next step |
-|---|---|---|---|
-| `VerificationTask` | implemented / stabilizing | Top-level IR1 unit. | Ensure it remains backend-independent until backend boundary. |
-| `ScopeIR` | implemented / stabilizing | Represents semantic evaluation scope. | Align roles with semantic context naming. |
-| `QueryIR` | implemented / stabilizing | Wraps logical expression. | Clarify whether multiple queries aggregate before or after IR2. |
-| `LogicalIR` | implemented / stabilizing | Base for boolean reasoning. | Define normalization invariants. |
-| `ComparisonIR` | implemented / stabilizing | Atomic predicate. | Use resolved semantic entity/path consistently. |
-| `ProblemIR` | implemented / stabilizing | High-level ML semantic predicate. | Define lowering into backend/model constraints. |
-| `AndIR` / `OrIR` / `NotIR` / `ImplyIR` | implemented / stabilizing | Boolean structure. | Define NNF and implication-elimination rules. |
-| IR2 normal forms | planned / critical | CNF/DNF representation. | Define data model and transformation contract. |
-| Aggregated assertions | planned / critical | Combined verification problem. | Define artifact shape. |
-| Backend query | planned / critical | Backend-specific execution artifact. | Define Z3 query boundary first. |
-
----
-
-# Testing status
-
-| Testing layer | Status | Purpose | Priority |
-|---|---|---|---:|
-| Parser unit tests | existing / stabilizing | Check grammar accepts/rejects samples. | P1 |
-| Builder unit tests | existing / stabilizing | Check AST construction. | P1 |
-| Semantic unit tests | existing / stabilizing | Check binding, scopes, compatibility. | P0 |
-| IR1 tests | stabilizing | Check semantic-to-IR output. | P0 |
-| Golden samples | planned / critical | Freeze expected pipeline outputs. | P0 |
-| End-to-end tests | planned / critical | Test `.forml + model → backend query/result`. | P0 |
-| Contract tests | planned / critical | Validate every layer boundary. | P0 |
-| Miova mutation campaigns | planned / critical | Challenge artifacts and expected failures. | P0 |
-
----
-
-# Documentation status
-
-| Documentation area | Status | Priority | Next action |
-|---|---|---:|---|
-| Root docs | stabilizing | P0 | Write `index.md`, roadmap, overview, status matrix. |
-| Architecture docs | planned / stabilizing | P0 | Rewrite pipeline views and runtime flow. |
-| Compiler docs | planned / stabilizing | P0 | Write compiler pipeline and IR docs. |
-| ModelBridge docs | planned / stabilizing | P0 | Write overview/schema/constraints docs. |
-| Contract docs | planned | P0 | Write boundary contracts. |
-| Miova docs | planned | P0 | Write integration and campaign docs. |
-| Language docs | planned | P1 | Write syntax and vocabulary docs after contracts. |
-| Backends docs | planned | P1 | Start with Z3 boundary. |
-| Runtime docs | planned | P2 | Write after backend query execution exists. |
-| ADRs | planned | P1 | Write after P0 contracts are drafted. |
-
----
-
-# Immediate P0 blockers
-
-The following items should be stabilized before claiming a full end-to-end FORML pipeline:
-
-1. IR1 must consistently use semantic annotations instead of raw unresolved AST fields.
-2. IR2 CNF/DNF artifact and transformation contract must be defined.
-3. Assertion aggregation must be defined as a first-class artifact.
-4. ModelSchema must be connected to semantic validation.
-5. Model-derived constraints must be defined.
-6. Lowering/minimization must define equivalence/equisatisfiability guarantees.
-7. Backend query shape must be defined, likely starting with Z3.
-8. Error boundaries must distinguish parser, builder, semantic, model, IR, and backend failures.
-9. Golden samples must be created for representative properties.
-10. Miova mutation boundaries must be mapped to FORML artifacts.
-
----
-
-# Recommended next documentation batch
-
-After this root batch, the next documentation batch should be:
-
-```text
-docs/architecture/pipeline-views.md
-docs/architecture/runtime-flow.md
-docs/compiler/pipeline.md
-docs/compiler/backend-boundary.md
-```
-
-This will turn the current roadmap into a concrete end-to-end architecture narrative.
+1. Stabilize public error boundaries instead of wrapping semantic failures as parser failures.
+2. Define the next scope semantics for `at`, `check_at`, explicit anchors and nested/multiple quantified entities.
+3. Add model encoders beyond single-output `LinearRegression`.
+4. Decide the V1 policy for preprocessing and transformed-feature contracts.
+5. Add timeout/resource controls and richer backend execution diagnostics.
+6. Connect Miova mutation campaigns to the now-stable layer contracts.

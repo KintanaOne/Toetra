@@ -1,167 +1,126 @@
-# End-to-End Preview
+# End-to-End Numeric-Affine Preview
 
-> Status: Target architecture  
-> Scope: V1 path preview  
-> Implementation: Partial
+> Status: Implemented initial profile  
+> Scope: FORML source + optional `ModelSchema` → Z3 result
 
-## Purpose
+## What works today
 
-This page previews the intended end-to-end FORML V1 flow.
-
-The goal is not to claim that every stage is fully implemented today, but to define the target path that the implementation should converge toward.
-
-## Minimal V1 target
-
-The minimal V1 path is:
+The current executable profile is:
 
 ```text
 .forml specification
-+ serialized ML model
-+ optional dataset/schema
-→ parsed CST
-→ built AST
-→ SemanticValidatedAST
-→ IR1 structural logical task
-→ NNF normalization (planned IR1 subphase)
-→ IR2 / CNF-DNF
-→ AggregatedAssertionSet
-→ LoweredQuery
-→ Z3 BackendQuery
-→ Z3 VerificationResult
++ optional ModelSchema and supported model encoder
+→ CST and AST
+→ semantic binding and schema-aware scalar typing
+→ IR1 recursive scalar expressions
+→ NNF
+→ IR2 domain/model assumption aggregation
+→ backend capability routing
+→ Z3 numeric-affine translation
+→ structured verification result
 ```
 
-## Step 1 — User writes a property
+## Complete example
 
 ```forml
-model := "model.joblib"
-target := prediction
+model := "linear.joblib"
+target := score
 
-[ROBUSTNESS]: at x in neighborhood(metric=L2, eps=0.1)
-=> CLASSIFICATION.EQUAL()
-using z3
+max_score := 7.0
+minimum_a := 0.0
+maximum_a := 3.0
+
+[BOUND]:
+forall x0
+    with domain(
+        x0.a: [minimum_a, maximum_a]
+    )
+    => target <= max_score
+    using Z3
 ```
 
-## Step 2 — FORML parses the source
-
-The parser transforms source text into a CST.
+With the encoded model equation:
 
 ```text
-.forml source → CST
+score = 2 * x0.a + 1
 ```
 
-## Step 3 — FORML builds the AST
-
-The builder converts syntax into typed AST nodes.
+FORML builds:
 
 ```text
-CST → AST
+Γdomain:
+    x0.a >= 0
+    x0.a <= 3
+
+Γmodel:
+    _model.score = 2 * x0.a + 1
+
+P:
+    _model.score <= 7
+
+Universal verification condition:
+    Γdomain ∧ Γmodel ∧ ¬P
 ```
 
-## Step 4 — Semantic validation
-
-Semantic validation resolves:
-
-- scope,
-- variables,
-- implicit entities,
-- symbol bindings,
-- property/scope compatibility,
-- problem/function compatibility.
+Z3 returns `UNSAT`, which FORML interprets as:
 
 ```text
-AST → SemanticValidatedAST
+PROVED
+Property proved: no counterexample exists under the encoded assumptions.
 ```
 
-## Step 5 — IR1 structural logical task
+## Existential semantics
 
-IR1 converts semantic logic into a backend-independent logical representation.
+For:
 
-The current IR1 translator should be treated as structural. De Morgan rewrites, implication normalization, and full NNF enforcement are the next IR1 stabilization subphase.
+```forml
+[LOGIC]:
+exists x0
+    with domain(x0.a: ]0.0, 3.0])
+    => x0.a > 2.0
+    using Z3
+```
+
+FORML builds `Γ ∧ P`. A satisfiable query returns `WITNESS`; an unsatisfiable query returns `NO_WITNESS`.
+
+## Capability boundary
+
+The initial Z3 profile accepts:
+
+- numeric `INT` and `FLOAT` scalars;
+- addition, subtraction and unary signs;
+- multiplication by a compile-time numeric constant;
+- division by a non-zero compile-time numeric constant;
+- open and closed numeric intervals;
+- numeric finite sets;
+- supported affine model-output equations.
+
+It rejects before execution:
+
+- feature × feature multiplication;
+- division by a symbolic expression;
+- symbolic categorical sets;
+- unsupported model constraints;
+- unsupported scalar sorts.
+
+## Vacuity warning
+
+When an UNSAT universal query is caused by inconsistent assumptions rather than the property itself, the result remains `PROVED` but includes:
 
 ```text
-SemanticValidatedAST → IR1
+Z3_VACUOUS_PROOF
+The property is proved only because the aggregated assumptions are inconsistent;
+the admissible set is empty.
 ```
 
-## Step 6 — IR2 / CNF-DNF
+## Deliberate V1 limits
 
-IR2 is planned as the normal-form layer.
+This profile does not yet encode:
 
-It selects CNF or DNF depending on verification needs.
-
-```text
-IR1 → IR2
-```
-
-## Step 7 — ModelBridge
-
-The model is loaded and introspected.
-
-```text
-model artifact → ModelSchema
-```
-
-ModelSchema then supports:
-
-- schema-aware validation,
-- model constraint preparation,
-- future backend lowering.
-
-## Step 8 — Assertion aggregation
-
-FORML combines:
-
-- user assertions,
-- semantic constraints,
-- scope constraints,
-- domain constraints,
-- neighborhood constraints,
-- model-derived constraints.
-
-```text
-IR2 + ModelConstraints → AggregatedAssertionSet
-```
-
-## Step 9 — Lowering and minimization
-
-The aggregated assertion set is simplified and prepared for backend encoding.
-
-```text
-AggregatedAssertionSet → LoweredQuery
-```
-
-## Step 10 — Z3 backend query
-
-The lowered query is encoded into a Z3-specific backend artifact.
-
-```text
-LoweredQuery → Z3 BackendQuery
-```
-
-## Step 11 — Verification result
-
-Z3 executes the query and returns a structured verification result.
-
-```text
-Z3 BackendQuery → VerificationResult
-```
-
-## Post-V1 extensions
-
-The following are post-V1:
-
-- ERAN backend,
-- multi-backend orchestration,
-- AutoFORML,
-- runtime monitoring,
-- distributed verification,
-- advanced formal proof generation.
-
-## Testing strategy
-
-The end-to-end path should be validated through:
-
-- golden samples,
-- contract tests,
-- property-based testing with Hypothesis,
-- intelligent fuzzing,
-- Miova mutation campaigns.
+- preprocessing pipelines;
+- arbitrary sklearn models;
+- trees, ensembles or neural networks;
+- nonlinear arithmetic;
+- symbolic categories;
+- multi-variable or nested quantifier semantics;
+- runtime monitoring.

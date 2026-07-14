@@ -1,4 +1,8 @@
-from dsl.ir.ir1.nodes import ComparisonIR
+from dsl.ir.ir1.nodes import (
+    AttributeExpressionIR,
+    ComparisonIR,
+    ConstantExpressionIR,
+)
 from dsl.ir.ir2.enums import Polarity
 from dsl.ir.ir2.nodes import (
     ClauseIR2,
@@ -9,11 +13,14 @@ from dsl.ir.ir2.nodes import (
 )
 from dsl.ir.ir2.pretty import pretty_formula
 from dsl.language.vocabulary.operators import EnumComparisonOperator
+from dsl.semantic.types.enums import EnumDataType
 
 
 def _cmp(name: str) -> ComparisonIR:
     return ComparisonIR(
-        entity="_x", feature=name, op=EnumComparisonOperator.LTE, value=1
+        left=AttributeExpressionIR(entity="_x", feature=name),
+        op=EnumComparisonOperator.LTE,
+        right=ConstantExpressionIR(value=1, dtype=EnumDataType.INT),
     )
 
 

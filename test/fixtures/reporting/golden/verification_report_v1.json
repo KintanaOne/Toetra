@@ -1,0 +1,71 @@
+{
+  "schema": "forml.verification-report",
+  "schema_version": 1,
+  "property": {
+    "index": 0,
+    "type": "BOUND",
+    "semantics": "refutation",
+    "specification": "_model.score <= 7.0"
+  },
+  "scope": {
+    "kind": "quantifier",
+    "quantifier": "forall",
+    "variables": [
+      {
+        "name": "x0",
+        "role": "bound"
+      }
+    ]
+  },
+  "execution": {
+    "backend": "Z3",
+    "backend_status": "sat",
+    "status": "counterexample",
+    "assumption_count": 2,
+    "route_reason": "requested backend satisfies IR2 requirements"
+  },
+  "summary": "Property violated",
+  "assignments": {
+    "inputs": [
+      {
+        "name": "x0.a",
+        "raw_name": "x0.a",
+        "kind": "input",
+        "value": 3
+      }
+    ],
+    "outputs": [
+      {
+        "name": "score",
+        "raw_name": "_model.score",
+        "kind": "output",
+        "value": {
+          "kind": "rational",
+          "numerator": 5,
+          "denominator": 2,
+          "text": "5/2"
+        }
+      }
+    ],
+    "auxiliary": [
+      {
+        "name": "ratio",
+        "raw_name": "ratio",
+        "kind": "auxiliary",
+        "value": {
+          "kind": "rational",
+          "numerator": 1,
+          "denominator": 3,
+          "text": "1/3"
+        }
+      }
+    ]
+  },
+  "diagnostics": [
+    {
+      "code": "EXAMPLE",
+      "severity": "info",
+      "message": "example"
+    }
+  ]
+}

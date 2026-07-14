@@ -3,10 +3,20 @@
   "model_type": "LinearRegression",
   "task": "regression",
   "target": "SalePrice",
+  "target_dtype": "int",
   "features": {
-    "size": {"dtype": "int", "nullable": false},
-    "rooms": {"dtype": "int", "nullable": false},
-    "distance": {"dtype": "float", "nullable": false}
+    "size": {
+      "dtype": "int",
+      "nullable": false
+    },
+    "rooms": {
+      "dtype": "int",
+      "nullable": false
+    },
+    "distance": {
+      "dtype": "float",
+      "nullable": false
+    }
   },
   "metadata": {
     "serialization_format": ".pkl",

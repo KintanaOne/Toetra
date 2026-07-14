@@ -1,6 +1,13 @@
 from __future__ import annotations
 
-from dsl.ir.ir1.nodes import ComparisonIR, QueryIR, ScopeIR, VerificationTask
+from dsl.ir.ir1.nodes import (
+    AttributeExpressionIR,
+    ComparisonIR,
+    ConstantExpressionIR,
+    QueryIR,
+    ScopeIR,
+    VerificationTask,
+)
 from dsl.ir.ir2.builder import IR2Builder
 from dsl.ir.ir2.context import IR2BuildContext
 from dsl.ir.ir2.enums import NormalFormKind
@@ -71,10 +78,9 @@ def test_default_factory_registers_sklearn_linear_regression_encoder() -> None:
 def test_model_output_assumption_survives_ir2_aggregation_and_dnf() -> None:
     assumptions = ModelEncoderFactory().encode(_schema(), _scope())
     spec = ComparisonIR(
-        entity="x",
-        feature="a",
+        left=AttributeExpressionIR(entity="x", feature="a"),
         op=EnumComparisonOperator.LTE,
-        value=10,
+        right=ConstantExpressionIR(value=10, dtype=EnumDataType.INT),
     )
     task = VerificationTask(
         property_type=EnumProperty.LOGIC,

@@ -43,7 +43,7 @@ Current grammar-level backend names include reserved names, but the V1 execution
 
 | Backend Syntax | Intended Backend / Mode | Status |
 |---|---|---|
-| `z3` / `Z3` | SMT backend | V1 target / planned critical backend |
+| `z3` / `Z3` | SMT backend | implemented numeric-affine V1 profile |
 | `eran` / `ERAN` | Neural network verification backend | reserved / post-V1 |
 | `zonotope` / `ZONOTOPE` | Abstract domain / backend mode | reserved / post-V1 |
 | `box` / `BOX` | Abstract domain / backend mode | reserved / post-V1 |

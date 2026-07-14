@@ -1,151 +1,218 @@
-# Results and Traces
+# Results and Reports
 
-> Status: Planned  
-> Implementation: Not yet implemented  
-> Scope: Normalized verification outputs and traceability metadata
+> Status: Implemented for text, JSON and HTML/Jupyter  
+> Implementation: `dsl.backends.results`, `dsl.reporting`  
+> Scope: Backend-neutral verification results and user-facing report output
 
 ## Purpose
 
-FORML should return structured verification results rather than raw backend outputs.
-
-The result layer normalizes backend-specific responses and preserves enough traceability to explain how a result was produced.
-
-## Result Position
+FORML separates four concerns:
 
 ```text
-BackendQuery
-→ VerificationRuntime
-→ BackendRawResult
+backend execution
 → VerificationResult
-→ DiagnosticTrace
+→ VerificationReport
+→ text / JSON / HTML renderer
 ```
 
-## VerificationResult
+A backend reports what happened during execution. The reporting layer combines
+that result with the FORML property, scope, route and assumptions. Renderers do
+not import or inspect a concrete solver.
 
-A `VerificationResult` is the normalized output of a verification run.
+The internal IR pretty-printers remain developer tools. User-facing output must
+consume `VerificationReport`.
 
-Suggested shape:
+## Backend-Neutral Result
 
-```text
-VerificationResult
-    property_id
-    status
-    satisfied
-    backend
-    counterexample
-    diagnostics
-    trace
-    raw_backend_summary
+`dsl.backends.results.VerificationResult` is the common execution contract:
+
+```python
+VerificationResult(
+    status=VerificationStatus.COUNTEREXAMPLE,
+    backend=EnumBackend.Z3,
+    backend_status="sat",
+    assignments={"x0.a": 3, "_model.score": 7},
+    message="Property violated ...",
+    diagnostics=(),
+)
 ```
 
-## Status Semantics
+The normalized statuses currently are:
 
 | Status | Meaning |
 |---|---|
-| `SATISFIED` | The property is verified according to the backend semantics |
-| `VIOLATED` | The backend found a violation or counterexample |
-| `UNKNOWN` | The backend could not prove or disprove the property |
-| `TIMEOUT` | The backend exceeded execution limits |
-| `UNSUPPORTED` | The query requires unsupported backend features |
-| `ERROR` | An unexpected backend/runtime error occurred |
+| `PROVED` | No counterexample exists under the encoded assumptions |
+| `COUNTEREXAMPLE` | A concrete violation was found |
+| `WITNESS` | A satisfying assignment was found |
+| `NO_WITNESS` | No satisfying assignment exists |
+| `UNKNOWN` | The backend could not conclude |
 
-## Counterexamples
+`Z3VerificationResult` remains available as a compatibility type, but it is a
+subtype of the backend-neutral result. Historical accessors `solver_status` and
+`model` map to `backend_status` and `assignments`.
 
-When a backend finds a violation, FORML should preserve the counterexample in a normalized form.
+## Verification Report
 
-A counterexample may include:
+`dsl.reporting.VerificationReport` combines:
 
-- feature assignments,
-- symbolic variable values,
-- violated assertion identifiers,
-- model-side constraints involved,
-- source property reference.
+- property index and type;
+- verification semantics;
+- normalized scope and variables;
+- concise specification text;
+- selected backend and route reason;
+- backend and FORML statuses;
+- normalized assignments;
+- diagnostics;
+- assumption count.
 
-For V1, counterexample extraction should focus on Z3.
-
-## DiagnosticTrace
-
-A diagnostic trace explains how the result was obtained.
-
-It should preserve references to:
-
-```text
-SourceProperty
-CST node
-AST node
-SemanticValidatedAST node
-IR1 task
-IR2 form
-AggregatedAssertionSet
-LoweredQuery
-BackendQuery
-BackendRawResult
-```
-
-The goal is not to expose every internal object to the user.
-
-The goal is to preserve enough traceability for debugging, testing, and future reporting.
-
-## Trace Granularity
-
-FORML may support several trace levels:
-
-| Level | Description |
-|---|---|
-| `none` | Only return result status |
-| `summary` | Return property, backend, status, and high-level diagnostics |
-| `debug` | Include compiler and lowering trace references |
-| `full` | Include all available trace metadata |
-
-V1 can start with `summary` and `debug`.
-
-## Relationship With Golden Tests
-
-Golden samples should assert not only that a result exists, but also that traceability is preserved.
-
-Example checks:
+Assignments are classified as:
 
 ```text
-- property id is preserved
-- backend is Z3
-- status is normalized
-- diagnostics mention unsupported constructs when relevant
-- counterexample exists when expected
+INPUT      x0.a
+OUTPUT     _model.score → score
+AUXILIARY  backend-introduced names
 ```
 
-## Relationship With Miova
+This distinction lets all renderers display a counterexample without exposing
+backend naming conventions.
 
-Miova can test result and trace robustness by mutating:
+## Text Rendering
 
-- backend raw outputs,
-- diagnostic payloads,
-- result statuses,
-- trace references,
-- counterexample structures.
+The default renderer is available as a method:
 
-Expected failures should be explicit.
+```python
+print(report.to_text())
+```
 
-## Result Boundary Invariants
+or as a standalone function:
 
-A valid `VerificationResult` must:
+```python
+from dsl.reporting import render_verification_reports_text
 
-- identify the backend,
-- expose a normalized status,
-- preserve property traceability,
-- avoid leaking backend-specific exceptions directly,
-- distinguish unknown from failure,
-- distinguish violation from runtime error.
+print(render_verification_reports_text(reports))
+```
 
-## V1 Result Scope
+The renderer displays:
 
-For V1, result handling should prioritize:
+- the normalized FORML status;
+- the property and scope;
+- the concise specification;
+- backend and routing information;
+- the conclusion;
+- grouped input, output and auxiliary assignments;
+- structured diagnostics.
+
+ASCII-only output is supported for restricted terminals:
+
+```python
+from dsl.reporting import TextRenderOptions
+
+print(
+    report.to_text()
+    if supports_unicode
+    else render_verification_report_text(
+        report,
+        options=TextRenderOptions(use_unicode=False),
+    )
+)
+```
+
+## Stable JSON Contract
+
+Every JSON payload is explicitly versioned:
+
+```json
+{
+  "schema": "forml.verification-report",
+  "schema_version": 1
+}
+```
+
+One report can be serialized or written directly:
+
+```python
+payload = report.to_dict()
+json_text = report.to_json()
+report.write_json("artifacts/property-1.json")
+```
+
+A report collection uses a separate envelope:
+
+```python
+from dsl.reporting import write_verification_reports_json
+
+write_verification_reports_json(reports, "artifacts/forml-report.json")
+```
+
+Its schema identifier is:
 
 ```text
-Z3 status mapping
-counterexample extraction when available
-normalized error handling
-basic traceability
-golden result samples
+forml.verification-report-collection
 ```
 
-More advanced reporting can come later.
+Z3 integer values become JSON integers. Exact non-integral rationals preserve
+their numerator and denominator rather than being rounded:
+
+```json
+{
+  "kind": "rational",
+  "numerator": 1,
+  "denominator": 3,
+  "text": "1/3"
+}
+```
+
+The version-1 contract is protected by a golden fixture under
+`test/fixtures/reporting/golden/`.
+
+## HTML and Jupyter Rendering
+
+A report or complete session can be returned directly from a notebook cell:
+
+```python
+report
+session
+```
+
+Both objects expose `_repr_html_()` through their public `to_html()` method.
+The renderer is backend-neutral, escapes all specification, diagnostic and
+assignment text, and uses no JavaScript or external assets.
+
+Standalone review artifacts are available through:
+
+```python
+report.write_html("property.html")
+session.write_html("verification-session.html")
+```
+
+The generated document includes inline CSS, a status summary, one card per
+property, grouped inputs and model outputs, route information and diagnostics.
+It can therefore be attached to a model-review ticket without a running FORML
+or Jupyter environment.
+
+## Current Boundary
+
+Implemented:
+
+```text
+Z3 native status
+→ VerificationResult
+→ VerificationReport
+→ shared text renderer
+→ stable JSON export
+→ HTML/Jupyter representation
+```
+
+High-level runtime integration:
+
+```text
+verify(...)
+→ VerificationSession
+→ collection of reports
+→ print / JSON helpers
+```
+
+The user-facing presentation layer is complete for terminal, automation and
+notebook workflows. Future presentation work may add richer domain/model
+explanations, interactive exploration or a web application, but those are not
+required by the current V1 profile.

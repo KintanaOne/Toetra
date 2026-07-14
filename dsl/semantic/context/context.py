@@ -1,8 +1,13 @@
+from __future__ import annotations
+
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from dsl.semantic.context.scope import SemanticScope
 from dsl.semantic.symbols.table import SymbolTable
+
+if TYPE_CHECKING:
+    from dsl.ast.nodes.domain import DomainNode
 
 
 @dataclass
@@ -49,7 +54,7 @@ class SemanticContext:
     # Optional semantic metadata
     # ---------------------------------------------
 
-    domain: Optional[object] = None
+    domain: DomainNode | None = None
     neighborhood: Optional[object] = None
     quantifier: Optional[str] = None
     model_target: Optional[str] = None

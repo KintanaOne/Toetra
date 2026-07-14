@@ -1,3 +1,4 @@
+from dsl.ir.ir1.nodes import AttributeExpressionIR, ComparisonIR
 from dsl.ir.ir1.run_ir1 import run_ir
 
 
@@ -14,5 +15,7 @@ def test_explicit_quantifier_identifier_reaches_semantic_binding_and_ir1():
     comparison = task.query.expression
 
     assert task.scope.variables == {"applicant": "symbolic"}
-    assert comparison.entity == "applicant"
-    assert comparison.feature == "age"
+    assert isinstance(comparison, ComparisonIR)
+    assert isinstance(comparison.left, AttributeExpressionIR)
+    assert comparison.left.entity == "applicant"
+    assert comparison.left.feature == "age"

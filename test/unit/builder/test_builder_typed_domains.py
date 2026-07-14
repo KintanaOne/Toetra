@@ -5,12 +5,17 @@ import pytest
 from dsl.ast.nodes.domain import (
     FiniteSetDomainNode,
     IntervalDomainNode,
-    SymbolLiteralNode,
 )
 from dsl.ast.nodes.expressions import AtExprNode, QuantifierExprNode
-from dsl.ast.nodes.primitives import ConstantNode
+from dsl.ast.nodes.primitives import (
+    AttributeNode,
+    BinaryArithmeticNode,
+    ConstantNode,
+    NameRefNode,
+)
 from dsl.builder.program import parse_program
 from dsl.language.vocabulary.domains import EnumBoundaryKind
+from dsl.language.vocabulary.operators import EnumArithmeticOperator
 from dsl.parser.parser import parse_forml_code
 from dsl.semantic.types.enums import EnumDataType
 
@@ -75,8 +80,8 @@ def test_builds_symbolic_finite_set_without_turning_names_into_features():
 
     assert isinstance(constraint, FiniteSetDomainNode)
     assert constraint.values == [
-        SymbolLiteralNode("retail"),
-        SymbolLiteralNode("corporate"),
+        NameRefNode("retail"),
+        NameRefNode("corporate"),
     ]
 
 
@@ -139,8 +144,24 @@ def test_domain_is_built_for_local_at_scope_too():
     assert scope.domain.entries[0].subject.feature == "sex"
 
 
-def test_arithmetic_interval_bound_is_reserved_for_g2_c():
+def test_builds_arithmetic_interval_bounds():
     source = program_with_domain("x0.a: [x0.b - 1, x0.b + 1]")
+    program = build(source)
+    scope = program.body[0].rule.scope
 
-    with pytest.raises(NotImplementedError, match="Arithmetic scalar expressions"):
-        build(source)
+    assert isinstance(scope, QuantifierExprNode)
+    assert scope.domain is not None
+
+    interval = scope.domain.entries[0].constraint
+    assert isinstance(interval, IntervalDomainNode)
+    assert isinstance(interval.lower, BinaryArithmeticNode)
+    assert interval.lower.operator is EnumArithmeticOperator.SUB
+    assert interval.lower.left == AttributeNode(
+        entity="x0",
+        feature="b",
+        path=["x0", "b"],
+    )
+    assert isinstance(interval.lower.right, ConstantNode)
+
+    assert isinstance(interval.upper, BinaryArithmeticNode)
+    assert interval.upper.operator is EnumArithmeticOperator.ADD

@@ -4,10 +4,16 @@ from dataclasses import dataclass
 
 import pytest
 
-from dsl.ir.ir1.nodes import ComparisonIR, ScopeIR
+from dsl.ir.ir1.nodes import (
+    AttributeExpressionIR,
+    ComparisonIR,
+    ConstantExpressionIR,
+    ScopeIR,
+)
 from dsl.ir.ir2.enums import AssumptionSource
 from dsl.ir.ir2.nodes import AssumptionIR2, NNFFormulaIR2
 from dsl.language.vocabulary.operators import EnumComparisonOperator
+from dsl.semantic.types.enums import EnumDataType
 from model.detector.model_framework import EnumModelFramework
 from model.encoder import (
     InvalidModelAssumptionError,
@@ -57,10 +63,9 @@ def _model_assumption(
     source: AssumptionSource = AssumptionSource.MODEL,
 ) -> AssumptionIR2:
     atom = ComparisonIR(
-        entity="x",
-        feature="a",
+        left=AttributeExpressionIR(entity="x", feature="a"),
         op=EnumComparisonOperator.LTE,
-        value=1,
+        right=ConstantExpressionIR(value=1, dtype=EnumDataType.INT),
     )
     return AssumptionIR2(
         source=source,

@@ -1,27 +1,32 @@
 from __future__ import annotations
 
-from dsl.ir.ir1.nodes import AndIR, ComparisonIR, NotIR
+from dsl.ir.ir1.nodes import (
+    AndIR,
+    AttributeExpressionIR,
+    ComparisonIR,
+    ConstantExpressionIR,
+    NotIR,
+)
 from dsl.ir.ir2.condition import VerificationConditionBuilder
 from dsl.ir.ir2.enums import AssumptionSource, VerificationSemantics
 from dsl.ir.ir2.nodes import AssumptionIR2, NNFFormulaIR2
 from dsl.language.vocabulary.operators import EnumComparisonOperator
+from dsl.semantic.types.enums import EnumDataType
 
 
 def _property_atom() -> ComparisonIR:
     return ComparisonIR(
-        entity="x0",
-        feature="a",
+        left=AttributeExpressionIR(entity="x0", feature="a"),
         op=EnumComparisonOperator.LTE,
-        value=3.0,
+        right=ConstantExpressionIR(value=3.0, dtype=EnumDataType.FLOAT),
     )
 
 
 def _domain_atom() -> ComparisonIR:
     return ComparisonIR(
-        entity="x0",
-        feature="a",
+        left=AttributeExpressionIR(entity="x0", feature="a"),
         op=EnumComparisonOperator.GTE,
-        value=0.0,
+        right=ConstantExpressionIR(value=0.0, dtype=EnumDataType.FLOAT),
     )
 
 

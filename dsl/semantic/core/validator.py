@@ -1,9 +1,11 @@
+from dsl.ast.nodes.program import ProgramNode
 from dsl.builder.program import parse_program
 from dsl.parser.errors import ParserError
 from dsl.parser.parser import parse_forml_code
 from dsl.semantic.runtime.tracer import ValidationTracer
 
 from dsl.semantic.core.property import PropertyValidator
+from dsl.semantic.core.specification_constants import collect_specification_constants
 
 
 class FORMLValidator:
@@ -11,20 +13,27 @@ class FORMLValidator:
     def __init__(self):
         self.tracer = ValidationTracer(enabled=True)
 
-    def validate(self, program, tracer=None, model_schema=None):
+    def validate(
+        self,
+        program: ProgramNode,
+        tracer=None,
+        model_schema=None,
+    ) -> bool:
         if tracer:
             self.tracer = tracer
 
         self.tracer.log(f"Validating FORMLValidator: {program}")
 
         try:
-            model_target = program.header.target if program.header is not None else None
+            model_target = program.header.target
+            specification_constants = collect_specification_constants(program.header)
 
             for prop in program.body:
                 PropertyValidator(tracer=self.tracer).validate(
                     prop,
                     model_schema=model_schema,
                     model_target=model_target,
+                    specification_constants=specification_constants,
                 )
 
         except ParserError:

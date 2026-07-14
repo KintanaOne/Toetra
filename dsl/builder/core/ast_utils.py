@@ -113,23 +113,8 @@ def parse_attribute(node: Tree) -> AttributeNode:
 # Converts raw tokens into typed ConstantNode.
 
 
-def parse_value(node: Tree) -> ConstantNode:
-    """
-    Parse a value node into a ConstantNode with inferred type.
-
-    Type inference strategy:
-    1. Try int
-    2. Try float
-    3. Fallback to string
-    """
-    raw = get_token_value(node)
-
-    if raw is None:
-        raw = get_node_name_or_value(node)
-
-    if raw is None:
-        raise ValueError("Invalid value node")
-
+def parse_literal_value(raw: str) -> ConstantNode:
+    """Build a typed constant from one scalar literal spelling."""
     cleaned = clean_string(raw)
 
     if cleaned is None:
@@ -158,6 +143,26 @@ def parse_value(node: Tree) -> ConstantNode:
 
     # Fallback: string
     return ConstantNode(value=cleaned, dtype=EnumDataType.STRING)
+
+
+def parse_value(node: Tree) -> ConstantNode:
+    """
+    Parse a value node into a ConstantNode with inferred type.
+
+    Type inference strategy:
+    1. Try int
+    2. Try float
+    3. Fallback to string
+    """
+    raw = get_token_value(node)
+
+    if raw is None:
+        raw = get_node_name_or_value(node)
+
+    if raw is None:
+        raise ValueError("Invalid value node")
+
+    return parse_literal_value(raw)
 
 
 # ============================================================================

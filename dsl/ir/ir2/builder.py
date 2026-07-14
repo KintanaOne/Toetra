@@ -6,6 +6,7 @@ from dsl.ir.ir1.nodes import VerificationTask
 from dsl.ir.ir2.assumptions import AssumptionCollector
 from dsl.ir.ir2.condition import VerificationConditionBuilder
 from dsl.ir.ir2.context import IR2BuildContext
+from dsl.ir.ir2.domain_assumptions import DomainAssumptionEncoder
 from dsl.ir.ir2.enums import NormalFormKind, VerificationSemantics
 from dsl.ir.ir2.errors import NormalFormExplosionError
 from dsl.ir.ir2.guard import NNFGuard
@@ -39,6 +40,7 @@ class IR2Builder:
         cnf_converter: CNFConverter | None = None,
         dnf_converter: DNFConverter | None = None,
         requirements_analyzer: RequirementsAnalyzer | None = None,
+        domain_assumption_encoder: DomainAssumptionEncoder | None = None,
         validator: IR2Validator | None = None,
     ):
         self.assumption_collector = assumption_collector or AssumptionCollector()
@@ -47,6 +49,9 @@ class IR2Builder:
         self.cnf_converter = cnf_converter or CNFConverter()
         self.dnf_converter = dnf_converter or DNFConverter()
         self.requirements_analyzer = requirements_analyzer or RequirementsAnalyzer()
+        self.domain_assumption_encoder = (
+            domain_assumption_encoder or DomainAssumptionEncoder()
+        )
         self.validator = validator or IR2Validator()
 
     def build(
@@ -62,8 +67,15 @@ class IR2Builder:
 
         NNFGuard.assert_task_is_nnf(task_nnf)
 
+        domain_assumptions = self.domain_assumption_encoder.encode_domain(
+            task_nnf.scope.domain
+        )
+        combined_assumptions = (
+            *domain_assumptions,
+            *(assumptions or ()),
+        )
         collected_assumptions = self.assumption_collector.collect(
-            assumptions,
+            combined_assumptions,
         )
 
         spec_formula = NNFFormulaIR2(
@@ -120,6 +132,7 @@ class IR2Builder:
                 "source_ir": "ir1_nnf",
                 "builder": "IR2Builder",
                 "verification_semantics": semantics.value,
+                "domain_assumption_count": len(domain_assumptions),
             },
         )
 

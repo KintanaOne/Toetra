@@ -1,0 +1,83 @@
+{
+  "assumptions": [
+    {
+      "description": "domain lower bound: x0.a >= 0.0",
+      "metadata": {
+        "boundary": "closed",
+        "constraint_kind": "interval",
+        "entity": "x0",
+        "entry_index": 0,
+        "expansion_kind": "lower_bound",
+        "expression": "0.0",
+        "feature": "a",
+        "operator": ">=",
+        "origin": "dsl_domain"
+      },
+      "source": "domain"
+    },
+    {
+      "description": "domain upper bound: x0.a <= 3.0",
+      "metadata": {
+        "boundary": "closed",
+        "constraint_kind": "interval",
+        "entity": "x0",
+        "entry_index": 0,
+        "expansion_kind": "upper_bound",
+        "expression": "3.0",
+        "feature": "a",
+        "operator": "<=",
+        "origin": "dsl_domain"
+      },
+      "source": "domain"
+    },
+    {
+      "description": "sklearn linear regression output equation",
+      "metadata": {
+        "encoder": "SklearnLinearRegressorEncoder",
+        "model_type": "LinearRegression",
+        "target": "score"
+      },
+      "source": "model"
+    }
+  ],
+  "backend": "Z3",
+  "diagnostics": [],
+  "domain_assumption_count": 2,
+  "message": "Property proved: no counterexample exists under the encoded assumptions.",
+  "normal_form": "nnf",
+  "property_type": "BOUND",
+  "requirements": {
+    "affine_arithmetic": true,
+    "domain_assumptions": true,
+    "model_assertions": true,
+    "scalar_sorts": [
+      "float"
+    ]
+  },
+  "route_reason": "requested backend satisfies IR2 requirements",
+  "semantics": "refutation",
+  "solver_status": "unsat",
+  "spec_formula": {
+    "left": {
+      "dtype": "float",
+      "entity": "_model",
+      "feature": "score",
+      "type": "target"
+    },
+    "op": "<=",
+    "right": {
+      "dtype": "float",
+      "source_kind": "specification_constant",
+      "source_name": "max_score",
+      "type": "constant",
+      "value": 7.0
+    },
+    "type": "comparison"
+  },
+  "status": "proved",
+  "target_dtype": "float",
+  "threshold_provenance": {
+    "source_kind": "specification_constant",
+    "source_name": "max_score"
+  }
+}

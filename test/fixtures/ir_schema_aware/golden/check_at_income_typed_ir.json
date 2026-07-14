@@ -11,11 +11,19 @@
   },
   "query": {
     "type": "comparison",
-    "entity": "x0",
-    "feature": "income",
+    "left": {
+      "type": "attribute",
+      "entity": "x0",
+      "feature": "income",
+      "dtype": "float"
+    },
     "op": "<=",
-    "value": 1000,
-    "feature_dtype": "float",
-    "value_dtype": "int"
+    "right": {
+      "type": "constant",
+      "value": 1000,
+      "dtype": "int",
+      "source_kind": "literal",
+      "source_name": null
+    }
   }
 }

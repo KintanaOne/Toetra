@@ -29,6 +29,7 @@ class SklearnIntrospector(BaseIntrospector):
         from a scikit-learn model.
         """
 
+        target = self._detect_target()
         features = (
             self.input_schema.features
             if self.input_schema is not None
@@ -40,7 +41,8 @@ class SklearnIntrospector(BaseIntrospector):
             model_type=type(self.model).__name__,
             features=features,
             task=self._detect_task(),
-            target=self._detect_target(),
+            target=target,
+            target_dtype=self._detect_target_dtype(target),
             metadata=self._build_metadata(),
         )
 
@@ -143,6 +145,21 @@ class SklearnIntrospector(BaseIntrospector):
             return self.target_name
 
         return "target"
+
+    def _detect_target_dtype(self, target: str) -> EnumDataType | None:
+        """Infer the target dtype without guessing when metadata is absent."""
+
+        if self.input_schema is not None and self.input_schema.target_dtype is not None:
+            return self.input_schema.target_dtype
+
+        if self.source_path is None:
+            return None
+
+        data = pd.read_csv(self.source_path)
+        if target not in data.columns:
+            return None
+
+        return self._map_dtype(data[target].dtype)
 
     # ======================================================
     # Metadata extraction

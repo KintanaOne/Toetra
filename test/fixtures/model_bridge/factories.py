@@ -91,6 +91,9 @@ def schema_to_contract(schema) -> dict[str, Any]:
         "model_type": schema.model_type,
         "task": schema.task,
         "target": schema.target,
+        "target_dtype": (
+            schema.target_dtype.value if schema.target_dtype is not None else None
+        ),
         "features": {
             name: {
                 "dtype": getattr(feature.dtype, "value", str(feature.dtype)),

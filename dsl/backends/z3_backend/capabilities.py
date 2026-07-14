@@ -6,6 +6,7 @@ from dsl.ir.ir2.enums import (
     VerificationSemantics,
 )
 from dsl.language.vocabulary.backends import EnumBackend
+from dsl.semantic.types.enums import EnumDataType
 
 Z3_CAPABILITIES = BackendCapabilities(
     backend=EnumBackend.Z3,
@@ -25,4 +26,16 @@ Z3_CAPABILITIES = BackendCapabilities(
         VerificationSemantics.REFUTATION,
         VerificationSemantics.SATISFACTION,
     ),
+    supports_affine_arithmetic=True,
+    supports_nonlinear_arithmetic=False,
+    supports_symbolic_division=False,
+    supported_scalar_sorts=frozenset(
+        {
+            EnumDataType.INT,
+            EnumDataType.FLOAT,
+        }
+    ),
+    supports_finite_set_membership=True,
+    supports_symbolic_categories=False,
+    supports_domain_assumptions=True,
 )

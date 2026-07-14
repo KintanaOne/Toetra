@@ -4,7 +4,9 @@ from typing import Iterable
 
 from dsl.ir.ir1.nodes import (
     AndIR,
+    AttributeExpressionIR,
     ComparisonIR,
+    ConstantExpressionIR,
     ImplyIR,
     LogicalIR,
     NotIR,
@@ -19,6 +21,7 @@ from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.problems import EnumProblem
 from dsl.language.vocabulary.properties import EnumProperty
+from dsl.semantic.types.enums import EnumDataType
 
 # -----------------------------------------------------------------------------
 # Public API imports under test
@@ -65,7 +68,24 @@ def cmp(
     entity: str = "x0",
     op: EnumComparisonOperator = EnumComparisonOperator.LTE,
 ) -> ComparisonIR:
-    return ComparisonIR(entity=entity, feature=feature, op=op, value=value)
+    if isinstance(value, bool):
+        dtype = EnumDataType.BOOL
+    elif isinstance(value, int):
+        dtype = EnumDataType.INT
+    elif isinstance(value, float):
+        dtype = EnumDataType.FLOAT
+    elif isinstance(value, str):
+        dtype = EnumDataType.STRING
+    elif value is None:
+        dtype = EnumDataType.NoneType
+    else:
+        raise TypeError(f"Unsupported comparison fixture value: {value!r}")
+
+    return ComparisonIR(
+        left=AttributeExpressionIR(entity=entity, feature=feature),
+        op=op,
+        right=ConstantExpressionIR(value=value, dtype=dtype),
+    )
 
 
 def problem(
@@ -200,7 +220,11 @@ def _enum_value(value: object) -> object:
 
 
 def _cmp_to_str(node: ComparisonIR) -> str:
-    return f"CMP({node.entity}.{node.feature} {node.op.value} {node.value})"
+    from dsl.ir.ir1.scalar import format_scalar_expression
+
+    left = format_scalar_expression(node.left)
+    right = format_scalar_expression(node.right)
+    return f"CMP({left} {node.op.value} {right})"
 
 
 def _problem_to_str(node: ProblemIR) -> str:

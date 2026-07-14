@@ -4,12 +4,13 @@ from lark import Tree
 
 from dsl.ast.nodes.domain import (
     DomainConstraintNode,
+    DomainFiniteValueNode,
     DomainEntryNode,
     DomainNode,
     FiniteSetDomainNode,
     IntervalDomainNode,
-    SymbolLiteralNode,
 )
+from dsl.ast.nodes.primitives import NameRefNode
 from dsl.builder.core.ast_utils import node_value, parse_attribute, parse_value
 from dsl.builder.core.strict import require_node, require_value
 from dsl.builder.core.utils import find_child, find_node
@@ -72,7 +73,7 @@ def _parse_interval(node: Tree) -> IntervalDomainNode:
     )
 
 
-def _parse_finite_set_value(node: Tree):
+def _parse_finite_set_value(node: Tree) -> DomainFiniteValueNode:
     symbolic = find_child(node, "symbolic_literal")
     if symbolic is not None:
         identifier = require_node(
@@ -83,7 +84,7 @@ def _parse_finite_set_value(node: Tree):
             node_value(identifier),
             "Symbolic domain literal cannot be empty",
         )
-        return SymbolLiteralNode(name=name)
+        return NameRefNode(name=name)
 
     value = require_node(
         find_child(node, "value"),
@@ -93,7 +94,7 @@ def _parse_finite_set_value(node: Tree):
 
 
 def _parse_finite_set(node: Tree) -> FiniteSetDomainNode:
-    values = [
+    values: list[DomainFiniteValueNode] = [
         _parse_finite_set_value(value)
         for value in _direct_children(node, "finite_set_value")
     ]

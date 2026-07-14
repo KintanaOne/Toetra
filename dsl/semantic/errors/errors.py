@@ -29,3 +29,11 @@ class InvalidOperatorError(SemanticError):
 
 class IncompatibleFunctionError(SemanticError):
     pass
+
+
+class InvalidArithmeticError(TypeMismatchError):
+    """Raised when a scalar arithmetic expression is not semantically valid."""
+
+
+class InvalidDomainError(SemanticError):
+    """Raised when a typed domain violates its semantic contract."""

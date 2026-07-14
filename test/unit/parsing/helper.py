@@ -139,6 +139,7 @@ def assert_domain(
     """Assert one finite-set typed domain entry."""
 
     from dsl.ast.nodes.domain import FiniteSetDomainNode, SymbolLiteralNode
+    from dsl.ast.nodes.primitives import NameRefNode
 
     assert domain is not None
     assert len(domain.entries) == 1
@@ -149,7 +150,11 @@ def assert_domain(
     assert isinstance(entry.constraint, FiniteSetDomainNode)
 
     actual_values = [
-        value.name if isinstance(value, SymbolLiteralNode) else value.value
+        (
+            value.name
+            if isinstance(value, (NameRefNode, SymbolLiteralNode))
+            else value.value
+        )
         for value in entry.constraint.values
     ]
     assert actual_values == values

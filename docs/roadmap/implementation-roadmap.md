@@ -194,9 +194,7 @@ Post-V1 extensions include:
 
 ## Documentation-First Language Migration
 
-The documentation baseline for explicit quantified bindings, typed domains and scalar arithmetic is complete after patches 01 through 06.
-
-Implementation proceeds in this order:
+The implementation chantier for explicit quantified bindings, typed domains, scalar arithmetic and specification constants is complete through Patch 08. The sequence below is now a historical record of the delivered gates:
 
 ```text
 1. EBNF and Lark grammar
@@ -206,15 +204,15 @@ Implementation proceeds in this order:
 5. IR1 scalar and domain representation
 6. IR2 domain assumptions, provenance and requirements
 7. backend capabilities and initial Z3 numeric-affine translation
-8. universal/existential result interpretation
-9. complete end-to-end tests
+8. universal/existential result interpretation, result diagnostics and vacuity detection
+9. final end-to-end golden and documentation status consolidation
 ```
 
-Each step follows the corresponding gate in `docs/testing/language-evolution-test-matrix.md`.
+Each delivered step follows the corresponding gate in `docs/testing/language-evolution-test-matrix.md`.
 
-### Initial implementation boundary
+### Delivered implementation boundary
 
-Implement first:
+The completed initial profile includes:
 
 - required identifiers for `forall` and `exists`;
 - exact binding with no explicit-entity alias fallback;
@@ -224,4 +222,31 @@ Implement first:
 - numeric affine execution in Z3;
 - structured rejection of nonlinear and categorical requests not yet supported.
 
-Do not block language representation on full backend support. Do not claim backend support merely because the parser accepts a construct.
+Language representation remains broader than the executable Z3 profile. Capability mismatch is reported before solver execution, and parser acceptance alone never implies backend support. The next language chantier concerns richer scope and anchor semantics rather than unfinished scalar arithmetic infrastructure.
+
+## User-facing Runtime and Reporting Consolidation
+
+The usability chantier following the numeric-affine compiler profile is complete:
+
+```text
+Patch 09  — executable affine demonstration
+Patch 10  — backend-neutral results and report model
+Patch 11  — shared text rendering and versioned JSON
+Patch 12  — public verify(...) API and VerificationSession
+Patch 12.1 — self-contained user-script demonstration
+Patch 13  — HTML/Jupyter rendering and credit-risk notebook
+```
+
+The public path is now:
+
+```text
+.forml + serialized model + optional reference dataset
+→ verify(...)
+→ VerificationSession
+→ text / JSON / HTML / Jupyter
+```
+
+This closes the current scalar-arithmetic, domain, affine-Z3 and user-output
+chantier. The next language chantier is the redesign of anchors, `at`,
+`check_at`, multiple/nested quantified entities and their scope semantics.
+

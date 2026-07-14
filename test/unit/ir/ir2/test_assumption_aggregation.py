@@ -6,7 +6,9 @@ import pytest
 
 from dsl.ir.ir1.nodes import (
     AndIR,
+    AttributeExpressionIR,
     ComparisonIR,
+    ConstantExpressionIR,
     OrIR,
     QueryIR,
     ScopeIR,
@@ -35,20 +37,21 @@ from dsl.ir.ir2.requirements import IR2Requirements
 from dsl.ir.ir2.validator import IR2Validator
 from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.properties import EnumProperty
+from dsl.semantic.types.enums import EnumDataType
 
 
 def _cmp(feature: str, value: int = 1) -> ComparisonIR:
     return ComparisonIR(
-        entity="x",
-        feature=feature,
+        left=AttributeExpressionIR(entity="x", feature=feature),
         op=EnumComparisonOperator.LTE,
-        value=value,
+        right=ConstantExpressionIR(value=value, dtype=EnumDataType.INT),
     )
 
 
 def _literal_signature(literal: LiteralIR2) -> tuple[str, Polarity]:
     assert isinstance(literal.atom, ComparisonIR)
-    return literal.atom.feature, literal.polarity
+    assert isinstance(literal.atom.left, AttributeExpressionIR)
+    return literal.atom.left.feature, literal.polarity
 
 
 def _scope() -> ScopeIR:

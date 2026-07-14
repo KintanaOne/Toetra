@@ -1,23 +1,23 @@
 # /dsl/ir/pretty.py
 
 from dsl.ir.ir1.nodes import (
-    VerificationTask,
-    ScopeIR,
-    QueryIR,
-    LogicalIR,
-    ComparisonIR,
     AndIR,
-    OrIR,
-    NotIR,
-    ImplyIR,
-    ProblemIR,
     AttributeExpressionIR,
-    ConstantExpressionIR,
+    ComparisonIR,
     FiniteSetDomainIR,
+    ImplyIR,
     IntervalDomainIR,
+    LogicalIR,
+    NotIR,
+    OrIR,
+    ProblemIR,
+    QueryIR,
+    ScopeIR,
     SymbolLiteralIR,
     TargetExpressionIR,
+    VerificationTask,
 )
+from dsl.ir.ir1.scalar import format_scalar_expression
 
 # =============================================================================
 # ENTRY POINT
@@ -99,17 +99,9 @@ def _pretty_scope(scope: ScopeIR) -> list[str]:
 
 
 def _pretty_scalar_expression(node) -> str:
-    if isinstance(node, ConstantExpressionIR):
-        return repr(node.value)
-    if isinstance(node, AttributeExpressionIR):
-        return (
-            f"{node.entity}.{node.feature}" if node.entity is not None else node.feature
-        )
-    if isinstance(node, TargetExpressionIR):
-        return node.name
     if isinstance(node, SymbolLiteralIR):
         return node.name
-    return repr(node)
+    return format_scalar_expression(node)
 
 
 def _pretty_domain_constraint(constraint) -> str:
@@ -150,15 +142,15 @@ def _pretty_logical(node: LogicalIR, indent=0) -> list[str]:
     # Comparison
     # -----------------------------
     if isinstance(node, ComparisonIR):
+        left = format_scalar_expression(node.left)
+        right = format_scalar_expression(node.right)
+
         dtype = ""
+        if isinstance(node.left, (AttributeExpressionIR, TargetExpressionIR)):
+            if node.left.dtype is not None:
+                dtype = f" : {node.left.dtype.value}"
 
-        if node.feature_dtype is not None:
-            dtype = f" : {node.feature_dtype.value}"
-
-        lines.append(
-            f"{space}- {node.entity}.{node.feature}{dtype} "
-            f"{node.op.value} {node.value}"
-        )
+        lines.append(f"{space}- {left}{dtype} {node.op.value} {right}")
         return lines
 
     # -----------------------------
