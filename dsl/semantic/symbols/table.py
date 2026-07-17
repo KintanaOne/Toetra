@@ -1,4 +1,9 @@
+from __future__ import annotations
+
+from dsl.semantic.symbols.point import PointSymbol
 from dsl.semantic.symbols.symbol import Symbol
+
+SemanticSymbol = Symbol | PointSymbol
 
 
 class SymbolTable:
@@ -23,7 +28,7 @@ class SymbolTable:
     # REGISTER
     # ─────────────────────────────────────────────
 
-    def register(self, symbol: Symbol):
+    def register(self, symbol: SemanticSymbol) -> None:
         """
         Register a semantic symbol.
 
@@ -41,7 +46,7 @@ class SymbolTable:
     # RESOLVE
     # ─────────────────────────────────────────────
 
-    def resolve(self, name: str):
+    def resolve(self, name: str) -> SemanticSymbol | None:
         """
         Resolve a symbol by name.
 
@@ -66,7 +71,7 @@ class SymbolTable:
     # ITERATION
     # ─────────────────────────────────────────────
 
-    def all(self):
+    def all(self) -> list[SemanticSymbol]:
         """
         Return all registered symbols.
         """

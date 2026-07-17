@@ -47,6 +47,64 @@ class IR2Validator:
                 "requirements.normal_form must match task.normal_form."
             )
 
+        self._validate_point_aware_contract(task)
+
+    def _validate_point_aware_contract(self, task: VerificationTaskIR2) -> None:
+        source_names = [mapping.source_name for mapping in task.point_mappings]
+        if len(source_names) != len(set(source_names)):
+            raise IR2ValidationError(
+                "point_mappings must contain unique source point names."
+            )
+        mapped_points = tuple(mapping.ir_point for mapping in task.point_mappings)
+        if len(mapped_points) != len(set(mapped_points)):
+            raise IR2ValidationError(
+                "point_mappings must contain unique IR point identities."
+            )
+        if len(task.model_evaluations) != len(set(task.model_evaluations)):
+            raise IR2ValidationError(
+                "model_evaluations must be deduplicated by (model, point, target)."
+            )
+        mapped_point_set = set(mapped_points)
+        for evaluation in task.model_evaluations:
+            if mapped_point_set and evaluation.point not in mapped_point_set:
+                raise IR2ValidationError(
+                    "Every model evaluation point must be present in point_mappings."
+                )
+        requirements = task.requirements
+        if requirements.point_count != len(task.point_mappings):
+            raise IR2ValidationError(
+                "requirements.point_count must match task.point_mappings."
+            )
+        if requirements.model_evaluation_count != len(task.model_evaluations):
+            raise IR2ValidationError(
+                "requirements.model_evaluation_count must match task.model_evaluations."
+            )
+        if requirements.binder_sequence != task.quantifier_structure.binder_sequence:
+            raise IR2ValidationError(
+                "requirements.binder_sequence must match quantifier_structure."
+            )
+        if (
+            requirements.alternation_depth
+            != task.quantifier_structure.alternation_depth
+        ):
+            raise IR2ValidationError(
+                "requirements.alternation_depth must match quantifier_structure."
+            )
+        if (
+            requirements.requires_quantifier_alternation
+            != task.quantifier_structure.is_alternating
+        ):
+            raise IR2ValidationError(
+                "Quantifier alternation requirement must match the binder sequence."
+            )
+        if (
+            task.quantifier_structure.is_alternating
+            and not requirements.requires_native_quantifiers
+        ):
+            raise IR2ValidationError(
+                "Alternating quantifiers require native/advanced capability."
+            )
+
     def _validate_assumptions(
         self,
         assumptions: tuple[AssumptionIR2, ...],

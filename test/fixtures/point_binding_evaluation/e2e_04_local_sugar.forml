@@ -1,0 +1,12 @@
+model := "linear.joblib"
+target := score
+
+anchor x0 := { a: 1.0 }
+
+[ROBUSTNESS]:
+at x0 with x1 in neighborhood(
+    metric = Linf,
+    eps = 0.1
+)
+=> (target[x1] - target[x0] <= 0.2)
+   and (target[x0] - target[x1] <= 0.2) using Z3

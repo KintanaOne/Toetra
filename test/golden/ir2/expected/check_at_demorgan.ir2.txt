@@ -3,7 +3,7 @@
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Property      : LOGIC
 Backend       : Z3
-Scope         : pointwise
+Scope         : quantifier
 Semantics     : refutation
 Normal form   : dnf
 Requirements  : boolean_logic, numeric_comparisons

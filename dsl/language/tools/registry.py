@@ -21,6 +21,7 @@ SPECIAL_SEQ = {
     "arithmetic_unary_operators": " | ".join(
         key for key in OFFICIAL_MAPS["arithmetic_operators"] if key in {"PLUS", "MINUS"}
     ),
+    "argument_keywords": "ARG_KEY | ARG_VALUE | ARG_OF | ARG_METRIC | ARG_EPS",
 }
 
 

@@ -21,6 +21,15 @@ COMMENT_BLOCK : /'''(.|\n)*?'''/
 # === PROTECTED_WORDS ===
 
 IN.10 : /in(?![A-Za-z0-9_])/
+ANCHOR.10 : /anchor(?![A-Za-z0-9_])/
+REF.10 : /ref(?![A-Za-z0-9_])/
+ARG_KEY.11 : /key(?=\s*=(?!=))/
+ARG_VALUE.11 : /value(?=\s*=(?!=))/
+ARG_OF.11 : /of(?=\s*=(?!=))/
+ARG_METRIC.11 : /metric(?=\s*=(?!=))/
+ARG_EPS.11 : /eps(?=\s*=(?!=))/
+WHERE.10 : /where(?![A-Za-z0-9_])/
+LOCAL_WITH.11 : /with(?=\s+[A-Za-z_][A-Za-z0-9_]*\s+in(?![A-Za-z0-9_]))/
 WITH.10 : /with(?![A-Za-z0-9_])/
 DOMAIN.10 : /domain(?![A-Za-z0-9_])/
 AT.10 : /at(?![A-Za-z0-9_])/
@@ -140,6 +149,11 @@ boolean : true
 identifier : IDENTIFIER
 quoted_identifier : ESCAPED_STRING
     | identifier
+    | ARG_KEY
+    | ARG_VALUE
+    | ARG_OF
+    | ARG_METRIC
+    | ARG_EPS
 
 # === VALUE TYPES ===
 
@@ -213,7 +227,7 @@ problem_expr : (CLASSIFICATION
 # === ATTRIBUTES / MODEL OUTPUT ===
 
 attribute : identifier ("." identifier)*
-target_ref : TARGET
+target_ref : TARGET ("[" identifier "]")?
 
 # === SCALAR ARITHMETIC ===
 
@@ -242,10 +256,13 @@ comparison_expr : scalar_expression comparison_operation scalar_expression
 ?logic_imply : logic_or
     | logic_or "->" logic_imply -> logical_imply
 ?logic_or : logic_and
-    | logic_or "OR" logic_and -> logic_or
+    | logic_or (OR
+    | "OR") logic_and -> logic_or
 ?logic_and : logic_not
-    | logic_and "AND" logic_not -> logic_and
-?logic_not : "NOT" atom -> logic_not
+    | logic_and (AND
+    | "AND") logic_not -> logic_and
+?logic_not : (NOT
+    | "NOT") atom -> logic_not
     | atom
 ?atom : comparison_expr
     | logic_expr
@@ -257,9 +274,16 @@ comparison_expr : scalar_expression comparison_operation scalar_expression
 # =========================================================
 # === NEIGHBORHOOD (CRITICAL ABSTRACTION) ===
 
-neighborhood : IN NEIGHBORHOOD "(" ("metric" "=")? (L1
+neighborhood : IN NEIGHBORHOOD "(" (ARG_METRIC "=")? (L1
     | L2
     | LINF) "," (args)? ")"
+neighborhood_of_argument : ARG_OF "=" identifier
+neighborhood_metric_argument : ARG_METRIC "=" (L1
+    | L2
+    | LINF)
+neighborhood_eps_argument : ARG_EPS "=" scalar_expression
+neighborhood_membership : identifier IN NEIGHBORHOOD "(" neighborhood_of_argument "," neighborhood_metric_argument "," neighborhood_eps_argument ")"
+local_neighborhood : LOCAL_WITH identifier IN NEIGHBORHOOD "(" neighborhood_metric_argument "," neighborhood_eps_argument ")"
 
 # =========================================================
 # === PROPERTY EXPRESSIONS ================================
@@ -278,13 +302,18 @@ quantifier : FORALL
     | EXIST
     | FORALL_WORD
     | EXISTS_WORD
-quantifier_expr : quantifier identifier (padding domain)?
+quantifier_clause : quantifier identifier ("," identifier)*
+quantifier_expr : quantifier identifier ("," identifier)* (padding quantifier_clause)* (padding domain)? (padding where_clause)?
 
 # =========================================================
 # === AT (LOCAL) ==========================================
 # =========================================================
 
-at_expr : AT identifier (padding neighborhood)? (padding domain)?
+legacy_at_suffix : padding neighborhood (padding domain)?
+    | padding domain
+at_suffix : local_neighborhood
+    | legacy_at_suffix
+at_expr : AT identifier (at_suffix)?
 
 # =========================================================
 # === CHECK AT (POINTWISE) ================================
@@ -298,6 +327,14 @@ check_expr : CHECK_AT identifier
 
 pairwise_token : PAIRWISE
 pairwise_expr : pairwise_token padding neighborhood (padding domain)?
+
+# =========================================================
+# === RESTRICTIONS ========================================
+# =========================================================
+
+restriction : neighborhood_membership
+    | assertion
+where_clause : WHERE restriction
 
 # =========================================================
 # === DOMAIN / CONTEXT ====================================
@@ -332,7 +369,8 @@ property_type : ROBUSTNESS
     | BOUND
     | LOGIC
     | /[A-Z]+/
-property : "[" property_type "]" ":" padding property_expr padding property_imply padding assertion (padding backend)?
+property : "[" property_type "]" ":" padding (property_expr padding property_imply padding assertion
+    | assertion) (padding backend)?
 property_section : property
 
 # =========================================================
@@ -359,11 +397,23 @@ dataset : quoted_identifier
 dataset_declaration : DATASET ":=" dataset
 specification_constant_declaration : identifier ":=" specification_constant_literal
 specification_constants : specification_constant_declaration ((";")? specification_constant_declaration)* (";")?
+anchor_literal : specification_constant_literal
+anchor_entry : identifier ":" anchor_literal
+inline_anchor : "{" padding anchor_entry (padding "," padding anchor_entry)* (padding ",")? padding "}"
+anchor_ref_key_argument : ARG_KEY "=" value
+anchor_ref_value_argument : ARG_VALUE "=" value
+anchor_ref_argument : anchor_ref_key_argument
+    | anchor_ref_value_argument
+anchor_ref : REF "(" padding anchor_ref_argument (padding "," padding anchor_ref_argument)* (padding ",")? padding ")"
+anchor_binding : inline_anchor
+    | anchor_ref
+anchor_declaration : ANCHOR identifier ":=" anchor_binding
+anchor_declarations : anchor_declaration ((";")? anchor_declaration)* (";")?
 
 # =========================================================
 # === PROGRAM STRUCTURE ===================================
 # =========================================================
 
-header : padding model_declaration padding target_declaration padding (dataset_declaration padding)? (specification_constants padding)?
+header : padding model_declaration padding target_declaration padding (dataset_declaration padding)? (specification_constants padding)? (anchor_declarations padding)?
 body : padding property_section (padding property_section)* padding
 program : header body

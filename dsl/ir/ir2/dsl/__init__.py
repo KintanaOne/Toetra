@@ -7,6 +7,8 @@ from dsl.ir.ir2.dsl.nodes import (
     FormulaIR2,
     LiteralIR2,
     NNFFormulaIR2,
+    PointIdentityMapIR2,
+    QuantifierStructureIR2,
     TermIR2,
     VerificationTaskIR2,
 )
@@ -20,6 +22,8 @@ __all__ = [
     "FormulaIR2",
     "LiteralIR2",
     "NNFFormulaIR2",
+    "PointIdentityMapIR2",
+    "QuantifierStructureIR2",
     "TermIR2",
     "VerificationTaskIR2",
 ]

@@ -57,6 +57,16 @@ contracts/quantified-domain-scalar-expressions.md
 
 It consolidates ADR-0013, ADR-0014 and ADR-0015 into boundary-level obligations.
 
+## Point-Binding and Evaluation Contract
+
+The normative target contract for anchors, ordered and nested binders, point-indexed model evaluations, local sugar, multi-point evidence and replay is:
+
+```text
+contracts/point-binding-and-evaluation.md
+```
+
+It operationalizes ADR-0017 across the complete compiler, ModelBridge, backend and runtime pipeline. Until implementation patches land, it is an accepted target contract rather than a claim about current behavior.
+
 ---
 
 ## Contract Categories

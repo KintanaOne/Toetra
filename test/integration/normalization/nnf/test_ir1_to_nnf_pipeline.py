@@ -16,7 +16,7 @@ model := "model.onnx"
 target := MyTarget
 
 [LOGIC]:
-check_at x0 => x0.a <= 1 -> x0.b <= 2 using Z3
+forall x0 => x0.a <= 1 -> x0.b <= 2 using Z3
 """
 
     tasks = _run_ir1_then_nnf(source)
@@ -34,7 +34,7 @@ model := "model.onnx"
 target := MyTarget
 
 [LOGIC]:
-check_at x0 => NOT (x0.a <= 1 AND x0.b <= 2) using Z3
+forall x0 => NOT (x0.a <= 1 AND x0.b <= 2) using Z3
 """
 
     tasks = _run_ir1_then_nnf(source)
@@ -52,7 +52,7 @@ model := "model.onnx"
 target := MyTarget
 
 [LOGIC]:
-check_at x0 => NOT (x0.a <= 1 OR x0.b <= 2) using Z3
+forall x0 => NOT (x0.a <= 1 OR x0.b <= 2) using Z3
 """
 
     tasks = _run_ir1_then_nnf(source)
@@ -64,13 +64,13 @@ check_at x0 => NOT (x0.a <= 1 OR x0.b <= 2) using Z3
     assert_is_nnf(expr)
 
 
-def test_pipeline_at_scope_keeps_implicit_perturbation_binding_after_nnf():
+def test_pipeline_quantifier_scope_keeps_symbolic_binding_after_nnf():
     source = """
 model := "model.onnx"
 target := MyTarget
 
 [ROBUSTNESS]:
-at x in neighborhood(L2, eps=0.01) => NOT (a <= 1 OR b <= 2) using Z3
+forall x1 => NOT (a <= 1 OR b <= 2) using Z3
 """
 
     tasks = _run_ir1_then_nnf(source)
@@ -79,19 +79,19 @@ at x in neighborhood(L2, eps=0.01) => NOT (a <= 1 OR b <= 2) using Z3
     task = tasks[0]
     expr = task.query.expression
 
-    assert task.scope.kind == "local"
-    assert task.scope.variables == {"x": "anchor", "x'": "perturbation"}
-    assert sexpr(expr) == "AND(NOT(CMP(x'.a <= 1)), NOT(CMP(x'.b <= 2)))"
+    assert task.scope.kind == "quantifier"
+    assert task.scope.variables == {"x1": "symbolic"}
+    assert sexpr(expr) == "AND(NOT(CMP(x1.a <= 1)), NOT(CMP(x1.b <= 2)))"
     assert_is_nnf(expr)
 
 
-def test_pipeline_pairwise_scope_keeps_pairwise_binding_after_nnf():
+def test_pipeline_two_point_scope_keeps_explicit_bindings_after_nnf():
     source = """
 model := "model.onnx"
 target := MyTarget
 
 [MONOTONICITY]:
-x ~ x' in neighborhood(L2, eps=0.01) => NOT (a <= 1 AND b <= 2) using Z3
+forall x0, x1 => NOT (x1.a <= 1 AND x1.b <= 2) using Z3
 """
 
     tasks = _run_ir1_then_nnf(source)
@@ -100,7 +100,7 @@ x ~ x' in neighborhood(L2, eps=0.01) => NOT (a <= 1 AND b <= 2) using Z3
     task = tasks[0]
     expr = task.query.expression
 
-    assert task.scope.kind == "pairwise"
-    assert task.scope.variables == {"x": "anchor", "x'": "perturbation"}
-    assert sexpr(expr) == "OR(NOT(CMP(x'.a <= 1)), NOT(CMP(x'.b <= 2)))"
+    assert task.scope.kind == "quantifier"
+    assert task.scope.variables == {"x0": "symbolic", "x1": "symbolic"}
+    assert sexpr(expr) == "OR(NOT(CMP(x1.a <= 1)), NOT(CMP(x1.b <= 2)))"
     assert_is_nnf(expr)

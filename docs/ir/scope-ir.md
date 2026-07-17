@@ -1,280 +1,49 @@
 # Scope IR
 
-> Status: Implemented / Stabilizing  
-> Implementation: IR1 scope representation  
-> Scope: Semantic context lowering
+> Status: Implemented point-aware compatibility projection
 
 ## Purpose
 
-`ScopeIR` represents where and how a FORML property is evaluated.
-
-It is produced from the left-hand side of a property after semantic validation.
-
-In the DSL, scope can be expressed through constructs such as:
-
-- `check_at`,
-- `at`,
-- `pairwise`,
-- `forall`,
-- `exists`.
-
-`ScopeIR` turns those syntactic forms into explicit semantic context.
-
----
-
-## Conceptual Shape
+`ScopeIR` carries the canonical point context from semantic validation into IR1 and IR2. Its semantic source of truth is not the historical `kind` string but the structured fields:
 
 ```text
 ScopeIR
-├── kind
-├── variables
-├── neighborhood
-└── domain
+├── points
+├── binders
+├── domain
+├── restriction
+├── selected/default point metadata
+├── source/sugar provenance
+└── compatibility fields: kind, variables, quantifier
 ```
 
-| Field | Role |
-|---|---|
-| `kind` | Scope category: pointwise, local, pairwise, quantifier. |
-| `variables` | Mapping from variables to semantic roles. |
-| `neighborhood` | Optional perturbation or distance context. |
-| `domain` | Optional domain restriction. |
+## Points
 
----
+Every point is represented by an exact point binding with name, binding kind, lexical depth, generated/source status, schema, and provenance where applicable. Domain constraints and scalar references point to these identities rather than reconstructing them from strings.
 
-## Scope Kinds
+## Binders
 
-### Pointwise Scope
+`binders` preserves source expansion order and quantifier kind. A grouped binder is expanded left to right. Alternation remains visible to IR2 requirements.
 
-Pointwise scope evaluates a property at a single point.
+## Domain and restriction
 
-DSL example:
+Domains contain point-owned interval or finite-set constraints. `restriction` remains separate from the user assertion so universal refutation and existential satisfaction can be built soundly.
 
-```forml
-[BOUND]: check_at x => age <= 30
-```
+Natural `Linf` neighborhoods are lowered to ordinary point-feature inequalities before backend translation.
 
-Conceptual IR:
+## Compatibility fields
 
-```text
-kind = pointwise
-variables = { "x": "anchor" }
-```
+`kind`, `variables`, and the singular `quantifier` accessor remain for older consumers and one-point displays. They are derived views only:
 
----
-
-### Local Scope
-
-Local scope evaluates a property around a point and introduces an implicit perturbation variable.
-
-DSL example:
-
-```forml
-[ROBUSTNESS]: at x in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUAL()
-```
-
-Conceptual IR:
-
-```text
-kind = local
-variables = {
-  "x": "anchor",
-  "x'": "perturbation"
-}
-```
-
-Implicit feature access should resolve to the perturbation variable unless explicitly specified.
-
----
-
-### Pairwise Scope
-
-Pairwise scope compares an anchor and a primed counterpart.
-
-DSL example:
-
-```forml
-[MONOTONICITY]: x ~ x' in neighborhood(metric=L2, eps=0.1) => x'.score >= x.score
-```
-
-Conceptual IR:
-
-```text
-kind = pairwise
-variables = {
-  "x": "anchor",
-  "x'": "perturbation"
-}
-```
-
-The pairwise convention must remain consistent with the semantic validator.
-
----
-
-### Quantifier Scope
-
-Quantifier scope introduces an explicitly named symbolic variable.
-
-DSL example:
-
-```forml
-[BOUND]: forall applicant => applicant.age >= 18
-```
-
-Conceptual IR:
-
-```text
-kind = quantifier
-variables = {
-  "applicant": "symbolic"
-}
-quantifier = forall
-```
-
-The identifier is preserved from source to `ScopeIR`. It must not be replaced by `_x`. Implicit features use the same identifier as their resolved entity.
-
----
-
-## Neighborhood IR
-
-Neighborhoods define perturbation spaces.
-
-Conceptually:
-
-```text
-NeighborhoodIR
-├── metric
-├── eps
-└── args
-```
-
-Examples:
-
-- L1 ball,
-- L2 ball,
-- Linf ball,
-- future custom perturbation domains.
-
-The `eps` value should be normalized as a numeric value.
-
----
-
-## Domain IR
-
-`DomainIR` represents validated, backend-independent input admissibility constraints.
-
-Target conceptual shape:
-
-```text
-DomainIR
-├── constraints
-│   ├── IntervalConstraintIR
-│   │   ├── entity
-│   │   ├── feature
-│   │   ├── lower
-│   │   ├── upper
-│   │   ├── lower_boundary
-│   │   └── upper_boundary
-│   └── FiniteSetConstraintIR
-│       ├── entity
-│       ├── feature
-│       └── values
-└── provenance
-```
-
-Example:
-
-```text
-DomainIR(
-  constraints=(
-    IntervalConstraintIR(x0.a, 0.0, 3.0, CLOSED, OPEN),
-    FiniteSetConstraintIR(x0.region, (EU, US)),
-  )
-)
-```
-
-Invariants:
-
-- every subject is semantically resolved;
-- interval boundary kinds are explicit;
-- finite-set members retain their semantic literal kinds;
-- constraints are conjunctive at the domain level;
-- no generic domain name or ad-hoc args dictionary is required;
-- no backend-specific expression appears in `DomainIR`.
-
-`DomainIR` is later expanded into `AssumptionIR2(source=DOMAIN)` formulas. The scope representation itself should remain readable and traceable.
-
----
+- they must not decide semantic validity;
+- they must not choose an input point;
+- they must not flatten ordered binders;
+- they must not define backend capability.
 
 ## Invariants
 
-A valid `ScopeIR` must satisfy:
-
-| Invariant | Description |
-|---|---|
-| Known kind | Scope kind must be one of the supported semantic scopes. |
-| Explicit variables | No implicit variable should remain unresolved. |
-| Role consistency | Variable roles must match semantic validation. |
-| Neighborhood consistency | Neighborhoods must be valid for the scope kind. |
-| Domain consistency | Domain restrictions must be represented without raw syntax leakage. |
-| Semantic preservation | The scope must preserve LHS semantics from the DSL. |
-
----
-
-## Current Stabilization Points
-
-The current implementation already represents scope information, but several points should be stabilized:
-
-- pairwise parsing must split `x ~ x'` consistently, not comma-separated pairs;
-- quantifier scope must preserve the exact identifier declared in the source;
-- pointwise role naming should align with semantic roles;
-- typed domain constraints should replace ad-hoc name/argument dictionaries;
-- metrics should be normalized with official vocabulary values.
-
----
-
-## Relationship with SemanticContext
-
-`SemanticContext` is produced during semantic validation.
-
-`ScopeIR` is its IR-level projection.
-
-```text
-SemanticContext → ScopeIR
-```
-
-`SemanticContext` is validation-oriented.  
-`ScopeIR` is compilation-oriented.
-
----
-
-## Relationship with ModelBridge
-
-ModelBridge can enrich scope validation by checking that referenced features, targets, and dtypes exist in the model schema.
-
-Future schema-aware semantic validation should ensure that `ScopeIR` does not refer to model features that cannot exist.
-
----
-
-## Relationship with Miova
-
-Scope is a high-value mutation surface.
-
-Miova can mutate:
-
-- scope kind,
-- variable roles,
-- primed variable conventions,
-- neighborhood metrics,
-- epsilon values,
-- domain values,
-- missing or incompatible scope metadata.
-
-Expected behavior should be either valid transformation, semantic rejection, or contract failure depending on the mutation.
-
----
-
-## Summary
-
-`ScopeIR` formalizes the evaluation context of a FORML property.
-
-It is the bridge between LHS semantics and logical verification.
+- all explicit point references resolve exactly;
+- point order is deterministic and follows source declaration/binder order;
+- short references exist only after unambiguous semantic resolution;
+- indexed targets carry a structured model evaluation;
+- legacy provisional source forms cannot create hidden point bindings.

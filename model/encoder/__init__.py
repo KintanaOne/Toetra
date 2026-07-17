@@ -1,4 +1,8 @@
-from model.encoder.base import ModelEncoder, validate_model_assumptions
+from model.encoder.base import (
+    ModelEncoder,
+    validate_model_assumptions,
+    validate_model_evaluation_coverage,
+)
 from model.encoder.context import ModelEncodingContext
 from model.encoder.defaults import create_default_model_encoder_registry
 from model.encoder.errors import (
@@ -31,4 +35,5 @@ __all__ = [
     "UnsupportedModelParameterError",
     "create_default_model_encoder_registry",
     "validate_model_assumptions",
+    "validate_model_evaluation_coverage",
 ]

@@ -1,10 +1,15 @@
+from __future__ import annotations
+
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from dsl.semantic.context.context import SemanticContext
-from dsl.semantic.symbols.symbol import Symbol
-from dsl.semantic.symbols.table import SymbolTable
+from dsl.semantic.symbols.table import SemanticSymbol, SymbolTable
 from dsl.semantic.types.enums import EnumArithmeticClass, EnumDataType
+
+if TYPE_CHECKING:
+    from dsl.semantic.context.evaluations import ModelEvaluationIdentity
+    from dsl.semantic.symbols.point import PointSymbol
 
 
 @dataclass
@@ -51,10 +56,22 @@ class SemanticAnnotations:
     Symbol registry available in the semantic scope.
     """
 
+    assertion_root: Any | None = None
+    """Bound source assertion before restriction semantics are applied."""
+
+    restriction_root: Any | None = None
+    """Canonical bound restriction, when the source contains one."""
+
     logical_root: Any | None = None
     """
     Root validated logical expression.
     """
+
+    verification_root: Any | None = None
+    """Canonical query body selected from source quantifier semantics."""
+
+    verification_semantics: str | None = None
+    """Either ``refutation`` or ``satisfaction`` for restricted properties."""
 
     # ─────────────────────────────────────────────
     # Local resolution results
@@ -92,10 +109,25 @@ class SemanticAnnotations:
     arithmetic_class: EnumArithmeticClass | None = None
     """Structural arithmetic family required by this scalar expression."""
 
-    resolved_symbol: Symbol | None = None
+    resolved_symbol: SemanticSymbol | None = None
     """
-    Reference to SymbolTable Symbol object.
+    Reference to a symbol-table entry.
     """
+
+    resolved_point: PointSymbol | None = None
+    """Exact input point selected for an indexed or short model reference."""
+
+    resolved_evaluation: ModelEvaluationIdentity | None = None
+    """Interned ``(model, point)`` evaluation identity, when applicable."""
+
+    resolved_candidate_point: PointSymbol | None = None
+    """Resolved neighborhood candidate point, when applicable."""
+
+    resolved_anchor_point: PointSymbol | None = None
+    """Resolved neighborhood anchor point, when applicable."""
+
+    lowered_expression: Any | None = None
+    """Canonical expression generated from one source-level sugar node."""
 
     # ─────────────────────────────────────────────
     # Scope metadata

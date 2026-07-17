@@ -64,7 +64,7 @@ def test_check_at_attribute_receives_semantic_annotations():
     target := MyTarget
 
     [ROBUSTNESS]:
-    check_at x0 => x0.age <= 30
+    forall x0 => x0.age <= 30
     """
 
     ast = _build_and_validate(source)
@@ -84,7 +84,7 @@ def test_check_at_implicit_attribute_receives_default_entity():
     target := MyTarget
 
     [ROBUSTNESS]:
-    check_at x0 => age <= 30
+    forall x0 => age <= 30
     """
 
     ast = _build_and_validate(source)
@@ -126,7 +126,7 @@ def test_nested_logic_attributes_receive_semantic_annotations():
     target := MyTarget
 
     [ROBUSTNESS]:
-    check_at x0 => (x0.age <= 30 OR x0.income >= 1000) AND x0.score <= 1
+    forall x0 => (x0.age <= 30 OR x0.income >= 1000) AND x0.score <= 1
     """
 
     ast = _build_and_validate(source)

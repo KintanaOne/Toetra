@@ -45,17 +45,24 @@ Exact class names may evolve.
 
 ## ScopeIR Requirements
 
-For a quantified property, `ScopeIR` preserves:
+`ScopeIR` preserves the complete point environment required by the property:
 
 ```text
-kind = QUANTIFIED
-quantifier = FORALL | EXISTS
-variables = {source_identifier: SYMBOLIC}
-default_entity = source_identifier
+points = ordered PointBindingIR identities
+binders = ordered QuantifierBinderIR frames
+default_point = exact PointBindingIR | None
 domain = typed DomainIR1 | None
+restriction = RestrictionIR | None
+provenance = source scope and sugar metadata
 ```
 
-The quantifier kind must not be discarded under a generic `kind="quantifier"` field without another field preserving `FORALL` versus `EXISTS`.
+Every binder retains its quantifier kind, point identity, lexical depth, source
+span, and generated/source status. Grouped binders are expanded left to right.
+Alternating binders must not be flattened into one coarse quantifier.
+
+The historical `variables` and `quantifier` fields remain compatibility
+projections during migration. New consumers must not use them to reconstruct
+point identity or alternation.
 
 ---
 
@@ -72,7 +79,8 @@ BinaryArithmeticIR1
 ComparisonIR1(left_expression, operator, right_expression)
 ```
 
-Each reference uses resolved identity, not raw unresolved syntax.
+Each feature reference uses its resolved `PointBindingIR`, not raw unresolved
+syntax or only a string entity label.
 
 Each node retains enough metadata for:
 
@@ -104,13 +112,34 @@ IR1 does not encode these constraints as Z3 expressions.
 
 ## Target Mapping
 
-The DSL keyword `target` lowers to a model-output reference tied to the header-declared target identity, for example conceptually:
+The DSL keyword `target` lowers to one structured model evaluation:
 
 ```text
-TargetRefIR1(entity="_model", feature=<declared target>)
+TargetRefIR1(
+    evaluation=ModelEvaluationIR(
+        model_identity=<header model>,
+        point=<resolved PointBindingIR>,
+        target_name=<header target>,
+    )
+)
 ```
 
-The concrete internal entity label may differ, but it must remain distinct from input entities and consistent with model assumptions.
+`target[x0]` and `target[x1]` therefore remain distinct even though V1 exposes
+one scalar target name. Repeated references to `target[x0]` reuse one interned
+evaluation identity.
+
+The historical `_model.<target>` fields may remain temporarily as compatibility
+projections, but they are not the source of truth.
+
+## Restriction Mapping
+
+Canonical `where` and neighborhood restrictions are preserved separately in
+`ScopeIR.restriction`, including source origin and source span. The property
+query contains the canonical language formula produced by semantic validation.
+
+NNF normalization may rewrite the logical shape of both formula and
+restriction, but it must preserve point identities, evaluation identities,
+binder ordering, and provenance.
 
 ---
 
@@ -147,7 +176,8 @@ A valid IR1 task contains:
 - no opaque `Domain(name, raw_args)` representation;
 - no asymmetric feature-to-constant-only comparison restriction;
 - no solver-native object;
-- preserved quantifier kind and variable identity.
+- preserved point identity, binder order, binding kind and source provenance;
+- structured model evaluation identity for every target reference.
 
 ---
 

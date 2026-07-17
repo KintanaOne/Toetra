@@ -3,17 +3,19 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from dsl.ir.ir1.nodes import ModelEvaluationIR, PointBindingIR
 from dsl.ir.ir2.model.base import ModelConstraintIR2
 from dsl.language.vocabulary.operators import EnumComparisonOperator
 
 
 @dataclass(frozen=True)
 class AffineTermIR2:
-    """One term of an affine model expression: coefficient * entity.feature."""
+    """One term of an affine model expression: coefficient * point.feature."""
 
     entity: str
     feature: str
     coefficient: float
+    point: PointBindingIR | None = None
 
 
 @dataclass
@@ -30,15 +32,21 @@ class AffineExpressionIR2:
 
 @dataclass
 class AffineOutputConstraintIR2(ModelConstraintIR2):
-    """Atomic affine model assumption relating output to w·x + b.
-
-    This is intentionally backend-independent. It does not encode Z3 terms and
-    does not decide the final normal form. It only states a model-level fact
-    that can participate in Γ before IR2 builds Γ ∧ ¬P.
-    """
+    """Atomic affine model equation for one explicit model evaluation."""
 
     output_entity: str
     output_feature: str
     op: EnumComparisonOperator
     expression: AffineExpressionIR2
+    evaluation: ModelEvaluationIR | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def point(self) -> PointBindingIR | None:
+        """Return the input point attached to the structured evaluation."""
+        return self.evaluation.point if self.evaluation is not None else None
+
+    @property
+    def model_identity(self) -> str | None:
+        """Return the declared model identity for this equation."""
+        return self.evaluation.model_identity if self.evaluation is not None else None

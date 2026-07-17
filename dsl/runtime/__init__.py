@@ -5,11 +5,18 @@ This module remains available for advanced integrations and compatibility.
 """
 
 from dsl.runtime.api import verify
+from dsl.runtime.anchors import (
+    AnchorLookupRequest,
+    AnchorResolver,
+    AnchorSource,
+    DataFrameAnchorResolver,
+)
 from dsl.runtime.backends import (
     BackendRunnerRegistry,
     create_default_backend_runner_registry,
 )
 from dsl.runtime.errors import (
+    AnchorResolutionError,
     BackendRunnerNotRegisteredError,
     ReplayUnavailableError,
     VerificationConfigurationError,
@@ -23,9 +30,14 @@ from dsl.runtime.session import (
 )
 
 __all__ = [
+    "AnchorLookupRequest",
+    "AnchorResolutionError",
+    "AnchorResolver",
+    "AnchorSource",
     "BackendRunnerNotRegisteredError",
     "BackendRunnerRegistry",
     "CounterexampleReplay",
+    "DataFrameAnchorResolver",
     "ReplayUnavailableError",
     "VerificationConfigurationError",
     "VerificationExecution",

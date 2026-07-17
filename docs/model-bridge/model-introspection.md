@@ -96,21 +96,25 @@ An introspector may receive:
 
 ## Feature Detection
 
-Feature metadata may come from two sources:
+Feature metadata may come from three sources, in priority order:
 
 1. an externally provided schema;
-2. dataset-based inference.
+2. sklearn named-input metadata (`feature_names_in_`) combined with dataset dtypes;
+3. dataset-only inference when the model exposes no named-input contract.
 
 Current behavior:
 
 ```text
 if input_schema exists:
     use input_schema.features
+elif model.feature_names_in_ exists:
+    keep those names and that order
+    read only their dtypes/nullability from dataset_path
 else:
-    infer features from dataset_path
+    infer every non-target dataset column as a feature
 ```
 
-When dataset inference is used, the current sklearn introspector reads the dataset and maps pandas dtypes to FORML semantic data types.
+This distinction matters when one CSV is reused for anchor lookup. Lookup keys and provenance columns may coexist with model inputs, but they must not enter `ModelSchema.features` when the model declares its actual named inputs. If the model has no named-input metadata, callers must provide a dataset containing only model inputs plus the target, or keep lookup data separate through `anchor_source`/a custom resolver.
 
 ## Task Detection
 

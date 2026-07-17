@@ -14,7 +14,7 @@ model := "model.onnx"
 target := MyTarget
 
 [LOGIC]:
-check_at x0 => NOT ((x0.a <= 1 AND x0.b <= 2) -> x0.c <= 3) using Z3
+forall x0 => NOT ((x0.a <= 1 AND x0.b <= 2) -> x0.c <= 3) using Z3
 """
 
     run_nnf = import_run_nnf()

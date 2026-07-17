@@ -17,6 +17,6 @@ class PropertyNode(ASTNode):
 
 
 @dataclass
-class PropertyRuleNode:
+class PropertyRuleNode(ASTNode):
     scope: ExpressionNode
     assertion: AssertionNode

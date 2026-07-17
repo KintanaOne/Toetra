@@ -11,6 +11,7 @@ from dsl.ir.ir1.nodes import (
     ComparisonIR,
     ConstantExpressionIR,
     LogicalIR,
+    ModelEvaluationIR,
     NotIR,
     OrIR,
     ProblemIR,
@@ -28,6 +29,8 @@ from dsl.ir.ir2.dsl.nodes import (
     FormulaIR2,
     LiteralIR2,
     NNFFormulaIR2,
+    PointIdentityMapIR2,
+    QuantifierStructureIR2,
 )
 from dsl.ir.ir2.enums import (
     AssumptionSource,
@@ -72,6 +75,13 @@ class IR2Requirements:
     requires_symbolic_categories: bool = False
     requires_domain_assumptions: bool = False
 
+    point_count: int = 0
+    anchor_count: int = 0
+    model_evaluation_count: int = 0
+    binder_sequence: tuple[str, ...] = ()
+    alternation_depth: int = 0
+    requires_quantifier_alternation: bool = False
+
 
 class RequirementsAnalyzer:
     """Compute backend requirements from an already lowered IR2 task.
@@ -90,6 +100,9 @@ class RequirementsAnalyzer:
         normal_form: NormalFormKind,
         semantics: VerificationSemantics = VerificationSemantics.REFUTATION,
         requires_native_quantifiers: bool = False,
+        point_mappings: tuple[PointIdentityMapIR2, ...] = (),
+        model_evaluations: tuple[ModelEvaluationIR, ...] = (),
+        quantifier_structure: QuantifierStructureIR2 | None = None,
     ) -> IR2Requirements:
         atoms = list(self._iter_literals_or_atoms(verification_condition))
 
@@ -98,7 +111,10 @@ class RequirementsAnalyzer:
             assumption_atoms.extend(self._iter_literals_or_atoms(assumption.formula))
 
         all_items = atoms + assumption_atoms
-        uses_quantified_scope = scope.kind == "quantifier"
+        quantifier_structure = quantifier_structure or QuantifierStructureIR2()
+        uses_quantified_scope = (
+            scope.kind == "quantifier" or quantifier_structure.is_quantified
+        )
         domain_assumptions = tuple(
             assumption
             for assumption in assumptions
@@ -167,6 +183,16 @@ class RequirementsAnalyzer:
             requires_finite_set_membership=requires_finite_set_membership,
             requires_symbolic_categories=requires_symbolic_categories,
             requires_domain_assumptions=bool(domain_assumptions),
+            point_count=len(point_mappings),
+            anchor_count=sum(
+                mapping.ir_point.binding_kind
+                in {"inline_anchor", "referenced_anchor", "legacy_anchor"}
+                for mapping in point_mappings
+            ),
+            model_evaluation_count=len(model_evaluations),
+            binder_sequence=quantifier_structure.binder_sequence,
+            alternation_depth=quantifier_structure.alternation_depth,
+            requires_quantifier_alternation=quantifier_structure.is_alternating,
         )
 
     def _iter_literals_or_atoms(

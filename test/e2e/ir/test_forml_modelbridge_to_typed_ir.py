@@ -27,7 +27,7 @@ def test_forml_modelbridge_schema_validation_to_typed_ir(tmp_path):
     target := MyTarget
 
     [ROBUSTNESS]:
-    check_at x0 => x0.income <= 1000
+    forall x0 => x0.income <= 1000
     """
 
     ast = parse_program(parse_forml_code(source))
@@ -65,7 +65,7 @@ def test_forml_modelbridge_rejects_unknown_feature_before_ir(tmp_path):
     target := MyTarget
 
     [ROBUSTNESS]:
-    check_at x0 => x0.unknown <= 1000
+    forall x0 => x0.unknown <= 1000
     """
 
     ast = parse_program(parse_forml_code(source))

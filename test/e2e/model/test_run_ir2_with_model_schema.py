@@ -1,7 +1,5 @@
-from dsl.ir.ir1.nodes import AndIR
 from dsl.ir.ir2.context import IR2BuildContext
-from dsl.ir.ir2.enums import AssumptionSource, NormalFormKind
-from dsl.ir.ir2.model.affine import AffineOutputConstraintIR2
+from dsl.ir.ir2.enums import NormalFormKind
 from dsl.ir.ir2.run_ir2 import run_ir2_with_model_schema
 from dsl.semantic.types.enums import EnumDataType
 from model.detector.model_framework import EnumModelFramework
@@ -13,11 +11,11 @@ model := "model.pkl"
 target := MyTarget
 
 [LOGIC]:
-check_at x0 => x0.a <= 10 using Z3
+forall x0 => x0.a <= 10 using Z3
 """
 
 
-def test_run_ir2_with_model_schema_injects_scope_dependent_model_assumption():
+def test_run_ir2_with_model_schema_skips_unreferenced_model_evaluation() -> None:
     schema = ModelSchema(
         framework=EnumModelFramework.SKLEARN,
         model_type="LinearRegression",
@@ -42,20 +40,8 @@ def test_run_ir2_with_model_schema_injects_scope_dependent_model_assumption():
     assert len(tasks) == 1
 
     task = tasks[0]
-    assert task.requirements.requires_model_assertions is True
-    assert len(task.assumptions) == 1
-
-    assumption = task.assumptions[0]
-    assert assumption.source is AssumptionSource.MODEL
-    assert isinstance(assumption.formula.expression, AffineOutputConstraintIR2)
-
-    atom = assumption.formula.expression
-    assert atom.output_entity == "_model"
-    assert atom.output_feature == "MyTarget"
-    assert atom.expression.terms[0].entity == "x0"
-    assert atom.expression.terms[0].feature == "a"
-    assert atom.expression.terms[0].coefficient == 2.0
-    assert atom.expression.bias == 1.0
-
+    assert task.requirements.requires_model_assertions is False
+    assert task.requirements.model_evaluation_count == 0
+    assert task.model_evaluations == ()
+    assert task.assumptions == ()
     assert task.normal_form is NormalFormKind.NNF
-    assert isinstance(task.verification_condition.expression, AndIR)

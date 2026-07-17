@@ -1,5 +1,5 @@
 TASK 0
 PROPERTY ROBUSTNESS
 BACKEND Z3
-SCOPE local variables=x:anchor,x':perturbation
-QUERY OR(NOT(CMP(x'.a <= 1)), PROBLEM(CLASSIFICATION.EQUAL))
+SCOPE quantifier variables=x1:symbolic
+QUERY OR(NOT(CMP(x1.a <= 1)), PROBLEM(CLASSIFICATION.EQUAL))

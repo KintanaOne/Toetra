@@ -228,18 +228,15 @@ Language documentation must therefore describe not only valid syntax, but also e
 
 | Area | Status | Notes |
 |---|---|---|
-| Header syntax | Implemented / stabilizing | `model`, `target`, optional `dataset`; specification constants are the accepted target evolution of the former generic variable declarations. |
-| Property sections | Implemented / stabilizing | Property type, scope, implication, assertion, optional backend. |
-| Scopes | Implemented / stabilizing | `at`, `check_at`, `pairwise`, quantifiers. |
-| Typed domains | Target contract defined / implementation pending | Explicit subjects, interval boundaries, finite sets, arithmetic interval bounds. |
-| Specification constants | Target contract defined / implementation pending | Immutable scalar declarations with context-sensitive bare-name resolution. |
-| Assertions | Target contract defined / implementation pending | Expression-to-expression comparisons, arithmetic, boolean operators, problem predicates. |
-| Logic casing | Needs stabilization | Grammar currently mixes lowercase tokens and uppercase literal operators. |
-| Vocabulary enums | Needs normalization | Some enum/string boundaries should be stabilized. |
-| Backend syntax | Implemented / stabilizing | `using z3`, `using ERAN`, etc. |
-| Model-aware validation | Planned / critical | Requires ModelSchema integration. |
-
----
+| Header syntax | implemented | `model`, one scalar `target`, optional dataset/schema inputs and specification constants. |
+| Property sections | implemented | Direct assertions, ordered binders, domains, restrictions and optional backend. |
+| Point bindings and sugar | implemented | Inline/referenced anchors, `check_at`, new `at`, indexed targets and stable legacy diagnostics. |
+| Typed domains | implemented | Explicit point subjects, open/closed intervals, finite sets and arithmetic bounds. |
+| Specification constants | implemented | Immutable typed declarations with deterministic name resolution. |
+| Assertions | implemented | Scalar arithmetic, comparisons, boolean logic and supported predicates. |
+| Quantifiers | implemented / capability-gated | Homogeneous chains execute; alternation is represented and rejected by current Z3 capabilities. |
+| Model-aware validation | implemented | `ModelSchema` controls point feature names and types. |
+| Backend syntax | implemented | Z3 is the executable V1 backend; other names do not imply support. |
 
 ## Related Documents
 

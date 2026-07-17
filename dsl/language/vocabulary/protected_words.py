@@ -5,6 +5,15 @@ from dsl.language.vocabulary.utils import EnumMixin
 
 protected_words = {
     "IN.10": r"/in(?![A-Za-z0-9_])/",
+    "ANCHOR.10": r"/anchor(?![A-Za-z0-9_])/",
+    "REF.10": r"/ref(?![A-Za-z0-9_])/",
+    "ARG_KEY.11": r"/key(?=\s*=(?!=))/",
+    "ARG_VALUE.11": r"/value(?=\s*=(?!=))/",
+    "ARG_OF.11": r"/of(?=\s*=(?!=))/",
+    "ARG_METRIC.11": r"/metric(?=\s*=(?!=))/",
+    "ARG_EPS.11": r"/eps(?=\s*=(?!=))/",
+    "WHERE.10": r"/where(?![A-Za-z0-9_])/",
+    "LOCAL_WITH.11": r"/with(?=\s+[A-Za-z_][A-Za-z0-9_]*\s+in(?![A-Za-z0-9_]))/",
     "WITH.10": r"/with(?![A-Za-z0-9_])/",
     "DOMAIN.10": r"/domain(?![A-Za-z0-9_])/",
     "AT.10": r"/at(?![A-Za-z0-9_])/",
@@ -21,6 +30,9 @@ protected_words = {
 
 class EnumProtectedWord(EnumMixin, Enum):
     IN = "in"
+    ANCHOR = "anchor"
+    REF = "ref"
+    WHERE = "where"
     WITH = "with"
     DOMAIN = "domain"
     AT = "at"

@@ -4,6 +4,8 @@
 > Date: 2026-07  
 > Scope: DSL scopes, semantic binding, and quantified verification
 
+> Evolution note: ADR-0017 supersedes the single-variable initial-scope limitation and extends exact binding to ordered multiple and nested point binders. ADR-0013 remains authoritative for the prohibition of unknown-entity alias fallback.
+
 ## Context
 
 FORML supports quantified properties intended to describe behavior over a symbolic input space.

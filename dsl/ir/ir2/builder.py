@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import replace
 
 from dsl.ir.ir1.nodes import VerificationTask
+from dsl.ir.ir2.anchor_assumptions import AnchorAssumptionEncoder
 from dsl.ir.ir2.assumptions import AssumptionCollector
 from dsl.ir.ir2.condition import VerificationConditionBuilder
 from dsl.ir.ir2.context import IR2BuildContext
@@ -19,6 +20,7 @@ from dsl.ir.ir2.nodes import (
 )
 from dsl.ir.ir2.normal_forms.cnf import CNFConverter
 from dsl.ir.ir2.normal_forms.dnf import DNFConverter
+from dsl.ir.ir2.points import PointAwareIR2Analyzer
 from dsl.ir.ir2.requirements import RequirementsAnalyzer
 from dsl.ir.ir2.selector import NormalFormSelector
 from dsl.ir.ir2.validator import IR2Validator
@@ -41,6 +43,8 @@ class IR2Builder:
         dnf_converter: DNFConverter | None = None,
         requirements_analyzer: RequirementsAnalyzer | None = None,
         domain_assumption_encoder: DomainAssumptionEncoder | None = None,
+        anchor_assumption_encoder: AnchorAssumptionEncoder | None = None,
+        point_analyzer: PointAwareIR2Analyzer | None = None,
         validator: IR2Validator | None = None,
     ):
         self.assumption_collector = assumption_collector or AssumptionCollector()
@@ -52,6 +56,10 @@ class IR2Builder:
         self.domain_assumption_encoder = (
             domain_assumption_encoder or DomainAssumptionEncoder()
         )
+        self.anchor_assumption_encoder = (
+            anchor_assumption_encoder or AnchorAssumptionEncoder()
+        )
+        self.point_analyzer = point_analyzer or PointAwareIR2Analyzer()
         self.validator = validator or IR2Validator()
 
     def build(
@@ -67,10 +75,12 @@ class IR2Builder:
 
         NNFGuard.assert_task_is_nnf(task_nnf)
 
+        anchor_assumptions = self.anchor_assumption_encoder.encode_scope(task_nnf.scope)
         domain_assumptions = self.domain_assumption_encoder.encode_domain(
             task_nnf.scope.domain
         )
         combined_assumptions = (
+            *anchor_assumptions,
             *domain_assumptions,
             *(assumptions or ()),
         )
@@ -82,8 +92,12 @@ class IR2Builder:
             expression=task_nnf.query.expression,
         )
 
+        point_mappings = self.point_analyzer.point_mappings(task_nnf.scope)
+        quantifier_structure = self.point_analyzer.quantifier_structure(task_nnf.scope)
+
         semantics = self._resolve_verification_semantics(
             task_nnf,
+            quantifier_structure=quantifier_structure,
         )
 
         vc_nnf = self.vc_builder.build_condition(
@@ -103,19 +117,22 @@ class IR2Builder:
             context,
         )
 
+        model_evaluations = self.point_analyzer.model_evaluations(
+            spec_formula=spec_formula,
+        )
+
+        requires_native_quantifiers = quantifier_structure.is_alternating
+
         requirements = self.requirements_analyzer.analyze(
             scope=task_nnf.scope,
             verification_condition=verification_condition,
             assumptions=collected_assumptions,
             normal_form=actual_form,
             semantics=semantics,
-            # The current quantified scopes are eliminated into either:
-            #
-            #   Gamma AND NOT P
-            #   Gamma AND P
-            #
-            # No native ForAll/Exists reaches the backend.
-            requires_native_quantifiers=False,
+            requires_native_quantifiers=requires_native_quantifiers,
+            point_mappings=point_mappings,
+            model_evaluations=model_evaluations,
+            quantifier_structure=quantifier_structure,
         )
 
         task_ir2 = VerificationTaskIR2(
@@ -128,11 +145,19 @@ class IR2Builder:
             semantics=semantics,
             normal_form=actual_form,
             requirements=requirements,
+            point_mappings=point_mappings,
+            model_evaluations=model_evaluations,
+            quantifier_structure=quantifier_structure,
             metadata={
                 "source_ir": "ir1_nnf",
                 "builder": "IR2Builder",
                 "verification_semantics": semantics.value,
+                "anchor_assumption_count": len(anchor_assumptions),
                 "domain_assumption_count": len(domain_assumptions),
+                "point_count": len(point_mappings),
+                "model_evaluation_count": len(model_evaluations),
+                "binder_sequence": quantifier_structure.binder_sequence,
+                "alternation_depth": quantifier_structure.alternation_depth,
             },
         )
 
@@ -148,43 +173,20 @@ class IR2Builder:
     @staticmethod
     def _resolve_verification_semantics(
         task: VerificationTask,
+        *,
+        quantifier_structure,
     ) -> VerificationSemantics:
-        """Select verification semantics from the preserved IR1 scope.
-
-        Non-quantified scopes and universal scopes use refutation:
-
-            Gamma AND NOT P
-
-        Existential scopes use satisfaction:
-
-            Gamma AND P
-        """
-
-        scope = task.scope
-
-        if scope.kind != "quantifier":
-            return VerificationSemantics.REFUTATION
-
-        quantifier = scope.quantifier
-
-        if quantifier is None:
+        """Select the outer goal without flattening the binder sequence."""
+        outermost = quantifier_structure.outermost_quantifier
+        if outermost is None:
+            if task.scope.kind != "quantifier":
+                return VerificationSemantics.REFUTATION
             raise ValueError("Quantified IR1 scope is missing its quantifier.")
-
-        normalized = {
-            "∀": "forall",
-            "∃": "exists",
-        }.get(
-            quantifier.strip(),
-            quantifier.strip().lower(),
-        )
-
-        if normalized == "forall":
+        if outermost == "forall":
             return VerificationSemantics.REFUTATION
-
-        if normalized == "exists":
+        if outermost == "exists":
             return VerificationSemantics.SATISFACTION
-
-        raise ValueError(f"Unsupported IR1 quantifier: {quantifier!r}")
+        raise ValueError(f"Unsupported IR1 quantifier: {outermost!r}")
 
     def build_tasks(
         self,

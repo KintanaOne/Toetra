@@ -10,7 +10,7 @@ from dsl.reporting.values import json_safe_report_value
 
 REPORT_SCHEMA = "forml.verification-report"
 REPORT_COLLECTION_SCHEMA = "forml.verification-report-collection"
-REPORT_SCHEMA_VERSION = 1
+REPORT_SCHEMA_VERSION = 2
 
 
 def verification_report_to_dict(report: VerificationReport) -> dict[str, Any]:
@@ -41,6 +41,16 @@ def verification_report_to_dict(report: VerificationReport) -> dict[str, Any]:
             "route_reason": report.route_reason,
         },
         "summary": report.summary,
+        "points": [
+            {
+                "name": point.name,
+                "binding_kind": point.binding_kind,
+                "provenance": json_safe_report_value(point.provenance),
+                "inputs": [_assignment_to_dict(item) for item in point.inputs],
+                "outputs": [_assignment_to_dict(item) for item in point.outputs],
+            }
+            for point in report.points
+        ],
         "assignments": {
             "inputs": [_assignment_to_dict(item) for item in report.inputs],
             "outputs": [_assignment_to_dict(item) for item in report.outputs],
@@ -124,12 +134,20 @@ def write_verification_reports_json(
 
 
 def _assignment_to_dict(assignment: ReportAssignment) -> dict[str, Any]:
-    return {
+    payload = {
         "name": assignment.display_name,
         "raw_name": assignment.raw_name,
         "kind": assignment.kind.value,
         "value": json_safe_report_value(assignment.value),
     }
+    optional = {
+        "point": assignment.point_name,
+        "binding_kind": assignment.binding_kind,
+        "model_identity": assignment.model_identity,
+        "target": assignment.target_name,
+    }
+    payload.update({key: value for key, value in optional.items() if value is not None})
+    return payload
 
 
 def _write_json(path: str | Path, content: str) -> Path:

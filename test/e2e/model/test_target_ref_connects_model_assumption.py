@@ -42,7 +42,7 @@ def test_target_ref_connects_to_model_output_assumption():
     target := MyTarget
 
     [BOUND]:
-    check_at x0 => target <= 10 using Z3
+    forall x0 => target <= 10 using Z3
     """
 
     tasks = run_ir2_with_model_schema(
@@ -99,7 +99,7 @@ def test_target_ref_and_model_assumption_build_refutation_vc():
     target := MyTarget
 
     [BOUND]:
-    check_at x0 => target <= 10 using Z3
+    forall x0 => target <= 10 using Z3
     """
 
     tasks = run_ir2_with_model_schema(

@@ -18,12 +18,16 @@ from dsl.ir.ir1.nodes import (
     TargetExpressionIR,
     UnaryArithmeticExpressionIR,
 )
+from dsl.ir.ir1.points import PointIRRegistry
 from dsl.semantic.core.specification_constants import SPECIFICATION_CONSTANT_KIND
 from dsl.semantic.types.enums import EnumArithmeticClass, EnumDataType
 
 
 class ScalarExpressionTranslator:
     """Lower a semantically validated scalar AST tree into IR1."""
+
+    def __init__(self, point_registry: PointIRRegistry | None = None) -> None:
+        self.point_registry = point_registry or PointIRRegistry()
 
     def translate(self, node: ScalarExpressionNode) -> ScalarExpressionIR:
         if isinstance(node, ConstantNode):
@@ -93,6 +97,11 @@ class ScalarExpressionTranslator:
             entity=semantic.resolved_entity,
             feature=feature,
             dtype=self._dtype(node),
+            point=(
+                self.point_registry.point(semantic.resolved_point)
+                if semantic.resolved_point is not None
+                else None
+            ),
         )
 
     def _translate_target(self, node: TargetRefNode) -> TargetExpressionIR:
@@ -106,10 +115,18 @@ class ScalarExpressionTranslator:
                 f"Invalid target reference path: {semantic.resolved_path!r}"
             )
 
+        if semantic.resolved_evaluation is None:
+            raise ValueError(
+                "Point-aware target reference reached IR1 without a model "
+                "evaluation identity"
+            )
+        evaluation = self.point_registry.evaluation(semantic.resolved_evaluation)
+
         return TargetExpressionIR(
             entity="_model",
             feature=semantic.resolved_path[-1],
             dtype=self._dtype(node),
+            evaluation=evaluation,
         )
 
     @staticmethod

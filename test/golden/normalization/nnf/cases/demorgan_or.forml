@@ -2,4 +2,4 @@ model := "model.onnx"
 target := MyTarget
 
 [LOGIC]:
-check_at x0 => NOT (x0.a <= 1 OR x0.b <= 2) using Z3
+forall x0 => NOT (x0.a <= 1 OR x0.b <= 2) using Z3

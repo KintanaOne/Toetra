@@ -17,7 +17,7 @@ model := "{model_path.as_posix()}"
 target := MyTarget
 
 [ROBUSTNESS]:
-check_at x0 => x0.age >= 0
+forall x0 => x0.age >= 0
 """
 
     cst = parse_forml_code(source)

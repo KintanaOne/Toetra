@@ -15,6 +15,7 @@ from dsl.ast.nodes.domain import (
     SymbolLiteralNode,
 )
 from dsl.ast.nodes.header import SpecificationConstantDeclarationNode
+from dsl.ast.nodes.neighborhood import NeighborhoodMembershipNode
 from dsl.ast.nodes.primitives import (
     AttributeNode,
     BinaryArithmeticNode,
@@ -25,6 +26,7 @@ from dsl.ast.nodes.primitives import (
     UnaryArithmeticNode,
 )
 from dsl.semantic.context.context import SemanticContext
+from dsl.semantic.core.restrictions import NeighborhoodLowerer
 from dsl.semantic.core.specification_constants import SPECIFICATION_CONSTANT_KIND
 from dsl.semantic.errors.errors import UnboundVariableError
 from dsl.semantic.runtime.annotations import SemanticAnnotations
@@ -33,10 +35,11 @@ from dsl.semantic.symbols.symbol import Symbol
 
 
 class BindingValidator:
-    """Resolve assertion and domain names after scope construction."""
+    """Resolve assertions, restrictions, domains, and indexed model outputs."""
 
-    def __init__(self, tracer=None):
+    def __init__(self, tracer=None, model_schema=None):
         self.tracer = tracer or ValidationTracer()
+        self.model_schema = model_schema
 
     def validate(
         self,
@@ -47,6 +50,28 @@ class BindingValidator:
 
         if context.domain is not None:
             self._bind_domain(context.domain, context)
+
+        if context.restriction is not None:
+            expression = context.restriction.expression
+            if isinstance(expression, LogicalNode):
+                bound_restriction = self._check_node(expression, context)
+                context.restriction.expression = bound_restriction
+                context.canonical_restriction = bound_restriction
+            elif isinstance(expression, NeighborhoodMembershipNode):
+                expression.epsilon = self._resolve_scalar_expression(
+                    expression.epsilon,
+                    context,
+                    allow_implicit_feature=False,
+                )
+                lowered = NeighborhoodLowerer(model_schema=self.model_schema).lower(
+                    expression, context
+                )
+                bound_restriction = self._check_node(lowered, context)
+                context.canonical_restriction = bound_restriction
+            else:
+                raise TypeError(
+                    f"Unsupported restriction type: {type(expression).__name__}"
+                )
 
         return self._check_node(rhs, context)
 
@@ -151,7 +176,7 @@ class BindingValidator:
     ) -> ScalarExpressionNode:
         symbol = context.symbol_table.resolve(node.name)
 
-        if symbol is not None and symbol.kind == SPECIFICATION_CONSTANT_KIND:
+        if isinstance(symbol, Symbol) and symbol.kind == SPECIFICATION_CONSTANT_KIND:
             return self._constant_from_symbol(symbol)
 
         if not allow_implicit_feature:
@@ -226,7 +251,10 @@ class BindingValidator:
         if isinstance(node, NameRefNode):
             symbol = context.symbol_table.resolve(node.name)
 
-            if symbol is not None and symbol.kind == SPECIFICATION_CONSTANT_KIND:
+            if (
+                isinstance(symbol, Symbol)
+                and symbol.kind == SPECIFICATION_CONSTANT_KIND
+            ):
                 return self._constant_from_symbol(symbol)
 
             return SymbolLiteralNode(name=node.name)
@@ -245,10 +273,35 @@ class BindingValidator:
                 "Cannot resolve 'target': missing model target in semantic context"
             )
 
+        if target.point is not None:
+            point = context.point_environment.resolve(target.point)
+            if point is None:
+                raise UnboundVariableError(
+                    f"Unknown target point '{target.point}'. Visible points: "
+                    f"{list(context.point_environment.names())}"
+                )
+        else:
+            point = context.resolve_default_point(reference_kind="target")
+
+        if not context.model_identity:
+            raise UnboundVariableError(
+                "Cannot resolve 'target': missing declared model identity "
+                "in semantic context"
+            )
+
+        evaluation = context.evaluation_registry.intern(
+            model_identity=context.model_identity,
+            point=point,
+            target_name=context.model_target,
+        )
+
         semantic.resolved_entity = "_model"
         semantic.resolved_symbol = None
+        # Keep the historical path stable until point-aware IR1 lands in 15.6.
         semantic.resolved_path = ["_model", context.model_target]
         semantic.resolved_type = "model_output"
+        semantic.resolved_point = point
+        semantic.resolved_evaluation = evaluation
 
     def _ensure_semantic(self, node):
         if not hasattr(node, "semantic") or node.semantic is None:
@@ -260,41 +313,27 @@ class BindingValidator:
         attr: AttributeNode,
         context: SemanticContext,
     ) -> None:
-        """Resolve explicit entities exactly and implicit features by scope."""
+        """Resolve explicit entities exactly and short features without fallback."""
         semantic = self._ensure_semantic(attr)
-        variables = context.variables
-        default_entity = context.default_entity
-        symbol_table = context.symbol_table
 
         if attr.entity is not None:
-            if attr.entity not in variables:
+            point = context.point_environment.resolve(attr.entity)
+            if point is None:
                 raise UnboundVariableError(
-                    f"Unknown variable '{attr.entity}', "
-                    f"expected {list(variables.keys())}"
+                    f"Unknown variable '{attr.entity}', expected "
+                    f"{list(context.point_environment.names())}"
                 )
 
-            symbol = symbol_table.resolve(attr.entity)
-            semantic.resolved_entity = attr.entity
-            semantic.resolved_symbol = symbol
-            semantic.resolved_path = [attr.entity, *attr.path[1:]]
+            semantic.resolved_entity = point.name
+            semantic.resolved_symbol = point
+            semantic.resolved_point = point
+            semantic.resolved_path = [point.name, *attr.path[1:]]
             return
 
-        if default_entity is not None:
-            symbol = symbol_table.resolve(default_entity)
-            semantic.resolved_entity = default_entity
-            semantic.resolved_symbol = symbol
-            semantic.resolved_path = [default_entity, attr.feature]
-            return
-
-        if len(variables) == 1:
-            resolved = next(iter(variables))
-            symbol = symbol_table.resolve(resolved)
-            semantic.resolved_entity = resolved
-            semantic.resolved_symbol = symbol
-            semantic.resolved_path = [resolved, attr.feature]
-            return
-
-        raise UnboundVariableError(
-            f"Ambiguous feature '{attr.feature}' "
-            f"with variables {list(variables.keys())}"
+        point = context.resolve_default_point(
+            reference_kind=f"feature '{attr.feature}'"
         )
+        semantic.resolved_entity = point.name
+        semantic.resolved_symbol = point
+        semantic.resolved_point = point
+        semantic.resolved_path = [point.name, attr.feature]

@@ -12,7 +12,10 @@ IR2 converts an NNF IR1 task into a backend-neutral verification task containing
 - verification semantics;
 - a selected NNF, CNF or DNF verification condition;
 - backend requirements;
-- non-blocking diagnostics.
+- non-blocking diagnostics;
+- exact source-to-IR point mappings;
+- the deduplicated set of required `(model, point, target)` evaluations;
+- the complete ordered quantifier structure and alternation depth.
 
 ## Verification semantics
 
@@ -28,7 +31,7 @@ Existential scopes use satisfaction:
 VC = Γ ∧ P
 ```
 
-No native quantifier currently reaches the backend. The quantified scope is preserved as metadata while the verification condition is quantifier-free.
+Homogeneous universal and existential chains are lowered to quantifier-free refutation or satisfaction bodies. Alternating chains retain their complete ordered binders, require native/advanced quantifier support, and are rejected by capability routing before solver translation when the selected backend cannot execute them soundly.
 
 ## Assumption aggregation
 
@@ -36,7 +39,8 @@ IR2 currently aggregates:
 
 - domain assumptions generated from `ScopeIR.domain`;
 - model assumptions produced by a `ModelEncoder`;
-- externally supplied backend-neutral assumptions.
+- externally supplied backend-neutral assumptions;
+- inline-anchor equality facts carrying exact point identity and source provenance.
 
 Each assumption carries:
 
@@ -71,13 +75,16 @@ Boolean conversion changes grouping and literal polarity but treats each scalar 
 - required scalar sorts;
 - finite-set membership;
 - symbolic categories;
-- native quantifier needs.
+- native quantifier and alternation needs;
+- point count and anchor count;
+- required model-evaluation count;
+- binder sequence and alternation depth.
 
 The backend router compares these requirements with a concrete capability declaration before translation.
 
 ## Diagnostics
 
-IR2 diagnostics are non-blocking structural warnings. For example, model assumptions combined with a property that never references a model output produce `IR2_MODEL_OUTPUT_NOT_REFERENCED`.
+IR2 diagnostics are non-blocking structural warnings. Evaluation-driven ModelBridge normally emits no model equation for a point-only property. Legacy or manually injected disconnected assumptions still produce `IR2_MODEL_OUTPUT_NOT_REFERENCED`, while missing, duplicate, or unrequested structured equations use the `MODEL_EVALUATION_*` family.
 
 Backend result diagnostics are separate because they depend on solver execution. Vacuity detection therefore belongs to the Z3 runner rather than IR2 construction.
 

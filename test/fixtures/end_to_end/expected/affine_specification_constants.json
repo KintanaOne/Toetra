@@ -11,7 +11,9 @@
         "expression": "0.0",
         "feature": "a",
         "operator": ">=",
-        "origin": "dsl_domain"
+        "origin": "dsl_domain",
+        "point": "x0",
+        "point_binding_kind": "universal"
       },
       "source": "domain"
     },
@@ -26,15 +28,20 @@
         "expression": "3.0",
         "feature": "a",
         "operator": "<=",
-        "origin": "dsl_domain"
+        "origin": "dsl_domain",
+        "point": "x0",
+        "point_binding_kind": "universal"
       },
       "source": "domain"
     },
     {
-      "description": "sklearn linear regression output equation",
+      "description": "sklearn linear regression output equation for point x0",
       "metadata": {
         "encoder": "SklearnLinearRegressorEncoder",
+        "model_identity": "linear.joblib",
         "model_type": "LinearRegression",
+        "point": "x0",
+        "point_binding_kind": "universal",
         "target": "score"
       },
       "source": "model"
@@ -61,6 +68,22 @@
     "left": {
       "dtype": "float",
       "entity": "_model",
+      "evaluation": {
+        "model_identity": "linear.joblib",
+        "point": {
+          "binding_kind": "universal",
+          "generated": false,
+          "lexical_depth": 1,
+          "name": "x0",
+          "source_span": {
+            "column": 1,
+            "end_column": 6,
+            "end_line": 12,
+            "line": 9
+          }
+        },
+        "target_name": "score"
+      },
       "feature": "score",
       "type": "target"
     },

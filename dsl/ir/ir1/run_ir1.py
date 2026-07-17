@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import TYPE_CHECKING
 
 from dsl.builder.program import parse_program
@@ -11,13 +12,14 @@ from dsl.semantic.runtime.tracer import ValidationTracer
 
 if TYPE_CHECKING:
     from model.schema.model_schema import ModelSchema
+    from dsl.semantic.symbols.point import ResolvedAnchorBinding
 
 DEFAULT_SAMPLE = """
 model := "model.onnx"
 target := MyTarget
 
 [ROBUSTNESS]:
-check_at x0 => (x0.a <= 1 OR x0.b <= 2) AND x0.c <= 3
+forall x0 => (x0.a <= 1 OR x0.b <= 2) AND x0.c <= 3
 """
 
 
@@ -25,6 +27,7 @@ def run_ir(
     source: str,
     *,
     model_schema: ModelSchema | None = None,
+    resolved_anchors: Mapping[str, ResolvedAnchorBinding] | None = None,
 ):
     """Run the complete source-to-IR1 pipeline.
 
@@ -41,6 +44,7 @@ def run_ir(
         ast,
         tracer=ValidationTracer(enabled=False),
         model_schema=model_schema,
+        resolved_anchors=resolved_anchors,
     )
 
     translator = IRTranslator()

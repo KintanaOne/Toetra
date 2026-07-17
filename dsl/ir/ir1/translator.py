@@ -3,9 +3,15 @@ from __future__ import annotations
 from dsl.ast.nodes.program import ProgramNode
 from dsl.ast.nodes.property import PropertyNode
 
-from dsl.ir.ir1.nodes import VerificationTask
-from dsl.ir.ir1.scope_translator import ScopeTranslator
+from dsl.ir.ir1.nodes import (
+    RestrictionIR,
+    RestrictionProvenanceIR,
+    VerificationTask,
+)
+from dsl.ir.ir1.points import PointIRRegistry, copy_source_span
 from dsl.ir.ir1.query_translator import QueryTranslator
+from dsl.ir.ir1.scalar_translator import ScalarExpressionTranslator
+from dsl.ir.ir1.scope_translator import ScopeTranslator
 
 from dsl.language.vocabulary.backends import EnumBackend
 
@@ -27,8 +33,22 @@ class IRTranslator:
         scope_translator: ScopeTranslator | None = None,
         query_translator: QueryTranslator | None = None,
     ):
-        self.scope_translator = scope_translator or ScopeTranslator()
-        self.query_translator = query_translator or QueryTranslator()
+        self.point_registry = PointIRRegistry()
+
+        if scope_translator is None and query_translator is None:
+            scalar_translator = ScalarExpressionTranslator(self.point_registry)
+            self.scope_translator = ScopeTranslator(
+                scalar_translator=scalar_translator,
+                point_registry=self.point_registry,
+            )
+            self.query_translator = QueryTranslator(
+                scalar_translator=scalar_translator,
+            )
+        else:
+            self.scope_translator = scope_translator or ScopeTranslator(
+                point_registry=self.point_registry,
+            )
+            self.query_translator = query_translator or QueryTranslator()
 
     # ------------------------------------------------------------------
     # PROGRAM
@@ -42,8 +62,46 @@ class IRTranslator:
     # ------------------------------------------------------------------
 
     def _translate_property(self, prop: PropertyNode) -> VerificationTask:
-        scope_ir = self.scope_translator.translate(prop.rule.scope)
-        query_ir = self.query_translator.translate(prop.rule.assertion.root)
+        self.point_registry.clear()
+
+        semantic = prop.semantic
+        context = semantic.context if semantic is not None else None
+
+        if context is not None:
+            for frame in context.binder_frames:
+                self.point_registry.register_frame(frame)
+
+        restriction_ir = None
+        if (
+            semantic is not None
+            and semantic.restriction_root is not None
+            and context is not None
+            and context.restriction_provenance is not None
+        ):
+            restriction_ir = RestrictionIR(
+                expression=self.query_translator.translate_expression(
+                    semantic.restriction_root
+                ),
+                provenance=RestrictionProvenanceIR(
+                    origin=context.restriction_provenance.origin.value,
+                    source_span=copy_source_span(
+                        context.restriction_provenance.source_span
+                    ),
+                ),
+            )
+
+        scope_ir = self.scope_translator.translate(
+            prop.rule.scope,
+            context=context,
+            restriction=restriction_ir,
+        )
+
+        logical_root = (
+            semantic.logical_root
+            if semantic is not None and semantic.logical_root is not None
+            else prop.rule.assertion.root
+        )
+        query_ir = self.query_translator.translate(logical_root)
 
         backend = self._translate_backend(prop)
 

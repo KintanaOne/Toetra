@@ -2,12 +2,51 @@
   "property_type": "ROBUSTNESS",
   "backend": null,
   "scope": {
-    "kind": "pointwise",
+    "kind": "quantifier",
     "variables": {
-      "x0": "anchor"
+      "x0": "symbolic"
     },
     "neighborhood": null,
-    "domain": null
+    "domain": null,
+    "points": [
+      {
+        "name": "x0",
+        "binding_kind": "universal",
+        "lexical_depth": 1,
+        "generated": false,
+        "source_span": {
+          "line": 6,
+          "column": 1,
+          "end_line": 6,
+          "end_column": 10
+        }
+      }
+    ],
+    "binders": [
+      {
+        "quantifier": "forall",
+        "point": "x0",
+        "generated": false,
+        "source_span": {
+          "line": 6,
+          "column": 1,
+          "end_line": 6,
+          "end_column": 10
+        }
+      }
+    ],
+    "default_point": "x0",
+    "provenance": {
+      "source_kind": "quantifier",
+      "source_span": {
+        "line": 6,
+        "column": 1,
+        "end_line": 6,
+        "end_column": 10
+      },
+      "legacy_compatibility": false
+    },
+    "restriction": null
   },
   "query": {
     "type": "comparison",
@@ -15,7 +54,19 @@
       "type": "attribute",
       "entity": "x0",
       "feature": "income",
-      "dtype": "float"
+      "dtype": "float",
+      "point": {
+        "name": "x0",
+        "binding_kind": "universal",
+        "lexical_depth": 1,
+        "generated": false,
+        "source_span": {
+          "line": 6,
+          "column": 1,
+          "end_line": 6,
+          "end_column": 10
+        }
+      }
     },
     "op": "<=",
     "right": {

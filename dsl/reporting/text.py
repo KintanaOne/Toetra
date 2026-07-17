@@ -59,7 +59,10 @@ def render_verification_report_text(
 
     if report.assignments:
         lines.extend(["", _assignment_section_title(report.status)])
-        lines.extend(_render_assignment_groups(report, resolved))
+        if report.points:
+            lines.extend(_render_point_groups(report, resolved))
+        else:
+            lines.extend(_render_assignment_groups(report, resolved))
 
     if report.diagnostics:
         lines.extend(["", "Diagnostics"])
@@ -123,6 +126,26 @@ def _assignment_section_title(status: VerificationStatus) -> str:
     if status is VerificationStatus.WITNESS:
         return "Witness"
     return "Backend assignments"
+
+
+def _render_point_groups(
+    report: VerificationReport,
+    options: TextRenderOptions,
+) -> list[str]:
+    lines: list[str] = []
+    for point in report.points:
+        if not point.inputs and not point.outputs:
+            continue
+        lines.append(f"  Point {point.name} ({point.binding_kind})")
+        if point.provenance:
+            lines.append(f"    provenance = {point.provenance}")
+        for assignment in point.inputs + point.outputs:
+            lines.extend(_render_assignment(assignment, options))
+    if report.auxiliary_assignments:
+        lines.append("  Auxiliary values")
+        for assignment in report.auxiliary_assignments:
+            lines.extend(_render_assignment(assignment, options))
+    return lines
 
 
 def _render_assignment_groups(

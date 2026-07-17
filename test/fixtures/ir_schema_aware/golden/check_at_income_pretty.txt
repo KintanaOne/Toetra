@@ -5,9 +5,18 @@ Property : EnumProperty.ROBUSTNESS
 Backend  : None
 
 📍 Scope
-  Type        : pointwise
+  Type        : quantifier
   Variables   :
-    - x0   → anchor
+    - x0   → symbolic
+
+  Points      :
+    - x0           → universal (depth=1)
+
+  Binders     :
+    - forall x0
+
+  Default     : x0
+  Source form : quantifier
 
 🔍 Query
   - x0.income : float <= 1000

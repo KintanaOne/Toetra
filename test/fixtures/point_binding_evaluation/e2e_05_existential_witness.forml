@@ -1,0 +1,14 @@
+model := "linear.joblib"
+target := score
+
+anchor x0 := { a: 1.0 }
+
+[ROBUSTNESS]:
+exists x1
+where x1 in neighborhood(
+    of = x0,
+    metric = Linf,
+    eps = 0.1
+)
+=> (target[x1] - target[x0] > 0.2)
+   or (target[x0] - target[x1] > 0.2) using Z3

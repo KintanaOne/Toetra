@@ -1,23 +1,37 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
 from dsl.backends.defaults import create_default_backend_registry
 from dsl.backends.registry import BackendRegistry
 from dsl.backends.router import BackendRouter
+from dsl.ast.nodes.program import ProgramNode
 from dsl.builder.program import parse_program
 from dsl.ir.ir2.context import IR2BuildContext
 from dsl.ir.ir2.enums import NormalFormKind
 from dsl.ir.ir2.run_ir2 import run_ir2_with_model_schema
 from dsl.parser.parser import parse_forml_code
 from dsl.reporting import build_verification_report
+from dsl.runtime.anchors import (
+    AnchorLookupRequest,
+    AnchorResolver,
+    AnchorSource,
+    DataFrameAnchorResolver,
+)
 from dsl.runtime.backends import (
     BackendRunnerRegistry,
     create_default_backend_runner_registry,
 )
-from dsl.runtime.errors import VerificationConfigurationError
+from dsl.runtime.errors import AnchorResolutionError, VerificationConfigurationError
 from dsl.runtime.session import VerificationExecution, VerificationSession
+from dsl.semantic.core.anchors import AnchorValidator
+from dsl.semantic.symbols.point import (
+    PointBindingKind,
+    ResolvedAnchorBinding,
+    frozen_mapping,
+)
 from model.encoder.context import ModelEncodingContext
 from model.runtime.manager import ModelManager
 from model.schema.model_schema import ModelSchema
@@ -34,6 +48,7 @@ class _ResolvedModel:
 @dataclass(frozen=True)
 class _LoadedSpecification:
     source: str
+    program: ProgramNode
     path: Path | None
     base_directory: Path
     model_reference: str
@@ -51,13 +66,20 @@ def verify(
     ir2_context: IR2BuildContext | None = None,
     backend_registry: BackendRegistry | None = None,
     runner_registry: BackendRunnerRegistry | None = None,
+    anchor_source: AnchorSource | None = None,
+    anchor_resolver: AnchorResolver | None = None,
 ) -> VerificationSession:
     """Verify every property from a FORML source or ``.forml`` file.
 
     A caller may provide an already normalized ``ModelSchema`` or let FORML
     build one from a serialized model. When ``model`` is omitted for a file
     specification, the model reference from the FORML header is resolved
-    relative to the specification file.
+    relative to the specification file. Referenced anchors require either a
+    dedicated ``anchor_source`` (pandas DataFrame or CSV path) or a custom
+    ``anchor_resolver``. When neither is provided, a compatible ``dataset``
+    artifact is reused as the default anchor lookup source. This fallback is
+    ergonomic only: model/schema introspection and anchor lookup remain
+    distinct runtime responsibilities.
     """
 
     loaded = _load_specification(specification)
@@ -69,6 +91,13 @@ def verify(
         schema=schema,
     )
     _validate_target_contract(loaded.target, resolved.schema.target)
+    resolved_anchors = _resolve_anchor_bindings(
+        loaded.program,
+        schema=resolved.schema,
+        anchor_source=anchor_source,
+        anchor_resolver=anchor_resolver,
+        dataset_fallback=resolved.dataset_path,
+    )
 
     context = ir2_context or IR2BuildContext(preferred_normal_form=NormalFormKind.NNF)
     tasks = run_ir2_with_model_schema(
@@ -76,6 +105,7 @@ def verify(
         schema=resolved.schema,
         model_context=model_context,
         ir2_context=context,
+        resolved_anchors=resolved_anchors,
     )
 
     router = BackendRouter(backend_registry or create_default_backend_registry())
@@ -108,6 +138,7 @@ def verify(
         model=resolved.model,
         model_path=resolved.model_path,
         dataset_path=resolved.dataset_path,
+        anchor_resolutions=resolved_anchors,
     )
 
 
@@ -127,6 +158,7 @@ def _load_specification(specification: str | Path) -> _LoadedSpecification:
     program = parse_program(parse_forml_code(source))
     return _LoadedSpecification(
         source=source,
+        program=program,
         path=resolved_path,
         base_directory=base_directory,
         model_reference=program.header.model,
@@ -223,3 +255,65 @@ def _validate_target_contract(header_target: str, schema_target: str) -> None:
             f"target '{schema_target}'. The property and model assumptions would "
             "otherwise refer to different outputs."
         )
+
+
+def _resolve_anchor_bindings(
+    program: ProgramNode,
+    *,
+    schema: ModelSchema,
+    anchor_source: AnchorSource | None,
+    anchor_resolver: AnchorResolver | None,
+    dataset_fallback: AnchorSource | None,
+) -> Mapping[str, ResolvedAnchorBinding]:
+    environment = AnchorValidator(model_schema=schema).validate(program.anchors)
+    requests = tuple(
+        AnchorLookupRequest(
+            name=point.name,
+            key=point.reference.key,
+            value=point.reference.value,
+        )
+        for point in environment.global_anchors()
+        if point.binding_kind is PointBindingKind.REFERENCED_ANCHOR
+        and point.reference is not None
+    )
+    if anchor_source is not None and anchor_resolver is not None:
+        raise VerificationConfigurationError(
+            "Provide either 'anchor_source' or 'anchor_resolver', not both"
+        )
+    if not requests:
+        return frozen_mapping({})
+
+    if anchor_resolver is None:
+        effective_source = (
+            anchor_source if anchor_source is not None else dataset_fallback
+        )
+        if effective_source is None:
+            raise AnchorResolutionError(
+                "Referenced anchors require anchor_source=..., "
+                "anchor_resolver=..., or a compatible dataset=... artifact",
+                code="ANCHOR_SOURCE_REQUIRED",
+            )
+        anchor_resolver = DataFrameAnchorResolver(effective_source)
+
+    resolved = anchor_resolver.resolve(requests, schema=schema)
+    return _validate_resolver_output(requests, resolved)
+
+
+def _validate_resolver_output(
+    requests: tuple[AnchorLookupRequest, ...],
+    resolved: Mapping[str, ResolvedAnchorBinding],
+) -> Mapping[str, ResolvedAnchorBinding]:
+    expected = tuple(request.name for request in requests)
+    missing = [name for name in expected if name not in resolved]
+    if missing:
+        raise AnchorResolutionError(
+            "Anchor resolver did not return binding(s): " + ", ".join(missing),
+            code="ANCHOR_RESOLVER_INCOMPLETE",
+        )
+    unexpected = [name for name in resolved if name not in set(expected)]
+    if unexpected:
+        raise AnchorResolutionError(
+            "Anchor resolver returned unexpected binding(s): " + ", ".join(unexpected),
+            code="ANCHOR_RESOLVER_UNEXPECTED",
+        )
+    return frozen_mapping({name: resolved[name] for name in expected})

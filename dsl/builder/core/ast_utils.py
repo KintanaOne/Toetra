@@ -115,6 +115,9 @@ def parse_attribute(node: Tree) -> AttributeNode:
 
 def parse_literal_value(raw: str) -> ConstantNode:
     """Build a typed constant from one scalar literal spelling."""
+    if len(raw) >= 2 and raw[0] == raw[-1] and raw[0] in {"'", '"'}:
+        return ConstantNode(value=raw[1:-1], dtype=EnumDataType.STRING)
+
     cleaned = clean_string(raw)
 
     if cleaned is None:

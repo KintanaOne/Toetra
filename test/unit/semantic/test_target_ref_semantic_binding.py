@@ -11,7 +11,7 @@ def test_target_ref_resolves_to_model_target():
     target := MyTarget
 
     [BOUND]:
-    check_at x0 => target <= 10
+    forall x0 => target <= 10
     """
 
     program = parse_program(parse_forml_code(code))

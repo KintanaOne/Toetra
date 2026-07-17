@@ -1,0 +1,11 @@
+model := "linear.joblib"
+target := score
+
+[MONOTONICITY]:
+forall x0, x1
+with domain(
+    x0.a: [0, 3],
+    x1.a: [0, 3]
+)
+where x1.a >= x0.a
+=> target[x1] >= target[x0] using Z3

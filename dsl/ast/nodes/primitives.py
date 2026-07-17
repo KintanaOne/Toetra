@@ -61,8 +61,9 @@ class AttributeNode(ScalarExpressionNode):
 
 @dataclass
 class TargetRefNode(ScalarExpressionNode):
-    """Reference to the model output declared in the FORML header."""
+    """Reference to the unique model output, optionally indexed by a point."""
 
+    point: str | None = None
     name: str = "target"
 
 

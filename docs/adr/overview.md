@@ -21,7 +21,8 @@ The goal of the ADR section is to make explicit:
 - why quantified variables are explicitly bound,
 - why comparisons relate general scalar expressions,
 - why typed domains are lowered into provenanced assumptions,
-- and why specification constants use context-aware bare-name resolution.
+- why specification constants use context-aware bare-name resolution,
+- and why points, lexical bindings and model evaluations are represented independently.
 
 ## ADR format
 
@@ -57,6 +58,7 @@ Impact on FORML
 | ADR-0014 | Represent comparisons as relations between scalar expressions |
 | ADR-0015 | Preserve typed domains and lower them into provenanced assumptions |
 | ADR-0016 | Use specification constants and context-aware bare-name resolution |
+| ADR-0017 | Use first-class points, lexical bindings and point-indexed model evaluations |
 
 ## Decision status vocabulary
 

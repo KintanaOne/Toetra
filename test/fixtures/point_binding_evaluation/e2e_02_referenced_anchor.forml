@@ -1,0 +1,11 @@
+model := "linear.joblib"
+target := score
+
+anchor row := ref(
+    key = "id",
+    value = "R-42"
+)
+
+[BOUND]:
+check_at row
+=> target <= 7 using Z3

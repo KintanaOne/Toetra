@@ -1,8 +1,12 @@
 from __future__ import annotations
 
-from dsl.ir.ir1.nodes import ScopeIR
+from dsl.ir.ir1.nodes import ModelEvaluationIR
 from dsl.ir.ir2.nodes import AssumptionIR2
-from model.encoder.base import ModelEncoder, validate_model_assumptions
+from model.encoder.base import (
+    ModelEncoder,
+    validate_model_assumptions,
+    validate_model_evaluation_coverage,
+)
 from model.encoder.context import ModelEncodingContext
 from model.encoder.defaults import create_default_model_encoder_registry
 from model.encoder.registry import ModelEncoderRegistry
@@ -25,11 +29,25 @@ class ModelEncoderFactory:
     def encode(
         self,
         schema: ModelSchema,
-        scope: ScopeIR,
+        evaluations: tuple[ModelEvaluationIR, ...],
         *,
         context: ModelEncodingContext | None = None,
     ) -> tuple[AssumptionIR2, ...]:
-        """Encode model assumptions and validate the encoder boundary."""
+        """Encode exactly the requested model evaluations.
+
+        The factory deliberately receives structured evaluation identities
+        rather than a scope. Input-point selection is owned by semantic/IR
+        analysis and must never be guessed by the model encoder.
+        """
+        unique_evaluations = tuple(dict.fromkeys(evaluations))
+        effective_context = context or ModelEncodingContext()
         encoder = self.create(schema)
-        assumptions = encoder.encode(schema, scope, context=context)
-        return validate_model_assumptions(assumptions)
+        assumptions = validate_model_assumptions(
+            encoder.encode(schema, unique_evaluations, context=effective_context)
+        )
+        if (
+            effective_context.include_model_constraints
+            and effective_context.include_output_constraints
+        ):
+            validate_model_evaluation_coverage(assumptions, unique_evaluations)
+        return assumptions

@@ -34,6 +34,7 @@ class BackendCapabilities:
     supported_normal_forms: tuple[NormalFormKind, ...]
 
     supports_native_quantifiers: bool = False
+    supports_quantifier_alternation: bool = False
     supported_verification_semantics: tuple[VerificationSemantics, ...] = (
         VerificationSemantics.REFUTATION,
     )
@@ -45,6 +46,7 @@ class BackendCapabilities:
     supports_finite_set_membership: bool = False
     supports_symbolic_categories: bool = False
     supports_domain_assumptions: bool = False
+    max_model_evaluations: int | None = None
 
     def supports(self, requirements: IR2Requirements) -> bool:
         """Return whether all requirements are satisfied."""
@@ -76,10 +78,26 @@ class BackendCapabilities:
             reasons.append("model assertions")
 
         if (
+            self.max_model_evaluations is not None
+            and requirements.model_evaluation_count > self.max_model_evaluations
+        ):
+            reasons.append(
+                "model evaluations "
+                f"{requirements.model_evaluation_count} exceed backend maximum "
+                f"{self.max_model_evaluations}"
+            )
+
+        if (
             requirements.requires_native_quantifiers
             and not self.supports_native_quantifiers
         ):
             reasons.append("native quantifiers")
+
+        if (
+            requirements.requires_quantifier_alternation
+            and not self.supports_quantifier_alternation
+        ):
+            reasons.append("quantifier alternation")
 
         if (
             requirements.required_verification_semantics

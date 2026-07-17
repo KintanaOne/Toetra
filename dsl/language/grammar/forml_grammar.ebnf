@@ -9,7 +9,7 @@ boolean = true | false ;
 
 (* === IDENTIFIERS === *)
 identifier = ? identifier_name ? ;
-quoted_identifier = ? escaped_string ? | identifier ;
+quoted_identifier = ? escaped_string ? | identifier | ? argument_keywords ? ;
 
 (* === VALUE TYPES === *)
 value_number = ? number ? ;
@@ -51,7 +51,7 @@ problem_expr    = ( ? official_problems ? ) , "." , function_expr ;
 
 (* === ATTRIBUTES / MODEL OUTPUT === *)
 attribute = identifier , { "." , identifier } ;
-target_ref = TARGET ;
+target_ref = TARGET , [ "[" , identifier , "]" ] ;
 
 (* === SCALAR ARITHMETIC === *)
 additive_operator = ? arithmetic_additive_operators ? ;
@@ -74,11 +74,11 @@ comparison_expr = scalar_expression , comparison_operation , scalar_expression ;
 
 ?logic_imply    = logic_or | logic_or "->" logic_imply          -> logical_imply
 
-?logic_or       = logic_and | logic_or "OR" logic_and           -> logic_or
+?logic_or       = logic_and | logic_or ( OR | "OR" ) logic_and           -> logic_or
 
-?logic_and      = logic_not | logic_and "AND" logic_not         -> logic_and
+?logic_and      = logic_not | logic_and ( AND | "AND" ) logic_not         -> logic_and
 
-?logic_not      = "NOT" atom                                    -> logic_not | atom
+?logic_not      = ( NOT | "NOT" ) atom                                    -> logic_not | atom
 
 ?atom           = comparison_expr | logic_expr | problem_expr | "(" assertion ")"
 
@@ -87,7 +87,12 @@ comparison_expr = scalar_expression , comparison_operation , scalar_expression ;
 (* ========================================================= *)
 
 (* === NEIGHBORHOOD (CRITICAL ABSTRACTION) === *)
-neighborhood = IN , NEIGHBORHOOD , "(" , [ "metric" , "=" ] , ( ? official_metrics ? ) , "," , [ args ] , ")" ;
+neighborhood = IN , NEIGHBORHOOD , "(" , [ ARG_METRIC , "=" ] , ( ? official_metrics ? ) , "," , [ args ] , ")" ;
+neighborhood_of_argument = ARG_OF , "=" , identifier ;
+neighborhood_metric_argument = ARG_METRIC , "=" , ( ? official_metrics ? ) ;
+neighborhood_eps_argument = ARG_EPS , "=" , scalar_expression ;
+neighborhood_membership = identifier , IN , NEIGHBORHOOD , "(" , neighborhood_of_argument , "," , neighborhood_metric_argument , "," , neighborhood_eps_argument , ")" ;
+local_neighborhood = LOCAL_WITH , identifier , IN , NEIGHBORHOOD , "(" , neighborhood_metric_argument , "," , neighborhood_eps_argument , ")" ;
 
 (* ========================================================= *)
 (* === PROPERTY EXPRESSIONS ================================ *)
@@ -100,13 +105,16 @@ property_expr = quantifier_expr | at_expr | check_expr | pairwise_expr ;
 (* ========================================================= *)
 
 quantifier = ? official_quantifier ? ;
-quantifier_expr = quantifier , identifier , [ padding , domain ] ;
+quantifier_clause = quantifier , identifier , { "," , identifier } ;
+quantifier_expr = quantifier , identifier , { "," , identifier } , { padding , quantifier_clause } , [ padding , domain ] , [ padding , where_clause ] ;
 
 (* ========================================================= *)
 (* === AT (LOCAL) ========================================== *)
 (* ========================================================= *)
 
-at_expr = AT , identifier , [ padding , neighborhood ] , [ padding , domain ] ;
+legacy_at_suffix = padding , neighborhood , [ padding , domain ] | padding , domain ;
+at_suffix = local_neighborhood | legacy_at_suffix ;
+at_expr = AT , identifier , [ at_suffix ] ;
 
 (* ========================================================= *)
 (* === CHECK AT (POINTWISE) ================================ *)
@@ -120,6 +128,13 @@ check_expr = CHECK_AT , identifier ;
 
 pairwise_token = PAIRWISE ;
 pairwise_expr = pairwise_token , padding , neighborhood , [ padding , domain ] ;
+
+(* ========================================================= *)
+(* === RESTRICTIONS ======================================== *)
+(* ========================================================= *)
+
+restriction = neighborhood_membership | assertion ;
+where_clause = WHERE , restriction ;
 
 (* ========================================================= *)
 (* === DOMAIN / CONTEXT ==================================== *)
@@ -145,7 +160,7 @@ finite_set_domain = "{" , padding , finite_set_value , { padding , "," , padding
 
 property_imply = PROPERTY_IMPLY ;
 property_type = ? official_properties ? | ? uppercase_string ? ;
-property = "[" , property_type , "]" , ":" , padding , property_expr , padding , property_imply , padding , assertion , [ padding , backend ] ;
+property = "[" , property_type , "]" , ":" , padding , ( property_expr , padding , property_imply , padding , assertion | assertion ) , [ padding , backend ] ;
 property_section = property ;
 
 (* ========================================================= *)
@@ -166,10 +181,21 @@ dataset_declaration = DATASET , ":=" , dataset ;
 specification_constant_declaration = identifier , ":=" , specification_constant_literal ;
 specification_constants = specification_constant_declaration , { [ ";" ] , specification_constant_declaration } , [ ";" ] ;
 
+anchor_literal = specification_constant_literal ;
+anchor_entry = identifier , ":" , anchor_literal ;
+inline_anchor = "{" , padding , anchor_entry , { padding , "," , padding , anchor_entry } , [ padding , "," ] , padding , "}" ;
+anchor_ref_key_argument = ARG_KEY , "=" , value ;
+anchor_ref_value_argument = ARG_VALUE , "=" , value ;
+anchor_ref_argument = anchor_ref_key_argument | anchor_ref_value_argument ;
+anchor_ref = REF , "(" , padding , anchor_ref_argument , { padding , "," , padding , anchor_ref_argument } , [ padding , "," ] , padding , ")" ;
+anchor_binding = inline_anchor | anchor_ref ;
+anchor_declaration = ANCHOR , identifier , ":=" , anchor_binding ;
+anchor_declarations = anchor_declaration , { [ ";" ] , anchor_declaration } , [ ";" ] ;
+
 (* ========================================================= *)
 (* === PROGRAM STRUCTURE =================================== *)
 (* ========================================================= *)
 
-header = padding , model_declaration , padding , target_declaration , padding , [ dataset_declaration , padding ] , [ specification_constants , padding ] ;
+header = padding , model_declaration , padding , target_declaration , padding , [ dataset_declaration , padding ] , [ specification_constants , padding ] , [ anchor_declarations , padding ] ;
 body = padding , property_section , { padding , property_section } , padding ;
 program = header , body ;

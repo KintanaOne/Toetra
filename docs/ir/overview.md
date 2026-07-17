@@ -160,20 +160,16 @@ What exactly is sent to the backend?
 
 ## Current Implementation Status
 
-| Representation | Status | Notes |
+| Representation | Status | Guarantee |
 |---|---|---|
-| SemanticValidatedAST | implemented / stabilizing | Semantic annotations and binding exist. |
-| VerificationTask | implemented / stabilizing | Main IR1 execution unit. |
-| ScopeIR | implemented / stabilizing | Represents pointwise, local, pairwise, and quantifier contexts. |
-| LogicalIR | implemented / stabilizing | Represents comparisons, boolean operators, implications, problem predicates, and target scalar-expression evolution. |
-| Specification constant lowering | accepted target / implementation pending | Constants become typed IR literals with declaration provenance. |
-| IR1-NNF | implemented / stabilizing | De Morgan / NNF logic exists conceptually and should be explicitly documented and tested. |
-| IR2-CNF/DNF | planned | Required after IR1 for backend preparation. |
-| AggregatedAssertionSet | planned | Required to combine DSL and model-derived constraints. |
-| LoweredQuery | planned | Required before backend-specific encoding. |
-| BackendQuery | planned | Required for Z3 and future backend integration. |
-
----
+| Semantic annotations | implemented | Exact points, types, restrictions and model-evaluation identities. |
+| VerificationTask / IR1 | implemented | Point-aware scalar logic, ordered binders, point-owned domains and provenance. |
+| ScopeIR | implemented | Structured points/binders/restriction with compatibility-only legacy projections. |
+| IR1 NNF | implemented | Logical normalization preserves point and evaluation metadata. |
+| IR2 NNF/CNF/DNF | implemented | Normal forms, requirements, assumptions, point mappings and quantifier profile. |
+| Assertion aggregation | implemented | Domains, anchors, model equations and verification body combine with provenance. |
+| Backend query | implemented for Z3 | Structured point identities become distinct solver symbols with reverse mappings. |
+| Reporting/replay contract | implemented | Grouped evidence and real-model replay retain all points/evaluations. |
 
 ## Design Principle
 

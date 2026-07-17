@@ -49,7 +49,7 @@ def test_schema_aware_validation_accepts_known_feature():
     target := MyTarget
 
     [ROBUSTNESS]:
-    check_at x0 => x0.age <= 30
+    forall x0 => x0.age <= 30
     """
 
     ast = _build(source)
@@ -67,7 +67,7 @@ def test_schema_aware_validation_rejects_unknown_feature():
     target := MyTarget
 
     [ROBUSTNESS]:
-    check_at x0 => x0.unknown <= 30
+    forall x0 => x0.unknown <= 30
     """
 
     ast = _build(source)
@@ -86,7 +86,7 @@ def test_schema_aware_validation_sets_resolved_type_on_attribute():
     target := MyTarget
 
     [ROBUSTNESS]:
-    check_at x0 => x0.income <= 1000
+    forall x0 => x0.income <= 1000
     """
 
     ast = _build(source)
@@ -118,7 +118,7 @@ def test_schema_aware_validation_is_optional_without_model_schema():
     target := MyTarget
 
     [ROBUSTNESS]:
-    check_at x0 => x0.unknown <= 30
+    forall x0 => x0.unknown <= 30
     """
 
     ast = _build(source)

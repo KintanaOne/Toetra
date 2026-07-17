@@ -3,7 +3,6 @@
 from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.problems import EnumProblem
 from dsl.language.vocabulary.properties import EnumProperty
-from dsl.semantic.context.scope import SemanticScope
 
 # -------------------------------
 # Problem ↔ Function
@@ -25,36 +24,28 @@ PROBLEM_FUNCTION_COMPATIBILITY = {
 
 
 # -------------------------------
-# Property ↔ Scope (IMPORTANT 🔥)
+# Property ↔ Point environment
 # -------------------------------
-PROPERTY_SCOPE_COMPATIBILITY = {
-    EnumProperty.ROBUSTNESS: {
-        SemanticScope.QUANTIFIER,
-        SemanticScope.LOCAL,
-        SemanticScope.POINTWISE,
-    },
-    EnumProperty.FAIRNESS: {
-        SemanticScope.PAIRWISE,
-    },
-    EnumProperty.MONOTONICITY: {
-        SemanticScope.PAIRWISE,
-        SemanticScope.QUANTIFIER,
-    },
-    EnumProperty.STABILITY: {
-        SemanticScope.LOCAL,
-        SemanticScope.QUANTIFIER,
-    },
-    EnumProperty.BOUND: {
-        SemanticScope.POINTWISE,
-        SemanticScope.QUANTIFIER,
-    },
-    EnumProperty.LOGIC: {
-        SemanticScope.POINTWISE,
-        SemanticScope.LOCAL,
-        SemanticScope.PAIRWISE,
-        SemanticScope.QUANTIFIER,
-    },
-}
+
+
+def validate_property_point_contract(property_type, context) -> None:
+    """Validate property-specific point requirements without scope enums.
+
+    Point binding, target resolution and restrictions are already validated by
+    the composed semantic environment.  Property labels therefore do not gate
+    mutually exclusive ``POINTWISE``/``LOCAL``/``PAIRWISE`` categories.  The
+    only V1 structural rule retained here is that FAIRNESS is relational and
+    requires at least two visible points.
+    """
+
+    if property_type is EnumProperty.FAIRNESS:
+        point_count = len(context.point_environment.all())
+        if point_count < 2:
+            from dsl.semantic.errors.errors import InvalidPropertyError
+
+            raise InvalidPropertyError(
+                "Property 'FAIRNESS' requires at least two visible points"
+            )
 
 
 # -------------------------------
