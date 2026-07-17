@@ -1,177 +1,64 @@
 # Verification Runtime
 
-> Status: Implemented for the numerical-affine Z3 profile  
-> Public API: `forml.verify`
+> Status: Implemented for anchors, grouped evidence, and multi-point replay
 
-## User Entry Point
+## Public execution
 
 ```python
-from forml import verify
-
 session = verify(
-    "credit-risk.forml",
-    model="credit-risk.joblib",
-    dataset="credit-risk-reference.csv",
+    specification,
+    model=model_or_path,
+    dataset=optional_dataset,
+    schema=optional_schema,
+    anchor_source=optional_source,
+    anchor_resolver=optional_resolver,
 )
 ```
 
-The runtime performs the complete orchestration:
+`dataset` supports model/schema introspection and, when no explicit anchor mechanism is supplied, may also be reused as the default source for `ref(...)`. `anchor_source` or `anchor_resolver` always wins.
 
-```text
-load specification
-→ resolve or build ModelSchema
-→ compile to IR2
-→ route each property
-→ execute its backend runner
-→ build VerificationReport objects
-→ return VerificationSession
-```
+## Anchor resolution
 
-A caller does not need to instantiate `IR2BuildContext`, `BackendRouter` or
-`Z3Runner` for the standard path.
+Referenced anchors are resolved before IR2. The default resolver accepts a `pandas.DataFrame` or CSV path, requires exactly one matching row, projects only declared model features, validates types, and preserves lookup provenance.
 
-## Inputs
+Inline anchors require no source. An unresolved referenced anchor cannot reach routing or Z3.
 
-### Specification
+## Grouped results
 
-`specification` accepts either:
-
-- a `Path` to a `.forml` file;
-- a string path ending in `.forml`;
-- raw FORML source text.
-
-A missing string ending in `.forml` raises `FileNotFoundError` rather than being
-misinterpreted as source code.
-
-### Model metadata
-
-Two modes are supported.
-
-Artifact mode:
+Each finding exposes point-aware evidence:
 
 ```python
-verify(
-    "policy.forml",
-    model="model.joblib",
-    dataset="reference.csv",
-)
+finding.points
+finding.point_values
+finding.output_values_by_point
 ```
 
-Schema mode:
+Every point contains its binding kind, inputs, outputs, and provenance. Flat `input_values` and `output_values` remain available only for unambiguous one-point results.
+
+JSON reporting uses `forml.verification-report` schema version 2 and serializes points explicitly. Text, HTML, and Jupyter renderers group values by point.
+
+## Replay
+
+`finding.replay()` reconstructs every referenced point in declaration order, calls the real estimator once per point, compares formal and concrete outputs, and reevaluates the canonical restriction and assertion.
+
+Multi-point replay exposes:
 
 ```python
-verify(source, schema=model_schema)
+replay.inputs_by_point
+replay.backend_outputs_by_point
+replay.model_outputs_by_point
+replay.relation_satisfied
+replay.assertion_satisfied
+replay.to_records()
+replay.to_dataframe()
 ```
 
-In artifact mode, `ModelManager` loads and introspects the serialized model.
-The dataset is optional but may be required to recover input and target dtypes.
-If the model path is omitted, the header model reference is resolved relative
-to the `.forml` file.
+Flat replay properties are intentionally rejected when several points make them ambiguous.
 
-The header target and schema target must match exactly.
+## Runtime boundaries
 
-## Execution Model
-
-For every compiled property, the runtime creates:
-
-```python
-VerificationExecution(
-    task=task,
-    route=route,
-    result=result,
-    report=report,
-)
-```
-
-The task and route remain available for advanced inspection through the
-internal runtime layer. Normal application code should consume the session, its
-`VerificationFinding` helpers and the report renderers exported by `forml`.
-
-
-## User Findings and Replay
-
-The session groups results by meaning:
-
-```python
-session.proved
-session.counterexamples
-session.witnesses
-session.no_witnesses
-session.unknown
-```
-
-The first common findings are available directly:
-
-```python
-finding = session.first_counterexample
-replay = finding.replay() if finding is not None else None
-```
-
-`VerificationFinding` exposes normalized `input_values`,
-`qualified_input_values` and `output_values`. A replay compares the backend
-assignment with the original estimator loaded from the serialized artifact.
-
-## Summary Tables and Artifacts
-
-```python
-session.to_records()
-session.to_dataframe()
-session.write_artifacts("artifacts/", formats={"json", "html"})
-```
-
-The neutral records API avoids imposing pandas on lower reporting layers, while
-`to_dataframe()` is a convenience for notebook users.
-
-## Runner Registry
-
-Capability registration and execution registration are intentionally separate.
-A backend may be known to the router but unavailable in the current process.
-In that case the runtime raises `BackendRunnerNotRegisteredError` instead of
-silently selecting another executor.
-
-```python
-from dsl.runtime import BackendRunnerRegistry
-
-runners = BackendRunnerRegistry()
-runners.register(...)
-verify(source, schema=schema, runner_registry=runners)
-```
-
-## CI Usage
-
-```python
-session = verify(...)
-session.print()
-session.write_json("artifacts/forml-report.json")
-raise SystemExit(session.exit_code)
-```
-
-Exit codes are stable:
-
-| Code | Meaning |
-|---|---|
-| `0` | Every property was positively concluded |
-| `1` | A property failed |
-| `2` | At least one result is inconclusive |
-
-## Error Boundaries
-
-The runtime preserves the original compiler and backend errors. It adds
-configuration-specific errors only for ambiguous or disconnected inputs, such
-as:
-
-- supplying both a schema and model artifacts;
-- a header target that differs from the model schema target;
-- a routed backend without a registered runner;
-- missing specification, model or dataset files.
-
-## Current Constraints
-
-The public runtime currently executes the default Z3 numerical-affine profile.
-It does not yet provide:
-
-- timeouts;
-- parallel property execution;
-- multi-backend comparison;
-- persistent execution traces;
-- replay for estimators without a conventional `predict(...)` interface.
+- the model must expose compatible prediction behavior;
+- point inputs must be reconstructible in `ModelSchema` order;
+- preprocessing remains outside V1 unless already embodied in a future supported encoder;
+- alternating quantifiers are rejected before execution;
+- replay is unavailable when required point values or model outputs are incomplete.

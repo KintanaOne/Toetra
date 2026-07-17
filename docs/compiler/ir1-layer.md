@@ -39,6 +39,10 @@ IR1 receives semantically validated properties and produces backend-independent 
 |---|---|
 | `VerificationTask` | Top-level verification unit for one property. |
 | `ScopeIR` | Semantic scope extracted from LHS. |
+| `PointBindingIR` | Stable identity and binding kind of one input point. |
+| `QuantifierBinderIR` | One ordered expanded quantifier frame. |
+| `ModelEvaluationIR` | Structured `(model, point, target)` evaluation identity. |
+| `RestrictionIR` | Canonical `where` or neighborhood relation with provenance. |
 | `NeighborhoodIR` | Perturbation space or local neighborhood. |
 | `DomainIR` | Typed domain constraints with resolved subjects and preserved boundary/literal kinds. |
 | `QueryIR` | RHS verification expression. |
@@ -77,6 +81,10 @@ VerificationTask(
 IR1 is responsible for:
 
 - representing semantic scope explicitly;
+- preserving exact point identity across scope, domain, features and outputs;
+- preserving ordered and alternating binder chains;
+- preserving canonical restrictions separately from the property formula;
+- representing indexed model outputs as structured model evaluations;
 - representing RHS logic as backend-independent nodes;
 - preserving resolved semantic bindings;
 - flattening associative boolean operators where appropriate;
@@ -107,6 +115,10 @@ IR1 must preserve:
 - property type;
 - semantic scope kind;
 - variable roles;
+- exact point bindings and binding kinds;
+- quantifier order and lexical depth;
+- restriction and sugar provenance;
+- model-evaluation identity;
 - neighborhood parameters;
 - domain restrictions;
 - resolved entity references;
@@ -169,7 +181,7 @@ ComparisonIR(entity=None, feature="age", ...)
 
 ---
 
-## Quantified Scope Preservation
+## Point and Quantifier Preservation
 
 For a validated scope such as:
 
@@ -177,15 +189,21 @@ For a validated scope such as:
 forall applicant => target <= 7
 ```
 
-IR1 must preserve:
+IR1 preserves:
 
 ```text
 kind = quantifier
 variables = {"applicant": "symbolic"}
-quantifier = forall
+points = (PointBindingIR("applicant", UNIVERSAL),)
+binders = (QuantifierBinderIR(FORALL, applicant),)
 ```
 
-The translator must not synthesize `_x` or rename the declared variable. Any input reference reaching IR1 must already resolve to `applicant`. A target-only assertion remains valid because model assumptions connect the output to the quantified input later in the verification condition.
+The translator must not synthesize `_x` or rename the declared variable. Grouped
+and nested binders are expanded in source order. Alternating chains remain
+ordered and are not projected to one coarse quantifier.
+
+The historical `variables` and homogeneous `quantifier` fields remain temporary
+compatibility views for IR2 consumers that have not yet migrated.
 
 ---
 
@@ -216,6 +234,8 @@ DomainIR(
 ```
 
 IR1 must not collapse domains into an untyped `name`/`args` dictionary. It preserves semantic resolution and source provenance while remaining backend-independent.
+
+Each domain entry also carries the exact `PointBindingIR` owning the feature.
 
 The later IR2/aggregation boundary lowers interval and finite-set constraints into logical assumptions tagged with `AssumptionSource.DOMAIN`.
 
@@ -248,14 +268,28 @@ ComparisonIR(
 
 Required guarantees:
 
-- feature references use semantic resolved entities;
-- model-output references remain distinct from input features;
+- feature references reuse the exact resolved `PointBindingIR`;
+- model-output references contain `ModelEvaluationIR(model, point, target)`;
+- repeated references to the same model and point reuse one evaluation identity;
 - arithmetic operators are canonical;
 - expression order and associativity are preserved;
 - no Z3 expression is created;
 - no unsupported nonlinear form is silently converted into an affine form.
 
 Logical normalization treats a complete `ComparisonIR` as an atom. Arithmetic children are not boolean-normalized.
+
+## Restriction Preservation
+
+`where` and lowered `neighborhood` relations remain available as a separate
+`ScopeIR.restriction` artifact with origin and source span. The task query
+contains the canonical language formula selected by semantic validation.
+
+NNF rewrites the formula and restriction logical trees without changing:
+
+- point identity;
+- binder order;
+- model-evaluation identity;
+- source provenance.
 
 ## IR1 Output
 

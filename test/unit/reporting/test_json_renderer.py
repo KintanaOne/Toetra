@@ -142,7 +142,7 @@ def test_report_json_matches_versioned_golden_contract() -> None:
         / "fixtures"
         / "reporting"
         / "golden"
-        / "verification_report_v1.json"
+        / "verification_report_v2.json"
     )
 
     assert _report().to_dict() == json.loads(golden_path.read_text(encoding="utf-8"))

@@ -1,5 +1,6 @@
 from lark import Tree
 
+from dsl.builder.anchors import parse_anchor_declaration
 from dsl.builder.core.utils import find_all_nodes
 from dsl.builder.header import parse_header
 from dsl.builder.property import parse_property
@@ -18,6 +19,14 @@ def parse_program(tree: Tree) -> ProgramNode:
     header = parse_header(tree)
 
     # ------------------------------------------------------------------------
+    # GLOBAL ANCHORS
+    # ------------------------------------------------------------------------
+    anchors = [
+        parse_anchor_declaration(anchor)
+        for anchor in find_all_nodes(tree, "anchor_declaration")
+    ]
+
+    # ------------------------------------------------------------------------
     # BODY
     # ------------------------------------------------------------------------
     properties = [parse_property(p) for p in find_all_nodes(tree, "property_section")]
@@ -25,4 +34,4 @@ def parse_program(tree: Tree) -> ProgramNode:
     # ------------------------------------------------------------------------
     # PROGRAM NODE
     # ------------------------------------------------------------------------
-    return ProgramNode(header=header, body=properties)
+    return ProgramNode(header=header, body=properties, anchors=anchors)

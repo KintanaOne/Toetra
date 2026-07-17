@@ -227,3 +227,33 @@ The user-facing presentation layer is complete for terminal, automation and
 notebook workflows. Future presentation work may add richer domain/model
 explanations, interactive exploration or a web application, but those are not
 required by the current V1 profile.
+
+## Point-Aware Evidence
+
+Patch 15.11 adds grouped evidence without removing the historical one-point conveniences.
+
+```python
+report.point_values
+# {"x0": {"a": 1.0}, "x1": {"a": 2.0}}
+
+report.point_output_values
+# {"x0": {"score": 3.0}, "x1": {"score": 5.0}}
+```
+
+Each `ReportPointEvidence` retains its binding kind, source values, solver values, provenance and indexed outputs. `input_values` and `output_values` remain available only when one point is unambiguous; multi-point flattening raises explicitly.
+
+JSON emits a structured `points` array for multi-point evidence and anchored evidence. Text and HTML render one point group at a time. Session records keep their stable columns while storing nested point maps in `inputs` and `outputs` for multi-point properties.
+
+## Multi-Point Replay
+
+Replay is performed once for every distinct point referenced by a model output:
+
+```python
+replay = finding.replay()
+replay.inputs_by_point
+replay.outputs_by_point
+replay.relation_consistent
+replay.assertion_consistent
+```
+
+A replay is consistent only when every formal/concrete output comparison is within tolerance and every supported concrete relation/assertion check agrees with the formal result. Missing model features produce a `REPLAY_POINT_MISSING` failure; FORML never reports a silently partial replay.

@@ -34,9 +34,18 @@ def references_model_output(node: ScalarExpressionIR) -> bool:
     )
 
 
-def format_scalar_expression(node: ScalarExpressionIR) -> str:
+def format_scalar_expression(
+    node: ScalarExpressionIR,
+    *,
+    point_aware: bool = False,
+) -> str:
     """Render a scalar tree while preserving operator precedence and shape."""
-    return _format(node, parent_precedence=0, is_right_child=False)
+    return _format(
+        node,
+        parent_precedence=0,
+        is_right_child=False,
+        point_aware=point_aware,
+    )
 
 
 def _format(
@@ -44,6 +53,7 @@ def _format(
     *,
     parent_precedence: int,
     is_right_child: bool,
+    point_aware: bool,
 ) -> str:
     precedence = _precedence(node)
 
@@ -54,12 +64,16 @@ def _format(
     elif isinstance(node, SymbolLiteralIR):
         text = node.name
     elif isinstance(node, TargetExpressionIR):
-        text = f"{node.entity}.{node.feature}"
+        if point_aware and node.point is not None:
+            text = f"target[{node.point.name}]"
+        else:
+            text = f"{node.entity}.{node.feature}"
     elif isinstance(node, UnaryArithmeticExpressionIR):
         operand = _format(
             node.operand,
             parent_precedence=precedence,
             is_right_child=True,
+            point_aware=point_aware,
         )
         text = f"{node.operator.value}{operand}"
     elif isinstance(node, BinaryArithmeticExpressionIR):
@@ -67,11 +81,13 @@ def _format(
             node.left,
             parent_precedence=precedence,
             is_right_child=False,
+            point_aware=point_aware,
         )
         right = _format(
             node.right,
             parent_precedence=precedence,
             is_right_child=True,
+            point_aware=point_aware,
         )
         text = f"{left} {node.operator.value} {right}"
     else:

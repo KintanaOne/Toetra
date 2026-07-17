@@ -73,6 +73,30 @@ def _pretty_scope(scope: ScopeIR) -> list[str]:
     for var, role in scope.variables.items():
         lines.append(f"    - {var:<4} → {role}")
 
+    if scope.points:
+        lines.append("\n  Points      :")
+        for point in scope.points:
+            generated = " generated" if point.generated else ""
+            lines.append(
+                f"    - {point.name:<12} → {point.binding_kind}"
+                f" (depth={point.lexical_depth}{generated})"
+            )
+
+    if scope.binders:
+        lines.append("\n  Binders     :")
+        for binder in scope.binders:
+            lines.append(f"    - {binder.quantifier} {binder.point.name}")
+
+    if scope.default_point is not None:
+        lines.append(f"\n  Default     : {scope.default_point.name}")
+
+    if scope.provenance is not None:
+        lines.append(f"  Source form : {scope.provenance.source_kind}")
+
+    if scope.restriction is not None:
+        lines.append(f"\n  Restriction ({scope.restriction.provenance.origin}) :")
+        lines.extend(_pretty_logical(scope.restriction.expression, indent=4))
+
     # Neighborhood
     if scope.neighborhood:
         n = scope.neighborhood
@@ -142,8 +166,8 @@ def _pretty_logical(node: LogicalIR, indent=0) -> list[str]:
     # Comparison
     # -----------------------------
     if isinstance(node, ComparisonIR):
-        left = format_scalar_expression(node.left)
-        right = format_scalar_expression(node.right)
+        left = format_scalar_expression(node.left, point_aware=True)
+        right = format_scalar_expression(node.right, point_aware=True)
 
         dtype = ""
         if isinstance(node.left, (AttributeExpressionIR, TargetExpressionIR)):

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Sequence, cast
 
-from dsl.ir.ir1.nodes import ScopeIR
+from dsl.ir.ir1.nodes import ModelEvaluationIR
 from dsl.ir.ir2.enums import AssumptionSource
 from dsl.ir.ir2.dsl.nodes import AssumptionIR2, NNFFormulaIR2
 from dsl.ir.ir2.model.affine import (
@@ -20,14 +20,15 @@ from model.schema.model_schema import ModelSchema
 
 
 class SklearnLinearRegressorEncoder:
-    """Encode a simple single-output sklearn LinearRegression schema.
+    """Encode a single-output sklearn LinearRegression schema per point.
 
-    The encoder emits one backend-independent MODEL assumption:
+    For each requested evaluation ``(model, point, target)`` the encoder emits
+    one backend-independent equation:
 
-        _model.<target> == w1*x.f1 + ... + wn*x.fn + b
+        target[point] == w1*point.f1 + ... + wn*point.fn + b
 
-    It deliberately does not build solver expressions. The returned assumption is
-    NNF and can be aggregated by IR2 before CNF/DNF/NNF adaptation.
+    Coefficients and intercept are shared model parameters, while each equation
+    retains a distinct point and output-evaluation identity.
     """
 
     supported_model_types = frozenset({"LinearRegression"})
@@ -35,7 +36,7 @@ class SklearnLinearRegressorEncoder:
     def encode(
         self,
         schema: ModelSchema,
-        scope: ScopeIR,
+        evaluations: tuple[ModelEvaluationIR, ...],
         *,
         context: ModelEncodingContext | None = None,
     ) -> tuple[AssumptionIR2, ...]:
@@ -58,6 +59,10 @@ class SklearnLinearRegressorEncoder:
                 "SklearnLinearRegressorEncoder only supports regression schemas."
             )
 
+        unique_evaluations = tuple(dict.fromkeys(evaluations))
+        if not unique_evaluations:
+            return ()
+
         linear_metadata = self._linear_metadata(schema)
         feature_names = self._feature_names(schema, linear_metadata)
         coefficients = self._single_output_coefficients(linear_metadata)
@@ -69,46 +74,73 @@ class SklearnLinearRegressorEncoder:
                 f"{len(coefficients)} coefficients for {len(feature_names)} features."
             )
 
-        input_entity = self._select_input_entity(scope)
-
-        terms = tuple(
-            AffineTermIR2(
-                entity=input_entity,
-                feature=feature_name,
-                coefficient=float(coefficient),
+        assumptions: list[AssumptionIR2] = []
+        for evaluation in unique_evaluations:
+            self._validate_evaluation(schema, evaluation)
+            point = evaluation.point
+            terms = tuple(
+                AffineTermIR2(
+                    entity=point.name,
+                    feature=feature_name,
+                    coefficient=float(coefficient),
+                    point=point,
+                )
+                for feature_name, coefficient in zip(feature_names, coefficients)
             )
-            for feature_name, coefficient in zip(feature_names, coefficients)
-        )
-
-        expression = AffineExpressionIR2(
-            terms=terms,
-            bias=float(intercept),
-        )
-
-        atom = AffineOutputConstraintIR2(
-            output_entity="_model",
-            output_feature=schema.target,
-            op=EnumComparisonOperator.EQ,
-            expression=expression,
-            metadata={
-                "framework": schema.framework.value,
-                "model_type": schema.model_type,
-                "task": schema.task,
-            },
-        )
-
-        return (
-            AssumptionIR2(
-                source=AssumptionSource.MODEL,
-                formula=NNFFormulaIR2(expression=atom),
-                description="sklearn linear regression output equation",
+            expression = AffineExpressionIR2(
+                terms=terms,
+                bias=float(intercept),
+            )
+            atom = AffineOutputConstraintIR2(
+                output_entity="_model",
+                output_feature=schema.target,
+                op=EnumComparisonOperator.EQ,
+                expression=expression,
+                evaluation=evaluation,
                 metadata={
-                    "encoder": self.__class__.__name__,
+                    "framework": schema.framework.value,
                     "model_type": schema.model_type,
-                    "target": schema.target,
+                    "task": schema.task,
+                    "model_identity": evaluation.model_identity,
+                    "point": point.name,
+                    "target": evaluation.target_name,
                 },
-            ),
-        )
+            )
+            assumptions.append(
+                AssumptionIR2(
+                    source=AssumptionSource.MODEL,
+                    formula=NNFFormulaIR2(expression=atom),
+                    description=(
+                        "sklearn linear regression output equation "
+                        f"for point {point.name}"
+                    ),
+                    metadata={
+                        "encoder": self.__class__.__name__,
+                        "model_type": schema.model_type,
+                        "model_identity": evaluation.model_identity,
+                        "point": point.name,
+                        "point_binding_kind": point.binding_kind,
+                        "target": schema.target,
+                    },
+                )
+            )
+
+        return tuple(assumptions)
+
+    @staticmethod
+    def _validate_evaluation(
+        schema: ModelSchema,
+        evaluation: ModelEvaluationIR,
+    ) -> None:
+        if evaluation.target_name != schema.target:
+            raise UnsupportedModelParameterError(
+                "Requested evaluation target does not match ModelSchema.target: "
+                f"{evaluation.target_name!r} != {schema.target!r}."
+            )
+        if not evaluation.model_identity:
+            raise UnsupportedModelParameterError(
+                "Requested model evaluation is missing its model identity."
+            )
 
     def _linear_metadata(self, schema: ModelSchema) -> dict[str, Any]:
         raw = schema.metadata.get("linear")
@@ -178,19 +210,3 @@ class SklearnLinearRegressorEncoder:
             intercept = intercept[0]
 
         return float(intercept)
-
-    def _select_input_entity(self, scope: ScopeIR) -> str:
-        for variable, role in scope.variables.items():
-            if role == "perturbation":
-                return variable
-
-        for variable, role in scope.variables.items():
-            if role in {"anchor", "symbolic"}:
-                return variable
-
-        if scope.variables:
-            return next(iter(scope.variables.keys()))
-
-        raise UnsupportedModelParameterError(
-            "Cannot encode model without scope variables."
-        )

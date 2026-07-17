@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
@@ -15,6 +15,124 @@ from dsl.language.vocabulary.operators import (
 from dsl.language.vocabulary.problems import EnumProblem
 from dsl.language.vocabulary.properties import EnumProperty
 from dsl.semantic.types.enums import EnumArithmeticClass, EnumDataType
+
+# =============================================================================
+# POINT AND SOURCE IDENTITIES
+# =============================================================================
+
+
+@dataclass(frozen=True)
+class SourceSpanIR:
+    """Backend-independent copy of one source range."""
+
+    line: int
+    column: int
+    end_line: int
+    end_column: int
+
+
+@dataclass(frozen=True)
+class PointFeatureIR:
+    """One immutable model-input feature carried by a point identity."""
+
+    name: str
+    dtype: EnumDataType
+    nullable: bool
+
+
+@dataclass(frozen=True)
+class PointLiteralIR:
+    """One immutable concrete literal attached to an anchored point."""
+
+    value: Any
+    dtype: EnumDataType
+
+
+@dataclass(frozen=True)
+class PointConcreteValueIR:
+    """Concrete feature value retained for inline-anchor assumptions."""
+
+    feature: str
+    literal: PointLiteralIR
+
+
+@dataclass(frozen=True)
+class AnchorReferenceIR:
+    """Single-source lookup metadata retained for runtime resolution."""
+
+    key: str
+    value: PointLiteralIR
+
+
+@dataclass(frozen=True)
+class AnchorResolutionIR:
+    """Concrete lookup provenance retained after runtime resolution."""
+
+    key: str
+    lookup_value: PointLiteralIR
+    source_kind: str
+    source_reference: str | None
+    row_index: str
+
+
+@dataclass(frozen=True)
+class PointBindingIR:
+    """Stable IR1 identity for one concrete or symbolic model-input point."""
+
+    name: str
+    binding_kind: str
+    lexical_depth: int = 0
+    source_span: SourceSpanIR | None = None
+    generated: bool = False
+    feature_schema: tuple[PointFeatureIR, ...] = ()
+    concrete_values: tuple[PointConcreteValueIR, ...] = ()
+    reference: AnchorReferenceIR | None = None
+    resolution: AnchorResolutionIR | None = None
+
+
+@dataclass(frozen=True)
+class QuantifierBinderIR:
+    """One ordered, expanded point binder preserved in IR1."""
+
+    quantifier: str
+    point: PointBindingIR
+    source_span: SourceSpanIR | None = None
+    generated: bool = False
+
+
+@dataclass(frozen=True)
+class ModelEvaluationIR:
+    """Structured identity of one model invocation at one point."""
+
+    model_identity: str
+    point: PointBindingIR
+    target_name: str
+
+
+@dataclass(frozen=True)
+class RestrictionProvenanceIR:
+    """Source surface that introduced a canonical restriction."""
+
+    origin: str
+    source_span: SourceSpanIR | None = None
+
+
+@dataclass(frozen=True)
+class RestrictionIR:
+    """Canonical restriction kept distinct from the property formula."""
+
+    expression: LogicalIR
+    provenance: RestrictionProvenanceIR
+
+
+@dataclass(frozen=True)
+class ScopeProvenanceIR:
+    """Source scope form retained for diagnostics and migration."""
+
+    source_kind: str | None
+    source_span: SourceSpanIR | None = None
+    legacy_compatibility: bool = False
+
 
 # =============================================================================
 # ROOT EXECUTION UNIT
@@ -72,6 +190,11 @@ class ScopeIR:
     domain: DomainIR | None
 
     quantifier: str | None = None
+    points: tuple[PointBindingIR, ...] = ()
+    binders: tuple[QuantifierBinderIR, ...] = ()
+    restriction: RestrictionIR | None = None
+    default_point: PointBindingIR | None = None
+    provenance: ScopeProvenanceIR | None = None
 
 
 @dataclass
@@ -113,6 +236,7 @@ class AttributeExpressionIR(ScalarExpressionIR):
     entity: str
     feature: str
     dtype: EnumDataType | None = None
+    point: PointBindingIR | None = None
 
 
 @dataclass
@@ -120,6 +244,17 @@ class TargetExpressionIR(ScalarExpressionIR):
     feature: str
     entity: str = "_model"
     dtype: EnumDataType | None = None
+    evaluation: ModelEvaluationIR | None = None
+
+    @property
+    def point(self) -> PointBindingIR | None:
+        """Return the exact point selected by this output reference."""
+        return self.evaluation.point if self.evaluation is not None else None
+
+    @property
+    def model_identity(self) -> str | None:
+        """Return the declared model identity when point-aware metadata exists."""
+        return self.evaluation.model_identity if self.evaluation is not None else None
 
 
 @dataclass
@@ -171,6 +306,7 @@ class DomainEntryIR:
     feature: str
     constraint: DomainConstraintIR
     dtype: EnumDataType | None = None
+    point: PointBindingIR | None = field(default=None, compare=False)
 
 
 @dataclass

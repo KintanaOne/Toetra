@@ -51,10 +51,14 @@ class SklearnIntrospector(BaseIntrospector):
     # ======================================================
 
     def _detect_features(self) -> dict[str, FeatureSchema]:
-        """
-        Infer feature schema from the dataset.
+        """Infer the model input schema from model metadata and the dataset.
 
-        The target column is excluded from features when known.
+        When sklearn exposes ``feature_names_in_``, those names are the source
+        of truth for model inputs. The dataset may then contain additional
+        lookup or provenance columns (for example an anchor identifier), which
+        must not leak into ``ModelSchema.features``. Models without named-input
+        metadata retain the historical fallback of using every non-target
+        dataset column.
         """
 
         if self.source_path is None:
@@ -64,26 +68,40 @@ class SklearnIntrospector(BaseIntrospector):
             )
 
         data = pd.read_csv(self.source_path)
-
-        target = self._detect_target()
-
-        features: dict[str, FeatureSchema] = {}
-
-        for column, dtype in data.dtypes.items():
-            column_name = str(column)
-
-            if column_name == target:
-                continue
-
-            enum_dtype = self._map_dtype(dtype)
-
-            features[column_name] = FeatureSchema(
-                name=column_name,
-                dtype=enum_dtype,
-                nullable=bool(data[column].isnull().any()),
+        feature_names = self._model_feature_names()
+        if feature_names is None:
+            target = self._detect_target()
+            feature_names = tuple(
+                str(column) for column in data.columns if str(column) != target
             )
 
-        return features
+        missing = [name for name in feature_names if name not in data.columns]
+        if missing:
+            raise MissingFeatureMetadataError(
+                "Reference dataset is missing model-declared feature(s): "
+                + ", ".join(missing)
+            )
+
+        return {
+            name: FeatureSchema(
+                name=name,
+                dtype=self._map_dtype(data[name].dtype),
+                nullable=bool(data[name].isnull().any()),
+            )
+            for name in feature_names
+        }
+
+    def _model_feature_names(self) -> tuple[str, ...] | None:
+        """Return sklearn's ordered named-input contract when available."""
+
+        raw_names = self._safe_getattr("feature_names_in_")
+        if raw_names is None:
+            return None
+
+        normalized = self._to_python(raw_names)
+        if not isinstance(normalized, list):
+            normalized = list(normalized)
+        return tuple(str(name) for name in normalized)
 
     # ======================================================
     # Pandas → FORML type mapping

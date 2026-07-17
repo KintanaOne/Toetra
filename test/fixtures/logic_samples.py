@@ -31,7 +31,7 @@ OPERATOR_PRECEDENCE_PROPERTY = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    check_at x0 => x0.a <= 1 OR x0.b <= 2 AND x0.c <= 3
+    forall x0 => x0.a <= 1 OR x0.b <= 2 AND x0.c <= 3
     """
 
 
@@ -40,7 +40,7 @@ PARENTHESES_PRECEDENCE_PROPERTY = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    check_at x0 => (x0.a <= 1 OR x0.b <= 2) AND x0.c <= 3
+    forall x0 => (x0.a <= 1 OR x0.b <= 2) AND x0.c <= 3
     """
 
 
@@ -49,7 +49,7 @@ NOT_PRECEDENCE_PROPERTY = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    check_at x0 =>
+    forall x0 =>
         NOT x0.a <= 1 AND x0.b <= 2
     """
 
@@ -63,7 +63,7 @@ SIMPLE_LOGIC_IMPLICATION_PROPERTY = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    check_at x0 =>
+    forall x0 =>
         x0.a <= 1 -> x0.b <= 2
     """
 
@@ -73,7 +73,7 @@ NESTED_IMPLICATION_PROPERTY = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    check_at x0 =>
+    forall x0 =>
         x0.a <= 1 -> x0.b <= 2 -> x0.c <= 3
     """
 
@@ -86,7 +86,7 @@ INVALID_LOGIC_SYNTAX = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    check_at x0 =>
+    forall x0 =>
     x0.a <= OR x0.b <= 2
     """
 
@@ -96,7 +96,7 @@ INVALID_PARENTHESES = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    check_at x0 =>
+    forall x0 =>
     (x0.a <= 1 OR x0.b <= 2
     """
 
@@ -109,7 +109,7 @@ VALID_TRIPLE_OR_PROPERTY = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    check_at x0 =>
+    forall x0 =>
         x0.a <= 1 OR x0.b <= 2 OR x0.c <= 3
     """
 
@@ -119,7 +119,7 @@ VALID_TRIPLE_AND_PROPERTY = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    check_at x0 =>
+    forall x0 =>
         x0.a <= 1 AND x0.b <= 2 AND x0.c <= 3
     """
 
@@ -128,6 +128,6 @@ VALID_IMPLICATION_PROPERTY = """
     target := MyTarget
 
     [ROBUSTNESS]:
-    check_at x0 =>
+    forall x0 =>
         x0.a <= 1 -> x0.b <= 2
     """

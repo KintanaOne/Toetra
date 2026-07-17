@@ -11,6 +11,7 @@ from dsl.ast.nodes.domain import (
 from dsl.ast.nodes.expressions import (
     AtExprNode,
     CheckAtExprNode,
+    DirectExprNode,
     PairwiseExprNode,
     QuantifierExprNode,
 )
@@ -25,10 +26,17 @@ from dsl.ir.ir1.nodes import (
     FiniteSetDomainIR,
     IntervalDomainIR,
     NeighborhoodIR,
+    PointBindingIR,
+    QuantifierBinderIR,
+    RestrictionIR,
+    ScopeProvenanceIR,
     ScopeIR,
     SymbolLiteralIR,
 )
+from dsl.ir.ir1.points import PointIRRegistry, copy_source_span
 from dsl.ir.ir1.scalar_translator import ScalarExpressionTranslator
+from dsl.semantic.context.context import SemanticContext
+from dsl.semantic.symbols.point import PointBindingKind, PointSymbol
 
 
 class ScopeTranslator:
@@ -44,10 +52,35 @@ class ScopeTranslator:
     def __init__(
         self,
         scalar_translator: ScalarExpressionTranslator | None = None,
+        point_registry: PointIRRegistry | None = None,
     ) -> None:
-        self.scalar_translator = scalar_translator or ScalarExpressionTranslator()
+        self.point_registry = point_registry or PointIRRegistry()
+        self.scalar_translator = scalar_translator or ScalarExpressionTranslator(
+            self.point_registry
+        )
 
-    def translate(self, scope) -> ScopeIR:
+    def translate(
+        self,
+        scope,
+        *,
+        context: SemanticContext | None = None,
+        restriction: RestrictionIR | None = None,
+    ) -> ScopeIR:
+        if context is not None:
+            return self._translate_semantic_context(
+                scope,
+                context=context,
+                restriction=restriction,
+            )
+
+        if isinstance(scope, DirectExprNode):
+            return ScopeIR(
+                kind="pointwise",
+                variables={},
+                neighborhood=None,
+                domain=None,
+            )
+
         if isinstance(scope, AtExprNode):
             return self._translate_at(scope)
 
@@ -61,6 +94,58 @@ class ScopeTranslator:
             return self._translate_quantifier(scope)
 
         raise ValueError(f"Unsupported scope node type: {type(scope)}")
+
+    def _translate_semantic_context(
+        self,
+        scope,
+        *,
+        context: SemanticContext,
+        restriction: RestrictionIR | None,
+    ) -> ScopeIR:
+        for frame in context.binder_frames:
+            self.point_registry.register_frame(frame)
+
+        points = tuple(
+            self.point_registry.point(point)
+            for point in context.point_environment.all()
+        )
+        binders = tuple(
+            QuantifierBinderIR(
+                quantifier=frame.quantifier,
+                point=self.point_registry.point(frame.point),
+                source_span=copy_source_span(frame.source_span),
+                generated=frame.generated,
+            )
+            for frame in context.binder_frames
+        )
+
+        default_point: PointBindingIR | None = None
+        if context.default_entity is not None:
+            semantic_default = context.point_environment.resolve(context.default_entity)
+            if semantic_default is not None:
+                default_point = self.point_registry.point(semantic_default)
+
+        quantifier = self._compatibility_quantifier(context)
+
+        return ScopeIR(
+            kind=context.type.value,
+            variables={
+                point.name: self._compatibility_role(point)
+                for point in context.point_environment.all()
+            },
+            neighborhood=self._translate_neighborhood(context.neighborhood),
+            domain=self._translate_domain(context.domain),
+            quantifier=quantifier,
+            points=points,
+            binders=binders,
+            restriction=restriction,
+            default_point=default_point,
+            provenance=ScopeProvenanceIR(
+                source_kind=context.source_scope_kind,
+                source_span=copy_source_span(getattr(scope, "source_span", None)),
+                legacy_compatibility=context.legacy_scope_compatibility,
+            ),
+        )
 
     # ------------------------------------------------------------------
     # AT
@@ -120,6 +205,23 @@ class ScopeTranslator:
             domain=self._translate_domain(scope.domain),
             quantifier=quantifier,
         )
+
+    @staticmethod
+    def _compatibility_quantifier(context: SemanticContext) -> str | None:
+        """Project homogeneous chains to the legacy single quantifier field."""
+        chain = context.quantifier_chain
+        if not chain:
+            return context.quantifier
+        first = chain[0]
+        if all(quantifier == first for quantifier in chain):
+            return first
+        return None
+
+    @staticmethod
+    def _compatibility_role(point: PointSymbol) -> str:
+        if point.binding_kind is PointBindingKind.PERTURBATION:
+            return "perturbation"
+        return point.kind
 
     # ------------------------------------------------------------------
     # HELPERS
@@ -185,6 +287,7 @@ class ScopeTranslator:
                     feature=subject.feature,
                     constraint=self._translate_domain_constraint(entry.constraint),
                     dtype=subject.dtype,
+                    point=subject.point,
                 )
             )
 

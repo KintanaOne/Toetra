@@ -8,7 +8,7 @@ from dsl.ir.ir1.nodes import (
     AttributeExpressionIR,
     ComparisonIR,
     ConstantExpressionIR,
-    ScopeIR,
+    ModelEvaluationIR,
 )
 from dsl.ir.ir2.enums import AssumptionSource
 from dsl.ir.ir2.nodes import AssumptionIR2, NNFFormulaIR2
@@ -33,7 +33,7 @@ class FakeModelEncoder:
     def encode(
         self,
         schema: ModelSchema,
-        scope: ScopeIR,
+        evaluations: tuple[ModelEvaluationIR, ...],
         *,
         context: ModelEncodingContext | None = None,
     ) -> tuple[AssumptionIR2, ...]:
@@ -47,15 +47,6 @@ def _schema(model_type: str = "FakeModel") -> ModelSchema:
         features={},
         target="target",
         task="classification",
-    )
-
-
-def _scope() -> ScopeIR:
-    return ScopeIR(
-        kind="pointwise",
-        variables={"x": "anchor"},
-        neighborhood=None,
-        domain=None,
     )
 
 
@@ -102,7 +93,7 @@ def test_factory_encodes_and_validates_model_assumptions() -> None:
 
     factory = ModelEncoderFactory(registry)
 
-    assert factory.encode(_schema(), _scope()) == (assumption,)
+    assert factory.encode(_schema(), ()) == (assumption,)
 
 
 def test_factory_raises_when_no_encoder_is_registered() -> None:

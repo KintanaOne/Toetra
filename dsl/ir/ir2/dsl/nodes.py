@@ -3,7 +3,14 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, TYPE_CHECKING, TypeAlias
 
-from dsl.ir.ir1.nodes import AtomicIR, LogicalIR, ScopeIR
+from dsl.ir.ir1.nodes import (
+    AtomicIR,
+    LogicalIR,
+    ModelEvaluationIR,
+    PointBindingIR,
+    QuantifierBinderIR,
+    ScopeIR,
+)
 from dsl.ir.ir2.enums import (
     AssumptionSource,
     NormalFormKind,
@@ -72,6 +79,35 @@ FormulaIR2: TypeAlias = NNFFormulaIR2 | CNFFormulaIR2 | DNFFormulaIR2
 
 
 @dataclass(frozen=True)
+class PointIdentityMapIR2:
+    """Trace one source-visible point name to its exact IR point identity."""
+
+    source_name: str
+    ir_point: PointBindingIR
+
+
+@dataclass(frozen=True)
+class QuantifierStructureIR2:
+    """Ordered quantifier profile retained for capability matching."""
+
+    binders: tuple[QuantifierBinderIR, ...] = ()
+    binder_sequence: tuple[str, ...] = ()
+    alternation_depth: int = 0
+
+    @property
+    def is_quantified(self) -> bool:
+        return bool(self.binders or self.binder_sequence)
+
+    @property
+    def is_alternating(self) -> bool:
+        return self.alternation_depth > 0
+
+    @property
+    def outermost_quantifier(self) -> str | None:
+        return self.binder_sequence[0] if self.binder_sequence else None
+
+
+@dataclass(frozen=True)
 class AssumptionIR2:
     """A typed assumption used to build Γ ∧ ¬P.
 
@@ -105,5 +141,10 @@ class VerificationTaskIR2:
     semantics: VerificationSemantics
     normal_form: NormalFormKind
     requirements: IR2Requirements
+    point_mappings: tuple[PointIdentityMapIR2, ...] = ()
+    model_evaluations: tuple[ModelEvaluationIR, ...] = ()
+    quantifier_structure: QuantifierStructureIR2 = field(
+        default_factory=QuantifierStructureIR2
+    )
     metadata: dict[str, Any] = field(default_factory=dict)
     diagnostics: tuple[IR2Diagnostic, ...] = ()

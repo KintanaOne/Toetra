@@ -12,7 +12,9 @@ from dsl.ir.ir1.nodes import (
     NotIR,
     OrIR,
     ProblemIR,
+    PointBindingIR,
     ScalarExpressionIR,
+    SourceSpanIR,
     TargetExpressionIR,
     UnaryArithmeticExpressionIR,
     VerificationTask,
@@ -92,6 +94,7 @@ def serialize_scalar(node: ScalarExpressionIR):
             "entity": node.entity,
             "feature": node.feature,
             "dtype": node.dtype.value if node.dtype is not None else None,
+            "point": serialize_point(node.point),
         }
 
     if isinstance(node, TargetExpressionIR):
@@ -100,6 +103,15 @@ def serialize_scalar(node: ScalarExpressionIR):
             "entity": node.entity,
             "feature": node.feature,
             "dtype": node.dtype.value if node.dtype is not None else None,
+            "evaluation": (
+                {
+                    "model_identity": node.evaluation.model_identity,
+                    "point": serialize_point(node.evaluation.point),
+                    "target_name": node.evaluation.target_name,
+                }
+                if node.evaluation is not None
+                else None
+            ),
         }
 
     if isinstance(node, UnaryArithmeticExpressionIR):
@@ -186,6 +198,66 @@ def serialize_task(task: VerificationTask):
             "variables": task.scope.variables,
             "neighborhood": None,
             "domain": None,
+            "points": [serialize_point(point) for point in task.scope.points],
+            "binders": [
+                {
+                    "quantifier": binder.quantifier,
+                    "point": binder.point.name,
+                    "generated": binder.generated,
+                    "source_span": serialize_span(binder.source_span),
+                }
+                for binder in task.scope.binders
+            ],
+            "default_point": (
+                task.scope.default_point.name
+                if task.scope.default_point is not None
+                else None
+            ),
+            "provenance": (
+                {
+                    "source_kind": task.scope.provenance.source_kind,
+                    "source_span": serialize_span(task.scope.provenance.source_span),
+                    "legacy_compatibility": (
+                        task.scope.provenance.legacy_compatibility
+                    ),
+                }
+                if task.scope.provenance is not None
+                else None
+            ),
+            "restriction": (
+                {
+                    "origin": task.scope.restriction.provenance.origin,
+                    "source_span": serialize_span(
+                        task.scope.restriction.provenance.source_span
+                    ),
+                    "expression": serialize_logical(task.scope.restriction.expression),
+                }
+                if task.scope.restriction is not None
+                else None
+            ),
         },
         "query": serialize_logical(task.query.expression),
+    }
+
+
+def serialize_point(point: PointBindingIR | None):
+    if point is None:
+        return None
+    return {
+        "name": point.name,
+        "binding_kind": point.binding_kind,
+        "lexical_depth": point.lexical_depth,
+        "generated": point.generated,
+        "source_span": serialize_span(point.source_span),
+    }
+
+
+def serialize_span(span: SourceSpanIR | None):
+    if span is None:
+        return None
+    return {
+        "line": span.line,
+        "column": span.column,
+        "end_line": span.end_line,
+        "end_column": span.end_column,
     }

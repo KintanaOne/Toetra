@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
 from dsl.reporting.values import exact_report_value, python_report_value
 
@@ -30,6 +30,10 @@ class ReportAssignment:
     display_name: str
     value: Any
     kind: ReportAssignmentKind
+    point_name: str | None = None
+    binding_kind: str | None = None
+    model_identity: str | None = None
+    target_name: str | None = None
 
     @property
     def exact_value(self) -> Any:
@@ -47,9 +51,30 @@ class ReportAssignment:
     def field_name(self) -> str:
         """Return the unqualified feature or output name."""
 
+        if self.target_name is not None:
+            return self.target_name
         if self.kind is ReportAssignmentKind.INPUT and "." in self.display_name:
             return self.display_name.split(".", 1)[1]
         return self.display_name
+
+
+@dataclass(frozen=True)
+class ReportPointEvidence:
+    """All public evidence associated with one semantic point."""
+
+    name: str
+    binding_kind: str
+    inputs: tuple[ReportAssignment, ...] = ()
+    outputs: tuple[ReportAssignment, ...] = ()
+    provenance: Mapping[str, Any] | None = None
+
+    @property
+    def input_values(self) -> dict[str, Any]:
+        return {item.field_name: item.python_value for item in self.inputs}
+
+    @property
+    def output_values(self) -> dict[str, Any]:
+        return {item.field_name: item.python_value for item in self.outputs}
 
 
 @dataclass(frozen=True)
@@ -90,6 +115,7 @@ class VerificationReport:
     diagnostics: tuple[BackendResultDiagnostic, ...]
     assumption_count: int
     route_reason: str
+    points: tuple[ReportPointEvidence, ...] = ()
 
     @property
     def inputs(self) -> tuple[ReportAssignment, ...]:
@@ -120,24 +146,45 @@ class VerificationReport:
         return {item.display_name: item.python_value for item in self.inputs}
 
     @property
-    def input_values(self) -> dict[str, Any]:
-        """Return input assignments keyed by unqualified feature names."""
+    def point_values(self) -> dict[str, dict[str, Any]]:
+        """Return input values grouped by exact point identity."""
 
-        values: dict[str, Any] = {}
-        for item in self.inputs:
-            if item.field_name in values:
-                raise ValueError(
-                    "Input feature names are ambiguous without their scope entity: "
-                    f"{item.field_name!r}. Use 'qualified_input_values' instead."
-                )
-            values[item.field_name] = item.python_value
-        return values
+        return {point.name: point.input_values for point in self.points if point.inputs}
+
+    @property
+    def output_values_by_point(self) -> dict[str, dict[str, Any]]:
+        """Return model outputs grouped by evaluation point."""
+
+        return {
+            point.name: point.output_values for point in self.points if point.outputs
+        }
+
+    @property
+    def input_values(self) -> dict[str, Any]:
+        """Return the unique point input vector, rejecting ambiguous flattening."""
+
+        grouped = self.point_values
+        if len(grouped) > 1:
+            raise ValueError(
+                "Input values belong to multiple points. Use 'point_values' instead."
+            )
+        if grouped:
+            return next(iter(grouped.values()))
+        return {}
 
     @property
     def output_values(self) -> dict[str, Any]:
-        """Return model outputs keyed by their public target names."""
+        """Return the unique point outputs, rejecting ambiguous flattening."""
 
-        return {item.field_name: item.python_value for item in self.outputs}
+        grouped = self.output_values_by_point
+        if len(grouped) > 1:
+            raise ValueError(
+                "Model outputs belong to multiple points. "
+                "Use 'output_values_by_point' instead."
+            )
+        if grouped:
+            return next(iter(grouped.values()))
+        return {}
 
     @property
     def has_failure(self) -> bool:

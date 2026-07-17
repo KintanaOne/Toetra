@@ -1,0 +1,10 @@
+model := "linear.joblib"
+target := score
+
+anchor x0 := {
+    a: 1.0,
+    b: 2.0
+}
+
+[BOUND]:
+target[x0] <= 7 using Z3

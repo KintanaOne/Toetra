@@ -1,0 +1,11 @@
+model := "linear.joblib"
+target := score
+
+[LOGIC]:
+forall x0
+exists x1
+with domain(
+    x0.a: [0, 3],
+    x1.a: [0, 3]
+)
+=> target[x1] >= target[x0] using Z3

@@ -238,6 +238,7 @@ class DomainAssumptionEncoder:
             entity=entry.entity,
             feature=entry.feature,
             dtype=entry.dtype,
+            point=entry.point,
         )
 
     @staticmethod
@@ -288,6 +289,10 @@ class DomainAssumptionEncoder:
             "constraint_kind": constraint_kind,
             "expansion_kind": expansion_kind,
         }
+
+        if entry.point is not None:
+            metadata["point"] = entry.point.name
+            metadata["point_binding_kind"] = entry.point.binding_kind
 
         if boundary is not None:
             metadata["boundary"] = boundary

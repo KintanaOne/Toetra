@@ -32,7 +32,7 @@ DOMAIN_COUNTEREXAMPLE_SAMPLE = dedent("""
     target := MyTarget
 
     [LOGIC]:
-    check_at x0 => x0.a <= 2 using Z3
+    forall x0 => x0.a <= 2 using Z3
     """).strip()
 
 

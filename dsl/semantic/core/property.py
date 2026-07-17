@@ -1,6 +1,7 @@
 from dsl.language.vocabulary.properties import EnumProperty
+from dsl.semantic.context.points import PointEnvironment
 from dsl.semantic.rules.backend import validate_backend_for_property
-from dsl.semantic.rules.compatibility import PROPERTY_SCOPE_COMPATIBILITY
+from dsl.semantic.rules.compatibility import validate_property_point_contract
 from dsl.semantic.runtime.annotations import SemanticAnnotations
 
 from dsl.semantic.errors.errors import (
@@ -14,6 +15,7 @@ from dsl.semantic.core.lhs import LHSValidator
 from dsl.semantic.core.binding import BindingValidator
 from dsl.semantic.core.domain import DomainValidator
 from dsl.semantic.core.logic import LogicValidator
+from dsl.semantic.core.restrictions import RestrictionSemanticsBuilder
 from dsl.semantic.core.specification_constants import register_specification_constants
 
 
@@ -63,7 +65,9 @@ class PropertyValidator:
         prop,
         model_schema=None,
         model_target=None,
+        model_identity=None,
         specification_constants=(),
+        global_points: PointEnvironment | None = None,
     ):
 
         self.tracer.log(f"Validating Property: {prop.type}")
@@ -109,9 +113,24 @@ class PropertyValidator:
             #
             # ==================================================
 
-            context = LHSValidator(tracer=self.tracer).validate(scope)
+            context = LHSValidator(
+                tracer=self.tracer,
+                model_schema=model_schema,
+            ).validate(
+                scope,
+                point_environment=(
+                    global_points.fork_for_property()
+                    if global_points is not None
+                    else PointEnvironment()
+                ),
+            )
 
             context.model_target = model_target
+            if not model_identity:
+                raise SemanticError(
+                    "Missing declared model identity in property semantic context"
+                )
+            context.model_identity = model_identity
 
             register_specification_constants(
                 context,
@@ -144,7 +163,10 @@ class PropertyValidator:
             #
             # ==================================================
 
-            root = BindingValidator(tracer=self.tracer).validate(context, root)
+            root = BindingValidator(
+                tracer=self.tracer,
+                model_schema=model_schema,
+            ).validate(context, root)
             assertion.root = root
 
             DomainValidator(model_schema=model_schema).validate(
@@ -165,33 +187,40 @@ class PropertyValidator:
             #
             # ==================================================
 
-            LogicValidator(
+            logic_validator = LogicValidator(
                 tracer=self.tracer,
                 model_schema=model_schema,
-            ).validate(root, context)
+            )
+            logic_validator.validate(root, context)
+
+            if context.canonical_restriction is not None:
+                logic_validator.validate(context.canonical_restriction, context)
+
+            restriction_semantics = RestrictionSemanticsBuilder().build(
+                context=context,
+                assertion=root,
+            )
+            context.restriction_semantics = restriction_semantics
+
+            prop.semantic.assertion_root = root
+            prop.semantic.restriction_root = context.canonical_restriction
+            if restriction_semantics is None:
+                prop.semantic.logical_root = root
+            else:
+                prop.semantic.logical_root = restriction_semantics.language_formula
+                prop.semantic.verification_root = (
+                    restriction_semantics.verification_body
+                )
+                prop.semantic.verification_semantics = (
+                    restriction_semantics.verification_semantics.value
+                )
 
             # ==================================================
-            # PROPERTY ↔ SCOPE COMPATIBILITY
+            # PROPERTY ↔ COMPOSED POINT CONTRACT
             # ==================================================
 
             property_type = self._normalize_property_type(prop.type)
-
-            allowed_scopes = PROPERTY_SCOPE_COMPATIBILITY.get(property_type)
-
-            if allowed_scopes is None:
-                raise InvalidPropertyError(
-                    f"No scope compatibility rule defined for property '{property_type.value}'"
-                )
-
-            if context.type not in allowed_scopes:
-
-                allowed = ", ".join(s.value for s in allowed_scopes)
-
-                raise InvalidPropertyError(
-                    f"Property '{prop.type}' does not support "
-                    f"scope '{context.type.value}'. "
-                    f"Allowed scopes: {allowed}"
-                )
+            validate_property_point_contract(property_type, context)
 
             validate_backend_for_property(
                 property_type=property_type,
@@ -213,8 +242,6 @@ class PropertyValidator:
             # - optimization
             #
             # ==================================================
-
-            prop.semantic.logical_root = root
 
         except SemanticError as e:
 

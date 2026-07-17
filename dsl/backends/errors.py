@@ -22,5 +22,9 @@ class UnsupportedBackendRequirementsError(BackendTranslationError):
     """Raised when direct translation bypasses routing capability checks."""
 
 
+class BackendSymbolCollisionError(BackendTranslationError):
+    """Raised when two structured identities project to one solver symbol."""
+
+
 class UnsupportedScalarExpressionError(BackendTranslationError):
     """Raised when a scalar expression is outside the backend profile."""

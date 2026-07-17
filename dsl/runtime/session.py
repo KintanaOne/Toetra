@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import sys
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, TextIO, overload
+from types import MappingProxyType
+from typing import TYPE_CHECKING, Any, TextIO, overload
 
 from dsl.backends.results import VerificationResult, VerificationStatus
 from dsl.backends.router import BackendRoute
@@ -20,8 +21,13 @@ from dsl.reporting import (
     write_verification_reports_html,
     write_verification_reports_json,
 )
+from dsl.reporting.accessors import report_output_values_by_point, report_point_values
 from dsl.runtime.replay import CounterexampleReplay, replay_verification_report
 from model.schema.model_schema import ModelSchema
+
+if TYPE_CHECKING:
+    from dsl.semantic.symbols.point import ResolvedAnchorBinding
+
 
 _FAILURE_STATUSES = frozenset(
     {
@@ -35,6 +41,18 @@ _SUCCESS_STATUSES = frozenset(
         VerificationStatus.WITNESS,
     }
 )
+
+
+def _unique_group_values(
+    grouped: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any] | None:
+    """Flatten a grouped value only when a single point makes it unambiguous."""
+
+    if len(grouped) > 1:
+        return None
+    if grouped:
+        return dict(next(iter(grouped.values())))
+    return {}
 
 
 @dataclass(frozen=True)
@@ -52,6 +70,7 @@ class VerificationFinding:
     """Ergonomic user view over one completed verification property."""
 
     report: VerificationReport
+    task: VerificationTaskIR2 = field(compare=False)
     schema: ModelSchema = field(compare=False)
     _model: object | None = field(default=None, repr=False, compare=False)
 
@@ -71,6 +90,14 @@ class VerificationFinding:
     def output_values(self) -> dict[str, Any]:
         return self.report.output_values
 
+    @property
+    def point_values(self) -> dict[str, dict[str, Any]]:
+        return report_point_values(self.report)
+
+    @property
+    def output_values_by_point(self) -> dict[str, dict[str, Any]]:
+        return report_output_values_by_point(self.report)
+
     def replay(
         self,
         model: object | None = None,
@@ -87,8 +114,16 @@ class VerificationFinding:
                 "No model instance is attached to this session. Pass model=... "
                 "or call verify(...) with serialized model artifacts."
             )
+        task = self.task
+        if task is None:
+            from dsl.runtime.errors import ReplayUnavailableError
+
+            raise ReplayUnavailableError(
+                "No compiled verification task is attached to this finding"
+            )
         return replay_verification_report(
             self.report,
+            task=task,
             schema=self.schema,
             model=resolved_model,
             tolerance=tolerance,
@@ -115,6 +150,11 @@ class VerificationSession(Sequence[VerificationExecution]):
     model: object | None = field(default=None, repr=False, compare=False)
     model_path: Path | None = None
     dataset_path: Path | None = None
+    anchor_resolutions: Mapping[str, ResolvedAnchorBinding] = field(
+        default_factory=lambda: MappingProxyType({}),
+        repr=False,
+        compare=False,
+    )
 
     def __len__(self) -> int:
         return len(self.executions)
@@ -145,8 +185,13 @@ class VerificationSession(Sequence[VerificationExecution]):
     @property
     def findings(self) -> tuple[VerificationFinding, ...]:
         return tuple(
-            VerificationFinding(report=report, schema=self.schema, _model=self.model)
-            for report in self.reports
+            VerificationFinding(
+                report=execution.report,
+                task=execution.task,
+                schema=self.schema,
+                _model=self.model,
+            )
+            for execution in self.executions
         )
 
     @property
@@ -212,20 +257,26 @@ class VerificationSession(Sequence[VerificationExecution]):
     def to_records(self) -> list[dict[str, Any]]:
         """Return one neutral summary record per property."""
 
-        return [
-            {
-                "property": report.property_index + 1,
-                "type": report.property_type.value,
-                "status": report.status.value,
-                "semantics": report.semantics.value,
-                "specification": report.specification,
-                "backend": report.backend.value,
-                "backend_status": report.backend_status,
-                "inputs": report.input_values,
-                "outputs": report.output_values,
-            }
-            for report in self.reports
-        ]
+        records: list[dict[str, Any]] = []
+        for report in self.reports:
+            points = report_point_values(report)
+            outputs_by_point = report_output_values_by_point(report)
+            records.append(
+                {
+                    "property": report.property_index + 1,
+                    "type": report.property_type.value,
+                    "status": report.status.value,
+                    "semantics": report.semantics.value,
+                    "specification": report.specification,
+                    "backend": report.backend.value,
+                    "backend_status": report.backend_status,
+                    "inputs": _unique_group_values(points),
+                    "outputs": _unique_group_values(outputs_by_point),
+                    "points": points,
+                    "outputs_by_point": outputs_by_point,
+                }
+            )
+        return records
 
     def to_dataframe(self) -> Any:
         """Return the session summary as a pandas data frame."""

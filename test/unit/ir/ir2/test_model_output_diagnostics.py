@@ -1,6 +1,5 @@
 from dsl.ir.ir2.context import IR2BuildContext
 from dsl.ir.ir2.enums import NormalFormKind
-from dsl.ir.ir2.guardrails.diagnostics import DiagnosticSeverity
 from dsl.ir.ir2.guardrails.model_output import IR2_MODEL_OUTPUT_NOT_REFERENCED
 from dsl.ir.ir2.run_ir2 import run_ir2, run_ir2_with_model_schema
 from dsl.semantic.types.enums import EnumDataType
@@ -32,30 +31,24 @@ def _diagnostic_codes(task) -> set[str]:
     return {diagnostic.code for diagnostic in task.diagnostics}
 
 
-def test_warns_when_model_assumption_is_injected_but_spec_does_not_reference_model_output():
+def test_evaluation_driven_modelbridge_skips_point_only_property():
     code = """
     model := "model.pkl"
     target := MyTarget
 
     [BOUND]:
-    check_at x0 => x0.a <= 10 using Z3
+    forall x0 => x0.a <= 10 using Z3
     """
 
-    tasks = run_ir2_with_model_schema(
+    task = run_ir2_with_model_schema(
         code,
         schema=_linear_regression_schema(),
         ir2_context=IR2BuildContext(preferred_normal_form=NormalFormKind.NNF),
-    )
+    )[0]
 
-    task = tasks[0]
-
-    assert IR2_MODEL_OUTPUT_NOT_REFERENCED in _diagnostic_codes(task)
-
-    diagnostic = task.diagnostics[0]
-
-    assert diagnostic.code == IR2_MODEL_OUTPUT_NOT_REFERENCED
-    assert diagnostic.severity is DiagnosticSeverity.WARNING
-    assert "does not reference any model output symbol" in diagnostic.message
+    assert task.assumptions == ()
+    assert task.model_evaluations == ()
+    assert IR2_MODEL_OUTPUT_NOT_REFERENCED not in _diagnostic_codes(task)
 
 
 def test_does_not_warn_when_spec_references_model_output():
@@ -64,7 +57,7 @@ def test_does_not_warn_when_spec_references_model_output():
     target := MyTarget
 
     [BOUND]:
-    check_at x0 => target <= 10 using Z3
+    forall x0 => target <= 10 using Z3
     """
 
     tasks = run_ir2_with_model_schema(
@@ -84,7 +77,7 @@ def test_does_not_warn_without_model_assumptions():
     target := MyTarget
 
     [BOUND]:
-    check_at x0 => x0.a <= 10 using Z3
+    forall x0 => x0.a <= 10 using Z3
     """
 
     tasks = run_ir2(

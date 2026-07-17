@@ -9,6 +9,8 @@ from dsl.ir.ir1.run_ir1 import run_ir
 from dsl.ir.ir2.builder import IR2Builder
 from dsl.ir.ir2.context import IR2BuildContext
 from dsl.ir.ir2.enums import NormalFormKind
+from dsl.ir.ir2.nodes import NNFFormulaIR2
+from dsl.ir.ir2.points import PointAwareIR2Analyzer
 from dsl.ir.normalization.nnf import NNFNormalizer
 from dsl.semantic.types.enums import EnumDataType
 from model.detector.model_framework import EnumModelFramework
@@ -21,7 +23,7 @@ BOUND_SAMPLE = dedent("""
     target := MyTarget
 
     [BOUND]:
-    check_at x0 => target <= 7 using Z3
+    forall x0 => target <= 7 using Z3
     """).strip()
 
 
@@ -106,7 +108,7 @@ def run_forml_z3_with_model_encoder(
         DSL source
         -> IR1
         -> NNF
-        -> ModelEncoder(schema, scope) produces MODEL assumptions
+        -> ModelEncoder(schema, evaluations) produces MODEL assumptions
         -> IR2 builds Γ ∧ ¬P
         -> backend routing
         -> Z3 execution
@@ -118,9 +120,12 @@ def run_forml_z3_with_model_encoder(
     if len(nnf_tasks) != 1:
         raise ValueError("This demo expects exactly one FORML task.")
 
+    requested_evaluations = PointAwareIR2Analyzer().model_evaluations(
+        spec_formula=NNFFormulaIR2(expression=nnf_tasks[0].query.expression),
+    )
     assumptions = ModelEncoderFactory().encode(
         schema=schema,
-        scope=nnf_tasks[0].scope,
+        evaluations=requested_evaluations,
     )
 
     ir2_tasks = IR2Builder().build_tasks(

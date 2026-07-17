@@ -59,6 +59,10 @@ class QueryTranslator:
 
         return QueryIR(expression=self._translate_logical(node))
 
+    def translate_expression(self, node: LogicalNode) -> LogicalIR:
+        """Translate one logical AST root without adding a ``QueryIR`` wrapper."""
+        return self._translate_logical(node)
+
     # ------------------------------------------------------------------
     # FLATTENING
     # ------------------------------------------------------------------

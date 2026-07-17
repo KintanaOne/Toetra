@@ -216,6 +216,10 @@ def _requirements(task: VerificationTaskIR2) -> list[str]:
             "native_quantifiers",
             requirements.requires_native_quantifiers,
         ),
+        (
+            "quantifier_alternation",
+            requirements.requires_quantifier_alternation,
+        ),
         ("domains", requirements.requires_domains),
         ("domain_assumptions", requirements.requires_domain_assumptions),
         ("finite_set_membership", requirements.requires_finite_set_membership),
@@ -236,6 +240,14 @@ def _requirements(task: VerificationTaskIR2) -> list[str]:
         f"{_enum_value(requirements.required_verification_semantics)}"
     )
     lines.append(f"  - normal_form: {_enum_value(requirements.normal_form)}")
+    lines.append(f"  - point_count: {requirements.point_count}")
+    lines.append(f"  - anchor_count: {requirements.anchor_count}")
+    lines.append(f"  - model_evaluation_count: {requirements.model_evaluation_count}")
+    lines.append(
+        "  - binder_sequence: "
+        + (" -> ".join(requirements.binder_sequence) or "<none>")
+    )
+    lines.append(f"  - alternation_depth: {requirements.alternation_depth}")
     scalar_sorts = ", ".join(
         sorted(dtype.value for dtype in requirements.required_scalar_sorts)
     )

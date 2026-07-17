@@ -16,7 +16,7 @@ PROVED_SAMPLE = dedent("""
     target := MyTarget
 
     [LOGIC]:
-    check_at x0 => x0.a <= 1 OR NOT x0.a <= 1 using Z3
+    forall x0 => x0.a <= 1 OR NOT x0.a <= 1 using Z3
     """).strip()
 
 
@@ -25,7 +25,7 @@ COUNTEREXAMPLE_SAMPLE = dedent("""
     target := MyTarget
 
     [LOGIC]:
-    check_at x0 => x0.a <= 1 using Z3
+    forall x0 => x0.a <= 1 using Z3
     """).strip()
 
 

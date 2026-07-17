@@ -3,7 +3,7 @@ model := "model.onnx"
 target := MyTarget
 
 [ROBUSTNESS]:
-check_at x0 => x0.income <= 1000
+forall x0 => x0.income <= 1000
 """
 
 CHECK_AT_IMPLICIT_AGE = """
@@ -11,7 +11,7 @@ model := "model.onnx"
 target := MyTarget
 
 [ROBUSTNESS]:
-check_at x0 => age <= 30
+forall x0 => age <= 30
 """
 
 FORALL_IMPLICIT_AGE = """
@@ -27,7 +27,7 @@ model := "model.onnx"
 target := MyTarget
 
 [ROBUSTNESS]:
-check_at x0 => x0.is_active == true
+forall x0 => x0.is_active == true
 """
 
 NESTED_TYPED_LOGIC = """
@@ -35,5 +35,5 @@ model := "model.onnx"
 target := MyTarget
 
 [ROBUSTNESS]:
-check_at x0 => (x0.age <= 30 OR x0.income >= 1000) AND x0.is_active == true
+forall x0 => (x0.age <= 30 OR x0.income >= 1000) AND x0.is_active == true
 """

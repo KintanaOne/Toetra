@@ -25,7 +25,21 @@ class NNFNormalizer:
     """
 
     def normalize_task(self, task: VerificationTask) -> VerificationTask:
-        return replace(task, query=self.normalize_query(task.query))
+        scope = task.scope
+        if scope.restriction is not None:
+            scope = replace(
+                scope,
+                restriction=replace(
+                    scope.restriction,
+                    expression=self.normalize_expr(scope.restriction.expression),
+                ),
+            )
+
+        return replace(
+            task,
+            scope=scope,
+            query=self.normalize_query(task.query),
+        )
 
     def normalize_tasks(self, tasks: list[VerificationTask]) -> list[VerificationTask]:
         return [self.normalize_task(task) for task in tasks]

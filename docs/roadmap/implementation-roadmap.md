@@ -251,3 +251,39 @@ This closes the current scalar-arithmetic, domain, affine-Z3 and user-output
 chantier. The next language chantier is the redesign of anchors, `at`,
 `check_at`, multiple/nested quantified entities and their scope semantics.
 
+
+## Patch 15 — First-Class Points and Indexed Evaluations
+
+Patch 15-D1 froze the target language and cross-layer contract for anchors,
+ordered binders, restrictions, point-indexed targets, per-point model equations,
+and multi-point evidence.
+
+Patch 15-D2 freezes the implementation sequence. The authoritative detailed
+plan is:
+
+```text
+roadmap/point-binding-evaluation-implementation-roadmap.md
+```
+
+Patches 15.1 through 15.9 are complete: the target surface reaches a faithful CST, a point-aware AST, immutable global anchor symbols, lexical point frames, deterministic default-point resolution, canonical restriction/scope-sugar semantics, point-aware IR1 and IR2 requirements with safe alternation gating, evaluation-driven per-point ModelBridge equations, and collision-free multi-point Z3 execution with reversible symbol mappings. The next integration gate is Patch 15.10.
+
+The sequence is:
+
+```text
+15.1  Grammar and parser [complete]
+15.2  AST and builder [complete]
+15.3  Global anchors and composed point environment [complete]
+15.4  Lexical binders, default points, and indexed targets [complete]
+15.5  Restrictions, neighborhoods, and scope sugar [complete]
+15.6  Point-aware IR1 [complete]
+15.7  Point-aware IR2 and capability requirements [complete]
+15.8  Per-point ModelBridge equations [complete]
+15.9  Z3 point mapping and multi-point execution [complete]
+15.10 Anchor resolution and runtime API [next]
+15.11 Grouped reporting and multi-point replay
+15.12 End-to-end consolidation and migration closure
+```
+
+The detailed roadmap owns patch dependencies, acceptance-matrix assignments,
+non-goals, migration policy, and stop-the-line conditions. This global roadmap
+must not be used to bypass those finer-grained gates.

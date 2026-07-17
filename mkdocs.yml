@@ -102,6 +102,7 @@ nav:
       - Syntax: language/syntax.md
       - Properties: language/properties.md
       - Scopes: language/scopes.md
+      - Points, Anchors, and Evaluations: language/points-anchors-and-evaluations.md
       - Quantified Bindings: language/quantified-bindings.md
       - Domains: language/domains.md
       - Assertions: language/assertions.md
@@ -152,6 +153,7 @@ nav:
       - Semantic to IR1: contracts/semantic-to-ir1.md
       - IR1 to IR2: contracts/ir1-to-ir2.md
       - Quantified Domains and Scalar Expressions: contracts/quantified-domain-scalar-expressions.md
+      - Point Binding and Evaluation: contracts/point-binding-and-evaluation.md
       - Model to Schema: contracts/model-to-schema.md
       - Schema to Semantic: contracts/schema-to-semantic.md
       - Model Constraints: contracts/model-constraints.md
@@ -191,6 +193,7 @@ nav:
       - Compiler Contract Tests: testing/compiler-contract-tests.md
       - Golden Samples: testing/golden-samples.md
       - Language Evolution Test Matrix: testing/language-evolution-test-matrix.md
+      - Point Binding and Evaluation Test Matrix: testing/point-binding-evaluation-test-matrix.md
       - End-to-End Tests: testing/end-to-end-tests.md
       - Property-Based Testing: testing/property-based-testing.md
       - Intelligent Fuzzing: testing/intelligent-fuzzing.md
@@ -213,8 +216,11 @@ nav:
       - ADR-0013 Explicit Quantified Bindings: adr/ADR-0013-explicit-quantified-bindings.md
       - ADR-0014 Scalar Expression Comparisons: adr/ADR-0014-scalar-expression-comparisons.md
       - ADR-0015 Typed Domains as Assumptions: adr/ADR-0015-typed-domains-as-assumptions.md
+      - ADR-0016 Specification Constants and Name Resolution: adr/ADR-0016-specification-constants-and-name-resolution.md
+      - ADR-0017 First-Class Points and Indexed Evaluations: adr/ADR-0017-first-class-points-and-indexed-model-evaluations.md
 
   - Roadmap:
       - Implementation Roadmap: roadmap/implementation-roadmap.md
+      - Point Binding and Evaluation Roadmap: roadmap/point-binding-evaluation-implementation-roadmap.md
       - Documentation Roadmap: roadmap/documentation-roadmap.md
       - Open Questions: roadmap/open-questions.md

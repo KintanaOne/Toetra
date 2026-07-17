@@ -10,7 +10,12 @@ from dsl.backends.diagnostics import (
     BackendResultDiagnostic,
 )
 from dsl.backends.results import VerificationResult, VerificationStatus
-from dsl.backends.z3_backend.translator import Z3Translator
+from dsl.backends.z3_backend.symbols import (
+    Z3ModelOutputIdentity,
+    compatibility_assignment_name,
+    symbol_identity_metadata,
+)
+from dsl.backends.z3_backend.translator import Z3Translation, Z3Translator
 from dsl.ir.ir2.enums import VerificationSemantics
 from dsl.ir.ir2.nodes import VerificationTaskIR2
 from dsl.language.vocabulary.backends import EnumBackend
@@ -74,6 +79,7 @@ class Z3Runner:
                 solver_status="unknown",
                 model=None,
                 message=self._message_for(status),
+                metadata=self._translation_metadata(translation),
             )
 
         if solver_result == z3.sat:
@@ -83,14 +89,9 @@ class Z3Runner:
             return Z3VerificationResult(
                 status=status,
                 solver_status="sat",
-                model={
-                    name: model.eval(
-                        variable,
-                        model_completion=True,
-                    )
-                    for name, variable in translation.variables.items()
-                },
+                model=self._assignments(translation, model),
                 message=self._message_for(status),
+                metadata=self._translation_metadata(translation),
             )
 
         if solver_result == z3.unsat:
@@ -102,9 +103,57 @@ class Z3Runner:
                 model=None,
                 message=self._message_for(status),
                 diagnostics=diagnostics,
+                metadata=self._translation_metadata(translation),
             )
 
         raise RuntimeError(f"Unsupported Z3 solver result: {solver_result}")
+
+    @staticmethod
+    def _assignments(
+        translation: Z3Translation,
+        model: z3.ModelRef,
+    ) -> dict[str, Any]:
+        model_output_count = sum(
+            isinstance(identity, Z3ModelOutputIdentity)
+            for identity in translation.symbol_identities.values()
+        )
+        assignments: dict[str, Any] = {}
+        for solver_name, variable in translation.variables.items():
+            identity = translation.identity_for(solver_name)
+            assignment_name = compatibility_assignment_name(
+                identity,
+                model_output_count=model_output_count,
+            )
+            if assignment_name in assignments:
+                raise RuntimeError(
+                    "Z3 assignment display-name collision for " f"{assignment_name!r}."
+                )
+            assignments[assignment_name] = model.eval(
+                variable,
+                model_completion=True,
+            )
+        return assignments
+
+    @staticmethod
+    def _translation_metadata(translation: Z3Translation) -> dict[str, Any]:
+        model_output_count = sum(
+            isinstance(identity, Z3ModelOutputIdentity)
+            for identity in translation.symbol_identities.values()
+        )
+        assignment_symbols: dict[str, dict[str, Any]] = {}
+        for solver_name, identity in translation.symbol_identities.items():
+            assignment_name = compatibility_assignment_name(
+                identity,
+                model_output_count=model_output_count,
+            )
+            assignment_symbols[assignment_name] = {
+                "solver_name": solver_name,
+                "identity": symbol_identity_metadata(identity),
+            }
+        return {
+            "z3_symbol_mapping": translation.serialized_symbol_mapping(),
+            "assignment_symbol_mapping": assignment_symbols,
+        }
 
     def _unsat_diagnostics(
         self,

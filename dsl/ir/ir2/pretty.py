@@ -213,17 +213,20 @@ def _pretty_model_constraint(atom: ModelConstraintIR2) -> str:
 
 def _pretty_affine_output_constraint(atom: AffineOutputConstraintIR2) -> str:
     op = getattr(atom.op, "value", atom.op)
-    return (
-        f"{atom.output_entity}.{atom.output_feature} "
-        f"{op} {_pretty_affine_expression(atom.expression)}"
+    output = (
+        f"target[{atom.evaluation.point.name}]"
+        if atom.evaluation is not None
+        else f"{atom.output_entity}.{atom.output_feature}"
     )
+    return f"{output} {op} {_pretty_affine_expression(atom.expression)}"
 
 
 def _pretty_affine_expression(expression: AffineExpressionIR2) -> str:
     parts: list[str] = []
 
     for term in expression.terms:
-        parts.append(f"{term.coefficient}*{term.entity}.{term.feature}")
+        entity = term.point.name if term.point is not None else term.entity
+        parts.append(f"{term.coefficient}*{entity}.{term.feature}")
 
     if expression.bias or not parts:
         parts.append(str(expression.bias))

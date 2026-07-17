@@ -1,143 +1,75 @@
-# Verification Task
+# Verification Task IR2
 
-> Status: Stabilizing with accepted quantified/domain/arithmetic target contract  
-> Scope: Backend-independent unit of verification
+> Status: Implemented for the numeric-affine V1 profile
 
-## Purpose
+`VerificationTaskIR2` is the complete backend-neutral verification request.
 
-A verification task is the complete backend-independent description of one property verification request.
+## Point-aware structure
 
-It is more than a boolean assertion. It combines:
-
-- property identity;
-- scope and variables;
-- quantifier verification semantics;
-- normalized property formula;
-- domain assumptions;
-- model assumptions;
-- backend requirements;
-- provenance;
-- optional backend hint.
-
----
-
-## Conceptual Shape
+A task exposes:
 
 ```text
-VerificationTaskIR2(
-    property_type,
-    scope,
-    property_formula,
-    assumptions,
-    verification_condition,
-    semantics,
-    requirements,
-    backend_hint,
-    diagnostics,
-    provenance,
-)
+property_type
+scope / canonical restriction
+specification formula
+verification condition
+assumptions
+requirements
+point_mappings
+model_evaluations
+quantifier_structure
+provenance
 ```
 
-Exact implementation fields may differ.
+`point_mappings` preserves every point identity and binding kind. `model_evaluations` contains exactly the distinct `(model, point, target)` evaluations referenced by the property. A property that never refers to `target` requests no model equation.
 
----
+## Quantifier structure
 
-## Quantified Scope
-
-For:
-
-```forml
-forall x0
-```
-
-scope metadata preserves:
+IR2 records the ordered binder sequence and alternation depth. Homogeneous chains are executable in the initial profile:
 
 ```text
-kind: quantified
-quantifier: forall
-variables: {x0: symbolic}
-default_entity: x0
+forall, forall  → universal refutation
+exists, exists  → existential witness search
 ```
 
-For `exists x0`, only the quantifier/verification semantics changes; the exact binding rules remain identical.
-
----
+Alternating sequences are not flattened. They set `requires_quantifier_alternation` and are rejected by the current Z3 capability profile before translation.
 
 ## Assumptions
 
-Assumptions carry source identity.
+Assumptions retain structured provenance and point ownership:
 
-Examples:
+- typed domain bounds;
+- inline or runtime-resolved anchor facts;
+- one model equation per required evaluation;
+- future semantic or model assumptions.
 
-```text
-DOMAIN → interval and finite-set restrictions
-MODEL → encoded model behavior
-NEIGHBORHOOD → perturbation-space restrictions
-SEMANTIC → future derived semantic constraints
-```
+A referenced anchor must be resolved before IR2. It may never reach the solver as an unconstrained symbolic point.
 
-The property formula is not silently reclassified as an assumption.
+## Verification semantics
 
----
-
-## Verification Semantics
-
-### Universal refutation
+Universal properties use refutation:
 
 ```text
-condition = Γassumptions ∧ ¬P
+Γ ∧ R ∧ ¬P
 ```
 
-`UNSAT` proves the property; `SAT` yields a counterexample.
-
-### Existential witness
+Existential properties use satisfaction:
 
 ```text
-condition = Γassumptions ∧ P
+Γ ∧ R ∧ P
 ```
 
-`SAT` yields a witness; `UNSAT` proves absence of a witness.
+where `Γ` contains domains, concrete anchor facts, and model equations, and `R` is the canonical restriction.
 
-The task must make this distinction explicit so the runner cannot infer semantics from solver status alone.
+## Requirements
 
----
+Requirements include scalar sorts, normal form, point count, anchor count, model-evaluation count, binder sequence, alternation depth, neighborhood needs, and native-quantifier requirements. Routing uses these requirements before backend execution.
 
-## Scalar Atoms
+## Invariants
 
-A comparison atom may contain full scalar expression trees:
-
-```text
-2 * x0.a + x0.b <= target + 7
-```
-
-The task retains canonical scalar types and capability requirements.
-
-Logical normal forms manipulate atom polarity/grouping without flattening arithmetic.
-
----
-
-## Domain Traceability
-
-Expanded domain assumptions retain a mapping to original entries.
-
-For:
-
-```forml
-x0.a: ]0, 3]
-```
-
-the two generated comparison atoms share one source-domain-entry identity while identifying lower and upper components separately.
-
----
-
-## Task Invariants
-
-A backend-routable task has:
-
-- no unresolved symbol;
-- no ambiguous target reference;
-- explicit quantifier verification semantics;
-- explicit scalar/domain/model requirements;
-- valid normal-form declaration;
-- complete assumption provenance;
-- no backend-native object before translation.
+- point identity is never inferred from an entity string;
+- distinct points produce distinct evaluations;
+- repeated target references are deduplicated;
+- every requested model evaluation has exactly one connected model equation;
+- no unrequested model equation is accepted;
+- unsupported alternation is rejected before solver translation.

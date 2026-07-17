@@ -13,5 +13,5 @@ model := "model.joblib"
 target := MyTarget
 
 [BOUND]:
-check_at x0 => target <= 10 using Z3
+forall x0 => target <= 10 using Z3
 """

@@ -59,14 +59,19 @@ class BackendRouter:
         )
 
     def _route_any_compatible_backend(self, task: VerificationTaskIR2) -> BackendRoute:
+        rejected: list[str] = []
         for capabilities in self.registry.all():
-            if capabilities.supports(task.requirements):
+            incompatibilities = capabilities.incompatibilities(task.requirements)
+            if not incompatibilities:
                 return BackendRoute(
                     backend=capabilities.backend,
                     capabilities=capabilities,
                     reason="first registered backend satisfying IR2 requirements",
                 )
-
+            rejected.append(
+                f"{capabilities.backend.value}: " + "; ".join(incompatibilities)
+            )
+        details = "; ".join(rejected) if rejected else "no backends registered"
         raise NoCompatibleBackendError(
-            "No registered backend satisfies IR2 requirements"
+            "No registered backend satisfies IR2 requirements: " + details
         )

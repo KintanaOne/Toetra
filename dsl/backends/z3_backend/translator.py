@@ -8,10 +8,19 @@ import z3 as z3_solver
 
 from dsl.backends.capabilities import BackendCapabilities
 from dsl.backends.errors import (
+    BackendSymbolCollisionError,
     UnsupportedBackendRequirementsError,
     UnsupportedScalarExpressionError,
 )
 from dsl.backends.z3_backend.capabilities import Z3_CAPABILITIES
+from dsl.backends.z3_backend.symbols import (
+    Z3LegacyScalarIdentity,
+    Z3ModelOutputIdentity,
+    Z3PointFeatureIdentity,
+    Z3SymbolIdentity,
+    symbol_identity_metadata,
+    z3_symbol_name,
+)
 from dsl.ir.ir1.nodes import (
     AndIR,
     AttributeExpressionIR,
@@ -19,8 +28,10 @@ from dsl.ir.ir1.nodes import (
     ComparisonIR,
     ConstantExpressionIR,
     LogicalIR,
+    ModelEvaluationIR,
     NotIR,
     OrIR,
+    PointBindingIR,
     ProblemIR,
     ScalarExpressionIR,
     SymbolLiteralIR,
@@ -31,6 +42,7 @@ from dsl.ir.ir2.enums import Polarity
 from dsl.ir.ir2.nodes import (
     AffineExpressionIR2,
     AffineOutputConstraintIR2,
+    AffineTermIR2,
     AtomIR2,
     CNFFormulaIR2,
     DNFFormulaIR2,
@@ -70,6 +82,20 @@ def _bool_not(expression: z3_solver.BoolRef) -> z3_solver.BoolRef:
 class Z3Translation:
     expression: z3_solver.BoolRef
     variables: dict[str, z3_solver.ArithRef]
+    symbol_identities: dict[str, Z3SymbolIdentity]
+
+    def identity_for(self, solver_name: str) -> Z3SymbolIdentity:
+        """Restore the structured FORML identity for one solver symbol."""
+
+        return self.symbol_identities[solver_name]
+
+    def serialized_symbol_mapping(self) -> dict[str, dict[str, Any]]:
+        """Return a JSON-friendly reverse mapping for result construction."""
+
+        return {
+            name: symbol_identity_metadata(identity)
+            for name, identity in self.symbol_identities.items()
+        }
 
 
 class Z3Translator:
@@ -79,11 +105,15 @@ class Z3Translator:
     capabilities: BackendCapabilities = Z3_CAPABILITIES
 
     def __init__(self) -> None:
-        self._variables: dict[str, z3_solver.ArithRef] = {}
-        self._variable_dtypes: dict[str, EnumDataType] = {}
+        self._variables: dict[Z3SymbolIdentity, z3_solver.ArithRef] = {}
+        self._symbol_identities: dict[str, Z3SymbolIdentity] = {}
+        self._variable_dtypes: dict[Z3SymbolIdentity, EnumDataType] = {}
+        self._points_by_name: dict[str, PointBindingIR] = {}
+        self._model_evaluations: tuple[ModelEvaluationIR, ...] = ()
 
     def translate(self, task: VerificationTaskIR2) -> Z3Translation:
-        self._variables = {}
+        self._reset_symbols()
+        self._configure_task_identities(task)
         self._variable_dtypes = self._collect_variable_dtypes(
             task.verification_condition
         )
@@ -91,7 +121,8 @@ class Z3Translator:
         expression = self._translate_formula(task.verification_condition)
         return Z3Translation(
             expression=expression,
-            variables=dict(self._variables),
+            variables=self._variables_by_name(),
+            symbol_identities=dict(self._symbol_identities),
         )
 
     def translate_assumptions(self, task: VerificationTaskIR2) -> Z3Translation:
@@ -103,7 +134,8 @@ class Z3Translator:
         satisfiable.
         """
 
-        self._variables = {}
+        self._reset_symbols()
+        self._configure_task_identities(task)
         self._variable_dtypes = self._collect_many_variable_dtypes(
             assumption.formula for assumption in task.assumptions
         )
@@ -113,7 +145,8 @@ class Z3Translator:
         )
         return Z3Translation(
             expression=_bool_and(expressions),
-            variables=dict(self._variables),
+            variables=self._variables_by_name(),
+            symbol_identities=dict(self._symbol_identities),
         )
 
     def _validate_requirements(self, task: VerificationTaskIR2) -> None:
@@ -184,14 +217,12 @@ class Z3Translator:
     def _translate_scalar(self, expression: ScalarExpressionIR) -> z3_solver.ArithRef:
         if isinstance(expression, AttributeExpressionIR):
             return self._var(
-                expression.entity,
-                expression.feature,
+                self._attribute_identity(expression),
                 dtype=expression.dtype,
             )
         if isinstance(expression, TargetExpressionIR):
             return self._var(
-                expression.entity,
-                expression.feature,
+                self._target_identity(expression),
                 dtype=expression.dtype,
             )
         if isinstance(expression, ConstantExpressionIR):
@@ -313,7 +344,7 @@ class Z3Translator:
         atom: AffineOutputConstraintIR2,
     ) -> z3_solver.BoolRef:
         return self._apply_operator(
-            self._var(atom.output_entity, atom.output_feature),
+            self._var(self._affine_output_identity(atom)),
             atom.op,
             self._translate_affine_expression(atom.expression),
         )
@@ -328,21 +359,21 @@ class Z3Translator:
                 z3_solver.ArithRef,
                 result
                 + self._constant(term.coefficient)
-                * self._var(term.entity, term.feature),
+                * self._var(self._affine_term_identity(term)),
             )
         return result
 
     def _collect_variable_dtypes(
         self,
         formula: FormulaIR2,
-    ) -> dict[str, EnumDataType]:
+    ) -> dict[Z3SymbolIdentity, EnumDataType]:
         return self._collect_many_variable_dtypes((formula,))
 
     def _collect_many_variable_dtypes(
         self,
         formulas: Iterable[FormulaIR2],
-    ) -> dict[str, EnumDataType]:
-        collected: dict[str, EnumDataType] = {}
+    ) -> dict[Z3SymbolIdentity, EnumDataType]:
+        collected: dict[Z3SymbolIdentity, EnumDataType] = {}
         for formula in formulas:
             for atom in self._iter_formula_atoms(formula):
                 if not isinstance(atom, ComparisonIR):
@@ -356,7 +387,7 @@ class Z3Translator:
     def _record_expression_dtype(
         self,
         expression: ScalarExpressionIR,
-        collected: dict[str, EnumDataType],
+        collected: dict[Z3SymbolIdentity, EnumDataType],
     ) -> None:
         if not isinstance(
             expression,
@@ -370,14 +401,18 @@ class Z3Translator:
                 f"Z3 numeric profile does not support variable sort "
                 f"'{expression.dtype.value}'."
             )
-        name = f"{expression.entity}.{expression.feature}"
-        previous = collected.get(name)
+        identity = (
+            self._attribute_identity(expression)
+            if isinstance(expression, AttributeExpressionIR)
+            else self._target_identity(expression)
+        )
+        previous = collected.get(identity)
         if previous is not None and previous is not expression.dtype:
             raise UnsupportedScalarExpressionError(
-                f"Conflicting scalar sorts for '{name}': "
+                f"Conflicting scalar sorts for '{z3_symbol_name(identity)}': "
                 f"{previous.value} and {expression.dtype.value}."
             )
-        collected[name] = expression.dtype
+        collected[identity] = expression.dtype
 
     def _iter_formula_atoms(self, formula: FormulaIR2) -> Iterator[AtomIR2]:
         if isinstance(formula, NNFFormulaIR2):
@@ -420,16 +455,118 @@ class Z3Translator:
             yield from self._iter_scalar_tree(expression.left)
             yield from self._iter_scalar_tree(expression.right)
 
-    def _var(
+    def _reset_symbols(self) -> None:
+        self._variables = {}
+        self._symbol_identities = {}
+
+    def _variables_by_name(self) -> dict[str, z3_solver.ArithRef]:
+        return {
+            z3_symbol_name(identity): variable
+            for identity, variable in self._variables.items()
+        }
+
+    def _attribute_identity(
         self,
+        expression: AttributeExpressionIR,
+    ) -> Z3SymbolIdentity:
+        if expression.point is not None:
+            return Z3PointFeatureIdentity(
+                point=expression.point,
+                feature=expression.feature,
+            )
+        return self._legacy_feature_identity(
+            entity=expression.entity,
+            feature=expression.feature,
+        )
+
+    def _target_identity(
+        self,
+        expression: TargetExpressionIR,
+    ) -> Z3SymbolIdentity:
+        if expression.evaluation is not None:
+            return Z3ModelOutputIdentity(evaluation=expression.evaluation)
+        return self._legacy_output_identity(
+            entity=expression.entity,
+            feature=expression.feature,
+        )
+
+    def _affine_output_identity(
+        self,
+        atom: AffineOutputConstraintIR2,
+    ) -> Z3SymbolIdentity:
+        if atom.evaluation is not None:
+            return Z3ModelOutputIdentity(evaluation=atom.evaluation)
+        return self._legacy_output_identity(
+            entity=atom.output_entity,
+            feature=atom.output_feature,
+        )
+
+    def _affine_term_identity(self, term: AffineTermIR2) -> Z3SymbolIdentity:
+        if term.point is not None:
+            return Z3PointFeatureIdentity(
+                point=term.point,
+                feature=term.feature,
+            )
+        return self._legacy_feature_identity(
+            entity=term.entity,
+            feature=term.feature,
+        )
+
+    def _configure_task_identities(self, task: VerificationTaskIR2) -> None:
+        points = tuple(mapping.ir_point for mapping in task.point_mappings)
+        if not points:
+            points = tuple(task.scope.points)
+        self._points_by_name = {point.name: point for point in points}
+        self._model_evaluations = tuple(task.model_evaluations)
+
+    def _legacy_feature_identity(
+        self,
+        *,
         entity: str,
         feature: str,
+    ) -> Z3SymbolIdentity:
+        point = self._points_by_name.get(entity)
+        if point is not None:
+            return Z3PointFeatureIdentity(point=point, feature=feature)
+        return Z3LegacyScalarIdentity(entity=entity, feature=feature)
+
+    def _legacy_output_identity(
+        self,
+        *,
+        entity: str,
+        feature: str,
+    ) -> Z3SymbolIdentity:
+        if entity == "_model":
+            candidates = tuple(
+                evaluation
+                for evaluation in self._model_evaluations
+                if evaluation.target_name == feature
+            )
+            if len(candidates) == 1:
+                return Z3ModelOutputIdentity(evaluation=candidates[0])
+            if len(candidates) > 1:
+                raise UnsupportedScalarExpressionError(
+                    "Unindexed legacy model output is ambiguous for multiple "
+                    f"evaluations of target {feature!r}."
+                )
+        return Z3LegacyScalarIdentity(entity=entity, feature=feature)
+
+    def _var(
+        self,
+        identity: Z3SymbolIdentity,
         *,
         dtype: EnumDataType | None = None,
     ) -> z3_solver.ArithRef:
-        name = f"{entity}.{feature}"
-        if name not in self._variables:
-            resolved_dtype = self._variable_dtypes.get(name, dtype)
+        if identity not in self._variables:
+            name = z3_symbol_name(identity)
+            existing_identity = self._symbol_identities.get(name)
+            if existing_identity is not None and existing_identity != identity:
+                raise BackendSymbolCollisionError(
+                    "Distinct FORML identities project to the same Z3 symbol "
+                    f"{name!r}: {existing_identity!r} != {identity!r}."
+                )
+
+            resolved_dtype = self._variable_dtypes.get(identity, dtype)
             if resolved_dtype is EnumDataType.INT:
                 variable = z3_solver.Int(name)
             elif resolved_dtype is None or resolved_dtype is EnumDataType.FLOAT:
@@ -439,8 +576,9 @@ class Z3Translator:
                     f"Z3 numeric profile does not support variable sort "
                     f"'{resolved_dtype.value}' for '{name}'."
                 )
-            self._variables[name] = cast(z3_solver.ArithRef, variable)
-        return self._variables[name]
+            self._variables[identity] = cast(z3_solver.ArithRef, variable)
+            self._symbol_identities[name] = identity
+        return self._variables[identity]
 
     def _constant(self, value: Any) -> z3_solver.ArithRef:
         if isinstance(value, bool):

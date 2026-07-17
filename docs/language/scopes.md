@@ -1,421 +1,208 @@
-# Scopes
+# Point Bindings and Property Contexts
 
-> Status: Target language contract — implementation partially available  
-> Scope: Evaluation scopes, variable introduction, and semantic contexts  
-> Priority: P0  
-> Audience: DSL users, semantic layer contributors, IR authors, test authors
+> Status: Implemented and normative for the numeric-affine V1 profile  
+> Scope: Point introduction, lexical visibility, restrictions, and user-facing sugar  
+> Audience: DSL users, compiler contributors, backend authors, and test authors
 
-## Purpose
+## Core rule
 
-Scopes define where a FORML property is evaluated.
+FORML no longer assigns a property to one mutually exclusive semantic scope. A property is evaluated in a **composed point environment** containing:
 
-They form the left-hand side of a property rule:
+- zero or more global anchors;
+- an ordered chain of lexical quantifier binders;
+- point-owned domains;
+- an optional `where` restriction;
+- zero or more model evaluations such as `target[x0]`.
 
-```forml
-[PROPERTY]: scope => assertion
-```
+`SemanticScope.POINTWISE`, `LOCAL`, `PAIRWISE`, and `QUANTIFIER` remain internal compatibility classifications for reports and older consumers. They are derived from the point environment and never decide meaning or backend eligibility.
 
-A scope introduces variables and semantic roles. It may also attach a neighborhood or a domain. During compilation, scope syntax becomes a `SemanticContext`, then a `ScopeIR`.
+## Point bindings
 
----
-
-## Scope Responsibilities
-
-A scope defines:
-
-| Responsibility | Example |
-|---|---|
-| Declared variables | `x`, `x'`, `x0` |
-| Semantic roles | anchor, perturbation, symbolic |
-| Default entity | implicit `age` resolves to the scope's default variable |
-| Neighborhood | `L2` ball with `eps=0.1` |
-| Domain | admissible valuations for a symbolic variable |
-| Semantic scope kind | pointwise, local, pairwise, quantifier |
-
-A scope does not define the model output. The keyword `target` refers to the output declared in the program header.
-
----
-
-## `check_at` Scope
-
-### Syntax
+### Inline anchor
 
 ```forml
-[BOUND]: check_at x0 => target >= 0
-```
-
-### Meaning
-
-`check_at` evaluates a property for one concrete point identified by `x0`.
-
-Semantic context:
-
-| Variable | Role |
-|---|---|
-| `x0` | anchor |
-
-Default entity:
-
-```text
-x0
-```
-
-Therefore:
-
-```forml
-age >= 18
-```
-
-resolves to:
-
-```text
-x0.age >= 18
-```
-
-`check_at` is not a domain-wide scope. The concrete values associated with `x0` must come from an execution context, observation, dataset row, or future binding mechanism. A domain does not transform `check_at` into universal quantification.
-
-### Typical Use Cases
-
-- checking one known observation;
-- pointwise model diagnostics;
-- deterministic regression tests;
-- validating a concrete counterexample candidate.
-
----
-
-## `at` Scope
-
-### Syntax
-
-```forml
-[ROBUSTNESS]: at x in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUAL()
-```
-
-### Meaning
-
-`at` introduces an anchor point and an implicit perturbation variable.
-
-Semantic context:
-
-| Variable | Role |
-|---|---|
-| `x` | anchor |
-| `x'` | perturbation |
-
-Default entity:
-
-```text
-x'
-```
-
-Thus an implicit feature reference such as:
-
-```forml
-age <= 30
-```
-
-is resolved to:
-
-```text
-x'.age <= 30
-```
-
-### Typical Use Cases
-
-- local robustness;
-- stability under perturbation;
-- neighborhood-constrained counterexample search.
-
----
-
-## Pairwise Scope
-
-### Syntax
-
-```forml
-[MONOTONICITY]: x ~ x' in neighborhood(metric=L1, eps=1.0) => x'.score >= x.score
-```
-
-### Meaning
-
-Pairwise scope compares two explicitly named related inputs.
-
-Semantic context:
-
-| Variable | Role |
-|---|---|
-| `x` | anchor |
-| `x'` | perturbation or paired point |
-
-The current pair convention requires the right identifier to be the primed form of the left identifier.
-
-Valid:
-
-```text
-x ~ x'
-```
-
-Invalid under the current contract:
-
-```text
-x ~ y
-```
-
-Unrelated or independently bound pairs require a future language decision.
-
----
-
-## Quantified Scopes
-
-### Target Syntax
-
-```forml
-[BOUND]: forall x0 => target <= 7
-```
-
-```forml
-[BOUND]: exists candidate => candidate.score > 0
-```
-
-Unicode aliases may be accepted:
-
-```forml
-[BOUND]: ∀ x0 => target <= 7
-```
-
-```forml
-[BOUND]: ∃ candidate => candidate.score > 0
-```
-
-### Meaning
-
-A quantified scope introduces one explicitly named symbolic input variable.
-
-For:
-
-```forml
-forall x0
-```
-
-the semantic context is:
-
-```text
-quantifier = forall
-variables = {
-    "x0": "symbolic"
+anchor customer := {
+    age: 42,
+    income: 55000,
+    debt_ratio: 0.31
 }
-default_entity = "x0"
 ```
 
-FORML must preserve the declared identifier. It must not replace it with an implicit internal name such as `_x`.
+The anchor is concrete, immutable, and expressed in the feature space consumed by the encoded model.
 
-### Universal Quantifier
+### Referenced anchor
 
 ```forml
-forall x0 => assertion
+anchor customer := ref(
+    key = "application_id",
+    value = "APP-1842"
+)
 ```
 
-means that `assertion` must hold for every admissible valuation of `x0`.
+The runtime resolves this reference from, in order:
 
-### Existential Quantifier
+1. `anchor_resolver`;
+2. `anchor_source`;
+3. a compatible `dataset` fallback;
+4. otherwise a structured missing-source error.
+
+Lookup columns are metadata. They do not become model features unless the model schema explicitly declares them.
+
+### Symbolic point
 
 ```forml
-exists x0 => assertion
+forall applicant
 ```
-
-means that at least one admissible valuation of `x0` must satisfy `assertion`.
-
-The language meaning is independent from backend availability. A backend may reject a quantified request when its capabilities do not support the required semantics.
-
----
-
-## Quantified Binding Rules
-
-Inside `forall x0` or `exists x0`:
-
-- `x0.age` is a valid explicit input reference;
-- `age` is a valid implicit reference and resolves to `x0.age`;
-- `y.age` is invalid unless `y` is separately declared by a future multi-variable scope;
-- `target` remains valid because it is a model-output reference, not an input entity.
-
-Valid:
 
 ```forml
-[BOUND]: forall x0 => x0.age >= 18
+exists candidate
 ```
 
-Valid with implicit input binding:
+Several identifiers may be bound at once:
 
 ```forml
-[BOUND]: forall x0 => age >= 18
+forall x0, x1
 ```
 
-Valid target-only assertion:
+This expands left to right to two nested universal binders. Ordered clauses preserve nesting:
 
 ```forml
-[BOUND]: forall x0 => target <= 7
+forall original
+exists counterfactual
+=> ...
 ```
 
-Invalid explicit binding:
+Indentation is presentation only. Shadowing and collisions with global anchors are rejected.
+
+## Domains and restrictions
+
+`with domain(...)` constrains individual point features:
 
 ```forml
-[BOUND]: forall x0 => y.age >= 18
+forall applicant
+with domain(
+    applicant.age: [18, 90],
+    applicant.income: [0, 200000]
+)
+=> target <= 0.8
 ```
 
-An unknown explicit entity must be rejected. The semantic layer must not silently alias `y` to `x0` merely because the scope contains one variable.
-
-The complete normative rules are defined in [Quantified Variable Bindings](quantified-bindings.md).
-
----
-
-## Domains on Quantified Scopes
-
-A quantified variable may be restricted by a typed domain:
+`where` restricts admissible points or relates several points:
 
 ```forml
-[LOGIC]:
-forall x0
-    with domain(
-        x0.age: [18, 65],
-        x0.region: {EU, US}
-    )
-    => target <= 7
+forall lower, higher
+where (
+    higher.income >= lower.income
+    and higher.age == lower.age
+)
+=> target[higher] <= target[lower]
 ```
 
-Domain subjects are always explicitly qualified. Every subject entity must be declared by the scope.
-
-Valid:
-
-```forml
-forall x0
-    with domain(
-        x0.age: [18, 65]
-    )
-    => target <= 7
-```
-
-Invalid:
-
-```forml
-forall x0
-    with domain(
-        y.age: [18, 65]
-    )
-    => target <= 7
-```
-
-The domain contributes admissibility assumptions. It does not replace the quantifier and does not turn `check_at` into a domain-wide scope.
-
-Multiple domain entries are conjunctive. Intervals preserve open/closed boundary kinds, and braces denote finite discrete sets. The full contract is defined in [Domains](domains.md).
-
----
-
-## Neighborhoods
-
-Neighborhoods define perturbation constraints for scopes such as `at` and pairwise scopes.
-
-Example:
-
-```forml
-in neighborhood(metric=L2, eps=0.1)
-```
-
-Expected semantic representation:
+The lowering is quantifier-sensitive:
 
 ```text
-metric: L2
-eps: 0.1
-args: {...}
+forall x where R => P  ≡  forall x: R -> P
+exists x where R => P  ≡  exists x: R and P
 ```
 
-Neighborhoods later participate in:
+The initial executable neighborhood is numeric `Linf`:
 
-- `SemanticContext`;
-- `ScopeIR`;
-- assertion aggregation;
-- backend lowering.
-
----
-
-## Scope to SemanticContext
-
-| Scope Syntax | Semantic Scope | Variables | Default Entity |
-|---|---|---|---|
-| `check_at x0` | pointwise | `{x0: anchor}` | `x0` |
-| `at x` | local | `{x: anchor, x': perturbation}` | `x'` |
-| `x ~ x'` | pairwise | `{x: anchor, x': perturbation}` | `x'` |
-| `forall x0` | quantifier | `{x0: symbolic}` | `x0` |
-| `exists x0` | quantifier | `{x0: symbolic}` | `x0` |
-
----
-
-## Scope to IR
-
-`ScopeIR` must preserve:
-
-- scope kind;
-- the exact declared variable names;
-- variable roles;
-- quantifier kind when applicable;
-- neighborhood metadata;
-- domain metadata;
-- enough provenance for diagnostics and backend routing.
-
-Conceptual quantified `ScopeIR`:
-
-```text
-kind: quantifier
-variables:
-  x0: symbolic
-quantifier: forall
-domain: ...
+```forml
+forall perturbed
+where perturbed in neighborhood(
+    of = customer,
+    metric = Linf,
+    eps = 0.05
+)
+=> ...
 ```
 
----
+## Model outputs
 
-## Current and Target Behavior
+FORML V1 has one scalar target selected by the header. Brackets select the **input point**, not an output from a list:
 
-| Area | Current implementation | Target contract |
-|---|---|---|
-| `check_at`, `at`, pairwise scopes | available | retained |
-| word and Unicode quantifiers | partially available | retained and normalized |
-| explicit quantified identifier | not yet represented end-to-end | required |
-| implicit `_x` convention | present in older documentation/implementation | removed from the public contract |
-| strict mismatch rejection | current single-variable fallback may interfere | required for explicit quantified references |
-| quantified backend execution | backend-dependent | capability-gated |
-
----
-
-## Testing Requirements
-
-```text
-check_at_introduces_anchor
-at_introduces_anchor_and_perturbation
-pairwise_preserves_both_identifiers
-forall_requires_identifier
-exists_requires_identifier
-quantifier_preserves_declared_identifier
-quantifier_sets_declared_identifier_as_default_entity
-matching_explicit_reference_is_accepted
-implicit_reference_resolves_to_declared_identifier
-mismatched_explicit_reference_is_rejected
-target_only_assertion_is_accepted
-mismatched_domain_subject_is_rejected
-implicit_domain_subject_is_rejected
-domain_interval_boundaries_are_preserved
-domain_finite_set_values_are_preserved
-scope_ir_preserves_quantified_identifier
+```forml
+target[x0]
+target[x1]
 ```
 
----
+Repeated references to `target[x0]` reuse one `(model, x0, target)` evaluation. Different points create different evaluations and different backend symbols.
 
-## Related Documents
+The short forms `target` and `age` are accepted only when exactly one eligible default point exists. FORML never silently picks the first or innermost point.
 
-- [Quantified Variable Bindings](quantified-bindings.md)
-- [Domains](domains.md)
-- [Properties](properties.md)
-- [Assertions](assertions.md)
-- [Syntax](syntax.md)
-- [Grammar](grammar.md)
-- [IR Scope](../ir/scope-ir.md)
-- [AST to Semantic Contract](../contracts/ast-to-semantic.md)
+## Direct properties
+
+An anchor can be used without an artificial left-hand scope:
+
+```forml
+anchor customer := { age: 42, income: 55000 }
+
+[BOUND]:
+target[customer] <= 0.4 using Z3
+```
+
+## User-facing sugar
+
+### `check_at`
+
+```forml
+anchor customer := ref(key = "id", value = "R-42")
+
+[BOUND]:
+check_at customer
+=> target <= 0.4 using Z3
+```
+
+`check_at` selects an already declared concrete anchor as the default point. It never declares a point.
+
+### `at`
+
+```forml
+anchor customer := { age: 42, income: 55000 }
+
+[ROBUSTNESS]:
+at customer with perturbed in neighborhood(
+    metric = Linf,
+    eps = 0.05
+)
+=> target[perturbed] <= target[customer] + 0.02 using Z3
+```
+
+This is deterministic sugar for a fresh universal candidate plus a natural neighborhood restriction. The explicit form and sugar use the same semantic, IR, ModelBridge, backend, reporting, and replay pipeline.
+
+## Legacy migration
+
+The provisional forms remain parseable only so FORML can emit stable migration diagnostics:
+
+| Legacy form | V1 action |
+|---|---|
+| undeclared `check_at x0` | declare an inline/referenced anchor, then select it |
+| `at x in neighborhood(...)` | use `anchor x := ...` and `at x with candidate in neighborhood(...)` |
+| `x ~ x' ...` | use explicit `forall x0, x1` or `exists x0, x1` plus `where` |
+
+They are never silently assigned the new meaning.
+
+## V1 execution boundary
+
+Implemented end to end:
+
+- concrete inline and referenced anchors;
+- homogeneous universal and existential binder chains;
+- one or more points and model evaluations;
+- numeric affine sklearn `LinearRegression` encoding;
+- typed numeric domains and scalar arithmetic;
+- `Linf` neighborhoods;
+- grouped proof/counterexample/witness evidence;
+- real-model replay for every referenced point.
+
+Represented but capability-rejected:
+
+- alternating quantifiers such as `forall x0` then `exists x1`.
+
+Outside the V1 profile:
+
+- arbitrary preprocessing reconstruction;
+- categorical/symbolic backend sorts;
+- multi-output models;
+- nonlinear and rich model encoders;
+- neighborhood metrics other than the implemented numeric-affine profile.

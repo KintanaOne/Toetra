@@ -14,7 +14,7 @@ def test_target_ref_survives_to_ir2_spec_formula():
     target := MyTarget
 
     [BOUND]:
-    check_at x0 => target <= 10 using Z3
+    forall x0 => target <= 10 using Z3
     """
 
     task = run_ir2(code)[0]

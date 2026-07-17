@@ -307,16 +307,30 @@ def _format_scope(report: VerificationReport) -> str:
 
 
 def _render_assignments(report: VerificationReport) -> str:
-    groups = (
-        ("Inputs", report.inputs),
-        ("Model outputs", report.outputs),
-        ("Auxiliary values", report.auxiliary_assignments),
-    )
-    rendered = "".join(
-        _render_assignment_group(label, assignments)
-        for label, assignments in groups
-        if assignments
-    )
+    if report.points:
+        rendered = "".join(
+            _render_assignment_group(
+                f"Point {point.name} · {point.binding_kind}",
+                point.inputs + point.outputs,
+            )
+            for point in report.points
+            if point.inputs or point.outputs
+        )
+        if report.auxiliary_assignments:
+            rendered += _render_assignment_group(
+                "Auxiliary values", report.auxiliary_assignments
+            )
+    else:
+        groups = (
+            ("Inputs", report.inputs),
+            ("Model outputs", report.outputs),
+            ("Auxiliary values", report.auxiliary_assignments),
+        )
+        rendered = "".join(
+            _render_assignment_group(label, assignments)
+            for label, assignments in groups
+            if assignments
+        )
     if not rendered:
         return ""
     title = (

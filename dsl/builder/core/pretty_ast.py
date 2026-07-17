@@ -13,16 +13,26 @@ from dsl.ast.nodes.primitives import (
     ConstantNode,
     AttributeNode,
     ArgNode,
+    TargetRefNode,
 )
 
 from dsl.ast.nodes.expressions import (
     AtExprNode,
     CheckAtExprNode,
+    DirectExprNode,
     PairwiseExprNode,
     QuantifierExprNode,
+    RestrictionNode,
 )
 
-from dsl.ast.nodes.neighborhood import NeighborhoodNode
+from dsl.ast.nodes.anchors import (
+    AnchorDeclarationNode,
+    AnchorEntryNode,
+    AnchorReferenceArgumentNode,
+    AnchorReferenceBindingNode,
+    InlineAnchorBindingNode,
+)
+from dsl.ast.nodes.neighborhood import NeighborhoodMembershipNode, NeighborhoodNode
 from dsl.ast.nodes.domain import (
     DomainEntryNode,
     DomainNode,
@@ -90,6 +100,8 @@ def _pretty_object(obj, indent):
 
     if hasattr(obj, "__dict__"):
         for k, v in obj.__dict__.items():
+            if k in {"semantic", "source_span"}:
+                continue
             lines.append(f"{pad}  {k}:")
             lines.append(pretty(v, indent + 2))
 
@@ -104,6 +116,9 @@ def _expr(node):
 
     if isinstance(node, ConstantNode):
         return repr(node.value)
+
+    if isinstance(node, TargetRefNode):
+        return "target" if node.point is None else f"target[{node.point}]"
 
     if isinstance(node, SymbolLiteralNode):
         return node.name
@@ -159,6 +174,11 @@ def _pretty_const(node: ConstantNode, indent: int):
     return _pad(indent) + str(node.value)
 
 
+@register(TargetRefNode)
+def _pretty_target(node: TargetRefNode, indent: int):
+    return _pad(indent) + _expr(node)
+
+
 @register(ArgNode)
 def _pretty_arg(node: ArgNode, indent: int):
     pad = _pad(indent)
@@ -210,6 +230,14 @@ def _pretty_finite_set_domain(node: FiniteSetDomainNode, indent: int):
 @register(SymbolLiteralNode)
 def _pretty_symbol_literal(node: SymbolLiteralNode, indent: int):
     return _pad(indent) + node.name
+
+
+@register(NeighborhoodMembershipNode)
+def _pretty_neighborhood_membership(node: NeighborhoodMembershipNode, indent: int):
+    return (
+        f"{_pad(indent)}{node.candidate} in neighborhood("
+        f"of={node.anchor}, metric={node.metric}, eps={_expr(node.epsilon)})"
+    )
 
 
 @register(NeighborhoodNode)
@@ -267,14 +295,29 @@ def _pretty_pairwise(node: PairwiseExprNode, indent: int):
     return "\n".join(lines)
 
 
+@register(DirectExprNode)
+def _pretty_direct(node: DirectExprNode, indent: int):
+    return f"{_pad(indent)}direct"
+
+
+@register(RestrictionNode)
+def _pretty_restriction(node: RestrictionNode, indent: int):
+    return f"{_pad(indent)}where\n{pretty(node.expression, indent + 1)}"
+
+
 @register(QuantifierExprNode)
 def _pretty_quantifier(node: QuantifierExprNode, indent: int):
     pad = _pad(indent)
-
-    lines = [f"{pad}{node.quantifier} {node.variable}"]
+    lines = [
+        f"{pad}{binder.quantifier} {', '.join(binder.variables)}"
+        for binder in node.binders
+    ]
 
     if node.domain:
         lines.append(f"{pad}  in {pretty(node.domain, 0).strip()}")
+
+    if node.restriction:
+        lines.append(pretty(node.restriction, indent + 1))
 
     return "\n".join(lines)
 
@@ -332,6 +375,43 @@ def _pretty_property(node: PropertyNode, indent: int):
 
 
 # =========================================================
+# ANCHORS
+# =========================================================
+
+
+@register(AnchorEntryNode)
+def _pretty_anchor_entry(node: AnchorEntryNode, indent: int):
+    return f"{_pad(indent)}{node.feature}: {_expr(node.value)}"
+
+
+@register(InlineAnchorBindingNode)
+def _pretty_inline_anchor(node: InlineAnchorBindingNode, indent: int):
+    lines = [f"{_pad(indent)}{{"]
+    lines.extend(pretty(entry, indent + 1) for entry in node.entries)
+    lines.append(f"{_pad(indent)}}}")
+    return "\n".join(lines)
+
+
+@register(AnchorReferenceArgumentNode)
+def _pretty_anchor_ref_argument(node: AnchorReferenceArgumentNode, indent: int):
+    return f"{_pad(indent)}{node.name}={_expr(node.value)}"
+
+
+@register(AnchorReferenceBindingNode)
+def _pretty_anchor_ref(node: AnchorReferenceBindingNode, indent: int):
+    args = ", ".join(
+        f"{argument.name}={_expr(argument.value)}" for argument in node.arguments
+    )
+    return f"{_pad(indent)}ref({args})"
+
+
+@register(AnchorDeclarationNode)
+def _pretty_anchor(node: AnchorDeclarationNode, indent: int):
+    binding = pretty(node.binding, indent + 1).lstrip()
+    return f"{_pad(indent)}anchor {node.name} := {binding}"
+
+
+# =========================================================
 # HEADER / PROGRAM
 # =========================================================
 
@@ -351,6 +431,11 @@ def _pretty_header(node: HeaderNode, indent: int):
 @register(ProgramNode)
 def _pretty_program(node: ProgramNode, indent: int):
     lines = [pretty(node.header, indent), ""]
+
+    for anchor in node.anchors:
+        lines.append(pretty(anchor, indent))
+    if node.anchors:
+        lines.append("")
 
     for prop in node.body:
         lines.append(pretty(prop, indent))

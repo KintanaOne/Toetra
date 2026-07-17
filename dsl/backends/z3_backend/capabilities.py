@@ -38,4 +38,5 @@ Z3_CAPABILITIES = BackendCapabilities(
     supports_finite_set_membership=True,
     supports_symbolic_categories=False,
     supports_domain_assumptions=True,
+    max_model_evaluations=None,
 )

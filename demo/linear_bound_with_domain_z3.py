@@ -13,6 +13,8 @@ from dsl.ir.ir2.domain_assumptions import (
     NumericFeatureBounds,
 )
 from dsl.ir.ir2.enums import NormalFormKind
+from dsl.ir.ir2.nodes import NNFFormulaIR2
+from dsl.ir.ir2.points import PointAwareIR2Analyzer
 from dsl.ir.normalization.nnf import NNFNormalizer
 from dsl.semantic.types.enums import EnumDataType
 from model.detector.model_framework import EnumModelFramework
@@ -25,7 +27,7 @@ BOUND_SAMPLE = dedent("""
     target := MyTarget
 
     [BOUND]:
-    check_at x0 with domain(
+    forall x0 with domain(
     
     )=> target <= 7 using Z3
     """).strip()
@@ -126,9 +128,12 @@ def run_forml_z3_linear_bound_with_domains(
     if len(nnf_tasks) != 1:
         raise ValueError("This demo expects exactly one FORML task.")
 
+    requested_evaluations = PointAwareIR2Analyzer().model_evaluations(
+        spec_formula=NNFFormulaIR2(expression=nnf_tasks[0].query.expression),
+    )
     model_assumptions = ModelEncoderFactory().encode(
         schema=schema,
-        scope=nnf_tasks[0].scope,
+        evaluations=requested_evaluations,
     )
 
     domain_assumptions = DomainAssumptionEncoder().encode(bounds)

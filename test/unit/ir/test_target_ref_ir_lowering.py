@@ -14,7 +14,7 @@ def test_target_ref_lowers_to_model_output_in_ir1():
     target := MyTarget
 
     [BOUND]:
-    check_at x0 => target <= 10
+    forall x0 => target <= 10
     """
 
     expr = run_ir(code)[0].query.expression

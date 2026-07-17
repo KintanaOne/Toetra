@@ -22,6 +22,7 @@ from dsl.reporting.json import (
 from dsl.reporting.model import (
     ReportAssignment,
     ReportAssignmentKind,
+    ReportPointEvidence,
     ReportScope,
     ReportScopeVariable,
     VerificationReport,
@@ -39,6 +40,7 @@ __all__ = [
     "HtmlRenderOptions",
     "ReportAssignment",
     "ReportAssignmentKind",
+    "ReportPointEvidence",
     "ReportScope",
     "ReportScopeVariable",
     "TextRenderOptions",

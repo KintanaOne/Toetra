@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from textwrap import dedent
 
 from dsl.backends.defaults import create_default_backend_registry
 from dsl.backends.router import BackendRouter
 from dsl.backends.z3_backend.runner import VerificationStatus, Z3Runner
+from dsl.ir.ir1.nodes import ModelEvaluationIR
 from dsl.ir.ir1.run_ir1 import run_ir
 from dsl.ir.ir2.builder import IR2Builder
 from dsl.ir.ir2.context import IR2BuildContext
@@ -24,7 +26,7 @@ BOUND_SAMPLE = dedent("""
     target := MyTarget
 
     [BOUND]:
-    check_at x0 => target <= 7 using Z3
+    forall x0 => target <= 7 using Z3
     """).strip()
 
 
@@ -125,14 +127,28 @@ def run_forml_z3_with_assumption(
     ir1_tasks = run_ir(source)
     nnf_tasks = NNFNormalizer().normalize_tasks(ir1_tasks)
 
-    ir2_tasks = IR2Builder().build_tasks(
-        nnf_tasks,
-        assumptions=(assumption,),
-        context=IR2BuildContext(
-            preferred_normal_form=NormalFormKind.NNF,
-            backend_hint=None,
-        ),
-    )
+    builder = IR2Builder()
+    ir2_tasks = []
+    for task in nnf_tasks:
+        spec_formula = NNFFormulaIR2(expression=task.query.expression)
+        evaluations = builder.point_analyzer.model_evaluations(
+            spec_formula=spec_formula,
+        )
+        if len(evaluations) != 1:
+            raise ValueError(
+                "Manual affine demo assumptions require exactly one model evaluation."
+            )
+        bound_assumption = _bind_manual_assumption(assumption, evaluations[0])
+        ir2_tasks.append(
+            builder.build(
+                task,
+                assumptions=(bound_assumption,),
+                context=IR2BuildContext(
+                    preferred_normal_form=NormalFormKind.NNF,
+                    backend_hint=None,
+                ),
+            )
+        )
 
     registry = create_default_backend_registry()
     router = BackendRouter(registry)
@@ -147,6 +163,35 @@ def run_forml_z3_with_assumption(
         results.append((task, route, result))
 
     return results
+
+
+def _bind_manual_assumption(
+    assumption: AssumptionIR2,
+    evaluation: ModelEvaluationIR,
+) -> AssumptionIR2:
+    """Migrate one legacy demo equation to an explicit evaluation identity."""
+
+    atom = assumption.formula.expression
+    if not isinstance(atom, AffineOutputConstraintIR2):
+        raise TypeError("Manual affine demo assumption must wrap an affine equation.")
+    point = evaluation.point
+    expression = replace(
+        atom.expression,
+        terms=tuple(
+            replace(term, entity=point.name, point=point)
+            for term in atom.expression.terms
+        ),
+    )
+    return replace(
+        assumption,
+        formula=NNFFormulaIR2(
+            expression=replace(
+                atom,
+                expression=expression,
+                evaluation=evaluation,
+            )
+        ),
+    )
 
 
 def print_case(
