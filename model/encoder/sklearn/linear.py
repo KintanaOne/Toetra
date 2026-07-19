@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Sequence, cast
 
+from dsl.compatibility.descriptors import ModelEncoderDescriptor
+
 from dsl.ir.ir1.nodes import ModelEvaluationIR
 from dsl.ir.ir2.enums import AssumptionSource
 from dsl.ir.ir2.dsl.nodes import AssumptionIR2, NNFFormulaIR2
@@ -32,6 +34,11 @@ class SklearnLinearRegressorEncoder:
     """
 
     supported_model_types = frozenset({"LinearRegression"})
+    compatibility = ModelEncoderDescriptor(
+        encoder_id="forml.affine-equation",
+        version="1",
+        semantic_target="forml.real_affine_extracted_model",
+    )
 
     def encode(
         self,

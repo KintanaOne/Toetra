@@ -1,6 +1,14 @@
 from __future__ import annotations
 
+import z3
+
+from dsl.compatibility.descriptors import (
+    BackendProfileDescriptor,
+    NumericSemanticDescriptor,
+)
+from dsl.compatibility.enums import BackendKind
 from dsl.backends.capabilities import BackendCapabilities
+from dsl.backends.execution import BackendExecutionCapabilities
 from dsl.ir.ir2.enums import (
     NormalFormKind,
     VerificationSemantics,
@@ -39,4 +47,20 @@ Z3_CAPABILITIES = BackendCapabilities(
     supports_symbolic_categories=False,
     supports_domain_assumptions=True,
     max_model_evaluations=None,
+    execution_capabilities=BackendExecutionCapabilities(
+        supports_timeout=True,
+        supports_cancellation=True,
+        supports_max_backend_units=True,
+        supports_max_memory=True,
+        supports_deterministic_seed=True,
+        supported_backend_options=None,
+    ),
+    numeric_profile=BackendProfileDescriptor(
+        backend_kind=BackendKind.SMT,
+        adapter_id="z3",
+        adapter_version=z3.get_version_string(),
+        profile_id="smt_real_affine_exact",
+        numeric_semantics=NumericSemanticDescriptor.exact_real(),
+        supports_non_finite_values=False,
+    ),
 )

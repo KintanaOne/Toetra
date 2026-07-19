@@ -97,7 +97,12 @@ class AnchorValidator:
             feature_schema=frozen_mapping(schema_features),
             concrete_values=frozen_mapping(
                 {
-                    name: PointLiteral(value=value.value, dtype=value.dtype)
+                    name: PointLiteral(
+                        value=value.value,
+                        dtype=value.dtype,
+                        source_lexeme=value.source_lexeme,
+                        source_dtype=f"dsl:{value.dtype.value}",
+                    )
                     for name, value in values.items()
                 }
             ),
@@ -209,6 +214,8 @@ class AnchorValidator:
             value=PointLiteral(
                 value=arguments["value"].value,
                 dtype=arguments["value"].dtype,
+                source_lexeme=arguments["value"].source_lexeme,
+                source_dtype=f"dsl:{arguments['value'].dtype.value}",
             ),
         )
         resolved = self.resolved_anchors.get(declaration.name)

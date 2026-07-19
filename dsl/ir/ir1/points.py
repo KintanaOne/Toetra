@@ -67,6 +67,8 @@ class PointIRRegistry:
                     literal=PointLiteralIR(
                         value=literal.value,
                         dtype=literal.dtype,
+                        source_lexeme=literal.source_lexeme,
+                        source_dtype=literal.source_dtype,
                     ),
                 )
                 for name, literal in (symbol.concrete_values or {}).items()
@@ -77,6 +79,8 @@ class PointIRRegistry:
                     value=PointLiteralIR(
                         value=symbol.reference.value.value,
                         dtype=symbol.reference.value.dtype,
+                        source_lexeme=symbol.reference.value.source_lexeme,
+                        source_dtype=symbol.reference.value.source_dtype,
                     ),
                 )
                 if symbol.reference is not None
@@ -88,6 +92,8 @@ class PointIRRegistry:
                     lookup_value=PointLiteralIR(
                         value=symbol.resolution.lookup_value.value,
                         dtype=symbol.resolution.lookup_value.dtype,
+                        source_lexeme=symbol.resolution.lookup_value.source_lexeme,
+                        source_dtype=symbol.resolution.lookup_value.source_dtype,
                     ),
                     source_kind=symbol.resolution.source_kind,
                     source_reference=symbol.resolution.source_reference,

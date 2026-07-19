@@ -34,6 +34,7 @@ def test_specification_constant_reaches_ir1_with_provenance() -> None:
     assert comparison.right.dtype is EnumDataType.INT
     assert comparison.right.source_kind is ScalarValueSource.SPECIFICATION_CONSTANT
     assert comparison.right.source_name == "maximum_age"
+    assert comparison.right.source_lexeme == "65"
 
 
 def test_target_can_be_compared_to_specification_constant() -> None:
@@ -59,3 +60,4 @@ def test_target_can_be_compared_to_specification_constant() -> None:
     assert comparison.right.dtype is EnumDataType.FLOAT
     assert comparison.right.source_kind is ScalarValueSource.SPECIFICATION_CONSTANT
     assert comparison.right.source_name == "max_risk"
+    assert comparison.right.source_lexeme == "0.2"

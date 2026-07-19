@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import math
+import threading
+import time
 from dataclasses import dataclass
 from typing import Any, Mapping
 
@@ -8,6 +11,12 @@ import z3
 from dsl.backends.diagnostics import (
     BackendDiagnosticSeverity,
     BackendResultDiagnostic,
+)
+from dsl.backends.errors import BackendExecutionError
+from dsl.backends.execution import (
+    BackendExecutionEvidence,
+    BackendExecutionPolicy,
+    BackendExecutionStatus,
 )
 from dsl.backends.results import VerificationResult, VerificationStatus
 from dsl.backends.z3_backend.symbols import (
@@ -22,6 +31,13 @@ from dsl.language.vocabulary.backends import EnumBackend
 
 Z3_VACUOUS_PROOF = "Z3_VACUOUS_PROOF"
 Z3_INCONSISTENT_ASSUMPTIONS = "Z3_INCONSISTENT_ASSUMPTIONS"
+BACKEND_TIMEOUT = "BACKEND_TIMEOUT"
+BACKEND_RESOURCE_LIMIT = "BACKEND_RESOURCE_LIMIT"
+BACKEND_CANCELLED = "BACKEND_CANCELLED"
+BACKEND_UNKNOWN = "BACKEND_UNKNOWN"
+BACKEND_DIAGNOSTIC_INCOMPLETE = "BACKEND_DIAGNOSTIC_INCOMPLETE"
+
+_RESERVED_Z3_OPTIONS = frozenset({"timeout", "rlimit", "max_memory", "random_seed"})
 
 
 @dataclass(frozen=True, init=False)
@@ -37,6 +53,7 @@ class Z3VerificationResult(VerificationResult):
         message: str = "",
         diagnostics: tuple[BackendResultDiagnostic, ...] = (),
         metadata: Mapping[str, Any] | None = None,
+        execution: BackendExecutionEvidence | None = None,
     ) -> None:
         object.__setattr__(self, "status", status)
         object.__setattr__(self, "backend", EnumBackend.Z3)
@@ -45,58 +62,175 @@ class Z3VerificationResult(VerificationResult):
         object.__setattr__(self, "message", message)
         object.__setattr__(self, "diagnostics", diagnostics)
         object.__setattr__(self, "metadata", metadata or {})
+        object.__setattr__(self, "execution", execution)
+
+
+@dataclass
+class _ExecutionBudget:
+    started_at: float
+    deadline: float | None
+
+    @classmethod
+    def start(cls, policy: BackendExecutionPolicy) -> _ExecutionBudget:
+        started_at = time.perf_counter()
+        deadline = (
+            started_at + policy.timeout_ms / 1000.0
+            if policy.timeout_ms is not None
+            else None
+        )
+        return cls(started_at=started_at, deadline=deadline)
+
+    def duration_ms(self) -> float:
+        return max(0.0, (time.perf_counter() - self.started_at) * 1000.0)
+
+    def remaining_timeout_ms(self) -> int | None:
+        if self.deadline is None:
+            return None
+        remaining = (self.deadline - time.perf_counter()) * 1000.0
+        if remaining <= 0:
+            return 0
+        return max(1, math.ceil(remaining))
+
+
+class _CancellationMonitor:
+    def __init__(
+        self,
+        solver: z3.Solver,
+        policy: BackendExecutionPolicy,
+    ) -> None:
+        self._solver = solver
+        self._token = policy.cancellation_token
+        self._stopped = threading.Event()
+        self._thread: threading.Thread | None = None
+
+    def __enter__(self) -> _CancellationMonitor:
+        if self._token is not None:
+            self._thread = threading.Thread(
+                target=self._watch,
+                name="forml-backend-cancellation",
+                daemon=True,
+            )
+            self._thread.start()
+        return self
+
+    def __exit__(self, *_args: object) -> None:
+        self._stopped.set()
+        if self._thread is not None:
+            self._thread.join(timeout=0.1)
+
+    def _watch(self) -> None:
+        assert self._token is not None
+        while not self._stopped.wait(0.01):
+            if self._token.is_cancelled():
+                self._solver.interrupt()
+                return
 
 
 class Z3Runner:
-    """Execute a translated IR2 verification condition with Z3.
+    """Execute an IR2 verification condition under the backend policy.
 
-    The interpretation of SAT and UNSAT depends on the verification semantics:
-
-    REFUTATION
-        SAT     -> COUNTEREXAMPLE
-        UNSAT   -> PROVED
-
-    SATISFACTION
-        SAT     -> WITNESS
-        UNSAT   -> NO_WITNESS
+    The generic policy owns timeout, resource, cancellation and deterministic
+    execution controls. Z3 only maps that contract to native solver options.
     """
 
     def __init__(self, translator: Z3Translator | None = None) -> None:
         self.translator = translator or Z3Translator()
 
-    def run(self, task: VerificationTaskIR2) -> Z3VerificationResult:
+    def run(
+        self,
+        task: VerificationTaskIR2,
+        *,
+        policy: BackendExecutionPolicy | None = None,
+    ) -> Z3VerificationResult:
+        resolved_policy = policy or BackendExecutionPolicy()
+        budget = _ExecutionBudget.start(resolved_policy)
+
+        if resolved_policy.cancelled:
+            return self._inconclusive_result(
+                execution_status=BackendExecutionStatus.CANCELLED,
+                backend_status="cancelled",
+                reason="Execution was cancelled before backend translation.",
+                backend_reason="pre_cancelled",
+                policy=resolved_policy,
+                budget=budget,
+            )
+
         translation = self.translator.translate(task)
+        if budget.remaining_timeout_ms() == 0:
+            return self._inconclusive_result(
+                execution_status=BackendExecutionStatus.TIMEOUT,
+                backend_status="timeout",
+                reason="The backend execution budget expired during translation.",
+                backend_reason="translation_deadline_exceeded",
+                policy=resolved_policy,
+                budget=budget,
+                metadata=self._translation_metadata(translation),
+            )
 
         solver = z3.Solver()
+        self._configure_solver(solver, resolved_policy, budget)
         solver.add(translation.expression)
 
-        solver_result = solver.check()
+        try:
+            with _CancellationMonitor(solver, resolved_policy):
+                solver_result = solver.check()
+        except Exception as error:
+            raise BackendExecutionError(
+                f"Z3 execution failed: {error}",
+                backend=EnumBackend.Z3.value,
+                evidence=self._execution_evidence(
+                    BackendExecutionStatus.ERROR,
+                    policy=resolved_policy,
+                    budget=budget,
+                    reason="The backend raised a technical execution error.",
+                    backend_reason=type(error).__name__,
+                ),
+            ) from error
 
         if solver_result == z3.unknown:
-            status = VerificationStatus.UNKNOWN
-            return Z3VerificationResult(
-                status=status,
-                solver_status="unknown",
-                model=None,
-                message=self._message_for(status),
+            backend_reason = (
+                solver.reason_unknown()
+                if hasattr(solver, "reason_unknown")
+                else "unknown"
+            )
+            execution_status = self._classify_unknown(
+                backend_reason,
+                policy=resolved_policy,
+                budget=budget,
+            )
+            return self._inconclusive_result(
+                execution_status=execution_status,
+                backend_status="unknown",
+                reason=self._reason_for_inconclusive(execution_status),
+                backend_reason=backend_reason,
+                policy=resolved_policy,
+                budget=budget,
                 metadata=self._translation_metadata(translation),
             )
 
         if solver_result == z3.sat:
             model = solver.model()
             status = self._status_for_sat(task.semantics)
-
             return Z3VerificationResult(
                 status=status,
                 solver_status="sat",
                 model=self._assignments(translation, model),
                 message=self._message_for(status),
                 metadata=self._translation_metadata(translation),
+                execution=self._execution_evidence(
+                    BackendExecutionStatus.SAT,
+                    policy=resolved_policy,
+                    budget=budget,
+                ),
             )
 
         if solver_result == z3.unsat:
             status = self._status_for_unsat(task.semantics)
-            diagnostics = self._unsat_diagnostics(task)
+            diagnostics = self._unsat_diagnostics(
+                task,
+                policy=resolved_policy,
+                budget=budget,
+            )
             return Z3VerificationResult(
                 status=status,
                 solver_status="unsat",
@@ -104,9 +238,146 @@ class Z3Runner:
                 message=self._message_for(status),
                 diagnostics=diagnostics,
                 metadata=self._translation_metadata(translation),
+                execution=self._execution_evidence(
+                    BackendExecutionStatus.UNSAT,
+                    policy=resolved_policy,
+                    budget=budget,
+                ),
             )
 
-        raise RuntimeError(f"Unsupported Z3 solver result: {solver_result}")
+        raise BackendExecutionError(
+            f"Unsupported Z3 solver result: {solver_result}",
+            backend=EnumBackend.Z3.value,
+            evidence=self._execution_evidence(
+                BackendExecutionStatus.ERROR,
+                policy=resolved_policy,
+                budget=budget,
+                reason="The backend returned an unsupported native status.",
+                backend_reason="unsupported_native_status",
+            ),
+        )
+
+    @staticmethod
+    def _configure_solver(
+        solver: z3.Solver,
+        policy: BackendExecutionPolicy,
+        budget: _ExecutionBudget,
+    ) -> None:
+        if not hasattr(solver, "set"):
+            return
+        remaining_timeout_ms = budget.remaining_timeout_ms()
+        if remaining_timeout_ms is not None:
+            solver.set(timeout=remaining_timeout_ms)
+        if policy.resources.max_backend_units is not None:
+            solver.set(rlimit=policy.resources.max_backend_units)
+        if policy.resources.max_memory_mb is not None:
+            solver.set(max_memory=policy.resources.max_memory_mb)
+        if policy.deterministic_seed is not None:
+            solver.set(random_seed=policy.deterministic_seed)
+
+        reserved = _RESERVED_Z3_OPTIONS.intersection(policy.backend_options)
+        if reserved:
+            names = ", ".join(sorted(reserved))
+            raise ValueError(
+                "Z3 backend options must not override generic execution policy "
+                f"fields: {names}"
+            )
+        if policy.backend_options:
+            solver.set(**dict(policy.backend_options))
+
+    def _inconclusive_result(
+        self,
+        *,
+        execution_status: BackendExecutionStatus,
+        backend_status: str,
+        reason: str,
+        backend_reason: str | None,
+        policy: BackendExecutionPolicy,
+        budget: _ExecutionBudget,
+        metadata: Mapping[str, Any] | None = None,
+    ) -> Z3VerificationResult:
+        diagnostic_codes = {
+            BackendExecutionStatus.TIMEOUT: BACKEND_TIMEOUT,
+            BackendExecutionStatus.RESOURCE_LIMIT: BACKEND_RESOURCE_LIMIT,
+            BackendExecutionStatus.CANCELLED: BACKEND_CANCELLED,
+            BackendExecutionStatus.UNKNOWN: BACKEND_UNKNOWN,
+        }
+        diagnostic = BackendResultDiagnostic(
+            code=diagnostic_codes[execution_status],
+            severity=BackendDiagnosticSeverity.WARNING,
+            message=reason,
+        )
+        return Z3VerificationResult(
+            status=VerificationStatus.UNKNOWN,
+            solver_status=backend_status,
+            model=None,
+            message=reason,
+            diagnostics=(diagnostic,),
+            metadata=metadata,
+            execution=self._execution_evidence(
+                execution_status,
+                policy=policy,
+                budget=budget,
+                reason=reason,
+                backend_reason=backend_reason,
+            ),
+        )
+
+    @staticmethod
+    def _execution_evidence(
+        status: BackendExecutionStatus,
+        *,
+        policy: BackendExecutionPolicy,
+        budget: _ExecutionBudget,
+        reason: str | None = None,
+        backend_reason: str | None = None,
+    ) -> BackendExecutionEvidence:
+        return BackendExecutionEvidence(
+            status=status,
+            duration_ms=budget.duration_ms(),
+            policy=policy.snapshot(),
+            reason=reason,
+            backend_reason=backend_reason,
+        )
+
+    @staticmethod
+    def _classify_unknown(
+        backend_reason: str,
+        *,
+        policy: BackendExecutionPolicy,
+        budget: _ExecutionBudget,
+    ) -> BackendExecutionStatus:
+        normalized = backend_reason.lower()
+        if policy.cancelled:
+            return BackendExecutionStatus.CANCELLED
+        if budget.remaining_timeout_ms() == 0 or "timeout" in normalized:
+            return BackendExecutionStatus.TIMEOUT
+        if any(
+            token in normalized
+            for token in ("rlimit", "resource", "memory", "max. memory")
+        ):
+            return BackendExecutionStatus.RESOURCE_LIMIT
+        if "cancel" in normalized:
+            return BackendExecutionStatus.CANCELLED
+        return BackendExecutionStatus.UNKNOWN
+
+    @staticmethod
+    def _reason_for_inconclusive(status: BackendExecutionStatus) -> str:
+        messages = {
+            BackendExecutionStatus.TIMEOUT: (
+                "Verification inconclusive: the backend execution timed out."
+            ),
+            BackendExecutionStatus.RESOURCE_LIMIT: (
+                "Verification inconclusive: the backend resource limit was reached."
+            ),
+            BackendExecutionStatus.CANCELLED: (
+                "Verification inconclusive: the backend execution was cancelled."
+            ),
+            BackendExecutionStatus.UNKNOWN: (
+                "Verification inconclusive: Z3 returned unknown."
+            ),
+        }
+        return messages[status]
 
     @staticmethod
     def _assignments(
@@ -158,8 +429,30 @@ class Z3Runner:
     def _unsat_diagnostics(
         self,
         task: VerificationTaskIR2,
+        *,
+        policy: BackendExecutionPolicy,
+        budget: _ExecutionBudget,
     ) -> tuple[BackendResultDiagnostic, ...]:
-        if not task.assumptions or self._assumptions_status(task) != z3.unsat:
+        if not task.assumptions:
+            return ()
+
+        assumptions_status = self._assumptions_status(
+            task,
+            policy=policy,
+            budget=budget,
+        )
+        if assumptions_status is None:
+            return (
+                BackendResultDiagnostic(
+                    code=BACKEND_DIAGNOSTIC_INCOMPLETE,
+                    severity=BackendDiagnosticSeverity.INFO,
+                    message=(
+                        "The backend budget was exhausted before the optional "
+                        "assumption-consistency diagnostic completed."
+                    ),
+                ),
+            )
+        if assumptions_status != z3.unsat:
             return ()
 
         if task.semantics is VerificationSemantics.REFUTATION:
@@ -185,11 +478,23 @@ class Z3Runner:
             ),
         )
 
-    def _assumptions_status(self, task: VerificationTaskIR2) -> z3.CheckSatResult:
+    def _assumptions_status(
+        self,
+        task: VerificationTaskIR2,
+        *,
+        policy: BackendExecutionPolicy,
+        budget: _ExecutionBudget,
+    ) -> z3.CheckSatResult | None:
+        remaining_timeout_ms = budget.remaining_timeout_ms()
+        if remaining_timeout_ms == 0 or policy.cancelled:
+            return None
         translation = self.translator.translate_assumptions(task)
         solver = z3.Solver()
+        self._configure_solver(solver, policy, budget)
         solver.add(translation.expression)
-        return solver.check()
+        with _CancellationMonitor(solver, policy):
+            status = solver.check()
+        return None if status == z3.unknown else status
 
     @staticmethod
     def _message_for(status: VerificationStatus) -> str:
@@ -210,31 +515,27 @@ class Z3Runner:
                 "No witness exists under the encoded assumptions."
             ),
             VerificationStatus.UNKNOWN: (
-                "Verification inconclusive: Z3 returned unknown."
+                "Verification inconclusive: the backend returned unknown."
             ),
         }
         return messages[status]
 
+    @staticmethod
     def _status_for_sat(
-        self,
         semantics: VerificationSemantics,
     ) -> VerificationStatus:
         if semantics is VerificationSemantics.REFUTATION:
             return VerificationStatus.COUNTEREXAMPLE
-
         if semantics is VerificationSemantics.SATISFACTION:
             return VerificationStatus.WITNESS
-
         raise ValueError(f"Unsupported verification semantics: {semantics}")
 
+    @staticmethod
     def _status_for_unsat(
-        self,
         semantics: VerificationSemantics,
     ) -> VerificationStatus:
         if semantics is VerificationSemantics.REFUTATION:
             return VerificationStatus.PROVED
-
         if semantics is VerificationSemantics.SATISFACTION:
             return VerificationStatus.NO_WITNESS
-
         raise ValueError(f"Unsupported verification semantics: {semantics}")

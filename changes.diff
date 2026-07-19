@@ -1,0 +1,672 @@
+--- a/docs/adr/ADR-0018-numeric-semantics-and-backend-compatibility.md
++++ b/docs/adr/ADR-0018-numeric-semantics-and-backend-compatibility.md
+@@ -0,0 +1,639 @@
++# ADR-0018 — Make Numeric Semantics and Framework/Model/Backend Compatibility Explicit
++
++> Status: Accepted — revised before implementation; implementation scheduled for Patch 16.2 and Patch 16.3  
++> Date: 2026-07  
++> Scope: DSL numeric literals, runtime data, model adapters, model families, ModelBridge encoders, IR, backend profiles, verification conclusions, routing, and reporting
++
++## Context
++
++FORML translates behavioral properties and model constraints across several numeric systems:
++
++```text
++DSL literals and domains
+++ runtime anchors/datasets
+++ executable model artifacts
++→ FORML typed artifacts and IR
++→ model-family encoder
++→ backend numeric representation and reasoning
++→ verification conclusion
++```
++
++These systems are not automatically equivalent.
++
++Examples include:
++
++- decimal source literals such as `0.1`;
++- Python integers and floats;
++- NumPy `float16`, `float32`, and `float64` values;
++- pandas nullable and extension dtypes;
++- framework-specific parameter storage and execution kernels;
++- model-family-specific operations such as affine products, tree thresholds, categorical routing, activation functions, and reductions;
++- concrete IEEE-754 execution;
++- exact integers, rationals, and reals in symbolic backends;
++- floating-point theories, mixed-integer encodings, interval arithmetic, abstract interpretation, concrete search, and remote verification services.
++
++The compatibility problem is not owned by one model framework and is not owned by one backend implementation. A result depends on the complete route selected for a verification task:
++
++```text
++framework adapter
++× model family and concrete execution profile
++× FORML model encoder
++× backend kind and numeric profile
++× property operations and required conclusions
++```
++
++A framework name alone is insufficient. Two models from the same framework can use different operations, dtypes, device kernels, or execution semantics. A backend name alone is also insufficient. The same solver can be used through exact real arithmetic, IEEE-754 floating-point sorts, bounded bit-vectors, or a deliberately over-approximating adapter.
++
++A replay can validate one concrete witness or counterexample. It cannot, by itself, validate a universal proof obtained from a different numeric semantics.
++
++FORML therefore needs an explicit, backend-neutral and framework-neutral contract that records the compatibility of the entire model-to-backend route.
++
++## Decision
++
++FORML will treat numeric semantics and framework/model/backend compatibility as first-class verification contracts.
++
++A verification task may be routed and executed only after FORML has:
++
++1. identified the source framework adapter and its relevant version or opset;
++2. identified the model family and the concrete numeric execution profile;
++3. identified the model-family encoder used by FORML;
++4. identified the numeric semantics required by the compiled specification;
++5. identified the backend kind and the numeric profile offered by the selected adapter;
++6. matched the complete route against a documented compatibility rule;
++7. determined which verification conclusions remain sound under that rule.
++
++Compatibility is assessed per verification task and backend profile. It is not inferred from a framework name, model class name, or backend name alone.
++
++## 1. Numeric semantic layers
++
++FORML distinguishes four semantic layers and two routing identities.
++
++### 1.1 Source model semantics
++
++The source model descriptor records the semantics of the executable artifact as far as they are known, including relevant information such as:
++
++- framework or interchange format;
++- framework version, runtime version, and opset when applicable;
++- model family;
++- parameter dtypes;
++- input and output dtypes;
++- concrete execution arithmetic;
++- operation order when material;
++- device or execution provider when material;
++- rounding mode when known;
++- overflow and underflow behavior when relevant;
++- support for signed zero, `NaN`, positive infinity, and negative infinity;
++- preprocessing boundary and transformed feature space;
++- framework conversions performed before prediction.
++
++FORML must not infer a universal numeric semantics from a framework brand. Unknown or environment-dependent behavior must remain `UNKNOWN` until an adapter supplies evidence.
++
++### 1.2 Specification and runtime-data semantics
++
++The specification side includes:
++
++- numeric DSL literal spelling;
++- specification constants;
++- domain bounds and finite numeric sets;
++- neighborhood radii;
++- inline anchor values;
++- referenced anchor values resolved from pandas, CSV, Arrow, NumPy, or custom sources;
++- explicit schema values supplied by the public API.
++
++The parser and builder must not silently erase information required to determine the intended numeric value. In particular, a decimal source lexeme must remain recoverable until the semantic layer has chosen its canonical representation.
++
++Runtime values must retain enough dtype information to distinguish materially different inputs such as exact integers, decimal values, binary floats of different widths, nullable values, and unknown/object values.
++
++### 1.3 FORML canonical numeric semantics
++
++FORML IR must carry a backend-neutral numeric description sufficient for routing, diagnostics, and reporting.
++
++The exact implementation type is deferred to Patch 16.2, but the description must be able to represent distinctions equivalent to:
++
++```text
++numeric family: integer | rational | decimal | binary_float | real | interval | bitvector | unknown
++precision/width: exact | 16 | 32 | 64 | arbitrary | unknown
++rounding: exact | nearest-even | toward-zero | directed | backend-defined | unknown
++special values: allowed/rejected/unknown
++range behavior: unbounded | finite | saturating | wrapping | unknown
++origin: DSL | model | schema | dataset | anchor | generated assumption
++```
++
++IR normalization may simplify arithmetic, but it must not silently change the declared numeric semantics.
++
++### 1.4 Model-family encoder identity
++
++The ModelBridge route must identify the encoder that translates a model family into FORML constraints.
++
++Examples of encoder families include:
++
++```text
++affine equation encoder
++tree-path encoder
++tree-ensemble encoder
++piecewise-linear network encoder
++interval transfer encoder
++concrete execution adapter
++```
++
++Two encoders for the same source model can expose different semantic targets and approximation guarantees. The encoder identity and version are therefore part of the compatibility key.
++
++### 1.5 Backend numeric profile
++
++A backend profile declares the semantics implemented through one FORML adapter. It does not inherit every theory or option supported by the underlying engine.
++
++Backend kinds may include:
++
++```text
++SMT
++MILP
++interval analysis
++abstract interpretation
++symbolic algebra
++concrete runtime search
++remote verification service
++```
++
++Examples of backend numeric profiles include:
++
++```text
++SMT_INTEGER_EXACT
++SMT_REAL_AFFINE_EXACT
++SMT_IEEE754_BINARY32
++SMT_IEEE754_BINARY64
++MILP_RATIONAL_AFFINE
++INTERVAL_BINARY64_OUTWARD_ROUNDED
++ABSTRACT_REAL_OVERAPPROX
++CONCRETE_SOURCE_RUNTIME_SEARCH
++```
++
++An implementation such as Z3, cvc5, a MILP solver, an interval engine, or an abstract interpreter may expose one or several profiles. Two profiles from the same implementation may have different compatibility and conclusion guarantees.
++
++## 2. Framework × model family × backend compatibility matrix
++
++FORML will maintain a normalized compatibility-rule registry and derive a human-readable support matrix from it.
++
++A literal hard-coded Cartesian table would grow without bound as frameworks, versions, model families, dtypes, encoders, backends, and property requirements evolve. The registry is therefore normative; the rendered table is a generated view of the same rules used by routing and reporting.
++
++### 2.1 Compatibility key
++
++Each rule is selected by a key equivalent to:
++
++```text
++FrameworkModelBackendCompatibilityKey
++├── framework_adapter_id
++├── framework_version_range_or_opset
++├── model_family
++├── source_execution_profile
++├── model_encoder_id
++├── model_encoder_version
++├── backend_kind
++├── backend_adapter_id
++├── backend_profile_id
++├── backend_version_range
++└── property_numeric_requirements
++```
++
++The model family is independent from the framework. For example, affine regression can originate from a native FORML artifact, an sklearn estimator, an ONNX graph, another ML framework, or a custom adapter.
++
++The backend profile is independent from the backend implementation. For example, exact-real SMT and IEEE-754 SMT are different profiles even if both are implemented with the same solver.
++
++### 2.2 Compatibility-rule result
++
++A matched rule produces an artifact equivalent to:
++
++```text
++FrameworkModelBackendCompatibilityRule
++├── support_status
++├── compatibility_classification
++├── semantic_target
++├── evidence_id
++├── assumptions_and_preconditions
++├── affected_operations
++├── permitted_conclusions
++├── replay_requirements
++├── diagnostics
++└── documentation_reference
++```
++
++`support_status` and `compatibility_classification` are distinct:
++
++- support status answers whether FORML currently implements and tests the route;
++- compatibility classification answers the proven semantic relationship of that route.
++
++A route may be implemented but `LOSSY`, or planned but expected to become `EXACT` once its proof obligations are satisfied.
++
++### 2.3 Illustrative matrix
++
++The following rows illustrate the intended shape. They are not commitments that every route is implemented in V1.
++
++| Source framework/format | Model family | Source numeric semantics | FORML encoder | Backend kind/profile | Expected classification | Permitted use | Status |
++|---|---|---|---|---|---|---|---|
++| Native or any adapter with exact coefficients | Affine regression/classification | Exact integer or rational arithmetic | Affine equation encoder | SMT exact integer/real or rational MILP | `EXACT` when operation semantics match | Universal and existential proof-grade conclusions | Generic rule to support |
++| Any IEEE-754 framework | Affine model | Binary32/binary64 concrete execution | Affine equation encoder using exact reals | SMT exact-real affine | `LOSSY` for the concrete executable; `EXACT` for the named extracted real-affine abstraction | Abstraction-level proofs; concrete examples require replay | First V1 instantiation uses this pattern |
++| Any IEEE-754 framework | Affine model | Binary32/binary64 with known operation order | Operation-order-preserving FP encoder | SMT IEEE-754 with matching width and rounding | `EXACT` only when storage, casts, operations, rounding, and exceptional values are proven equivalent; otherwise `UNKNOWN` | Proof-grade only after evidence rule is satisfied | Future profile |
++| ONNX or another interchange graph | Affine `Gemm`/`Add` graph | Opset-defined tensor arithmetic | Graph-preserving affine encoder | Matching floating-point or exact backend profile | Determined by opset, execution provider, casts, and backend encoding; never inferred from “ONNX” alone | According to matched rule | Future adapter |
++| Tree framework or interchange format | Decision tree / tree ensemble | Framework-specific thresholds, missing-value routing, categorical and float semantics | Tree-path or ensemble encoder | SMT or MILP path constraints | `EXACT`, approximation, or `UNKNOWN` depending on threshold and missing-value fidelity | According to matched rule | Post-V1 candidate |
++| Tensor framework or interchange graph | Piecewise-linear network | Binary floating-point tensor execution | ReLU/piecewise-linear encoder | Abstract interpretation over-approximation | `SOUND_OVER_APPROXIMATION` when transfer functions are proven sound | Universal proof and existential no-witness according to policy; candidates may be spurious | Post-V1 candidate |
++| Any executable framework | Any model family | Concrete source runtime | Concrete search/fuzzing adapter | Concrete source-runtime search | `SOUND_UNDER_APPROXIMATION` over explored executions | Confirmed witnesses/counterexamples only; no universal proof from incomplete search | Future falsification profile |
++| Any supported bounded arithmetic model | Affine or piecewise arithmetic | Finite-precision source semantics | Interval transfer encoder | Outward-rounded interval backend | `SOUND_OVER_APPROXIMATION` when interval transfer rules cover every source behavior | Universal proof-grade conclusions where the interval result is decisive | Future profile |
++| Custom/unknown adapter | Any model family | Incomplete numeric metadata | Any encoder | Any backend profile | `UNKNOWN` until evidence is supplied | No concrete-model proof-grade conclusion | Default conservative rule |
++
++The public compatibility documentation should eventually provide filters for at least:
++
++```text
++framework/format
++framework version or opset
++model family
++source dtype/execution profile
++FORML encoder
++backend kind
++backend numeric profile
++support status
++compatibility classification
++```
++
++### 2.4 Rule precedence
++
++Rules are matched from most specific to most general. A rule with an exact framework version, model subtype, dtype, encoder, and backend profile takes precedence over a wildcard rule.
++
++When two equally specific rules conflict, routing fails with a structured configuration error. FORML must not choose the most permissive classification.
++
++When no rule matches, the compatibility result is `UNKNOWN`, not an inferred default.
++
++### 2.5 Evidence and versioning
++
++A proof-grade rule must reference evidence such as:
++
++- a normative framework or interchange-format specification;
++- a backend theory specification;
++- an encoder correctness argument;
++- differential and boundary tests;
++- version-specific conformance tests;
++- a documented over-approximation or under-approximation theorem.
++
++Rules are versioned because framework kernels, opsets, adapters, and backend behavior can change independently.
++
++## 3. Compatibility classification
++
++FORML uses the following classification for the relation between source behavior and encoded backend behavior.
++
++Let:
++
++- `S` be the set of concrete source behaviors relevant to the task;
++- `B` be the set of behaviors represented by the backend encoding after concretization into the source vocabulary.
++
++| Classification | Required relation | Meaning |
++|---|---|---|
++| `EXACT` | `B = S` | The backend representation preserves the relevant source semantics exactly. |
++| `SOUND_OVER_APPROXIMATION` | `S ⊆ B` | The backend may include extra behaviors but contains every source behavior. |
++| `SOUND_UNDER_APPROXIMATION` | `B ⊆ S` | Every encoded behavior is a source behavior, but some source behaviors may be omitted. |
++| `LOSSY` | no proven inclusion relation | A deterministic conversion exists, but neither sound inclusion relation has been established. |
++| `INCOMPATIBLE` | no valid encoding | The task cannot be represented by the backend profile. |
++| `UNKNOWN` | insufficient evidence or no matching rule | FORML lacks metadata or a proven rule to classify the relationship. |
++
++Compatibility is evidence-based. An adapter must not claim `EXACT` or a sound approximation without a documented rule and tests supporting that claim.
++
++## 4. Conclusion validity depends on verification semantics
++
++A compatibility class does not have one universal meaning for every solver result.
++
++For universal verification by refutation:
++
++```text
++assumptions ∧ ¬property
++```
++
++For existential verification:
++
++```text
++assumptions ∧ property
++```
++
++The following matrix defines the minimum conclusion policy.
++
++| Compatibility | Universal backend “no violating behavior” | Universal backend “candidate violating behavior” | Existential backend “candidate satisfying behavior” | Existential backend “no satisfying behavior” |
++|---|---|---|---|---|
++| `EXACT` | sound proof | sound counterexample when concretizable | sound witness when concretizable | sound no-witness conclusion |
++| `SOUND_OVER_APPROXIMATION` | sound proof | may be spurious; concrete validation required | may be spurious; concrete validation required | sound no-witness conclusion |
++| `SOUND_UNDER_APPROXIMATION` | not sufficient | sound when concretizable; concrete validation required | sound when concretizable; concrete validation required | not sufficient |
++| `LOSSY` | not proof-grade for the concrete source | only a concretely replayed example may be confirmed | only a concretely replayed example may be confirmed | not proof-grade for the concrete source |
++| `INCOMPATIBLE` | execution rejected | execution rejected | execution rejected | execution rejected |
++| `UNKNOWN` | not proof-grade for the concrete source | only a concretely replayed example may be confirmed | only a concretely replayed example may be confirmed | not proof-grade for the concrete source |
++
++The table is intentionally expressed independently from `SAT` and `UNSAT`. A backend adapter maps its native status vocabulary to the common FORML execution contract introduced by Patch 17.
++
++Concrete replay validates one reconstructed execution. It does not upgrade a negative search result obtained under `LOSSY` or `UNKNOWN` compatibility into a concrete-model universal proof.
++
++The public report must never present a conclusion as applying to the concrete source artifact when the compatibility evidence supports only an abstraction-level statement.
++
++## 5. Initial V1 instantiation — one row, not the architecture
++
++The first implemented V1 route is expected to instantiate the generic matrix with:
++
++```text
++framework adapter: sklearn
++model family: affine regression
++source profile: discovered floating-point execution profile
++FORML encoder: affine equation encoder
++backend kind: SMT
++backend implementation: Z3
++backend profile: exact-real affine
++```
++
++This row does not define the architecture. It is only the first supported entry in the framework/model/backend registry.
++
++### 5.1 Real-affine abstraction target
++
++An exact-real backend can reason exactly about the affine equation constructed by FORML from its canonical exact constants.
++
++A result may therefore be valid for the declared mathematical abstraction:
++
++```text
++real-valued affine model extracted and encoded by FORML
++```
++
++The report must identify this target explicitly.
++
++### 5.2 Concrete framework execution target
++
++The same encoding is not automatically exact for concrete floating-point execution because:
++
++- the source parameter dtype may use different widths or conversions;
++- converting framework values to Python `float` can erase original metadata;
++- exact real addition and multiplication do not reproduce IEEE-754 rounding steps;
++- operation order can be material;
++- threshold and equality properties may change truth value near a numerical boundary;
++- overflow, underflow, signed zero, `NaN`, and infinities do not share ordinary real semantics.
++
++Until a route implements either exact concrete semantics or a proven sound approximation, a floating-point affine framework-to-exact-real-backend rule is `LOSSY` for claims about concrete execution.
++
++The V1 instantiation must therefore follow these rules:
++
++1. A result about the real-affine abstraction may be executed and reported only with its semantic target visible.
++2. A `LOSSY` or `UNKNOWN` assessment must not silently produce a concrete-model `PROVED` or `NO_WITNESS` conclusion.
++3. A candidate counterexample or witness may be promoted to a concrete example only after successful replay against the source runtime using compatible input dtypes.
++4. Exact equality is not the only affected operation; ordered comparisons near a boundary are also subject to the compatibility policy.
++5. Non-finite parameters, constants, bounds, radii, or anchor values are rejected by the initial numeric-affine profile unless another profile declares explicit semantics for them.
++6. The report must retain the matched framework/model/backend rule, discovered source dtypes, backend profile, compatibility classification, and semantic target.
++
++Patch 16.2 will choose the least disruptive public behavior among structured rejection, explicit abstraction mode, and more precise conclusion labels. It must obey the generic matrix contract above.
++
++## 6. Compatibility-check placement
++
++Compatibility is evaluated after FORML has enough task-specific evidence and before backend translation or execution.
++
++The target flow is:
++
++```text
++source + model + optional schema/data
++→ parse and preserve numeric source information
++→ semantic typing
++→ framework/model introspection and anchor resolution
++→ select model-family encoder
++→ derive IR requirements
++→ select backend kind/profile
++→ match framework/model/backend compatibility rule
++→ backend translation
++→ execution
++→ conclusion interpretation and reporting
++```
++
++The assessment crosses, but does not collapse, several boundaries:
++
++| Boundary | Responsibility |
++|---|---|
++| Parser/builder | Preserve literal spelling and source kind. |
++| Semantic layer | Resolve numeric types and promotion requirements. |
++| Framework adapter/runtime introspection | Discover framework, version/opset, model family, execution and data dtypes without erasing them. |
++| ModelBridge encoder | Declare the semantic target and constraint family represented by the encoder. |
++| Backend adapter/profile | Declare implemented numeric sorts, arithmetic semantics, status mapping, and execution profile. |
++| Compatibility registry | Match the full route and return an evidence-backed rule. |
++| Result interpreter | Allow only conclusions justified by the matched rule. |
++| Reporting | Expose the matched route, semantic target, evidence, classification, and limitations. |
++
++Compatibility must not be implemented as framework-specific or backend-specific conditionals scattered through translators.
++
++## 7. Assessment shape
++
++The exact Python API is deferred, but the architecture must support an artifact equivalent to:
++
++```text
++NumericCompatibilityAssessment
++├── classification
++├── support_status
++├── semantic_target
++├── matched_rule_id
++├── source_profiles
++│   ├── framework_and_version
++│   ├── model_family
++│   ├── model_parameters
++│   ├── model_execution
++│   ├── specification_values
++│   └── runtime_values
++├── model_encoder_profile
++├── backend_kind_and_profile
++├── evidence
++├── assumptions_and_preconditions
++├── affected_operations
++├── permitted_conclusions
++├── replay_requirements
++└── diagnostics
++```
++
++An assessment is task-local. For example, an integer-only bounded property may be exact even when another property against the same model/backend route uses unsupported floating-point semantics.
++
++## 8. Numeric input validation
++
++The compatibility pass must inspect all numeric contributors to the backend query, not only model coefficients:
++
++- specification constants;
++- arithmetic literals;
++- domain interval bounds;
++- finite numeric-set members;
++- neighborhood radii;
++- inline anchor values;
++- referenced anchor values;
++- explicit ModelSchema dtypes;
++- model coefficients, thresholds, intercepts, weights, or other encoded parameters;
++- generated model and domain assumptions.
++
++Unknown object dtypes, implicit narrowing, non-finite values, and incompatible mixed-width values must produce structured diagnostics rather than silent coercion.
++
++## 9. Relationship to backend capabilities and routing
++
++The existing backend-boundary decision remains valid: V1 may require only one backend implementation while preserving a generic contract.
++
++This ADR refines routing with three distinct questions:
++
++```text
++1. Framework/model support:
++   Can FORML introspect and encode this model family from this framework/version?
++
++2. Backend capability:
++   Can this backend profile represent the requested operations and sorts?
++
++3. Semantic compatibility:
++   What is the proven relationship between source behavior and backend encoding,
++   and which conclusions remain valid?
++```
++
++All three checks are required. A translator can support an operation syntactically while still providing a lossy semantic mapping.
++
++## Rationale
++
++### Trustworthy verification conclusions
++
++A verification framework must state what artifact and semantics were actually verified. Hiding a numeric conversion can change the truth of a property.
++
++### Framework and backend neutrality
++
++The registry key separates framework adapter, model family, model encoder, backend kind, backend implementation, and numeric profile. No one implementation becomes the architecture.
++
++### One source of truth
++
++The same compatibility rules can drive routing, generated support documentation, diagnostics, and report provenance. A handwritten marketing table must not diverge from runtime behavior.
++
++### Incremental implementation
++
++FORML can retain one useful initial route while adding new framework/model/backend rows without redesigning the compiler.
++
++### Auditable routing
++
++A structured rule explains why a route was accepted, rejected, limited to abstraction-level conclusions, or downgraded to concrete-example validation.
++
++### Future product foundations
++
++The registry can later support organizational policy, such as requiring proof-grade compatibility before deployment, without moving fundamental trust out of FORML Core.
++
++## Consequences
++
++### Positive
++
++- FORML no longer equates numeric type compatibility with semantic equivalence.
++- The architecture is neither framework-centric nor backend-centric.
++- Model family and model encoder are explicit compatibility dimensions.
++- Concrete-model and abstraction-level claims are distinguishable.
++- New backends can declare numeric guarantees without leaking implementation details into the compiler.
++- New framework adapters can reuse generic model-family and backend rules when their evidence matches.
++- A generated public compatibility matrix can remain synchronized with runtime routing.
++- Reports can explain exactly which framework/model/backend row justified a conclusion.
++- Counterexample replay receives a precise role rather than being treated as a substitute for proof soundness.
++
++### Negative
++
++- Compatibility metadata must survive more pipeline boundaries.
++- The registry needs versioning, precedence rules, and conflict validation.
++- Some currently accepted tasks may become rejected or downgraded until a sound rule exists.
++- Result/report contracts will need route and compatibility fields.
++- Tests must cover semantic mismatches and rule resolution, not only successful backend translation.
++- Preserving literal lexemes and framework dtypes may require changes to existing AST, schema, and affine IR value types.
++
++## Alternatives considered
++
++### Maintain a manually edited framework × model × backend spreadsheet
++
++Rejected as the normative implementation because it would diverge from routing behavior and would not scale across versions, dtypes, encoders, and property requirements.
++
++A generated table remains required as a user-facing view.
++
++### Make the first framework/backend route the implicit default architecture
++
++Rejected. The first supported route is one registry entry, not a privileged semantic model.
++
++### Treat every numeric value as a mathematical real
++
++Rejected for concrete-model claims because framework execution may use finite-precision arithmetic with different results.
++
++It remains valid as an explicitly named abstraction target.
++
++### Use Python `float` as FORML's universal numeric representation
++
++Rejected because it erases source width and does not define backend or model execution semantics.
++
++### Encode the binary value of each float exactly as a rational
++
++Insufficient as a complete solution. It can preserve a stored parameter value but does not reproduce every intermediate rounding step of the source model execution.
++
++### Restrict only exact equality
++
++Rejected because strict and non-strict inequalities can also change near a numerical boundary.
++
++### Rely on counterexample replay
++
++Rejected as a proof-soundness mechanism. Replay can confirm a concrete example but cannot validate an abstraction-level negative result universally.
++
++### Scatter compatibility checks through framework and backend adapters
++
++Rejected because duplicated conditionals would make rule precedence, reporting, generated documentation, and auditability inconsistent.
++
++### Defer all numeric semantics until after V1
++
++Rejected because the meaning of `PROVED` is part of the V1 public trust contract.
++
++## Implementation sequence
++
++### Patch 16.1 — Decision freeze
++
++- Accept this ADR.
++- Define the normalized framework/model/backend compatibility key and rule result.
++- Define the generated public compatibility matrix as a required view.
++- Register the ADR in the documentation navigation and ADR index.
++- Make no runtime or conclusion change.
++
++### Patch 16.2 — Descriptors, compatibility registry, and routing gate
++
++- Preserve DSL numeric source information needed by the decision.
++- Preserve framework, model, version/opset, execution, and runtime dtypes.
++- Add model-encoder descriptors.
++- Add backend-kind and backend-profile descriptors.
++- Implement the normalized compatibility-rule registry and deterministic precedence.
++- Add a backend-neutral compatibility assessment and structured diagnostics.
++- Reject conflicting rules and default unmatched routes to `UNKNOWN`.
++- Reject non-finite values in the initial numeric-affine profile.
++- Prevent unsupported concrete-model proof conclusions under `LOSSY`, `INCOMPATIBLE`, or `UNKNOWN` compatibility.
++
++### Patch 16.3 — Reporting, generated matrix, and semantic-boundary tests
++
++- Expose the matched rule, semantic target, source profiles, encoder profile, backend profile, classification, evidence, and permitted conclusions.
++- Generate the user-facing framework/model/backend compatibility matrix from the runtime registry.
++- Add regression tests for rule precedence, wildcard fallback, conflict rejection, and no-match behavior.
++- Add regression tests for dtype preservation and decimal-boundary cases.
++- Add end-to-end tests distinguishing abstraction proofs from concrete examples.
++- Add replay tests that preserve compatible input dtypes.
++- Document the initial V1 route and its limitations without presenting it as the architecture.
++
++## Acceptance criteria
++
++This decision is implemented only when:
++
++1. the compatibility key distinguishes framework/version, model family, source execution profile, model encoder, backend kind, backend profile, and property requirements;
++2. no model parameter or runtime numeric value loses materially relevant dtype information before compatibility assessment;
++3. DSL numeric literal spelling or an exact equivalent remains available until canonical semantic normalization;
++4. every model-family encoder declares its semantic target;
++5. every executable backend profile declares its numeric semantics;
++6. every verification task receives one deterministic compatibility assessment before backend translation;
++7. conflicting equally specific rules fail closed;
++8. an unmatched route produces `UNKNOWN` rather than an inferred permissive default;
++9. `LOSSY`, `INCOMPATIBLE`, and `UNKNOWN` cannot silently yield a concrete-model universal proof;
++10. non-finite values are rejected or handled by an explicitly compatible profile;
++11. result reports identify the matched framework/model/backend rule, semantic target, and compatibility classification;
++12. the public compatibility matrix is generated from the same registry used at runtime;
++13. counterexample/witness replay is treated as concrete-example validation, not universal proof validation;
++14. tests demonstrate at least one case where an exact-real abstraction and concrete floating-point execution differ;
++15. existing supported exact/integer behavior remains covered by regression tests.
++
++## Impact on FORML
++
++This ADR extends compiler, ModelBridge, routing, backend, and reporting contracts without expanding the required V1 model-family scope.
++
++The initial release may still implement one narrow route. The architectural contract, however, is a generic framework/model/backend compatibility registry that can later include affine models, trees, neural networks, symbolic models, SMT profiles, MILP profiles, interval engines, abstract interpreters, and concrete-search backends.
++
++FORML will explicitly state whether it verified:
++
++- an exact source semantics;
++- a sound over-approximation;
++- a sound under-approximation;
++- or a named mathematical abstraction.
++
++Fundamental semantic transparency remains part of FORML Core. Future platform or premium features may build policy, history, governance, organization-wide enforcement, and fleet-level compatibility dashboards on top of this contract, but they must not be required to understand the trust level of a local verification result.
+--- a/docs/adr/overview.md
++++ b/docs/adr/overview.md
+@@ -22,7 +22,8 @@
+ - why comparisons relate general scalar expressions,
+ - why typed domains are lowered into provenanced assumptions,
+ - why specification constants use context-aware bare-name resolution,
+-- and why points, lexical bindings and model evaluations are represented independently.
++- why points, lexical bindings and model evaluations are represented independently,
++- and why numeric semantics and backend compatibility are explicit verification contracts.
+ 
+ ## ADR format
+ 
+@@ -59,6 +60,7 @@
+ | ADR-0015 | Preserve typed domains and lower them into provenanced assumptions |
+ | ADR-0016 | Use specification constants and context-aware bare-name resolution |
+ | ADR-0017 | Use first-class points, lexical bindings and point-indexed model evaluations |
++| ADR-0018 | Make numeric semantics and framework/model/backend compatibility explicit |
+ 
+ ## Decision status vocabulary
+ 
+--- a/mkdocs.yml
++++ b/mkdocs.yml
+@@ -218,6 +218,7 @@
+       - ADR-0015 Typed Domains as Assumptions: adr/ADR-0015-typed-domains-as-assumptions.md
+       - ADR-0016 Specification Constants and Name Resolution: adr/ADR-0016-specification-constants-and-name-resolution.md
+       - ADR-0017 First-Class Points and Indexed Evaluations: adr/ADR-0017-first-class-points-and-indexed-model-evaluations.md
++      - ADR-0018 Framework/Model/Backend Numeric Compatibility: adr/ADR-0018-numeric-semantics-and-backend-compatibility.md
+ 
+   - Roadmap:
+       - Implementation Roadmap: roadmap/implementation-roadmap.md

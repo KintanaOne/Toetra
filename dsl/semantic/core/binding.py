@@ -204,6 +204,7 @@ class BindingValidator:
         constant = ConstantNode(
             value=declared_value.value,
             dtype=declared_value.dtype,
+            source_lexeme=declared_value.source_lexeme,
         )
         constant.semantic = SemanticAnnotations(
             resolved_type=declared_value.dtype.value,

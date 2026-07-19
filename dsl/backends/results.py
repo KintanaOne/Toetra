@@ -5,6 +5,7 @@ from enum import Enum
 from typing import Any, Mapping
 
 from dsl.backends.diagnostics import BackendResultDiagnostic
+from dsl.backends.execution import BackendExecutionEvidence
 from dsl.language.vocabulary.backends import EnumBackend
 
 
@@ -34,6 +35,7 @@ class VerificationResult:
     message: str = ""
     diagnostics: tuple[BackendResultDiagnostic, ...] = ()
     metadata: Mapping[str, Any] = field(default_factory=dict)
+    execution: BackendExecutionEvidence | None = None
 
     @property
     def solver_status(self) -> str:

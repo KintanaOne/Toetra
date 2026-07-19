@@ -57,7 +57,9 @@ def test_session_exposes_findings_records_dataframe_and_artifacts(
     records = session.to_records()
     assert records[0]["property"] == 1
     assert records[0]["status"] == "counterexample"
-    assert session.to_dataframe().shape == (2, 11)
+    assert records[0]["numeric_classification"] == "lossy"
+    assert records[0]["numeric_conclusion_scope"] == "semantic_target_only"
+    assert session.to_dataframe().shape == (2, 22)
 
     written = session.write_artifacts(tmp_path / "reports", formats={"html", "json"})
     assert set(written) == {"html", "json"}

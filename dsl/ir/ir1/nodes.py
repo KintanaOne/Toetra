@@ -46,6 +46,8 @@ class PointLiteralIR:
 
     value: Any
     dtype: EnumDataType
+    source_lexeme: str | None = field(default=None, compare=False)
+    source_dtype: str | None = field(default=None, compare=False)
 
 
 @dataclass(frozen=True)
@@ -229,6 +231,7 @@ class ConstantExpressionIR(ScalarExpressionIR):
     dtype: EnumDataType
     source_kind: ScalarValueSource = ScalarValueSource.LITERAL
     source_name: str | None = None
+    source_lexeme: str | None = field(default=None, compare=False)
 
 
 @dataclass

@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 from typing import Any
 
+from dsl.compatibility.descriptors import FrameworkModelDescriptor
+
 from model.detector.model_framework import EnumModelFramework
 from dsl.semantic.types.enums import EnumDataType
 from model.schema.feature_schema import FeatureSchema
@@ -41,3 +43,6 @@ class ModelSchema:
     # ======================================================
 
     metadata: dict[str, Any] = field(default_factory=dict)
+
+    compatibility: FrameworkModelDescriptor | None = None
+    target_source_dtype: str | None = None

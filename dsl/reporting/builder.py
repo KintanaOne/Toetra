@@ -16,9 +16,13 @@ from dsl.ir.ir1.nodes import (
 )
 from dsl.ir.ir1.scalar import format_scalar_expression
 from dsl.ir.ir2.nodes import NNFFormulaIR2, VerificationTaskIR2
+from dsl.provenance.builder import build_report_provenance
+from dsl.provenance.model import VerificationProvenanceContext
 from dsl.reporting.model import (
     ReportAssignment,
     ReportAssignmentKind,
+    ReportBackendExecution,
+    ReportNumericCompatibility,
     ReportPointEvidence,
     ReportScope,
     ReportScopeVariable,
@@ -32,6 +36,7 @@ def build_verification_report(
     result: VerificationResult,
     *,
     property_index: int,
+    provenance_context: VerificationProvenanceContext | None = None,
 ) -> VerificationReport:
     """Combine an IR2 task, routing decision and backend result into a report."""
 
@@ -55,12 +60,100 @@ def build_verification_report(
         backend=result.backend,
         backend_status=result.backend_status,
         status=result.status,
-        summary=result.message,
+        summary=_build_summary(route, result),
         assignments=assignments,
         diagnostics=result.diagnostics,
         assumption_count=len(task.assumptions),
         route_reason=route.reason,
         points=_build_point_evidence(task, assignments),
+        numeric_compatibility=_build_numeric_compatibility(route),
+        backend_execution=_build_backend_execution(result),
+        provenance=(
+            build_report_provenance(
+                provenance_context,
+                task=task,
+                route=route,
+                result=result,
+                property_index=property_index,
+            )
+            if provenance_context is not None
+            else None
+        ),
+    )
+
+
+def _build_backend_execution(
+    result: VerificationResult,
+) -> ReportBackendExecution | None:
+    execution = result.execution
+    if execution is None:
+        return None
+    policy = execution.policy
+    return ReportBackendExecution(
+        status=execution.status.value,
+        duration_ms=execution.duration_ms,
+        reason=execution.reason,
+        backend_reason=execution.backend_reason,
+        timeout_ms=policy.timeout_ms,
+        max_backend_units=policy.max_backend_units,
+        max_memory_mb=policy.max_memory_mb,
+        deterministic_seed=policy.deterministic_seed,
+        backend_options=policy.backend_options,
+    )
+
+
+def _build_summary(route: BackendRoute, result: VerificationResult) -> str:
+    assessment = route.numeric_compatibility
+    if assessment is None or result.status.value == "unknown":
+        return result.message
+    if assessment.conclusion_scope.value != "semantic_target_only":
+        return result.message
+
+    boundary = (
+        "This conclusion applies only to the declared semantic target "
+        f"'{assessment.semantic_target}', not automatically to concrete source "
+        "execution."
+    )
+    return f"{result.message} {boundary}".strip()
+
+
+def _build_numeric_compatibility(
+    route: BackendRoute,
+) -> ReportNumericCompatibility | None:
+    assessment = route.numeric_compatibility
+    if assessment is None:
+        return None
+
+    query = assessment.query
+    return ReportNumericCompatibility(
+        matched_rule_id=assessment.matched_rule_id,
+        support_status=assessment.support_status.value,
+        classification=assessment.classification.value,
+        semantic_target=assessment.semantic_target,
+        conclusion_scope=assessment.conclusion_scope.value,
+        evidence_id=assessment.evidence_id,
+        framework_adapter_id=query.framework_adapter_id,
+        framework_version=query.framework_version,
+        model_family=query.model_family,
+        source_execution_profile_id=query.source_execution_profile_id,
+        model_encoder_id=query.model_encoder_id,
+        model_encoder_version=query.model_encoder_version,
+        backend_kind=query.backend_kind,
+        backend_adapter_id=query.backend_adapter_id,
+        backend_profile_id=query.backend_profile_id,
+        backend_version=query.backend_version,
+        property_numeric_requirements=tuple(
+            sorted(query.property_numeric_requirements.tags)
+        ),
+        permitted_conclusions=tuple(
+            sorted(item.value for item in assessment.permitted_conclusions)
+        ),
+        replay_required_for=tuple(
+            sorted(item.value for item in assessment.replay_required_for)
+        ),
+        assumptions_and_preconditions=assessment.assumptions_and_preconditions,
+        compatibility_diagnostics=assessment.diagnostics,
+        documentation_reference=assessment.documentation_reference,
     )
 
 

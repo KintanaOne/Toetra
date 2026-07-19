@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Mapping, TypeVar
@@ -30,6 +30,8 @@ class PointLiteral:
 
     value: PrimitiveValue
     dtype: EnumDataType
+    source_lexeme: str | None = field(default=None, compare=False)
+    source_dtype: str | None = field(default=None, compare=False)
 
 
 @dataclass(frozen=True)

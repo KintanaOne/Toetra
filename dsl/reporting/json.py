@@ -5,12 +5,17 @@ from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
-from dsl.reporting.model import ReportAssignment, VerificationReport
+from dsl.provenance.model import ArtifactProvenance, ReportProvenance
+from dsl.reporting.model import (
+    ReportAssignment,
+    ReportNumericCompatibility,
+    VerificationReport,
+)
 from dsl.reporting.values import json_safe_report_value
 
 REPORT_SCHEMA = "forml.verification-report"
 REPORT_COLLECTION_SCHEMA = "forml.verification-report-collection"
-REPORT_SCHEMA_VERSION = 2
+REPORT_SCHEMA_VERSION = 5  # Frozen for the FORML 1.x public contract.
 
 
 def verification_report_to_dict(report: VerificationReport) -> dict[str, Any]:
@@ -39,8 +44,13 @@ def verification_report_to_dict(report: VerificationReport) -> dict[str, Any]:
             "status": report.status.value,
             "assumption_count": report.assumption_count,
             "route_reason": report.route_reason,
+            "backend_execution": _backend_execution_to_dict(report),
         },
         "summary": report.summary,
+        "provenance": _provenance_to_dict(report.provenance),
+        "numeric_compatibility": _numeric_compatibility_to_dict(
+            report.numeric_compatibility
+        ),
         "points": [
             {
                 "name": point.name,
@@ -74,11 +84,14 @@ def verification_reports_to_dict(
 ) -> dict[str, Any]:
     """Serialize several reports to a versioned collection contract."""
 
-    items = [verification_report_to_dict(report) for report in reports]
+    report_items = tuple(reports)
+    items = [verification_report_to_dict(report) for report in report_items]
+    shared_provenance = _shared_provenance(report_items)
     return {
         "schema": REPORT_COLLECTION_SCHEMA,
         "schema_version": REPORT_SCHEMA_VERSION,
         "report_count": len(items),
+        "provenance": _collection_provenance_to_dict(shared_provenance),
         "reports": items,
     }
 
@@ -131,6 +144,186 @@ def write_verification_reports_json(
     """Write a versioned report collection and return the output path."""
 
     return _write_json(path, verification_reports_to_json(reports, indent=indent))
+
+
+def _shared_provenance(
+    reports: tuple[VerificationReport, ...],
+) -> ReportProvenance | None:
+    provenances = tuple(report.provenance for report in reports)
+    if not provenances or any(item is None for item in provenances):
+        return None
+    first = provenances[0]
+    assert first is not None
+    if all(
+        item is not None
+        and item.input_fingerprint == first.input_fingerprint
+        and item.captured_at_utc == first.captured_at_utc
+        for item in provenances
+    ):
+        return first
+    return None
+
+
+def _collection_provenance_to_dict(
+    provenance: ReportProvenance | None,
+) -> dict[str, Any] | None:
+    if provenance is None:
+        return None
+    compiler = provenance.compiler
+    software = provenance.software
+    return {
+        "captured_at_utc": provenance.captured_at_utc,
+        "completeness": provenance.completeness.value,
+        "unavailable_inputs": list(provenance.unavailable_inputs),
+        "fingerprints": {"inputs": provenance.input_fingerprint},
+        "artifacts": {
+            role: _artifact_provenance_to_dict(artifact)
+            for role, artifact in provenance.artifacts.items()
+        },
+        "software": {
+            "forml_version": software.forml_version,
+            "forml_build_id": software.forml_build_id,
+            "python_version": software.python_version,
+            "python_implementation": software.python_implementation,
+            "platform": software.platform,
+            "components": dict(software.components),
+        },
+        "compiler_policy": {
+            "preferred_normal_form": compiler.preferred_normal_form,
+            "max_distribution_size": compiler.max_distribution_size,
+            "allow_nnf_fallback": compiler.allow_nnf_fallback,
+            "backend_hint": compiler.backend_hint,
+            "strict": compiler.strict,
+        },
+    }
+
+
+def _provenance_to_dict(
+    provenance: ReportProvenance | None,
+) -> dict[str, Any] | None:
+    if provenance is None:
+        return None
+    compiler = provenance.compiler
+    software = provenance.software
+    return {
+        "captured_at_utc": provenance.captured_at_utc,
+        "completeness": provenance.completeness.value,
+        "unavailable_inputs": list(provenance.unavailable_inputs),
+        "fingerprints": {
+            "inputs": provenance.input_fingerprint,
+            "property": provenance.property_fingerprint,
+            "route": provenance.route_fingerprint,
+            "execution_policy": provenance.execution_policy_fingerprint,
+            "verification": provenance.verification_fingerprint,
+        },
+        "artifacts": {
+            role: _artifact_provenance_to_dict(artifact)
+            for role, artifact in provenance.artifacts.items()
+        },
+        "software": {
+            "forml_version": software.forml_version,
+            "forml_build_id": software.forml_build_id,
+            "python_version": software.python_version,
+            "python_implementation": software.python_implementation,
+            "platform": software.platform,
+            "components": dict(software.components),
+        },
+        "compiler": {
+            "preferred_normal_form": compiler.preferred_normal_form,
+            "actual_normal_form": compiler.actual_normal_form,
+            "max_distribution_size": compiler.max_distribution_size,
+            "allow_nnf_fallback": compiler.allow_nnf_fallback,
+            "backend_hint": compiler.backend_hint,
+            "strict": compiler.strict,
+            "source_ir": compiler.source_ir,
+            "builder": compiler.builder,
+        },
+    }
+
+
+def _artifact_provenance_to_dict(
+    artifact: ArtifactProvenance,
+) -> dict[str, Any]:
+    fingerprint = artifact.fingerprint
+    return {
+        "role": artifact.role,
+        "source_kind": artifact.source_kind,
+        "status": artifact.status.value,
+        "name": artifact.name,
+        "fingerprint": (
+            {
+                "algorithm": fingerprint.algorithm,
+                "digest": fingerprint.digest,
+                "identifier": fingerprint.identifier,
+                "size_bytes": fingerprint.size_bytes,
+                "canonicalization": fingerprint.canonicalization,
+            }
+            if fingerprint is not None
+            else None
+        ),
+        "unavailable_reason": artifact.unavailable_reason,
+    }
+
+
+def _backend_execution_to_dict(report: VerificationReport) -> dict[str, Any] | None:
+    execution = report.backend_execution
+    if execution is None:
+        return None
+    return {
+        "status": execution.status,
+        "duration_ms": execution.duration_ms,
+        "reason": execution.reason,
+        "backend_reason": execution.backend_reason,
+        "policy": {
+            "timeout_ms": execution.timeout_ms,
+            "max_backend_units": execution.max_backend_units,
+            "max_memory_mb": execution.max_memory_mb,
+            "deterministic_seed": execution.deterministic_seed,
+            "backend_options": dict(execution.backend_options),
+        },
+    }
+
+
+def _numeric_compatibility_to_dict(
+    compatibility: ReportNumericCompatibility | None,
+) -> dict[str, Any] | None:
+    if compatibility is None:
+        return None
+
+    return {
+        "rule_id": compatibility.matched_rule_id,
+        "support_status": compatibility.support_status,
+        "classification": compatibility.classification,
+        "semantic_target": compatibility.semantic_target,
+        "conclusion_scope": compatibility.conclusion_scope,
+        "evidence_id": compatibility.evidence_id,
+        "source": {
+            "framework_adapter_id": compatibility.framework_adapter_id,
+            "framework_version": compatibility.framework_version,
+            "model_family": compatibility.model_family,
+            "execution_profile_id": compatibility.source_execution_profile_id,
+        },
+        "model_encoder": {
+            "id": compatibility.model_encoder_id,
+            "version": compatibility.model_encoder_version,
+        },
+        "backend": {
+            "kind": compatibility.backend_kind,
+            "adapter_id": compatibility.backend_adapter_id,
+            "adapter_version": compatibility.backend_version,
+            "profile_id": compatibility.backend_profile_id,
+        },
+        "property_numeric_requirements": list(
+            compatibility.property_numeric_requirements
+        ),
+        "permitted_conclusions": list(compatibility.permitted_conclusions),
+        "replay_required_for": list(compatibility.replay_required_for),
+        "assumptions_and_preconditions": list(
+            compatibility.assumptions_and_preconditions
+        ),
+        "diagnostics": list(compatibility.compatibility_diagnostics),
+        "documentation_reference": compatibility.documentation_reference,
+    }
 
 
 def _assignment_to_dict(assignment: ReportAssignment) -> dict[str, Any]:

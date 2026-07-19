@@ -13,6 +13,7 @@ from model.encoder.errors import (
     UnsupportedModelParameterError,
 )
 from model.encoder.factory import ModelEncoderFactory
+from model.encoder.profile import model_encoder_descriptor
 from model.encoder.registry import (
     ModelEncoderKey,
     ModelEncoderRegistration,
@@ -36,4 +37,5 @@ __all__ = [
     "create_default_model_encoder_registry",
     "validate_model_assumptions",
     "validate_model_evaluation_coverage",
+    "model_encoder_descriptor",
 ]

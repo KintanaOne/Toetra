@@ -1,3 +1,6 @@
+from dataclasses import replace
+from importlib.metadata import PackageNotFoundError, version
+
 from model.detector.model_framework import EnumModelFramework
 
 from model.introspector.base_introspector import BaseIntrospector
@@ -36,18 +39,38 @@ class XGBoostIntrospector(BaseIntrospector):
         # --------------------------------------------------
 
         sklearn_schema.framework = EnumModelFramework.XGBOOST
+        xgboost_version = self._xgboost_version()
+        if sklearn_schema.compatibility is not None:
+            sklearn_schema.compatibility = replace(
+                sklearn_schema.compatibility,
+                framework_adapter_id=EnumModelFramework.XGBOOST.value,
+                framework_version=xgboost_version,
+                model_family="tree_ensemble",
+            )
 
         # --------------------------------------------------
         # Inject XGBoost-specific metadata
         # --------------------------------------------------
 
-        sklearn_schema.metadata.update({"xgboost": self._extract_xgb_metadata()})
+        sklearn_schema.metadata.update(
+            {
+                "framework_version": xgboost_version,
+                "xgboost": self._extract_xgb_metadata(),
+            }
+        )
 
         return sklearn_schema
 
     # ======================================================
     # XGBoost metadata
     # ======================================================
+
+    @staticmethod
+    def _xgboost_version() -> str | None:
+        try:
+            return version("xgboost")
+        except PackageNotFoundError:
+            return None
 
     def _extract_xgb_metadata(self) -> dict:
         """

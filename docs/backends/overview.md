@@ -1,160 +1,33 @@
-# Backends Overview
+# Backends overview
 
-> Status: Planned / Z3-first V1 boundary  
-> Scope: Backend architecture, verification strategy, backend boundary  
-> Priority: P1
+FORML keeps backend execution behind explicit capability, numeric-compatibility,
+and execution-policy contracts.
 
-## Purpose
+## Built-in V1 backend
 
-The backend layer is responsible for executing or delegating the verification problem produced by FORML.
+Z3 is the only built-in V1 execution backend. It supports the implemented affine
+numeric route, Boolean logic, numeric comparisons, domain assumptions, finite
+numeric sets, and the normal forms declared by its capability profile.
 
-FORML does not treat backends as syntax-level targets. A backend must receive a stable, explicit, backend-specific representation produced after semantic validation, logical normalization, assertion aggregation, model constraint integration, and lowering.
+The backend receives IR2 tasks and model assumptions. It does not parse `.forml`
+source or inspect framework model objects directly.
 
-The backend layer answers the question:
+## Generic backend contract
 
-```text
-How is a validated FORML verification problem executed by a concrete verification engine?
-```
+Every backend adapter must declare:
 
-## Position in the FORML pipeline
+- structural capabilities;
+- supported verification semantics and normal forms;
+- numeric profile and non-finite-value policy;
+- timeout, resource, cancellation, and deterministic-seed capabilities;
+- normalized execution evidence and diagnostics.
 
-The backend layer sits after the logical verification pipeline:
+A backend is selected only when its capabilities and a registered numeric rule
+permit the task. `TIMEOUT`, `RESOURCE_LIMIT`, and `CANCELLED` remain technical
+termination states and map to an inconclusive logical result, never to a proof.
 
-```text
-.forml source
-→ CST
-→ AST
-→ SemanticValidatedAST
-→ IR1 / NNF
-→ IR2 / CNF-DNF
-→ AggregatedAssertionSet
-→ LoweredQuery
-→ BackendQuery
-→ VerificationBackend
-→ VerificationResult
-```
+## Not built in for V1
 
-Backends should not consume:
-
-- raw `.forml` source;
-- CST nodes;
-- AST nodes;
-- semantic annotations directly;
-- framework-specific model objects directly.
-
-Backends should consume:
-
-- a `BackendQuery`;
-- backend-specific configuration;
-- model constraints or symbolic model encodings;
-- execution options;
-- diagnostic context.
-
-## Core responsibilities
-
-The backend subsystem is responsible for:
-
-| Responsibility | Description |
-|---|---|
-| Capability declaration | Describe what a backend can verify. |
-| Compatibility checking | Reject unsupported property/model/query combinations early. |
-| Backend query encoding | Convert lowered FORML queries into backend-native artifacts. |
-| Execution | Run the verification query when the backend is executable. |
-| Result normalization | Convert backend-native results into FORML `VerificationResult`. |
-| Diagnostics | Explain unsupported features, solver failures, timeout, or inconclusive results. |
-
-## Backend categories
-
-FORML may eventually support several backend categories. For V1, only the Z3 path should be treated as the execution target.
-
-| Category | Examples | Role |
-|---|---|---|
-| SMT / symbolic solver | Z3 | Logical satisfiability, counterexamples, symbolic constraints. |
-| Neural verification | ERAN, VeriNet-like systems | Robustness and neural-network-specific guarantees. |
-| Abstract interpretation | Zonotope, box abstractions | Approximate robustness or bounds. |
-| Runtime checker | Future FORML runtime | Runtime behavioral monitoring. |
-| Diagnostic backend | Internal analyzers | Explainability, capability checking, early stops. |
-
-## Current implementation status
-
-The DSL grammar includes backend syntax such as `using z3`, `using ERAN`, `using box`, and `using zonotope`. This is syntax/reserved vocabulary, not an implementation claim.
-
-For the first functional V1, backend execution should focus only on `z3` / `Z3`. ERAN, box, zonotope, and multi-backend execution remain post-V1. Backend execution is not yet the primary implemented layer. The current implementation focus is:
-
-1. compiler pipeline;
-2. semantic validation;
-3. IR1 generation;
-4. ModelBridge;
-5. contracts and mutation/testing boundaries.
-
-Backend support should therefore be documented as a **target architecture** until backend query generation and execution are implemented.
-
-## Design principle
-
-FORML should keep a strict separation between:
-
-```text
-User intent
-Logical representation
-Model representation
-Backend query encoding
-Backend execution
-```
-
-This separation prevents backend-specific assumptions from leaking into the language, AST, semantic layer, or IR1.
-
-## Expected backend artifacts
-
-A mature backend layer should introduce or stabilize artifacts such as:
-
-```text
-BackendCapability
-BackendConfig
-BackendQuery
-BackendCompiler
-BackendExecutionContext
-VerificationResult
-VerificationDiagnostic
-```
-
-These artifacts should be explicit, serializable when possible, and testable through contracts.
-
-## Relationship with ModelBridge
-
-ModelBridge does not execute verification. It provides the normalized model representation required for semantic validation and future model constraint generation.
-
-The backend layer consumes model-derived constraints or symbolic model encodings, not raw model objects.
-
-```text
-ModelBridge
-→ ModelSchema
-→ ModelConstraintIR
-→ AggregatedAssertionSet
-→ LoweredQuery
-→ BackendQuery
-```
-
-## Relationship with Miova
-
-Miova should challenge backend boundaries by mutating:
-
-- backend selection;
-- backend configuration;
-- lowered queries;
-- backend queries;
-- capability declarations;
-- expected backend failures.
-
-Miova should not be part of the normal verification runtime path. It is a validation and robustness layer for FORML artifacts.
-
-## Non-goals
-
-The backend layer is not responsible for:
-
-- parsing FORML source;
-- resolving DSL symbols;
-- inferring model schemas;
-- deciding semantic validity of properties;
-- performing IR1 or IR2 normalization;
-- mutating artifacts for test.
-
+ERAN, MILP, abstract-interpretation, runtime-monitoring, remote, and distributed
+backends are extension or research targets. Their presence in vocabulary or
+documentation is not an implementation claim.

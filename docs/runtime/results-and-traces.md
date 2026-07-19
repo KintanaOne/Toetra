@@ -34,6 +34,7 @@ VerificationResult(
     assignments={"x0.a": 3, "_model.score": 7},
     message="Property violated ...",
     diagnostics=(),
+    execution=BackendExecutionEvidence(...),
 )
 ```
 
@@ -63,7 +64,10 @@ subtype of the backend-neutral result. Historical accessors `solver_status` and
 - backend and FORML statuses;
 - normalized assignments;
 - diagnostics;
-- assumption count.
+- assumption count;
+- numeric compatibility route, semantic target and conclusion scope;
+- backend execution status, duration, reason and policy snapshot;
+- content-addressed verification provenance and completeness.
 
 Assignments are classified as:
 
@@ -85,6 +89,52 @@ report.output_values     # {"score": 7.0}
 
 The original backend object remains available as `assignment.value` for advanced
 diagnostics only.
+
+## Numeric compatibility evidence
+
+Compatibility-aware reports expose the matched framework/model/encoder/backend rule rather than asking renderers to infer meaning from a concrete solver.
+
+```python
+report.numeric_compatibility.classification
+report.numeric_compatibility.semantic_target
+report.numeric_compatibility.conclusion_scope
+report.numeric_compatibility.source_route
+report.numeric_compatibility.backend_route
+```
+
+When the conclusion applies only to an encoded abstraction, the report summary, text renderer, JSON payload and HTML card all state that boundary. A `PROVED` result therefore cannot silently appear to certify bit-exact source execution.
+
+The complete contract is documented in [Numeric Compatibility Reporting](../contracts/numeric-compatibility-reporting.md).
+
+
+## Backend execution evidence
+
+The logical FORML status and the technical backend status are separate:
+
+```python
+report.status                       # VerificationStatus.UNKNOWN
+report.backend_execution.status     # "timeout"
+report.backend_execution.duration_ms
+report.backend_execution.timeout_ms
+report.backend_execution.backend_reason
+```
+
+Timeout, resource exhaustion and cancellation therefore remain visible in text, JSON, HTML and session records. Technical adapter failures raise `BackendExecutionError` instead of producing a misleading logical `UNKNOWN`. The complete contract is documented in [Backend Execution Contract](../contracts/backend-execution-contract.md).
+
+## Verification provenance
+
+Every completed report identifies the verification configuration without relying on mutable filenames:
+
+```python
+report.provenance.input_fingerprint
+report.provenance.property_fingerprint
+report.provenance.route_fingerprint
+report.provenance.execution_policy_fingerprint
+report.provenance.verification_fingerprint
+report.provenance.completeness
+```
+
+Files use raw-byte fingerprints. Inline specifications, schemas and pandas anchors use explicit versioned canonicalization. Opaque resolvers produce `partial` provenance rather than fabricated evidence. Collections carry only evidence shared by all properties. SHA-256 provides content identity, not signatures or chain-of-custody guarantees. See the [Verification Provenance Contract](../contracts/verification-provenance.md).
 
 ## Text Rendering
 
@@ -134,7 +184,7 @@ Every JSON payload is explicitly versioned:
 ```json
 {
   "schema": "forml.verification-report",
-  "schema_version": 1
+  "schema_version": 5
 }
 ```
 
@@ -172,8 +222,7 @@ their numerator and denominator rather than being rounded:
 }
 ```
 
-The version-1 contract is protected by a golden fixture under
-`test/fixtures/reporting/golden/`.
+Historical schemas remain as golden fixtures. Schema version 3 added `numeric_compatibility`. Schema version 4 added backend execution evidence. Schema version 5 adds content-addressed artifact, software, compiler, route and verification provenance; it is protected by `verification_report_v5.json`.
 
 ## HTML and Jupyter Rendering
 

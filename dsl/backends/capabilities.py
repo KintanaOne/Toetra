@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from dsl.compatibility.descriptors import BackendProfileDescriptor
+from dsl.backends.execution import BackendExecutionCapabilities
 from dsl.ir.ir2.enums import NormalFormKind, VerificationSemantics
 from dsl.ir.ir2.requirements import IR2Requirements
 from dsl.language.vocabulary.backends import EnumBackend
@@ -47,6 +49,10 @@ class BackendCapabilities:
     supports_symbolic_categories: bool = False
     supports_domain_assumptions: bool = False
     max_model_evaluations: int | None = None
+    numeric_profile: BackendProfileDescriptor | None = None
+    execution_capabilities: BackendExecutionCapabilities = (
+        BackendExecutionCapabilities()
+    )
 
     def supports(self, requirements: IR2Requirements) -> bool:
         """Return whether all requirements are satisfied."""

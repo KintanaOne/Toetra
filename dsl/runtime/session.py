@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, TextIO, overload
 from dsl.backends.results import VerificationResult, VerificationStatus
 from dsl.backends.router import BackendRoute
 from dsl.ir.ir2.nodes import VerificationTaskIR2
+from dsl.provenance.model import VerificationProvenanceContext
 from dsl.reporting import (
     HtmlRenderOptions,
     TextRenderOptions,
@@ -150,6 +151,7 @@ class VerificationSession(Sequence[VerificationExecution]):
     model: object | None = field(default=None, repr=False, compare=False)
     model_path: Path | None = None
     dataset_path: Path | None = None
+    provenance: VerificationProvenanceContext | None = None
     anchor_resolutions: Mapping[str, ResolvedAnchorBinding] = field(
         default_factory=lambda: MappingProxyType({}),
         repr=False,
@@ -261,6 +263,7 @@ class VerificationSession(Sequence[VerificationExecution]):
         for report in self.reports:
             points = report_point_values(report)
             outputs_by_point = report_output_values_by_point(report)
+            compatibility = report.numeric_compatibility
             records.append(
                 {
                     "property": report.property_index + 1,
@@ -270,6 +273,61 @@ class VerificationSession(Sequence[VerificationExecution]):
                     "specification": report.specification,
                     "backend": report.backend.value,
                     "backend_status": report.backend_status,
+                    "backend_execution_status": (
+                        report.backend_execution.status
+                        if report.backend_execution is not None
+                        else None
+                    ),
+                    "backend_duration_ms": (
+                        report.backend_execution.duration_ms
+                        if report.backend_execution is not None
+                        else None
+                    ),
+                    "backend_timeout_ms": (
+                        report.backend_execution.timeout_ms
+                        if report.backend_execution is not None
+                        else None
+                    ),
+                    "backend_execution_reason": (
+                        report.backend_execution.reason
+                        if report.backend_execution is not None
+                        else None
+                    ),
+                    "numeric_rule": (
+                        compatibility.matched_rule_id
+                        if compatibility is not None
+                        else None
+                    ),
+                    "numeric_classification": (
+                        compatibility.classification
+                        if compatibility is not None
+                        else None
+                    ),
+                    "numeric_semantic_target": (
+                        compatibility.semantic_target
+                        if compatibility is not None
+                        else None
+                    ),
+                    "numeric_conclusion_scope": (
+                        compatibility.conclusion_scope
+                        if compatibility is not None
+                        else None
+                    ),
+                    "verification_fingerprint": (
+                        report.provenance.verification_fingerprint
+                        if report.provenance is not None
+                        else None
+                    ),
+                    "input_fingerprint": (
+                        report.provenance.input_fingerprint
+                        if report.provenance is not None
+                        else None
+                    ),
+                    "captured_at_utc": (
+                        report.provenance.captured_at_utc
+                        if report.provenance is not None
+                        else None
+                    ),
                     "inputs": _unique_group_values(points),
                     "outputs": _unique_group_values(outputs_by_point),
                     "points": points,

@@ -111,6 +111,7 @@ class DataFrameAnchorResolver(AnchorResolver):
                 expected=feature.dtype,
                 anchor_name=request.name,
                 feature_name=feature_name,
+                source_dtype=str(self._frame[feature_name].dtype),
             )
 
         return ResolvedAnchorBinding(
@@ -149,6 +150,7 @@ def _coerce_feature_value(
     expected: EnumDataType,
     anchor_name: str,
     feature_name: str,
+    source_dtype: str | None = None,
 ) -> PointLiteral:
     if bool(pd.isna(value)):
         raise _dtype_error(anchor_name, feature_name, expected, value)
@@ -158,18 +160,34 @@ def _coerce_feature_value(
         if isinstance(normalized, Real) and not isinstance(
             normalized, (bool, np.bool_)
         ):
-            return PointLiteral(value=float(normalized), dtype=EnumDataType.FLOAT)
+            return PointLiteral(
+                value=float(normalized),
+                dtype=EnumDataType.FLOAT,
+                source_dtype=source_dtype,
+            )
     elif expected is EnumDataType.INT:
         if isinstance(normalized, Integral) and not isinstance(
             normalized, (bool, np.bool_)
         ):
-            return PointLiteral(value=int(normalized), dtype=EnumDataType.INT)
+            return PointLiteral(
+                value=int(normalized),
+                dtype=EnumDataType.INT,
+                source_dtype=source_dtype,
+            )
     elif expected is EnumDataType.BOOL:
         if isinstance(normalized, (bool, np.bool_)):
-            return PointLiteral(value=bool(normalized), dtype=EnumDataType.BOOL)
+            return PointLiteral(
+                value=bool(normalized),
+                dtype=EnumDataType.BOOL,
+                source_dtype=source_dtype,
+            )
     elif expected is EnumDataType.STRING:
         if isinstance(normalized, str):
-            return PointLiteral(value=normalized, dtype=EnumDataType.STRING)
+            return PointLiteral(
+                value=normalized,
+                dtype=EnumDataType.STRING,
+                source_dtype=source_dtype,
+            )
 
     raise _dtype_error(anchor_name, feature_name, expected, normalized)
 

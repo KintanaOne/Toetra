@@ -1,178 +1,160 @@
 # FORML
 
-**FORML** is a declarative, human-readable DSL for expressing **formal behavioral properties**
-of machine learning models (robustness, fairness, stability, monotonicity, logic…).
+FORML is a Python framework and declarative language for specifying and verifying
+behavioral properties of machine-learning models.
 
-It bridges the gap between **high-level requirements** and **formal verification tools**
-such as **ERAN** or **Z3**.
+**Release status:** `1.0.0rc1` — public V1 contract frozen for validation.
 
----
+FORML answers questions such as:
 
-## Why FORML?
+- Does a model output remain within a declared bound?
+- Does a universal property hold over a numeric domain?
+- Can FORML find a witness satisfying an existential property?
+- Can a counterexample be replayed on the original estimator?
 
-Machine learning models are rarely tested beyond accuracy.
+## V1 scope
 
-Yet, in practice, we often need answers to questions like:
-- Is my model robust to noise or perturbations?
-- Does it treat sensitive attributes fairly?
-- Are its outputs bounded and logically consistent?
+The V1 release candidate deliberately supports a narrow, auditable path:
 
-FORML allows these requirements to be expressed **explicitly**, **formally**, and **independently**
-of the verification backend.
+```text
+numeric transformed features
++ single-output scikit-learn LinearRegression
++ affine model encoding
++ homogeneous forall or exists bindings
++ numeric intervals and finite sets
++ scalar arithmetic and Boolean assertions
++ inline or referenced points/anchors
++ Z3 backend
+→ PROVED / COUNTEREXAMPLE / WITNESS / NO_WITNESS / UNKNOWN
+```
 
----
+FORML is backend-neutral at its architectural boundaries. Z3 is the only built-in
+V1 execution backend, and scikit-learn `LinearRegression` is the only built-in
+end-to-end model family.
 
-## Minimal Example
+## Installation from source
+
+FORML requires Python 3.11 or 3.12.
+
+```bash
+python -m pip install .
+```
+
+For development:
+
+```bash
+python -m pip install -r requirements-dev.txt
+make ci
+```
+
+## Minimal FORML specification
 
 ```forml
-ROBUSTNESS:
-at x0 in hyperball(L2, 0.01) := CLASSIFICATION.EQUAL()
-```
-The model must predict the same class for all small perturbations around x0.
+model := "affine_score.joblib"
+target := score
 
-## Executable end-to-end demo
+maximum_score := 7.0
 
-The canonical demo trains and serializes a small affine scikit-learn model,
-introspects it, compiles a FORML specification, injects typed domains and model
-constraints into IR2, then executes the resulting tasks with Z3.
-
-```bash
-make demo-affine
+[BOUND]:
+forall x0
+    with domain(x0.a: [0.0, 3.0])
+    => target <= maximum_score
+    using Z3
 ```
 
-Equivalent direct command:
+## Run the self-contained demo
 
-```bash
-python -m demo.affine_specification_constants_z3
-```
-
-The demo produces a proof, a counterexample and an existential witness without
-leaving generated model or dataset files in the repository. See
-[`demo/README.md`](demo/README.md) for details.
-
-## Python verification API
-
-A normal script can execute a policy without manipulating IR2, the backend
-router or Z3 directly:
-
-```python
-from forml import verify
-
-session = verify(
-    "policies/credit-risk.forml",
-    model="models/credit-risk.joblib",
-    dataset="data/reference.csv",
-)
-
-session.print()
-session.write_artifacts("artifacts/")
-raise SystemExit(session.exit_code)
-```
-
-When `model` is omitted, the model declared in the FORML header is resolved
-relative to the `.forml` file. See `demo/user_verify_script.py` for a complete
-command-line example.
-
-Run that script without preparing any files first:
+The canonical demo trains a temporary affine model, verifies universal and
+existential properties, and prints structured results:
 
 ```bash
 make demo-user
 ```
 
-Equivalent direct command:
+It does not leave generated model or dataset files in the repository.
 
-```bash
-python -m demo.user_verify_script --demo
-```
-
-For a real project, replace the paths in the Python example above with files
-that exist in your repository. The public package is deliberately small: normal
-application code should import from `forml`, not from `dsl.*`, `model.*`, IR2 or
-backend modules.
-
-Counterexamples and witnesses are directly accessible:
+## Python API
 
 ```python
-counterexample = session.first_counterexample
-if counterexample is not None:
-    replay = counterexample.replay()
-    print(replay.to_text())
-```
+from forml import verify
 
-The replay uses the estimator loaded by `verify(...)`, reconstructs the input
-features, evaluates the original model and compares its output with the formal
-backend assignment.
-
-## Jupyter and HTML reports
-
-`VerificationSession` and `VerificationReport` expose a rich Jupyter
-representation. Returning either object as the final cell expression displays
-status cards, the normalized scope, the specification, counterexamples or
-witnesses, and structured diagnostics:
-
-```python
 session = verify(
     "policy.forml",
     model="model.joblib",
     dataset="reference.csv",
 )
-session
+
+session.print()
+session.write_artifacts("artifacts", formats={"json", "html"})
+raise SystemExit(session.exit_code)
 ```
 
-A self-contained HTML artifact can be written without Jupyter:
+The public application API is exposed from `forml`. Modules under `dsl`, `model`,
+IR layers, and backend adapters are internal extension surfaces rather than the
+normal user entry point.
 
-```python
-session.write_artifacts("artifacts/", formats={"json", "html"})
+## Numeric guarantee
+
+The built-in V1 route encodes a floating-point sklearn affine model as an exact
+real-valued affine abstraction for Z3. The route is therefore classified as
+`LOSSY` with conclusions restricted to the declared semantic target:
+
+```text
+forml.real_affine_extracted_model
 ```
 
-See
-[`demo/notebooks/credit_risk_validation.ipynb`](demo/notebooks/credit_risk_validation.ipynb)
-for a complete model-review workflow, including replay of a formal
-counterexample on the original sklearn model.
+FORML does not silently claim bit-exact IEEE-754 equivalence. Reports include the
+numeric compatibility rule, semantic target, execution policy, provenance, and
+fingerprints needed to interpret the conclusion honestly.
 
-## Key Ideas
+## Explicit V1 limitations
 
-- FORML is declarative: you specify what must hold, not how to verify it
+The following remain outside the built-in V1 profile:
 
-- Properties are backend-agnostic
+- trees, ensembles, neural networks, and nonlinear model encoders;
+- classifiers and multi-output models;
+- reconstruction or symbolic encoding of preprocessing pipelines;
+- categorical or string reasoning in the backend;
+- executable alternating quantifiers;
+- built-in backends other than Z3;
+- bit-exact floating-point proofs;
+- distributed execution, dashboards, registries, and organizational governance.
 
-- The language separates:
-    - semantic intent (robustness, fairness, logic…)
-    - scope (global, local, pairwise)
-    - execution (ERAN, Z3, custom tools)
+Custom registries and adapters can extend several boundaries, but an extension is
+not considered supported until it declares capabilities, numeric compatibility,
+execution behavior, and tests.
+
+## Reports and reproducibility
+
+FORML produces text, HTML, Jupyter, records/DataFrame, and JSON reports. JSON
+schema version **5** is frozen for the FORML 1.x public contract. Incompatible
+changes require a new schema version.
+
+Each verification report identifies its specification, model, dataset or schema,
+route, execution policy, software environment, and compiler configuration through
+structured provenance and content fingerprints.
 
 ## Documentation
 
-Full documentation is available in the docs/ directory:
+- [Public V1 profile](docs/public-v1-profile.md)
+- [Getting started](docs/getting-started/overview.md)
+- [Language reference](docs/language/overview.md)
+- [Generated compatibility matrices](docs/generated/numeric-compatibility-matrices.md)
+- [Architecture](docs/architecture/overview.md)
+- [Public V1 contract](docs/contracts/public-v1-contract.md)
+- [Changelog](CHANGELOG.md)
 
-- [scopes.md](docs/scope.md) — global, local and pairwise scopes
+## Release validation
 
-- [syntax.md — language syntax](docs/syntax.md)
-  
-- [semantic.md](docs/semantics.md)
-  
-- [properties.md](docs/properties.md) — semantic definition of property types
+```bash
+make ci
+make release-check
+make review-bundle-check
+```
 
-- backends.md — supported verification tools
+The release checks build reproducible wheel and source distributions, install the
+wheel in a clean environment outside the checkout, and verify the review bundle.
 
-## Project Status
+## License
 
-FORML is an early-stage research and engineering project.
-The core DSL, parser, and AST are functional.
-Backend integrations are experimental and evolving.
-
-## Contributing
-
-- ✨ Contributions, suggestions, or improvements are welcome!
-- Open issues to report bugs or suggest features
-- Submit pull requests to improve the parser, DSL, or examples
-- Star the repository if you find the idea promising
-
-Let’s bring formal verification closer to real-world ML together 💡
-
-# 🔐 License
-Project licensed under MIT. See [LICENSE.md](LICENSE) for details.
-
-# 👤 Author
-Developed by KintanaOne
-(Alias of a data scientist & formal methods enthusiast who believes that ML should be tested as rigorously as software.)
+FORML is licensed under the [Apache License 2.0](LICENSE).
