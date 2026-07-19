@@ -93,6 +93,31 @@ def _validate_mkdocs_navigation() -> None:
             raise PublicContractError(f"MkDocs navigation target is missing: {target}")
 
 
+def _validate_sdist_manifest() -> None:
+    manifest_path = ROOT / "MANIFEST.in"
+    if not manifest_path.is_file():
+        raise PublicContractError("MANIFEST.in is missing")
+
+    directives = {
+        line.strip()
+        for line in manifest_path.read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    }
+    required = {
+        "include LICENSE",
+        "include README.md",
+        "include CHANGELOG.md",
+        "include pyproject.toml",
+        "recursive-include dsl/language/grammar *.ebnf *.lark",
+        "recursive-include forml/examples *.forml",
+    }
+    missing = sorted(required - directives)
+    if missing:
+        raise PublicContractError(
+            "MANIFEST.in is missing required release directives: " + ", ".join(missing)
+        )
+
+
 def check_public_contract() -> None:
     project = _project()
     if project.get("version") != EXPECTED_VERSION:
@@ -138,6 +163,7 @@ def check_public_contract() -> None:
         _validate_forml_examples(document)
 
     _validate_mkdocs_navigation()
+    _validate_sdist_manifest()
 
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     stale_markers = (
