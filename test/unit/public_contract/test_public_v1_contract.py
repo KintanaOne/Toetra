@@ -33,3 +33,12 @@ def test_readme_points_to_the_authoritative_v1_profile() -> None:
     assert "docs/public-v1-profile.md" in readme
     assert "forml.real_affine_extracted_model" in readme
     assert "Apache License 2.0" in readme
+
+
+def test_sdist_manifest_includes_public_release_files() -> None:
+    manifest = (ROOT / "MANIFEST.in").read_text(encoding="utf-8")
+
+    assert "include CHANGELOG.md" in manifest
+    assert "include LICENSE" in manifest
+    assert "include README.md" in manifest
+    assert "include pyproject.toml" in manifest
