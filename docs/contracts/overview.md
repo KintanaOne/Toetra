@@ -69,6 +69,26 @@ It operationalizes ADR-0017 across the complete compiler, ModelBridge, backend a
 
 ---
 
+## Numeric Compatibility Contract
+
+The backend-neutral contract for framework/model profiles, ModelBridge encoders, backend numeric profiles, deterministic rule resolution and permitted conclusions is:
+
+- [Numeric Compatibility Registry](numeric-compatibility-registry.md)
+- [Numeric Compatibility Reporting](numeric-compatibility-reporting.md)
+- [Generated Numeric Compatibility Matrices](../generated/numeric-compatibility-matrices.md)
+
+Together they operationalize ADR-0018 without making sklearn or Z3 the architectural abstraction.
+
+---
+
+## Verification Provenance Contract
+
+The [Verification Provenance Contract](verification-provenance.md) defines content-addressed artifact evidence, completeness, software/compiler identity and the five fingerprints exported by JSON schema v5.
+
+## Public V1 Contract
+
+The [Public V1 Contract](public-v1-contract.md) freezes the supported Python facade, executable framework/model/backend profile, JSON v5 compatibility rules, result semantics, license alignment and release gates for the FORML 1.x line.
+
 ## Contract Categories
 
 | Category | Main documents | Purpose |
@@ -147,3 +167,12 @@ The cross-layer rules for immutable user declarations and bare-name resolution a
 - [Specification Constants Contract](specification-constants.md)
 
 This contract is authoritative for AST shape, semantic lookup order, type preservation, provenance and backend treatment.
+
+
+## Backend execution
+
+The [Backend Execution Contract](backend-execution-contract.md) defines portable timeout, resource, cancellation, deterministic execution and termination evidence for every backend adapter.
+
+## Release artifacts
+
+See [Release engineering contract](release-engineering.md).

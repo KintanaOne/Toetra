@@ -1,14 +1,27 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools==82.0.1", "wheel==0.47.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "forml"
-version = "0.1.0"
-description = "DSL FORML – un langage de spécification de propriétés qualitatives pour modèles ML"
+version = "1.0.0rc1"
+description = "Declarative behavioral specification and formal verification for machine-learning models"
 authors = [{ name = "KintanaOne", email = "KintanaOne@proton.me" }]
 readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
+keywords = ["machine-learning", "formal-verification", "smt", "z3", "model-validation"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Typing :: Typed",
+]
 dependencies = [
     "lark==1.2.2",
     "Pygments==2.19.2",
@@ -18,7 +31,23 @@ dependencies = [
     "z3-solver==4.16.0.0"
 ]
 
+[project.urls]
+Homepage = "https://github.com/KintanaOne/FORML"
+Documentation = "https://kintanaone.github.io/FORML/"
+Repository = "https://github.com/KintanaOne/FORML"
+Issues = "https://github.com/KintanaOne/FORML/issues"
+Changelog = "https://github.com/KintanaOne/FORML/blob/main/CHANGELOG.md"
+
 [project.optional-dependencies]
+dev = [
+    "pytest==9.0.1",
+    "hypothesis==6.151.10",
+    "ruff==0.15.22",
+    "black==26.5.1",
+    "pyright==1.1.411",
+    "build==1.5.0",
+    "packaging==25.0",
+]
 docs = [
     "mkdocs==1.6.1",
     "mkdocs-material==9.7.6",
@@ -69,6 +98,7 @@ include = [
     "forml",
     "dsl",
     "model",
+    "scripts",
     "test/unit",
 ]
 exclude = [

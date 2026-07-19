@@ -72,9 +72,7 @@ markdown_extensions:
 
 nav:
   - Home: index.md
-  - Documentation Roadmap: docs-roadmap.md
-  - Review Corrections: review-corrections.md
-
+  - Public V1 Profile: public-v1-profile.md
   - Getting Started:
       - Overview: getting-started/overview.md
       - Installation: getting-started/installation.md
@@ -154,6 +152,13 @@ nav:
       - IR1 to IR2: contracts/ir1-to-ir2.md
       - Quantified Domains and Scalar Expressions: contracts/quantified-domain-scalar-expressions.md
       - Point Binding and Evaluation: contracts/point-binding-and-evaluation.md
+      - Numeric Compatibility Registry: contracts/numeric-compatibility-registry.md
+      - Numeric Compatibility Reporting: contracts/numeric-compatibility-reporting.md
+      - Backend Execution Contract: contracts/backend-execution-contract.md
+      - Verification Provenance: contracts/verification-provenance.md
+      - Release Engineering: contracts/release-engineering.md
+      - Public V1 Contract: contracts/public-v1-contract.md
+      - Generated Numeric Compatibility Matrices: generated/numeric-compatibility-matrices.md
       - Model to Schema: contracts/model-to-schema.md
       - Schema to Semantic: contracts/schema-to-semantic.md
       - Model Constraints: contracts/model-constraints.md
@@ -218,6 +223,11 @@ nav:
       - ADR-0015 Typed Domains as Assumptions: adr/ADR-0015-typed-domains-as-assumptions.md
       - ADR-0016 Specification Constants and Name Resolution: adr/ADR-0016-specification-constants-and-name-resolution.md
       - ADR-0017 First-Class Points and Indexed Evaluations: adr/ADR-0017-first-class-points-and-indexed-model-evaluations.md
+      - ADR-0018 Framework/Model/Backend Numeric Compatibility: adr/ADR-0018-numeric-semantics-and-backend-compatibility.md
+      - ADR-0019 Backend Execution Contract: adr/ADR-0019-backend-execution-contract.md
+      - ADR-0020 Verification Provenance: adr/ADR-0020-verification-provenance.md
+      - ADR-0021 Release Engineering: adr/ADR-0021-release-engineering-and-reproducible-artifacts.md
+      - ADR-0022 Public V1 Contract: adr/ADR-0022-public-v1-contract.md
 
   - Roadmap:
       - Implementation Roadmap: roadmap/implementation-roadmap.md

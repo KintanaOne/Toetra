@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from dsl.reporting.values import exact_report_value, python_report_value
+from dsl.provenance.model import ReportProvenance
 
 from dsl.backends.diagnostics import BackendResultDiagnostic
 from dsl.backends.results import VerificationStatus
@@ -95,6 +96,66 @@ class ReportScope:
 
 
 @dataclass(frozen=True)
+class ReportNumericCompatibility:
+    """Public numeric route and semantic-guarantee evidence."""
+
+    matched_rule_id: str | None
+    support_status: str
+    classification: str
+    semantic_target: str
+    conclusion_scope: str
+    evidence_id: str | None
+    framework_adapter_id: str
+    framework_version: str | None
+    model_family: str
+    source_execution_profile_id: str
+    model_encoder_id: str
+    model_encoder_version: str
+    backend_kind: str
+    backend_adapter_id: str
+    backend_profile_id: str
+    backend_version: str | None
+    property_numeric_requirements: tuple[str, ...]
+    permitted_conclusions: tuple[str, ...]
+    replay_required_for: tuple[str, ...]
+    assumptions_and_preconditions: tuple[str, ...]
+    compatibility_diagnostics: tuple[str, ...]
+    documentation_reference: str | None
+
+    @property
+    def source_route(self) -> str:
+        framework = self.framework_adapter_id
+        if self.framework_version is not None:
+            framework += f"@{self.framework_version}"
+        return (
+            f"{framework} / {self.model_family} / "
+            f"{self.source_execution_profile_id}"
+        )
+
+    @property
+    def backend_route(self) -> str:
+        backend = self.backend_adapter_id
+        if self.backend_version is not None:
+            backend += f"@{self.backend_version}"
+        return f"{self.backend_kind} / {backend} / {self.backend_profile_id}"
+
+
+@dataclass(frozen=True)
+class ReportBackendExecution:
+    """Portable execution-policy and termination evidence."""
+
+    status: str
+    duration_ms: float
+    reason: str | None
+    backend_reason: str | None
+    timeout_ms: int | None
+    max_backend_units: int | None
+    max_memory_mb: int | None
+    deterministic_seed: int | None
+    backend_options: Mapping[str, bool | int | float | str]
+
+
+@dataclass(frozen=True)
 class VerificationReport:
     """User-facing representation of one completed FORML verification task.
 
@@ -116,6 +177,9 @@ class VerificationReport:
     assumption_count: int
     route_reason: str
     points: tuple[ReportPointEvidence, ...] = ()
+    numeric_compatibility: ReportNumericCompatibility | None = None
+    backend_execution: ReportBackendExecution | None = None
+    provenance: ReportProvenance | None = None
 
     @property
     def inputs(self) -> tuple[ReportAssignment, ...]:

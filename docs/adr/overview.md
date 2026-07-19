@@ -22,7 +22,12 @@ The goal of the ADR section is to make explicit:
 - why comparisons relate general scalar expressions,
 - why typed domains are lowered into provenanced assumptions,
 - why specification constants use context-aware bare-name resolution,
-- and why points, lexical bindings and model evaluations are represented independently.
+- why points, lexical bindings and model evaluations are represented independently,
+- why numeric semantics and backend compatibility are explicit verification contracts,
+- why backend execution policy and termination evidence are backend-neutral,
+- why verification provenance is content-addressed, portable and explicit about incomplete evidence,
+- why CI, distributions and review bundles are verified release contracts,
+- and why the public V1 profile is narrow, executable and explicitly frozen.
 
 ## ADR format
 
@@ -59,6 +64,11 @@ Impact on FORML
 | ADR-0015 | Preserve typed domains and lower them into provenanced assumptions |
 | ADR-0016 | Use specification constants and context-aware bare-name resolution |
 | ADR-0017 | Use first-class points, lexical bindings and point-indexed model evaluations |
+| ADR-0018 | Make numeric semantics and framework/model/backend compatibility explicit |
+| ADR-0019 | Define a backend-neutral execution contract |
+| ADR-0020 | Make verification provenance content-addressed and portable |
+| ADR-0021 | Treat release engineering as a verified product contract |
+| ADR-0022 | Freeze the public V1 profile, compatibility policy and license |
 
 ## Decision status vocabulary
 

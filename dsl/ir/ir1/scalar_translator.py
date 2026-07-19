@@ -79,6 +79,7 @@ class ScalarExpressionTranslator:
             dtype=node.dtype,
             source_kind=source_kind,
             source_name=source_name,
+            source_lexeme=node.source_lexeme,
         )
 
     def _translate_attribute(self, node: AttributeNode) -> AttributeExpressionIR:

@@ -5,14 +5,19 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from dsl.backends.defaults import create_default_backend_registry
+from dsl.backends.execution import BackendExecutionPolicy
 from dsl.backends.registry import BackendRegistry
 from dsl.backends.router import BackendRouter
+from dsl.compatibility.model import NumericCompatibilityContext
+from dsl.compatibility.policy import apply_numeric_compatibility_policy
+from dsl.compatibility.registry import NumericCompatibilityRegistry
 from dsl.ast.nodes.program import ProgramNode
 from dsl.builder.program import parse_program
 from dsl.ir.ir2.context import IR2BuildContext
 from dsl.ir.ir2.enums import NormalFormKind
 from dsl.ir.ir2.run_ir2 import run_ir2_with_model_schema
 from dsl.parser.parser import parse_forml_code
+from dsl.provenance.builder import build_provenance_context
 from dsl.reporting import build_verification_report
 from dsl.runtime.anchors import (
     AnchorLookupRequest,
@@ -32,7 +37,10 @@ from dsl.semantic.symbols.point import (
     ResolvedAnchorBinding,
     frozen_mapping,
 )
+from model.compatibility import framework_model_descriptor
 from model.encoder.context import ModelEncodingContext
+from model.encoder.factory import ModelEncoderFactory
+from model.encoder.profile import model_encoder_descriptor
 from model.runtime.manager import ModelManager
 from model.schema.model_schema import ModelSchema
 
@@ -63,9 +71,12 @@ def verify(
     target: str | None = None,
     schema: ModelSchema | None = None,
     model_context: ModelEncodingContext | None = None,
+    model_encoder_factory: ModelEncoderFactory | None = None,
     ir2_context: IR2BuildContext | None = None,
     backend_registry: BackendRegistry | None = None,
+    numeric_compatibility_registry: NumericCompatibilityRegistry | None = None,
     runner_registry: BackendRunnerRegistry | None = None,
+    execution_policy: BackendExecutionPolicy | None = None,
     anchor_source: AnchorSource | None = None,
     anchor_resolver: AnchorResolver | None = None,
 ) -> VerificationSession:
@@ -79,7 +90,10 @@ def verify(
     ``anchor_resolver``. When neither is provided, a compatible ``dataset``
     artifact is reused as the default anchor lookup source. This fallback is
     ergonomic only: model/schema introspection and anchor lookup remain
-    distinct runtime responsibilities.
+    distinct runtime responsibilities. Custom framework/model integrations may
+    supply a ``model_encoder_factory`` whose selected encoder declares its
+    numeric semantic target. ``execution_policy`` applies one backend-neutral
+    timeout/resource/cancellation contract to every property in the session.
     """
 
     loaded = _load_specification(specification)
@@ -100,26 +114,60 @@ def verify(
     )
 
     context = ir2_context or IR2BuildContext(preferred_normal_form=NormalFormKind.NNF)
+    encoder_factory = model_encoder_factory or ModelEncoderFactory()
+    selected_encoder = encoder_factory.create(resolved.schema)
+    numeric_compatibility_context = NumericCompatibilityContext(
+        source_model=framework_model_descriptor(resolved.schema),
+        model_encoder=model_encoder_descriptor(selected_encoder),
+    )
     tasks = run_ir2_with_model_schema(
         loaded.source,
         schema=resolved.schema,
         model_context=model_context,
         ir2_context=context,
+        encoder_factory=encoder_factory,
         resolved_anchors=resolved_anchors,
     )
 
-    router = BackendRouter(backend_registry or create_default_backend_registry())
+    router = BackendRouter(
+        backend_registry or create_default_backend_registry(),
+        numeric_compatibility_registry=numeric_compatibility_registry,
+    )
     runners = runner_registry or create_default_backend_runner_registry()
+    resolved_execution_policy = execution_policy or BackendExecutionPolicy()
+    provenance_context = build_provenance_context(
+        specification_source=loaded.source,
+        specification_path=loaded.path,
+        model_path=resolved.model_path,
+        dataset_path=resolved.dataset_path,
+        anchor_source=anchor_source,
+        anchor_resolver=anchor_resolver,
+        anchors_used=bool(resolved_anchors),
+        schema=resolved.schema,
+        ir2_context=context,
+    )
 
     executions: list[VerificationExecution] = []
     for property_index, task in enumerate(tasks):
-        route = router.route(task)
-        result = runners.require(route.backend).run(task)
+        route = router.route(
+            task,
+            numeric_compatibility_context=numeric_compatibility_context,
+            execution_policy=resolved_execution_policy,
+        )
+        result = runners.require(route.backend).run(
+            task,
+            policy=resolved_execution_policy,
+        )
+        result = apply_numeric_compatibility_policy(
+            result,
+            route.numeric_compatibility,
+        )
         report = build_verification_report(
             task,
             route,
             result,
             property_index=property_index,
+            provenance_context=provenance_context,
         )
         executions.append(
             VerificationExecution(
@@ -139,6 +187,7 @@ def verify(
         model_path=resolved.model_path,
         dataset_path=resolved.dataset_path,
         anchor_resolutions=resolved_anchors,
+        provenance=provenance_context,
     )
 
 

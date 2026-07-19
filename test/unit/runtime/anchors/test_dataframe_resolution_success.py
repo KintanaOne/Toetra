@@ -47,7 +47,9 @@ def test_run_ref_001_resolves_one_complete_point_in_schema_order() -> None:
     assert tuple(binding.concrete_values) == ("a", "b")
     assert binding.concrete_values["a"].value == 1.5
     assert binding.concrete_values["a"].dtype is EnumDataType.FLOAT
+    assert binding.concrete_values["a"].source_dtype == "float64"
     assert binding.concrete_values["b"].value == 7
+    assert binding.concrete_values["b"].source_dtype == "int64"
     assert binding.provenance.source_kind == "dataframe"
     assert binding.provenance.row_index == "0"
 

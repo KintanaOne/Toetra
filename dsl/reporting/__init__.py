@@ -1,5 +1,14 @@
 """User-facing verification report models, renderers and serializers."""
 
+from dsl.provenance import (
+    ArtifactProvenance,
+    CompilerProvenance,
+    ContentFingerprint,
+    FingerprintStatus,
+    ProvenanceCompleteness,
+    ReportProvenance,
+    SoftwareProvenance,
+)
 from dsl.reporting.builder import build_verification_report
 from dsl.reporting.html import (
     HtmlRenderOptions,
@@ -22,6 +31,8 @@ from dsl.reporting.json import (
 from dsl.reporting.model import (
     ReportAssignment,
     ReportAssignmentKind,
+    ReportBackendExecution,
+    ReportNumericCompatibility,
     ReportPointEvidence,
     ReportScope,
     ReportScopeVariable,
@@ -37,9 +48,18 @@ __all__ = [
     "REPORT_COLLECTION_SCHEMA",
     "REPORT_SCHEMA",
     "REPORT_SCHEMA_VERSION",
+    "ArtifactProvenance",
+    "CompilerProvenance",
+    "ContentFingerprint",
+    "FingerprintStatus",
+    "ProvenanceCompleteness",
+    "ReportProvenance",
+    "SoftwareProvenance",
     "HtmlRenderOptions",
     "ReportAssignment",
     "ReportAssignmentKind",
+    "ReportBackendExecution",
+    "ReportNumericCompatibility",
     "ReportPointEvidence",
     "ReportScope",
     "ReportScopeVariable",

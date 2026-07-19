@@ -4,6 +4,7 @@ import pytest
 
 from dsl.backends.capabilities import BackendCapabilities
 from dsl.backends.errors import NoCompatibleBackendError
+from dsl.backends.execution import BackendExecutionCapabilities
 from dsl.backends.registry import BackendRegistry
 from dsl.backends.router import BackendRouter
 from dsl.ir.ir2.context import IR2BuildContext
@@ -49,6 +50,7 @@ def _capabilities(*, native: bool, alternation: bool) -> BackendCapabilities:
             {EnumDataType.INT, EnumDataType.FLOAT, EnumDataType.BOOL}
         ),
         supports_domain_assumptions=True,
+        execution_capabilities=BackendExecutionCapabilities(supports_timeout=True),
     )
 
 

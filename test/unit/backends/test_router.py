@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from dsl.backends.capabilities import BackendCapabilities
+from dsl.backends.execution import BackendExecutionCapabilities
 from dsl.backends.errors import (
     BackendNotRegisteredError,
     NoCompatibleBackendError,
@@ -158,6 +159,7 @@ def _capabilities(
         supported_normal_forms=forms,
         supports_native_quantifiers=supports_native_quantifiers,
         supported_verification_semantics=supported_semantics,
+        execution_capabilities=BackendExecutionCapabilities(supports_timeout=True),
     )
 
 
@@ -296,3 +298,76 @@ def test_backend_router_rejects_backend_without_required_normal_form():
 
     with pytest.raises(NoCompatibleBackendError):
         BackendRouter(registry).route(task)
+
+
+def test_backend_router_rejects_execution_controls_the_backend_cannot_enforce():
+    from dataclasses import replace
+
+    from dsl.backends.execution import (
+        BackendCancellationToken,
+        BackendExecutionCapabilities,
+        BackendExecutionPolicy,
+    )
+
+    registry = BackendRegistry()
+    registry.register(
+        replace(
+            _capabilities(),
+            execution_capabilities=BackendExecutionCapabilities(
+                supports_timeout=True,
+                supports_cancellation=False,
+            ),
+        )
+    )
+
+    with pytest.raises(
+        NoCompatibleBackendError, match="execution policy: cancellation"
+    ):
+        BackendRouter(registry).route(
+            _task(requirements=_requirements()),
+            execution_policy=BackendExecutionPolicy(
+                cancellation_token=BackendCancellationToken()
+            ),
+        )
+
+
+def test_backend_router_accepts_a_backend_neutral_execution_policy():
+    from dataclasses import replace
+
+    from dsl.backends.execution import (
+        BackendCancellationToken,
+        BackendExecutionCapabilities,
+        BackendExecutionPolicy,
+        BackendResourceLimits,
+    )
+
+    registry = BackendRegistry()
+    registry.register(
+        replace(
+            _capabilities(),
+            execution_capabilities=BackendExecutionCapabilities(
+                supports_timeout=True,
+                supports_cancellation=True,
+                supports_max_backend_units=True,
+                supports_max_memory=True,
+                supports_deterministic_seed=True,
+                supported_backend_options=None,
+            ),
+        )
+    )
+
+    route = BackendRouter(registry).route(
+        _task(requirements=_requirements()),
+        execution_policy=BackendExecutionPolicy(
+            timeout_ms=1_000,
+            resources=BackendResourceLimits(
+                max_backend_units=100,
+                max_memory_mb=64,
+            ),
+            deterministic_seed=3,
+            cancellation_token=BackendCancellationToken(),
+            backend_options={"adapter_specific": True},
+        ),
+    )
+
+    assert route.backend is EnumBackend.Z3

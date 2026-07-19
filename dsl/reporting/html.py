@@ -261,6 +261,9 @@ def _render_report_card(
     status_class = _STATUS_CLASSES[report.status]
     scope = _format_scope(report)
     assignments = _render_assignments(report)
+    numeric_compatibility = _render_numeric_compatibility(report)
+    backend_execution = _render_backend_execution(report)
+    provenance = _render_provenance(report)
     diagnostics = _render_diagnostics(report.diagnostics)
     route = (
         f'<p class="forml-route"><strong>Route:</strong> {escape(report.route_reason)}</p>'
@@ -283,11 +286,48 @@ def _render_report_card(
         + _meta_item("Scope", scope)
         + _meta_item("Backend", f"{report.backend.value} · {report.backend_status}")
         + _meta_item("Assumptions", str(report.assumption_count))
+        + (
+            _meta_item(
+                "Verification",
+                report.provenance.verification_fingerprint.split(":", 1)[-1][:12],
+            )
+            if report.provenance is not None
+            else ""
+        )
+        + (
+            _meta_item("Provenance", report.provenance.completeness.value)
+            if report.provenance is not None
+            else ""
+        )
+        + (
+            _meta_item(
+                "Numeric guarantee",
+                report.numeric_compatibility.classification,
+            )
+            if report.numeric_compatibility is not None
+            else ""
+        )
+        + (
+            _meta_item(
+                "Claim scope",
+                report.numeric_compatibility.conclusion_scope,
+            )
+            if report.numeric_compatibility is not None
+            else ""
+        )
         + "</dl>"
         '<div class="forml-section">'
         "<h4>Specification</h4>"
         f'<code class="forml-specification">{escape(report.specification)}</code>'
-        "</div>" + assignments + diagnostics + route + "</div>" + "</section>"
+        "</div>"
+        + backend_execution
+        + numeric_compatibility
+        + provenance
+        + assignments
+        + diagnostics
+        + route
+        + "</div>"
+        + "</section>"
     )
 
 
@@ -304,6 +344,153 @@ def _format_scope(report: VerificationReport) -> str:
     if variable_names:
         return f"{report.scope.kind} {variable_names}"
     return report.scope.kind
+
+
+def _render_backend_execution(report: VerificationReport) -> str:
+    execution = report.backend_execution
+    if execution is None:
+        return ""
+
+    timeout = (
+        "disabled" if execution.timeout_ms is None else f"{execution.timeout_ms} ms"
+    )
+    rows = (
+        ("Status", execution.status),
+        ("Duration", f"{execution.duration_ms:.3f} ms"),
+        ("Timeout", timeout),
+        (
+            "Backend units",
+            (
+                str(execution.max_backend_units)
+                if execution.max_backend_units is not None
+                else "unbounded"
+            ),
+        ),
+        (
+            "Memory",
+            (
+                f"{execution.max_memory_mb} MB"
+                if execution.max_memory_mb is not None
+                else "unbounded"
+            ),
+        ),
+        (
+            "Deterministic seed",
+            (
+                str(execution.deterministic_seed)
+                if execution.deterministic_seed is not None
+                else "default"
+            ),
+        ),
+        ("Reason", execution.reason or "—"),
+        ("Backend reason", execution.backend_reason or "—"),
+    )
+    table_rows = "".join(
+        "<tr>" f"<th>{escape(label)}</th>" f"<td>{escape(value)}</td>" "</tr>"
+        for label, value in rows
+    )
+    return (
+        '<div class="forml-section">'
+        "<h4>Backend execution</h4>"
+        '<div class="forml-assignment-group">'
+        f"<table><tbody>{table_rows}</tbody></table>"
+        "</div></div>"
+    )
+
+
+def _render_numeric_compatibility(report: VerificationReport) -> str:
+    compatibility = report.numeric_compatibility
+    if compatibility is None:
+        return ""
+
+    requirements = ", ".join(compatibility.property_numeric_requirements) or "None"
+    permitted = ", ".join(compatibility.permitted_conclusions) or "None"
+    replay = ", ".join(compatibility.replay_required_for) or "None"
+    rule_id = compatibility.matched_rule_id or "<no matching rule>"
+
+    rows = (
+        ("Rule", rule_id),
+        ("Support", compatibility.support_status),
+        ("Classification", compatibility.classification),
+        ("Semantic target", compatibility.semantic_target),
+        ("Conclusion scope", compatibility.conclusion_scope),
+        ("Source route", compatibility.source_route),
+        (
+            "Encoder",
+            f"{compatibility.model_encoder_id}@{compatibility.model_encoder_version}",
+        ),
+        ("Backend route", compatibility.backend_route),
+        ("Property requirements", requirements),
+        ("Permitted conclusions", permitted),
+        ("Replay required for", replay),
+    )
+    table_rows = "".join(
+        "<tr>" f"<th>{escape(label)}</th>" f"<td>{escape(value)}</td>" "</tr>"
+        for label, value in rows
+    )
+
+    notes = ""
+    note_items = tuple(compatibility.assumptions_and_preconditions) + tuple(
+        compatibility.compatibility_diagnostics
+    )
+    if note_items:
+        notes = (
+            '<ul class="forml-diagnostics">'
+            + "".join(
+                '<li class="forml-diagnostic"><span>' + escape(item) + "</span></li>"
+                for item in note_items
+            )
+            + "</ul>"
+        )
+
+    return (
+        '<div class="forml-section">'
+        "<h4>Numeric compatibility</h4>"
+        '<div class="forml-assignment-group">'
+        f"<table><tbody>{table_rows}</tbody></table>"
+        "</div>" + notes + "</div>"
+    )
+
+
+def _render_provenance(report: VerificationReport) -> str:
+    provenance = report.provenance
+    if provenance is None:
+        return ""
+
+    rows = (
+        ("Captured", provenance.captured_at_utc),
+        ("Completeness", provenance.completeness.value),
+        ("Inputs", provenance.input_fingerprint),
+        ("Property", provenance.property_fingerprint),
+        ("Route", provenance.route_fingerprint),
+        ("Execution policy", provenance.execution_policy_fingerprint),
+        ("Verification", provenance.verification_fingerprint),
+        ("FORML version", provenance.software.forml_version),
+        ("FORML build", provenance.software.forml_build_id or "unavailable"),
+        (
+            "Compiler",
+            f"{provenance.compiler.actual_normal_form} / "
+            f"strict={provenance.compiler.strict}",
+        ),
+    )
+    table_rows = "".join(
+        "<tr>" f"<th>{escape(label)}</th>" f"<td>{escape(value)}</td>" "</tr>"
+        for label, value in rows
+    )
+    unavailable = ""
+    if provenance.unavailable_inputs:
+        unavailable = (
+            '<p class="forml-route"><strong>Unavailable inputs:</strong> '
+            + escape(", ".join(provenance.unavailable_inputs))
+            + "</p>"
+        )
+    return (
+        '<div class="forml-section">'
+        "<h4>Verification provenance</h4>"
+        '<div class="forml-assignment-group">'
+        f"<table><tbody>{table_rows}</tbody></table>"
+        "</div>" + unavailable + "</div>"
+    )
 
 
 def _render_assignments(report: VerificationReport) -> str:

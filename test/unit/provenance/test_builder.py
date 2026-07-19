@@ -1,0 +1,96 @@
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from pathlib import Path
+
+import pandas as pd
+
+from dsl.ir.ir2.context import IR2BuildContext
+from dsl.ir.ir2.enums import NormalFormKind
+from dsl.provenance.builder import build_provenance_context
+from dsl.provenance.model import FingerprintStatus, ProvenanceCompleteness
+from dsl.semantic.types.enums import EnumDataType
+from model.detector.model_framework import EnumModelFramework
+from model.schema.feature_schema import FeatureSchema
+from model.schema.model_schema import ModelSchema
+
+
+def _schema(*, coefficient: float = 2.0) -> ModelSchema:
+    return ModelSchema(
+        framework=EnumModelFramework.SKLEARN,
+        model_type="LinearRegression",
+        features={
+            "a": FeatureSchema(
+                name="a", dtype=EnumDataType.FLOAT, source_dtype="float64"
+            )
+        },
+        target="score",
+        task="regression",
+        target_dtype=EnumDataType.FLOAT,
+        target_source_dtype="float64",
+        metadata={
+            "linear": {
+                "coef": [coefficient],
+                "intercept": 1.0,
+                "feature_names": ["a"],
+            }
+        },
+    )
+
+
+def _context(**overrides: object):
+    arguments = {
+        "specification_source": "target <= 7",
+        "specification_path": None,
+        "model_path": None,
+        "dataset_path": None,
+        "anchor_source": None,
+        "anchor_resolver": None,
+        "anchors_used": False,
+        "schema": _schema(),
+        "ir2_context": IR2BuildContext(preferred_normal_form=NormalFormKind.NNF),
+        "captured_at": datetime(2026, 7, 19, 12, tzinfo=timezone.utc),
+    }
+    arguments.update(overrides)
+    return build_provenance_context(**arguments)  # type: ignore[arg-type]
+
+
+def test_schema_only_provenance_is_complete() -> None:
+    context = _context()
+    assert context.completeness is ProvenanceCompleteness.COMPLETE
+    assert context.artifacts["model"].status is FingerprintStatus.NOT_PROVIDED
+    assert context.artifacts["model_schema"].status is FingerprintStatus.AVAILABLE
+
+
+def test_file_fingerprints_use_exact_bytes_and_ignore_names(tmp_path: Path) -> None:
+    left = tmp_path / "model-a.joblib"
+    right = tmp_path / "renamed.joblib"
+    left.write_bytes(b"same-model")
+    right.write_bytes(b"same-model")
+
+    first = _context(model_path=left)
+    second = _context(model_path=right)
+
+    assert first.artifacts["model"].fingerprint == second.artifacts["model"].fingerprint
+    assert first.input_fingerprint == second.input_fingerprint
+
+
+def test_dataframe_anchor_source_has_canonical_fingerprint() -> None:
+    frame = pd.DataFrame({"id": ["a"], "x": [1.0]})
+    context = _context(anchor_source=frame, anchors_used=True)
+    artifact = context.artifacts["anchor_source"]
+    assert artifact.status is FingerprintStatus.AVAILABLE
+    assert artifact.fingerprint is not None
+    assert artifact.fingerprint.canonicalization == "pandas_dataframe_canonical_json_v1"
+
+
+def test_opaque_anchor_resolver_marks_provenance_partial() -> None:
+    context = _context(anchor_resolver=object(), anchors_used=True)
+    assert context.completeness is ProvenanceCompleteness.PARTIAL
+    assert context.unavailable_inputs == ("anchor_source",)
+
+
+def test_schema_change_changes_input_identity() -> None:
+    first = _context(schema=_schema(coefficient=2.0))
+    second = _context(schema=_schema(coefficient=3.0))
+    assert first.input_fingerprint != second.input_fingerprint

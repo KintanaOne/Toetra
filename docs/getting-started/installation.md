@@ -1,103 +1,42 @@
 # Installation
 
-> Status: Draft  
-> Scope: Developer setup  
-> Implementation: To be stabilized
+FORML `1.0.0rc1` supports Python 3.11 and 3.12.
 
-## Purpose
+## Install the project
 
-This document describes the expected installation flow for FORML during the V1 development phase.
-
-Because FORML is still under active development, installation instructions should remain simple and developer-oriented.
-
-## Recommended setup
-
-Clone the repository:
+From a source checkout:
 
 ```bash
-git clone https://github.com/KintanaOne/FORML.git
-cd FORML
+python -m pip install .
 ```
 
-Create a virtual environment:
+## Development environment
 
 ```bash
-python -m venv .venv
+python -m pip install -r requirements-dev.txt
+make ci
 ```
 
-Activate it:
+`make ci` is non-mutating: it checks lint, formatting, typing, generated
+compatibility matrices, the public documentation contract, tests, notebooks, and
+MkDocs without rewriting the checkout.
 
-=== "Windows"
-
-    ```bash
-    .venv\Scripts\activate
-    ```
-
-=== "Linux / macOS"
-
-    ```bash
-    source .venv/bin/activate
-    ```
-
-Install development dependencies:
+## Release validation
 
 ```bash
-python -m pip install --upgrade pip
-python -m pip install -e ".[dev]"
+make release-check
+make review-bundle-check
 ```
 
-## Expected dependencies
+The first command builds reproducible wheel and source distributions and installs
+the wheel in a clean virtual environment outside the repository. The second
+builds the review bundle twice and compares the resulting bytes.
 
-FORML currently depends on several categories of packages:
+## Import check
 
-| Category | Purpose |
-|---|---|
-| Parser | DSL parsing |
-| Testing | unit tests, property-based tests, fuzzing |
-| ML frameworks | model loading and introspection |
-| Solver | Z3 backend |
-| Documentation | MkDocs site generation |
-
-## Z3 requirement
-
-Z3 is the minimal backend target for the first functional V1.
-
-A working V1 should be able to go from:
-
-```text
-.forml + model
-→ Z3 query
-→ verification result
+```python
+from forml import verify, VerificationSession, VerificationStatus
 ```
 
-## Optional dependencies
-
-Some dependencies may remain optional depending on enabled features:
-
-| Dependency | Purpose |
-|---|---|
-| scikit-learn | ModelBridge sklearn support |
-| xgboost | ModelBridge XGBoost support |
-| pandas | dataset/schema introspection |
-| hypothesis | property-based testing |
-| miova | mutation campaigns and contract testing |
-
-## Documentation build
-
-Install documentation dependencies and run:
-
-```bash
-mkdocs serve
-```
-
-or:
-
-```bash
-mkdocs build --strict
-```
-
-The strict build should eventually be part of CI.
-
-## Stabilization note
-
-This page should be updated once the project exposes a stable package interface and installation command.
+Normal user code should import from `forml`. The `dsl` and `model` packages expose
+internal and extension contracts and are not the primary compatibility surface.

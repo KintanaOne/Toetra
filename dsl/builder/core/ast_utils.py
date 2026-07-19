@@ -116,7 +116,11 @@ def parse_attribute(node: Tree) -> AttributeNode:
 def parse_literal_value(raw: str) -> ConstantNode:
     """Build a typed constant from one scalar literal spelling."""
     if len(raw) >= 2 and raw[0] == raw[-1] and raw[0] in {"'", '"'}:
-        return ConstantNode(value=raw[1:-1], dtype=EnumDataType.STRING)
+        return ConstantNode(
+            value=raw[1:-1],
+            dtype=EnumDataType.STRING,
+            source_lexeme=raw,
+        )
 
     cleaned = clean_string(raw)
 
@@ -124,28 +128,40 @@ def parse_literal_value(raw: str) -> ConstantNode:
         raise ValueError("Invalid value: None after cleaning")
 
     if cleaned.lower() == "true":
-        return ConstantNode(True, EnumDataType.BOOL)
+        return ConstantNode(True, EnumDataType.BOOL, source_lexeme=raw)
 
     if cleaned.lower() == "false":
-        return ConstantNode(False, EnumDataType.BOOL)
+        return ConstantNode(False, EnumDataType.BOOL, source_lexeme=raw)
 
     if cleaned.lower() == "null":
-        return ConstantNode(None, EnumDataType.NoneType)
+        return ConstantNode(None, EnumDataType.NoneType, source_lexeme=raw)
 
     # Integer parsing
     try:
-        return ConstantNode(value=int(cleaned), dtype=EnumDataType.INT)
+        return ConstantNode(
+            value=int(cleaned),
+            dtype=EnumDataType.INT,
+            source_lexeme=raw,
+        )
     except (ValueError, TypeError):
         pass
 
     # Float parsing
     try:
-        return ConstantNode(value=float(cleaned), dtype=EnumDataType.FLOAT)
+        return ConstantNode(
+            value=float(cleaned),
+            dtype=EnumDataType.FLOAT,
+            source_lexeme=raw,
+        )
     except (ValueError, TypeError):
         pass
 
     # Fallback: string
-    return ConstantNode(value=cleaned, dtype=EnumDataType.STRING)
+    return ConstantNode(
+        value=cleaned,
+        dtype=EnumDataType.STRING,
+        source_lexeme=raw,
+    )
 
 
 def parse_value(node: Tree) -> ConstantNode:

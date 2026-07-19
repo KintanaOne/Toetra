@@ -10,18 +10,30 @@ from dsl.backends.diagnostics import (
     BackendDiagnosticSeverity,
     BackendResultDiagnostic,
 )
+from dsl.backends.execution import (
+    BackendExecutionPolicy,
+    BackendExecutionStatus,
+)
 from dsl.backends.results import VerificationStatus
 from dsl.ir.ir2.enums import VerificationSemantics
 from dsl.language.vocabulary.backends import EnumBackend
 from dsl.language.vocabulary.properties import EnumProperty
 from dsl.reporting import (
+    ArtifactProvenance,
+    CompilerProvenance,
+    ContentFingerprint,
+    FingerprintStatus,
+    ProvenanceCompleteness,
+    ReportProvenance,
     REPORT_COLLECTION_SCHEMA,
     REPORT_SCHEMA,
     REPORT_SCHEMA_VERSION,
     ReportAssignment,
     ReportAssignmentKind,
+    ReportBackendExecution,
     ReportScope,
     ReportScopeVariable,
+    SoftwareProvenance,
     VerificationReport,
     verification_reports_to_dict,
     write_verification_reports_json,
@@ -72,6 +84,63 @@ def _report() -> VerificationReport:
         ),
         assumption_count=2,
         route_reason="requested backend satisfies IR2 requirements",
+        backend_execution=ReportBackendExecution(
+            status=BackendExecutionStatus.SAT.value,
+            duration_ms=12.5,
+            reason=None,
+            backend_reason=None,
+            timeout_ms=BackendExecutionPolicy().timeout_ms,
+            max_backend_units=None,
+            max_memory_mb=None,
+            deterministic_seed=None,
+            backend_options={},
+        ),
+        provenance=ReportProvenance(
+            captured_at_utc="2026-07-19T12:00:00Z",
+            input_fingerprint="sha256:" + "1" * 64,
+            completeness=ProvenanceCompleteness.COMPLETE,
+            unavailable_inputs=(),
+            property_fingerprint="sha256:" + "2" * 64,
+            route_fingerprint="sha256:" + "3" * 64,
+            execution_policy_fingerprint="sha256:" + "4" * 64,
+            verification_fingerprint="sha256:" + "5" * 64,
+            artifacts={
+                "specification": ArtifactProvenance(
+                    role="specification",
+                    source_kind="inline_text",
+                    status=FingerprintStatus.AVAILABLE,
+                    fingerprint=ContentFingerprint(
+                        algorithm="sha256",
+                        digest="a" * 64,
+                        size_bytes=28,
+                        canonicalization="utf8_compiler_source",
+                    ),
+                ),
+                "model": ArtifactProvenance(
+                    role="model",
+                    source_kind="schema_only",
+                    status=FingerprintStatus.NOT_PROVIDED,
+                ),
+            },
+            software=SoftwareProvenance(
+                forml_version="1.0.0rc1",
+                forml_build_id="git:abc123",
+                python_version="3.11.9",
+                python_implementation="CPython",
+                platform="Linux-6.0-x86_64",
+                components={"z3-solver": "4.16.0.0"},
+            ),
+            compiler=CompilerProvenance(
+                preferred_normal_form="nnf",
+                actual_normal_form="nnf",
+                max_distribution_size=256,
+                allow_nnf_fallback=True,
+                backend_hint="Z3",
+                strict=True,
+                source_ir="IR2",
+                builder="IR2Builder",
+            ),
+        ),
     )
 
 
@@ -104,6 +173,10 @@ def test_report_to_dict_uses_versioned_stable_contract() -> None:
     assert payload["diagnostics"] == [
         {"code": "EXAMPLE", "severity": "info", "message": "example"}
     ]
+    assert payload["provenance"]["fingerprints"]["verification"] == (
+        "sha256:" + "5" * 64
+    )
+    assert payload["provenance"]["artifacts"]["model"]["status"] == ("not_provided")
 
 
 def test_report_to_json_is_valid_utf8_json() -> None:
@@ -142,7 +215,7 @@ def test_report_json_matches_versioned_golden_contract() -> None:
         / "fixtures"
         / "reporting"
         / "golden"
-        / "verification_report_v2.json"
+        / "verification_report_v5.json"
     )
 
     assert _report().to_dict() == json.loads(golden_path.read_text(encoding="utf-8"))

@@ -49,8 +49,59 @@ def render_verification_report_text(
         _field("Assumptions", str(report.assumption_count)),
     ]
 
+    provenance = report.provenance
+    if provenance is not None:
+        lines.extend(
+            [
+                _field(
+                    "Verification",
+                    provenance.verification_fingerprint.split(":", 1)[-1][:12],
+                ),
+                _field("Captured", provenance.captured_at_utc),
+                _field("Provenance", provenance.completeness.value),
+            ]
+        )
+
     if resolved.include_route_reason:
         lines.append(_field("Route", report.route_reason))
+
+    execution = report.backend_execution
+    if execution is not None:
+        lines.extend(
+            [
+                _field("Execution", execution.status),
+                _field("Duration", f"{execution.duration_ms:.3f} ms"),
+                _field(
+                    "Timeout",
+                    (
+                        "disabled"
+                        if execution.timeout_ms is None
+                        else f"{execution.timeout_ms} ms"
+                    ),
+                ),
+            ]
+        )
+        if execution.reason is not None:
+            lines.append(_field("Exec reason", execution.reason))
+        if execution.backend_reason is not None:
+            lines.append(_field("Native reason", execution.backend_reason))
+
+    compatibility = report.numeric_compatibility
+    if compatibility is not None:
+        lines.extend(
+            [
+                _field(
+                    "Numeric route",
+                    f"{compatibility.classification} ({compatibility.support_status})",
+                ),
+                _field("Semantic target", compatibility.semantic_target),
+                _field("Claim scope", compatibility.conclusion_scope),
+                _field(
+                    "Numeric rule",
+                    compatibility.matched_rule_id or "<no matching rule>",
+                ),
+            ]
+        )
 
     lines.extend(["", "Conclusion"])
     lines.extend(
@@ -63,6 +114,102 @@ def render_verification_report_text(
             lines.extend(_render_point_groups(report, resolved))
         else:
             lines.extend(_render_assignment_groups(report, resolved))
+
+    if compatibility is not None:
+        lines.extend(["", "Numeric compatibility"])
+        lines.extend(
+            _indented_wrapped(
+                f"Source: {compatibility.source_route}",
+                resolved,
+            )
+        )
+        lines.extend(
+            _indented_wrapped(
+                f"Backend: {compatibility.backend_route}",
+                resolved,
+            )
+        )
+        if compatibility.property_numeric_requirements:
+            lines.extend(
+                _indented_wrapped(
+                    "Requirements: "
+                    + ", ".join(compatibility.property_numeric_requirements),
+                    resolved,
+                )
+            )
+        if compatibility.assumptions_and_preconditions:
+            lines.append("  Preconditions")
+            for item in compatibility.assumptions_and_preconditions:
+                lines.extend(
+                    f"    {line}"
+                    for line in wrap(
+                        "- " + item,
+                        width=max(20, resolved.width - 4),
+                        subsequent_indent="  ",
+                    )
+                )
+        if compatibility.compatibility_diagnostics:
+            lines.append("  Compatibility diagnostics")
+            for item in compatibility.compatibility_diagnostics:
+                lines.extend(
+                    f"    {line}"
+                    for line in wrap(
+                        "- " + item,
+                        width=max(20, resolved.width - 4),
+                        subsequent_indent="  ",
+                    )
+                )
+
+    if provenance is not None:
+        lines.extend(["", "Verification provenance"])
+        lines.extend(
+            _indented_wrapped(
+                f"Inputs: {provenance.input_fingerprint}",
+                resolved,
+            )
+        )
+        lines.extend(
+            _indented_wrapped(
+                f"Property: {provenance.property_fingerprint}",
+                resolved,
+            )
+        )
+        lines.extend(
+            _indented_wrapped(
+                f"Route: {provenance.route_fingerprint}",
+                resolved,
+            )
+        )
+        lines.extend(
+            _indented_wrapped(
+                "Execution policy: " f"{provenance.execution_policy_fingerprint}",
+                resolved,
+            )
+        )
+        lines.extend(
+            _indented_wrapped(
+                f"Verification: {provenance.verification_fingerprint}",
+                resolved,
+            )
+        )
+        lines.extend(
+            _indented_wrapped(
+                f"FORML: {provenance.software.forml_version}"
+                + (
+                    f" ({provenance.software.forml_build_id})"
+                    if provenance.software.forml_build_id is not None
+                    else ""
+                ),
+                resolved,
+            )
+        )
+        if provenance.unavailable_inputs:
+            lines.extend(
+                _indented_wrapped(
+                    "Unavailable inputs: " + ", ".join(provenance.unavailable_inputs),
+                    resolved,
+                )
+            )
 
     if report.diagnostics:
         lines.extend(["", "Diagnostics"])

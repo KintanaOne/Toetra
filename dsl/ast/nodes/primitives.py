@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Union
 
 from dsl.ast.nodes.base import ASTNode
@@ -29,6 +29,7 @@ class ArgNode(ASTNode):
 class ConstantNode(ScalarExpressionNode):
     value: PrimitiveValue
     dtype: EnumDataType
+    source_lexeme: str | None = field(default=None, compare=False)
 
 
 @dataclass

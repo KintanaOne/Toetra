@@ -2,11 +2,16 @@ from typing import Any
 
 import pandas as pd
 
+from sklearn import __version__ as sklearn_version
 from sklearn.base import (
     ClassifierMixin,
     RegressorMixin,
 )
 
+from dsl.compatibility.descriptors import (
+    FrameworkModelDescriptor,
+    NumericSemanticDescriptor,
+)
 from dsl.semantic.types.enums import EnumDataType
 
 from model.detector.model_framework import EnumModelFramework
@@ -36,14 +41,24 @@ class SklearnIntrospector(BaseIntrospector):
             else self._detect_features()
         )
 
+        task = self._detect_task()
+        metadata = self._build_metadata()
+        target_source_dtype = self._detect_target_source_dtype(target)
         return ModelSchema(
             framework=EnumModelFramework.SKLEARN,
             model_type=type(self.model).__name__,
             features=features,
-            task=self._detect_task(),
+            task=task,
             target=target,
             target_dtype=self._detect_target_dtype(target),
-            metadata=self._build_metadata(),
+            metadata=metadata,
+            compatibility=self._compatibility_descriptor(
+                features=features,
+                task=task,
+                metadata=metadata,
+                target_source_dtype=target_source_dtype,
+            ),
+            target_source_dtype=target_source_dtype,
         )
 
     # ======================================================
@@ -87,6 +102,7 @@ class SklearnIntrospector(BaseIntrospector):
                 name=name,
                 dtype=self._map_dtype(data[name].dtype),
                 nullable=bool(data[name].isnull().any()),
+                source_dtype=str(data[name].dtype),
             )
             for name in feature_names
         }
@@ -194,6 +210,7 @@ class SklearnIntrospector(BaseIntrospector):
 
         metadata.update(
             {
+                "framework_version": sklearn_version,
                 "n_features_in": self._safe_getattr("n_features_in_"),
                 "classes": self._safe_getattr("classes_"),
                 "feature_names_in": feature_names_in,
@@ -218,11 +235,92 @@ class SklearnIntrospector(BaseIntrospector):
         if feature_names_in is not None:
             feature_names = self._to_python(feature_names_in)
 
+        coefficient = self._safe_getattr("coef_")
+        intercept = self._safe_getattr("intercept_")
         return {
-            "coef": self._to_python(self._safe_getattr("coef_")),
-            "intercept": self._to_python(self._safe_getattr("intercept_")),
+            "coef": self._to_python(coefficient),
+            "intercept": self._to_python(intercept),
             "feature_names": feature_names,
+            "coef_source_dtype": self._source_dtype_name(coefficient),
+            "intercept_source_dtype": self._source_dtype_name(intercept),
         }
+
+    def _detect_target_source_dtype(self, target: str) -> str | None:
+        if self.source_path is None:
+            return None
+
+        data = pd.read_csv(self.source_path)
+        if target not in data.columns:
+            return None
+        return str(data[target].dtype)
+
+    def _compatibility_descriptor(
+        self,
+        *,
+        features: dict[str, FeatureSchema],
+        task: str,
+        metadata: dict[str, Any],
+        target_source_dtype: str | None,
+    ) -> FrameworkModelDescriptor:
+        linear = metadata.get("linear")
+        parameter_dtypes: tuple[str, ...] = ()
+        if isinstance(linear, dict):
+            parameter_dtypes = tuple(
+                dict.fromkeys(
+                    str(value)
+                    for value in (
+                        linear.get("coef_source_dtype"),
+                        linear.get("intercept_source_dtype"),
+                    )
+                    if value
+                )
+            )
+
+        numeric_semantics, profile_id = self._numeric_profile(parameter_dtypes)
+        model_type = type(self.model).__name__
+        model_family = (
+            "affine_regression"
+            if model_type == "LinearRegression" and task == "regression"
+            else f"unknown:{task}:{model_type}"
+        )
+        return FrameworkModelDescriptor(
+            framework_adapter_id=EnumModelFramework.SKLEARN.value,
+            framework_version=sklearn_version,
+            model_family=model_family,
+            source_execution_profile_id=profile_id,
+            numeric_semantics=numeric_semantics,
+            parameter_dtypes=parameter_dtypes,
+            input_dtypes=tuple(
+                feature.source_dtype or feature.dtype.value
+                for feature in features.values()
+            ),
+            output_dtype=target_source_dtype,
+        )
+
+    @staticmethod
+    def _numeric_profile(
+        parameter_dtypes: tuple[str, ...],
+    ) -> tuple[NumericSemanticDescriptor, str]:
+        normalized = {value.lower() for value in parameter_dtypes}
+        if normalized and all("float64" in value for value in normalized):
+            return NumericSemanticDescriptor.binary_float(64), "ieee754_binary64"
+        if normalized and all("float32" in value for value in normalized):
+            return NumericSemanticDescriptor.binary_float(32), "ieee754_binary32"
+        if any("float" in value for value in normalized):
+            return (
+                NumericSemanticDescriptor.binary_float(None),
+                "binary_float_unknown_width",
+            )
+        return NumericSemanticDescriptor.unknown(), "unknown"
+
+    @staticmethod
+    def _source_dtype_name(value: Any) -> str | None:
+        dtype = getattr(value, "dtype", None)
+        if dtype is not None:
+            return str(dtype)
+        if value is None:
+            return None
+        return type(value).__name__
 
     def _to_python(self, value: Any) -> Any:
         """Convert numpy/pandas values to plain Python structures when possible."""

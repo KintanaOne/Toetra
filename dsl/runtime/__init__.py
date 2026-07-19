@@ -5,6 +5,14 @@ This module remains available for advanced integrations and compatibility.
 """
 
 from dsl.runtime.api import verify
+from dsl.provenance.model import VerificationProvenanceContext
+from dsl.backends.execution import (
+    BackendCancellationToken,
+    BackendExecutionPolicy,
+    BackendExecutionStatus,
+    BackendResourceLimits,
+    DEFAULT_BACKEND_TIMEOUT_MS,
+)
 from dsl.runtime.anchors import (
     AnchorLookupRequest,
     AnchorResolver,
@@ -30,7 +38,13 @@ from dsl.runtime.session import (
 )
 
 __all__ = [
+    "VerificationProvenanceContext",
     "AnchorLookupRequest",
+    "BackendCancellationToken",
+    "BackendExecutionPolicy",
+    "BackendExecutionStatus",
+    "BackendResourceLimits",
+    "DEFAULT_BACKEND_TIMEOUT_MS",
     "AnchorResolutionError",
     "AnchorResolver",
     "AnchorSource",
