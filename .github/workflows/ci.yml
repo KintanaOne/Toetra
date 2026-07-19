@@ -23,14 +23,12 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: "pip"
-          cache-dependency-path: |
-            pyproject.toml
-            requirements-dev.txt
+          cache-dependency-path: pyproject.toml
 
-      - name: Install development environment
+      - name: Install project with development and documentation dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements-dev.txt
+          python -m pip install ".[dev,docs]"
 
       - name: Run non-mutating FORML CI
         run: make ci
@@ -54,14 +52,12 @@ jobs:
         with:
           python-version: "3.12"
           cache: "pip"
-          cache-dependency-path: |
-            pyproject.toml
-            requirements-dev.txt
+          cache-dependency-path: pyproject.toml
 
-      - name: Install development environment
+      - name: Install project with development and documentation dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements-dev.txt
+          python -m pip install ".[dev,docs]"
 
       - name: Build reproducible distributions
         run: make release-check

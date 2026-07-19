@@ -8,8 +8,7 @@
 	review-bundle-check demo-affine demo-user clean
 
 install:
-	python -m pip install -r requirements-dev.txt
-	python -m pip install -e ".[docs]"
+	python -m pip install -e ".[dev,docs]"
 	
 test:
 	python -m pytest -q -m "not wip"
@@ -49,6 +48,13 @@ docs-check:
 
 # Non-mutating local verification gate.
 ci: lint format-check generated-check public-contract-check type test docs-check
+
+ci-check:
+	python -m ruff check .
+	python -m black .
+	python -m black --check .
+	python -m pyright
+	python -m pytest -q
 
 # Build deterministic wheel and sdist artifacts.
 dist:

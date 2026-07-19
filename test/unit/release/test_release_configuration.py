@@ -29,6 +29,17 @@ def test_ci_covers_supported_python_versions_and_checks_checkout() -> None:
     assert "make review-bundle-check" in workflow
 
 
+def test_ci_installs_project_runtime_and_all_required_extras() -> None:
+    workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    requirements = (ROOT / "requirements-dev.txt").read_text(encoding="utf-8")
+    makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+
+    assert workflow.count('python -m pip install ".[dev,docs]"') == 2
+    assert "python -m pip install -r requirements-dev.txt" not in workflow
+    assert "-e .[dev,docs]" in requirements
+    assert 'python -m pip install -e ".[dev,docs]"' in makefile
+
+
 def test_build_toolchain_and_dev_extra_are_pinned() -> None:
     project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
 
