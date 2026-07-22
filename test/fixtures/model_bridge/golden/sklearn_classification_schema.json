@@ -2,6 +2,31 @@
   "framework": "sklearn",
   "model_type": "LogisticRegression",
   "task": "classification",
+  "output_name": "MyTarget",
+  "output_schema": {
+    "kind": "classification",
+    "available_observables": [
+      "predicted_label",
+      "class_probability"
+    ],
+    "primary_dtype": "int",
+    "source_dtype": "int64",
+    "labels": [
+      0,
+      1
+    ],
+    "probability_available": true,
+    "decision_policy": {
+      "negative_label": 0,
+      "positive_label": 1,
+      "probability_threshold": "0.5",
+      "oriented_decision_threshold": "0",
+      "positive_when_strictly_greater": true,
+      "equality_label": 0,
+      "policy_source": "recognized_model_profile",
+      "semantic_profile_id": "binary_logistic_affine_classification"
+    }
+  },
   "target": "MyTarget",
   "target_dtype": "int",
   "features": {

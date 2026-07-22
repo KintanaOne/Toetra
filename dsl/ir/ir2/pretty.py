@@ -19,7 +19,11 @@ from dsl.ir.ir2.dsl.nodes import (
     VerificationTaskIR2,
 )
 from dsl.ir.ir2.enums import Polarity
-from dsl.ir.ir2.model.affine import AffineExpressionIR2, AffineOutputConstraintIR2
+from dsl.ir.ir2.model.affine import (
+    AffineExpressionIR2,
+    AffineModelQuantityConstraintIR2,
+    AffineOutputConstraintIR2,
+)
 from dsl.ir.ir2.model.base import ModelConstraintIR2
 
 
@@ -43,6 +47,8 @@ def pretty_ir2_task(task: VerificationTaskIR2) -> str:
     lines.append(f"Normal form   : {task.normal_form.value}")
     lines.append("Requirements  : " + _pretty_requirements(task))
     lines.append(f"Assumptions   : {len(task.assumptions)}")
+    if task.lowering_evidence:
+        lines.append(f"Lowerings     : {len(task.lowering_evidence)}")
 
     if task.assumptions:
         lines.append("Assumption formulas:")
@@ -72,6 +78,8 @@ def _pretty_requirements(task: VerificationTaskIR2) -> str:
         active.append("problem_predicates")
     if req.requires_model_assertions:
         active.append("model_assertions")
+    if req.requires_model_semantic_quantities:
+        active.append("model_semantic_quantities")
     if req.requires_native_quantifiers:
         active.append("native_quantifiers")
     if req.requires_domains:
@@ -207,6 +215,8 @@ def _pretty_problem(atom: ProblemIR) -> str:
 def _pretty_model_constraint(atom: ModelConstraintIR2) -> str:
     if isinstance(atom, AffineOutputConstraintIR2):
         return _pretty_affine_output_constraint(atom)
+    if isinstance(atom, AffineModelQuantityConstraintIR2):
+        return _pretty_affine_model_quantity_constraint(atom)
 
     return f"<model-constraint:{type(atom).__name__}>"
 
@@ -219,6 +229,18 @@ def _pretty_affine_output_constraint(atom: AffineOutputConstraintIR2) -> str:
         else f"{atom.output_entity}.{atom.output_feature}"
     )
     return f"{output} {op} {_pretty_affine_expression(atom.expression)}"
+
+
+def _pretty_affine_model_quantity_constraint(
+    atom: AffineModelQuantityConstraintIR2,
+) -> str:
+    op = getattr(atom.op, "value", atom.op)
+    quantity = atom.quantity
+    label = (
+        f"_model.{quantity.output_name}[{quantity.point.name}]"
+        f"::<{quantity.quantity_kind.value}>"
+    )
+    return f"{label} {op} {_pretty_affine_expression(atom.expression)}"
 
 
 def _pretty_affine_expression(expression: AffineExpressionIR2) -> str:

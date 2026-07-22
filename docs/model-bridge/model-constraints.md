@@ -1,6 +1,6 @@
 # Model Constraints
 
-> Status: planned / architecturally required  
+> Status: implemented for affine regression and the P21.6 binary logistic latent quantity  
 > Scope: ModelBridge to logical verification pipeline  
 > Priority: P0
 
@@ -136,14 +136,17 @@ objective = "binary:logistic"
 
 ### Symbolic Model Encoding Constraints
 
-Future backend-specific or backend-preparation constraints describing the model behavior itself.
+Backend-independent constraints describing the model behavior itself.
 
 Examples:
 
 ```text
-y = model(x)
-y' = model(x')
+target[x] = w · x + b
+internal_oriented_decision[x] = w · x + b
 ```
+
+P21.6 introduces `AffineModelQuantityConstraintIR2` for the second form. The
+quantity is internal and remains distinct from public output observables.
 
 These constraints are critical for robustness and pairwise properties.
 
@@ -202,7 +205,7 @@ Model constraint generation should produce precise diagnostics when:
 Given the DSL expression:
 
 ```forml
-[ROBUSTNESS]: at x in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUAL()
+[ROBUSTNESS]: forall baseline, candidate => CLASSIFICATION.EQUAL()
 ```
 
 And a model schema:

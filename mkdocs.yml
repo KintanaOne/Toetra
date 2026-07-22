@@ -73,6 +73,8 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Public V1 Profile: public-v1-profile.md
+  - Release Notes:
+      - 1.0.0rc2: releases/1.0.0rc2.md
   - Getting Started:
       - Overview: getting-started/overview.md
       - Installation: getting-started/installation.md
@@ -101,6 +103,7 @@ nav:
       - Properties: language/properties.md
       - Scopes: language/scopes.md
       - Points, Anchors, and Evaluations: language/points-anchors-and-evaluations.md
+      - Model Output Observables: language/model-output-observables.md
       - Quantified Bindings: language/quantified-bindings.md
       - Domains: language/domains.md
       - Assertions: language/assertions.md
@@ -152,6 +155,10 @@ nav:
       - IR1 to IR2: contracts/ir1-to-ir2.md
       - Quantified Domains and Scalar Expressions: contracts/quantified-domain-scalar-expressions.md
       - Point Binding and Evaluation: contracts/point-binding-and-evaluation.md
+      - Model Output Observables: contracts/model-output-observables.md
+      - Model Semantic Lowering: contracts/model-semantic-lowering.md
+      - Initial Binary Classification Profile: contracts/binary-classification-profile.md
+      - Output Reporting and Replay: contracts/output-reporting-and-replay.md
       - Numeric Compatibility Registry: contracts/numeric-compatibility-registry.md
       - Numeric Compatibility Reporting: contracts/numeric-compatibility-reporting.md
       - Backend Execution Contract: contracts/backend-execution-contract.md
@@ -199,6 +206,7 @@ nav:
       - Golden Samples: testing/golden-samples.md
       - Language Evolution Test Matrix: testing/language-evolution-test-matrix.md
       - Point Binding and Evaluation Test Matrix: testing/point-binding-evaluation-test-matrix.md
+      - Binary Classification Test Matrix: testing/binary-classification-test-matrix.md
       - End-to-End Tests: testing/end-to-end-tests.md
       - Property-Based Testing: testing/property-based-testing.md
       - Intelligent Fuzzing: testing/intelligent-fuzzing.md
@@ -228,9 +236,14 @@ nav:
       - ADR-0020 Verification Provenance: adr/ADR-0020-verification-provenance.md
       - ADR-0021 Release Engineering: adr/ADR-0021-release-engineering-and-reproducible-artifacts.md
       - ADR-0022 Public V1 Contract: adr/ADR-0022-public-v1-contract.md
+      - ADR-0023 Typed Model Outputs and Observables: adr/ADR-0023-typed-model-outputs-and-observables.md
+      - ADR-0024 Model Semantic Lowering: adr/ADR-0024-model-semantic-lowering.md
+      - ADR-0025 Initial Binary Classification Profile: adr/ADR-0025-binary-classification-profile.md
+      - ADR-0026 Public V1 Binary Classification Extension: adr/ADR-0026-public-v1-binary-classification-extension.md
 
   - Roadmap:
       - Implementation Roadmap: roadmap/implementation-roadmap.md
       - Point Binding and Evaluation Roadmap: roadmap/point-binding-evaluation-implementation-roadmap.md
+      - Binary Classification Roadmap: roadmap/binary-classification-implementation-roadmap.md
       - Documentation Roadmap: roadmap/documentation-roadmap.md
       - Open Questions: roadmap/open-questions.md

@@ -227,7 +227,13 @@ problem_expr : (CLASSIFICATION
 # === ATTRIBUTES / MODEL OUTPUT ===
 
 attribute : identifier ("." identifier)*
-target_ref : TARGET ("[" identifier "]")?
+model_output_ref : TARGET ("[" identifier "]")?
+target_ref : model_output_ref
+predicted_label_observable : "label"
+class_label_literal : specification_constant_literal
+class_probability_observable : "probability" "(" class_label_literal ")"
+output_observable : model_output_ref "." (predicted_label_observable
+    | class_probability_observable)
 
 # === SCALAR ARITHMETIC ===
 
@@ -243,6 +249,7 @@ multiplicative_expr : unary_expr (multiplicative_operator unary_expr)*
 unary_expr : unary_operator unary_expr
     | scalar_primary
 scalar_primary : value
+    | output_observable
     | target_ref
     | attribute
     | parenthesized_scalar

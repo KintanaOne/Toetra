@@ -167,3 +167,15 @@ pip install -e .
 
 The main demo requires scikit-learn, pandas, Joblib and `z3-solver`, which are
 already declared by the project.
+
+
+## Binary-classification release demo
+
+```bash
+make demo-classification
+```
+
+The demo trains a direct binary sklearn `LogisticRegression`, verifies a label
+proof, a replayable counterexample, a probability witness, and pairwise label
+equality, then checks concrete replay through the public API. The matching
+notebook is `demo/notebooks/binary_classification_policy.ipynb`.

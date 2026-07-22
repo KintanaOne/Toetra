@@ -9,6 +9,8 @@ from dsl.compatibility.descriptors import (
 )
 from dsl.compatibility.enums import NumericFamily
 from model.schema.model_schema import ModelSchema
+from model.schema.output_schema import ClassificationOutputSchema
+from model.families import BINARY_LOGISTIC_AFFINE_MODEL_FAMILY
 
 
 def framework_model_descriptor(schema: ModelSchema) -> FrameworkModelDescriptor:
@@ -22,7 +24,7 @@ def framework_model_descriptor(schema: ModelSchema) -> FrameworkModelDescriptor:
     return FrameworkModelDescriptor(
         framework_adapter_id=schema.framework.value,
         framework_version=_optional_text(schema.metadata.get("framework_version")),
-        model_family=_model_family(schema.model_type, schema.task),
+        model_family=_model_family(schema),
         source_execution_profile_id=profile_id,
         numeric_semantics=numeric_semantics,
         parameter_dtypes=parameter_dtypes,
@@ -30,14 +32,21 @@ def framework_model_descriptor(schema: ModelSchema) -> FrameworkModelDescriptor:
             feature.source_dtype or feature.dtype.value
             for feature in schema.features.values()
         ),
-        output_dtype=(schema.target_source_dtype or _target_dtype(schema)),
+        output_dtype=(schema.output_schema.source_dtype or _output_dtype(schema)),
     )
 
 
-def _model_family(model_type: str, task: str) -> str:
-    if model_type == "LinearRegression" and task == "regression":
+def _model_family(schema: ModelSchema) -> str:
+    if schema.model_type == "LinearRegression" and schema.task == "regression":
         return "affine_regression"
-    return f"unknown:{task}:{model_type}"
+    if (
+        schema.model_type == "LogisticRegression"
+        and schema.task == "classification"
+        and isinstance(schema.output_schema, ClassificationOutputSchema)
+        and schema.output_schema.decision_policy is not None
+    ):
+        return BINARY_LOGISTIC_AFFINE_MODEL_FAMILY
+    return f"unknown:{schema.task}:{schema.model_type}"
 
 
 def _parameter_dtypes(metadata: Mapping[str, Any]) -> tuple[str, ...]:
@@ -100,8 +109,9 @@ def _numeric_semantics(
     return NumericSemanticDescriptor.unknown(), "unknown"
 
 
-def _target_dtype(schema: ModelSchema) -> str | None:
-    return schema.target_dtype.value if schema.target_dtype is not None else None
+def _output_dtype(schema: ModelSchema) -> str | None:
+    dtype = schema.output_schema.primary_dtype
+    return dtype.value if dtype is not None else None
 
 
 def _optional_text(value: object) -> str | None:

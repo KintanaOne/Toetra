@@ -31,7 +31,8 @@ def test_readme_points_to_the_authoritative_v1_profile() -> None:
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
 
     assert "docs/public-v1-profile.md" in readme
-    assert "forml.real_affine_extracted_model" in readme
+    assert "LinearRegression" in readme
+    assert "LogisticRegression" in readme
     assert "Apache License 2.0" in readme
 
 

@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+from dsl.ast.nodes.outputs import (
+    ClassProbabilityObservableNode,
+    OutputObservableNode,
+)
 from dsl.ast.nodes.primitives import (
     AttributeNode,
     BinaryArithmeticNode,
@@ -18,6 +22,7 @@ from dsl.ir.ir1.nodes import (
     TargetExpressionIR,
     UnaryArithmeticExpressionIR,
 )
+from dsl.ir.ir1.outputs import ClassLabelIR, OutputObservableExpressionIR
 from dsl.ir.ir1.points import PointIRRegistry
 from dsl.semantic.core.specification_constants import SPECIFICATION_CONSTANT_KIND
 from dsl.semantic.types.enums import EnumArithmeticClass, EnumDataType
@@ -35,6 +40,9 @@ class ScalarExpressionTranslator:
 
         if isinstance(node, AttributeNode):
             return self._translate_attribute(node)
+
+        if isinstance(node, OutputObservableNode):
+            return self._translate_output_observable(node)
 
         if isinstance(node, TargetRefNode):
             return self._translate_target(node)
@@ -103,6 +111,40 @@ class ScalarExpressionTranslator:
                 if semantic.resolved_point is not None
                 else None
             ),
+        )
+
+    def _translate_output_observable(
+        self,
+        node: OutputObservableNode,
+    ) -> OutputObservableExpressionIR:
+        semantic = node.semantic
+        if semantic is None or semantic.resolved_evaluation is None:
+            raise ValueError(
+                "Model output observable reached IR1 without a model "
+                "evaluation identity"
+            )
+        if semantic.resolved_output_observable is None:
+            raise ValueError(
+                "Model output observable reached IR1 without an observable kind"
+            )
+
+        label = None
+        if isinstance(node, ClassProbabilityObservableNode):
+            if semantic.resolved_label is None:
+                raise ValueError(
+                    "Class probability reached IR1 without a canonical label"
+                )
+            label = ClassLabelIR(
+                value=semantic.resolved_label,
+                dtype=node.label.dtype,
+                source_lexeme=node.label.source_lexeme,
+            )
+
+        return OutputObservableExpressionIR(
+            evaluation=self.point_registry.evaluation(semantic.resolved_evaluation),
+            observable=semantic.resolved_output_observable,
+            dtype=self._dtype(node),
+            label=label,
         )
 
     def _translate_target(self, node: TargetRefNode) -> TargetExpressionIR:

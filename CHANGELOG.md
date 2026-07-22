@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.0.0rc2] - 2026-07-22
+
+### Added
+
+- Public direct binary sklearn `LogisticRegression` verification route.
+- Declarative label/probability observables, pairwise relations, reporting,
+  replay, and clean-install classification smoke tests.
+
+### Fixed
+
+- Stable Decimal provenance canonicalization and certified logistic-threshold
+  interval materialization.
+
+### Compatibility
+
+- JSON report schema v5 remains additive and the `LinearRegression` route is
+  unchanged.
+
 All notable user-visible changes to FORML are recorded here.
 
 The format follows Keep a Changelog principles. FORML uses semantic versioning

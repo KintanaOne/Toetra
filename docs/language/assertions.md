@@ -27,7 +27,7 @@ They compile through logical CST, AST, semantic validation, IR1, IR2, and the fi
 | Negation | `NOT age < 18` | Negate a predicate. |
 | Logical implication | `age >= 18 -> target >= 0.5` | Conditional rule. |
 | Parentheses | `(a >= 0 AND b <= 1) OR target == 0` | Control precedence. |
-| Problem predicate | `CLASSIFICATION.EQUAL()` | ML task-level predicate. |
+| Problem predicate | `forall baseline, candidate => CLASSIFICATION.EQUAL()` | Binary predicted-label equality sugar. |
 
 ---
 
@@ -211,7 +211,7 @@ Logical implication is right-associative. Comparisons are non-associative, so ch
 Problem predicates remain boolean leaves:
 
 ```forml
-CLASSIFICATION.EQUAL()
+[ROBUSTNESS]: forall baseline, candidate => CLASSIFICATION.EQUAL()
 REGRESSION.BETWEEN()
 ```
 

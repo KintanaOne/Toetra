@@ -189,6 +189,12 @@ class PropertyNumericRequirements:
             tags.add("symbolic_categories")
         if requirements.requires_model_assertions:
             tags.add("model_assertions")
+        if requirements.requires_model_semantic_quantities:
+            tags.add("model_semantic_quantities")
+        if requirements.requires_logistic_probability_threshold:
+            tags.add("logistic_probability_threshold")
+        if requirements.requires_transcendental_threshold_lowering:
+            tags.add("transcendental_threshold_lowering")
         tags.update(
             f"scalar_sort:{sort.value}" for sort in requirements.required_scalar_sorts
         )

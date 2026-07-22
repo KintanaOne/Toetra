@@ -2,6 +2,15 @@
   "framework": "sklearn",
   "model_type": "LinearRegression",
   "task": "regression",
+  "output_name": "SalePrice",
+  "output_schema": {
+    "kind": "regression",
+    "available_observables": [
+      "regression_value"
+    ],
+    "primary_dtype": "int",
+    "source_dtype": "int64"
+  },
   "target": "SalePrice",
   "target_dtype": "int",
   "features": {

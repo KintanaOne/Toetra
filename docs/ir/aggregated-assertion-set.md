@@ -27,7 +27,7 @@ It should receive a complete verification problem composed from:
 A user writes a property such as:
 
 ```forml
-[ROBUSTNESS]: at x in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUAL()
+[ROBUSTNESS]: forall baseline, candidate => CLASSIFICATION.EQUAL()
 ```
 
 But the backend needs more than the RHS predicate.

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
+from typing import TYPE_CHECKING
+
 from dsl.backends.diagnostics import (
     BackendDiagnosticSeverity,
     BackendResultDiagnostic,
@@ -10,6 +13,12 @@ from dsl.compatibility.model import NumericCompatibilityAssessment
 
 NUMERIC_CONCLUSION_NOT_PERMITTED = "NUMERIC_CONCLUSION_NOT_PERMITTED"
 NUMERIC_COMPATIBILITY_REPLAY_REQUIRED = "NUMERIC_COMPATIBILITY_REPLAY_REQUIRED"
+SEMANTIC_LOWERING_CONCLUSION_NOT_PERMITTED = (
+    "SEMANTIC_LOWERING_CONCLUSION_NOT_PERMITTED"
+)
+
+if TYPE_CHECKING:
+    from model.semantics.evidence import SemanticLoweringEvidence
 
 
 def apply_numeric_compatibility_policy(
@@ -67,6 +76,60 @@ def apply_numeric_compatibility_policy(
     }
     if status is not result.status:
         metadata["backend_interpreted_status"] = result.status.value
+
+    return VerificationResult(
+        status=status,
+        backend=result.backend,
+        backend_status=result.backend_status,
+        assignments=result.assignments,
+        message=message,
+        diagnostics=tuple(diagnostics),
+        metadata=metadata,
+        execution=result.execution,
+    )
+
+
+def apply_semantic_lowering_policy(
+    result: VerificationResult,
+    evidence: Iterable[SemanticLoweringEvidence],
+) -> VerificationResult:
+    """Fail closed when an approximate semantic rewrite cannot justify a result."""
+
+    items = tuple(evidence)
+    if not items:
+        return result
+
+    permitted = set(ConclusionKind)
+    for item in items:
+        permitted.intersection_update(item.permitted_conclusions)
+
+    conclusion = _conclusion_kind(result.status)
+    diagnostics = list(result.diagnostics)
+    status = result.status
+    message = result.message
+    if conclusion is not None and conclusion not in permitted:
+        status = VerificationStatus.UNKNOWN
+        message = (
+            "Verification inconclusive: the semantic probability-threshold "
+            f"lowering does not permit the backend conclusion {conclusion.value!r}."
+        )
+        diagnostics.append(
+            BackendResultDiagnostic(
+                code=SEMANTIC_LOWERING_CONCLUSION_NOT_PERMITTED,
+                severity=BackendDiagnosticSeverity.WARNING,
+                message=message,
+            )
+        )
+
+    metadata = dict(result.metadata)
+    metadata["semantic_lowering"] = {
+        "permitted_conclusions": tuple(
+            conclusion.value for conclusion in ConclusionKind if conclusion in permitted
+        ),
+        "evidence": tuple(item.to_dict() for item in items),
+    }
+    if status is not result.status:
+        metadata.setdefault("backend_interpreted_status", result.status.value)
 
     return VerificationResult(
         status=status,

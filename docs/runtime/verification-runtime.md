@@ -1,6 +1,6 @@
 # Verification Runtime
 
-> Status: Implemented for anchors, grouped evidence, and multi-point replay
+> Status: Implemented for anchors, typed model-evaluation evidence, and multi-point replay
 
 ## Public execution
 
@@ -35,11 +35,11 @@ finding.output_values_by_point
 
 Every point contains its binding kind, inputs, outputs, and provenance. Flat `input_values` and `output_values` remain available only for unambiguous one-point results.
 
-JSON reporting uses `forml.verification-report` schema version 2 and serializes points explicitly. Text, HTML, and Jupyter renderers group values by point.
+JSON reporting uses the frozen `forml.verification-report` schema version 5. Points remain explicit, and P21.9 adds an optional `model_evaluations` section for classification observables, internal technical quantities, and lowering traces. Text, HTML, and Jupyter renderers group these values by point and output port.
 
 ## Replay
 
-`finding.replay()` reconstructs every referenced point in declaration order, calls the real estimator once per point, compares formal and concrete outputs, and reevaluates the canonical restriction and assertion.
+`finding.replay()` reconstructs every referenced point in declaration order and delegates concrete evaluation to a framework-neutral `ModelRuntimeObserver`. It compares scalar outputs or classification labels/probabilities/internal quantities independently, then reevaluates the preserved original property. The initial sklearn observer uses `predict`, `predict_proba`, and `decision_function` behind that protocol.
 
 Multi-point replay exposes:
 
@@ -51,13 +51,14 @@ replay.relation_satisfied
 replay.assertion_satisfied
 replay.to_records()
 replay.to_dataframe()
+replay.points["x"].evaluations
 ```
 
 Flat replay properties are intentionally rejected when several points make them ambiguous.
 
 ## Runtime boundaries
 
-- the model must expose compatible prediction behavior;
+- a registered runtime observer must support the model/schema pair;
 - point inputs must be reconstructible in `ModelSchema` order;
 - preprocessing remains outside V1 unless already embodied in a future supported encoder;
 - alternating quantifiers are rejected before execution;

@@ -1,7 +1,7 @@
 # ADR-0018 — Make Numeric Semantics and Framework/Model/Backend Compatibility Explicit
 
-> Status: Accepted — revised before implementation; implementation scheduled for Patch 16.2 and Patch 16.3  
-> Date: 2026-07  
+> Status: Accepted — amended by P21.8.1 for certified logistic-threshold intervals
+> Date: 2026-07
 > Scope: DSL numeric literals, runtime data, model adapters, model families, ModelBridge encoders, IR, backend profiles, verification conclusions, routing, and reporting
 
 ## Context
@@ -637,3 +637,68 @@ FORML will explicitly state whether it verified:
 - or a named mathematical abstraction.
 
 Fundamental semantic transparency remains part of FORML Core. Future platform or premium features may build policy, history, governance, organization-wide enforcement, and fleet-level compatibility dashboards on top of this contract, but they must not be required to understand the trust level of a local verification result.
+
+## Patch 21 application
+
+ADR-0024 and ADR-0025 apply this numeric contract to probability-threshold
+lowering. An algebraic logit rewrite does not permit an unqualified host-float
+constant: exact thresholds, conservative bounds, uncertainty regions, and
+permitted conclusions remain governed by this ADR.
+
+P21.8.1 implements that rule as follows:
+
+- `p = 0.5` is an exact semantic lowering to the rational boundary `0`;
+- every other accepted threshold is parsed from its DSL decimal lexeme;
+- the exact identity `logit(p) = ln(p) - ln(1 - p)` is evaluated through
+  interval arithmetic;
+- `ln(p)` and `ln(1 - p)` are enclosed independently around correctly rounded
+  decimal results;
+- interval subtraction uses directed rounding;
+- the final interval is rounded outward to 50 published significant digits;
+- at least 20 guard digits are used internally, and working precision is also
+  enlarged when the source literal contains more than 50 digits;
+- the selected bound is represented as an exact decimal rational for Z3;
+- lowering evidence records published precision, working precision, and guard
+  digits in addition to both bounds and the selected side;
+- lowering evidence classifies the complete transformed property as a sound
+  under-approximation and permits universal proofs and existential witnesses;
+- a universal counterexample or existential no-witness that is not justified by
+  the lowering is downgraded to `UNKNOWN`;
+- the framework/model/backend route remains separately classified `LOSSY` for
+  source-artifact claims because sklearn floating-point execution is not
+  bit-equivalent to the exact-real affine abstraction.
+
+### Certified logistic-threshold interval construction
+
+For a source decimal probability `p` strictly inside `(0, 1)`, FORML constructs
+a lower and upper threshold satisfying:
+
+```text
+l <= logit(p) <= u
+```
+
+The construction is normative:
+
+1. Preserve the exact source decimal `p`; do not convert it through binary
+   floating point.
+2. Compute the exact decimal complement `q = 1 - p` at working precision large
+   enough to retain the complete source literal.
+3. Compute correctly rounded decimal approximations of `ln(p)` and `ln(q)` at
+   working precision.
+4. Enclose each logarithm using its adjacent representable decimal values.
+5. Subtract the logarithm intervals as
+   `[ln(p)_lower - ln(q)_upper, ln(p)_upper - ln(q)_lower]`, using
+   `ROUND_FLOOR` for the lower result and `ROUND_CEILING` for the upper result.
+6. Round the resulting interval outward to the published 50-digit precision.
+
+Computing `ln(p / (1 - p))` after a rounded division is forbidden for this
+profile. A rounded quotient can move the exact logit outside the adjacent values
+of the subsequently rounded logarithm. P21.8.1 adds a regression case at
+`p = 0.7`, where the previous construction produced an upper bound below the
+higher-precision reference.
+
+The constants `50` published digits and `20` guard digits are policy choices, not
+the source of soundness. Soundness comes from exact source-decimal preservation,
+independent logarithm enclosures, directed interval arithmetic, and outward final
+rounding. Changing either precision constant requires contract tests and an ADR
+amendment.

@@ -37,3 +37,7 @@ class InvalidArithmeticError(TypeMismatchError):
 
 class InvalidDomainError(SemanticError):
     """Raised when a typed domain violates its semantic contract."""
+
+
+class InvalidOutputObservableError(InvalidPropertyError):
+    """Raised when a public model-output observable violates its schema."""

@@ -4,6 +4,7 @@ import hashlib
 import json
 import math
 from dataclasses import fields, is_dataclass
+from decimal import Decimal
 from enum import Enum
 from pathlib import Path
 from typing import Any, Mapping
@@ -28,6 +29,24 @@ def canonicalize(value: Any) -> Any:
         else:
             payload = value.hex()
         return {"$type": "float", "value": payload}
+    if isinstance(value, Decimal):
+        if value.is_nan():
+            payload = "snan" if value.is_snan() else "nan"
+            if value.is_signed():
+                payload = "-" + payload
+            return {"$type": "decimal", "value": payload}
+        if value.is_infinite():
+            return {
+                "$type": "decimal",
+                "value": "-inf" if value.is_signed() else "+inf",
+            }
+        parts = value.as_tuple()
+        return {
+            "$type": "decimal",
+            "sign": parts.sign,
+            "digits": "".join(str(digit) for digit in parts.digits) or "0",
+            "exponent": parts.exponent,
+        }
     if isinstance(value, bytes):
         return {"$type": "bytes", "hex": value.hex()}
     if isinstance(value, Path):

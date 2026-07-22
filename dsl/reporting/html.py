@@ -261,6 +261,7 @@ def _render_report_card(
     status_class = _STATUS_CLASSES[report.status]
     scope = _format_scope(report)
     assignments = _render_assignments(report)
+    model_evaluations = _render_model_evaluations(report)
     numeric_compatibility = _render_numeric_compatibility(report)
     backend_execution = _render_backend_execution(report)
     provenance = _render_provenance(report)
@@ -323,6 +324,7 @@ def _render_report_card(
         + backend_execution
         + numeric_compatibility
         + provenance
+        + model_evaluations
         + assignments
         + diagnostics
         + route
@@ -386,7 +388,7 @@ def _render_backend_execution(report: VerificationReport) -> str:
         ("Backend reason", execution.backend_reason or "—"),
     )
     table_rows = "".join(
-        "<tr>" f"<th>{escape(label)}</th>" f"<td>{escape(value)}</td>" "</tr>"
+        f"<tr><th>{escape(label)}</th><td>{escape(value)}</td></tr>"
         for label, value in rows
     )
     return (
@@ -425,7 +427,7 @@ def _render_numeric_compatibility(report: VerificationReport) -> str:
         ("Replay required for", replay),
     )
     table_rows = "".join(
-        "<tr>" f"<th>{escape(label)}</th>" f"<td>{escape(value)}</td>" "</tr>"
+        f"<tr><th>{escape(label)}</th><td>{escape(value)}</td></tr>"
         for label, value in rows
     )
 
@@ -474,7 +476,7 @@ def _render_provenance(report: VerificationReport) -> str:
         ),
     )
     table_rows = "".join(
-        "<tr>" f"<th>{escape(label)}</th>" f"<td>{escape(value)}</td>" "</tr>"
+        f"<tr><th>{escape(label)}</th><td>{escape(value)}</td></tr>"
         for label, value in rows
     )
     unavailable = ""
@@ -490,6 +492,98 @@ def _render_provenance(report: VerificationReport) -> str:
         '<div class="forml-assignment-group">'
         f"<table><tbody>{table_rows}</tbody></table>"
         "</div>" + unavailable + "</div>"
+    )
+
+
+def _render_model_evaluations(report: VerificationReport) -> str:
+    if not report.model_evaluations:
+        return ""
+
+    groups: list[str] = []
+    for evaluation in report.model_evaluations:
+        rows: list[tuple[str, str]] = []
+        if evaluation.native_probability_threshold is not None:
+            rows.extend(
+                [
+                    (
+                        "Native probability threshold",
+                        evaluation.native_probability_threshold,
+                    ),
+                    (
+                        "Native decision threshold",
+                        evaluation.native_decision_threshold or "—",
+                    ),
+                    ("Boundary label", repr(evaluation.equality_label)),
+                ]
+            )
+        if evaluation.predicted_label is not None:
+            rows.append(("Predicted label", repr(evaluation.predicted_label)))
+        rows.extend(
+            (
+                f"Reconstructed probability {item.label!r}",
+                f"{item.value} ({item.precision_digits} digits)",
+            )
+            for item in evaluation.probabilities
+        )
+        rows.extend(
+            (f"Technical {item.kind}", str(item.value))
+            for item in evaluation.quantities
+        )
+        for index, lowering in enumerate(evaluation.lowerings, start=1):
+            if lowering.related_point_name is not None:
+                intent = f"predicted_label[{evaluation.point_name}] {lowering.operator} predicted_label[{lowering.related_point_name}]"
+                lowering_text = f"{lowering.canonical_formula_kind} at {lowering.quantity_kind} threshold {lowering.canonical_threshold}"
+            else:
+                intent = (
+                    f"{lowering.observable}({lowering.label!r}) {lowering.operator} {lowering.property_threshold}"
+                    if lowering.property_threshold is not None
+                    else f"{lowering.observable} {lowering.operator} {lowering.label!r}"
+                )
+                lowering_text = f"{lowering.quantity_kind} {lowering.canonical_operator} {lowering.canonical_threshold}"
+            rows.extend(
+                [
+                    (f"Intent {index}", intent),
+                    (f"Lowering {index}", lowering_text),
+                    (
+                        f"Observed {index}",
+                        f"value={lowering.property_value}; satisfied={lowering.property_satisfied}; margin={lowering.property_margin}",
+                    ),
+                    (
+                        f"Canonical {index}",
+                        f"value={lowering.quantity_value}; margin={lowering.canonical_margin}; compatibility={lowering.compatibility_classification}",
+                    ),
+                ]
+            )
+            if lowering.related_point_name is not None:
+                rows.append(
+                    (
+                        f"Related {index}",
+                        f"point={lowering.related_point_name}; label={lowering.related_property_value}; quantity={lowering.related_quantity_value}",
+                    )
+                )
+            if lowering.exact_threshold_expression is not None:
+                rows.append(
+                    (
+                        f"Threshold evidence {index}",
+                        f"{lowering.exact_threshold_expression} in [{lowering.threshold_lower_bound}, {lowering.threshold_upper_bound}], selected {lowering.selected_bound}",
+                    )
+                )
+        table_rows = "".join(
+            f"<tr><th>{escape(label)}</th><td><code>{escape(value)}</code></td></tr>"
+            for label, value in rows
+        )
+        groups.append(
+            '<div class="forml-assignment-group">'
+            f"<h5>Point {escape(evaluation.point_name)} · "
+            f"{escape(evaluation.output_name)}</h5>"
+            f"<table><tbody>{table_rows}</tbody></table>"
+            "</div>"
+        )
+    return (
+        '<div class="forml-section">'
+        "<h4>Model evaluations</h4>"
+        f'<div class="forml-assignment-grid">{"".join(groups)}</div>'
+        "</div>"
     )
 
 

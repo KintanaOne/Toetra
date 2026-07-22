@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterable
 
+from dsl.ir.ir1.model_quantities import ModelQuantityExpressionIR
 from dsl.ir.ir1.nodes import (
     AndIR,
     AtomicIR,
@@ -37,7 +38,10 @@ from dsl.ir.ir2.enums import (
     NormalFormKind,
     VerificationSemantics,
 )
-from dsl.ir.ir2.model.affine import AffineOutputConstraintIR2
+from dsl.ir.ir2.model.affine import (
+    AffineModelQuantityConstraintIR2,
+    AffineOutputConstraintIR2,
+)
 from dsl.ir.ir2.model.base import ModelConstraintIR2
 from dsl.language.vocabulary.operators import EnumArithmeticOperator
 from dsl.semantic.types.enums import EnumArithmeticClass, EnumDataType
@@ -81,6 +85,9 @@ class IR2Requirements:
     binder_sequence: tuple[str, ...] = ()
     alternation_depth: int = 0
     requires_quantifier_alternation: bool = False
+    requires_model_semantic_quantities: bool = False
+    requires_logistic_probability_threshold: bool = False
+    requires_transcendental_threshold_lowering: bool = False
 
 
 class RequirementsAnalyzer:
@@ -148,6 +155,7 @@ class RequirementsAnalyzer:
                     item,
                     (
                         ComparisonIR,
+                        AffineModelQuantityConstraintIR2,
                         AffineOutputConstraintIR2,
                     ),
                 )
@@ -170,7 +178,14 @@ class RequirementsAnalyzer:
             requires_affine_arithmetic=(
                 EnumArithmeticClass.AFFINE in arithmetic_classes
                 or any(
-                    isinstance(item, AffineOutputConstraintIR2) for item in all_items
+                    isinstance(
+                        item,
+                        (
+                            AffineModelQuantityConstraintIR2,
+                            AffineOutputConstraintIR2,
+                        ),
+                    )
+                    for item in all_items
                 )
             ),
             requires_nonlinear_arithmetic=(
@@ -193,6 +208,10 @@ class RequirementsAnalyzer:
             binder_sequence=quantifier_structure.binder_sequence,
             alternation_depth=quantifier_structure.alternation_depth,
             requires_quantifier_alternation=quantifier_structure.is_alternating,
+            requires_model_semantic_quantities=any(
+                isinstance(expression, ModelQuantityExpressionIR)
+                for expression in scalar_expressions
+            ),
         )
 
     def _iter_literals_or_atoms(
@@ -263,6 +282,8 @@ class RequirementsAnalyzer:
                     feature=atom.output_feature,
                     dtype=EnumDataType.FLOAT,
                 )
+            elif isinstance(atom, AffineModelQuantityConstraintIR2):
+                yield atom.quantity
 
     @staticmethod
     def _dtype(expression: ScalarExpressionIR) -> EnumDataType | None:
@@ -275,6 +296,7 @@ class RequirementsAnalyzer:
                 TargetExpressionIR,
                 UnaryArithmeticExpressionIR,
                 BinaryArithmeticExpressionIR,
+                ModelQuantityExpressionIR,
             ),
         ):
             return expression.dtype

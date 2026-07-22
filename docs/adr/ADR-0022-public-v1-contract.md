@@ -1,5 +1,8 @@
 # ADR-0022 — Freeze the public V1 contract
 
+> **Amended by ADR-0026:** `1.0.0rc2` adds the direct binary `LogisticRegression` route while preserving this ADR as the historical `rc1` freeze.
+
+
 - **Status:** Accepted
 - **Date:** 2026-07-19
 

@@ -1,6 +1,6 @@
 # Implementation Roadmap
 
-> Status: Active  
+> Status: Active
 > Scope: FORML implementation planning
 
 ## Purpose
@@ -287,3 +287,19 @@ The sequence is:
 The detailed roadmap owns patch dependencies, acceptance-matrix assignments,
 non-goals, migration policy, and stop-the-line conditions. This global roadmap
 must not be used to bypass those finer-grained gates.
+
+## Patch 21 — Declarative Binary Classification
+
+> Status: P21.0 specification freeze accepted; implementation pending
+
+The next chantier introduces typed output observables and a framework-neutral
+binary logistic classification profile. A direct fitted sklearn
+`LogisticRegression` will be the first concrete bridge, but neither sklearn nor
+Z3 defines the public language semantics.
+
+The normative patch sequence, debts, and gates are maintained in the
+[Binary Classification Implementation Roadmap](binary-classification-implementation-roadmap.md),
+with stable acceptance IDs in the
+[Binary Classification Test Matrix](../testing/binary-classification-test-matrix.md).
+
+The current `1.0.0rc1` public profile remains unchanged until P21.11.

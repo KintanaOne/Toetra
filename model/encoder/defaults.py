@@ -3,6 +3,7 @@ from __future__ import annotations
 from model.detector.model_framework import EnumModelFramework
 from model.encoder.registry import ModelEncoderRegistry
 from model.encoder.sklearn.linear import SklearnLinearRegressorEncoder
+from model.encoder.sklearn.logistic import SklearnLogisticRegressionEncoder
 
 
 def create_default_model_encoder_registry() -> ModelEncoderRegistry:
@@ -13,5 +14,10 @@ def create_default_model_encoder_registry() -> ModelEncoderRegistry:
         EnumModelFramework.SKLEARN,
         SklearnLinearRegressorEncoder(),
         model_type="LinearRegression",
+    )
+    registry.register(
+        EnumModelFramework.SKLEARN,
+        SklearnLogisticRegressionEncoder(),
+        model_type="LogisticRegression",
     )
     return registry

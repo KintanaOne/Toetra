@@ -4,8 +4,8 @@
 
 .PHONY: install test test-wip test-all lint format format-check type \
 	notebooks-clean notebooks-check generated-check public-contract-check docs-check ci \
-	dist dist-check install-check release-check review-bundle \
-	review-bundle-check demo-affine demo-user clean
+	release-metadata dist dist-check install-check release-check review-bundle \
+	review-bundle-check demo-affine demo-user demo-classification clean
 
 install:
 	python -m pip install -e ".[dev,docs]"
@@ -50,11 +50,15 @@ docs-check:
 ci: lint format-check generated-check public-contract-check type test docs-check
 
 ci-check:
+	python -m ruff check --fix
 	python -m ruff check .
 	python -m black .
 	python -m black --check .
 	python -m pyright
 	python -m pytest -q
+
+release-metadata:
+	python scripts/prepare_rc2_changelog.py
 
 # Build deterministic wheel and sdist artifacts.
 dist:
@@ -82,6 +86,10 @@ demo-affine:
 # Run the self-contained public verify(...) script example.
 demo-user:
 	python -m demo.user_verify_script --demo
+
+# Run the public binary-classification release demo.
+demo-classification:
+	python -m demo.binary_classification_policy
 
 clean:
 	python -c "import shutil; [shutil.rmtree(p, ignore_errors=True) for p in ('build', 'dist', 'site')]"

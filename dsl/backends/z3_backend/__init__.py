@@ -9,6 +9,7 @@ from dsl.backends.z3_backend.runner import (
 from dsl.backends.z3_backend.symbols import (
     Z3LegacyScalarIdentity,
     Z3ModelOutputIdentity,
+    Z3ModelQuantityIdentity,
     Z3PointFeatureIdentity,
     Z3SymbolIdentity,
 )
@@ -21,6 +22,7 @@ __all__ = [
     "Z3_CAPABILITIES",
     "Z3LegacyScalarIdentity",
     "Z3ModelOutputIdentity",
+    "Z3ModelQuantityIdentity",
     "Z3PointFeatureIdentity",
     "Z3Runner",
     "Z3SymbolIdentity",

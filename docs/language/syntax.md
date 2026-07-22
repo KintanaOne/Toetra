@@ -397,11 +397,11 @@ Write instead:
 ### Problem predicates
 
 ```forml
-CLASSIFICATION.EQUAL()
+[ROBUSTNESS]: forall baseline, candidate => CLASSIFICATION.EQUAL()
 REGRESSION.BETWEEN()
 ```
 
-Problem predicates are boolean leaves and cannot be used as arithmetic operands.
+Problem predicates are boolean leaves. The executable binary sugar requires exactly two visible model-input points.
 
 See [Assertions](assertions.md) and [Arithmetic Expressions](arithmetic-expressions.md).
 

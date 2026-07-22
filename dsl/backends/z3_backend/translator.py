@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import Any, cast
 
 import z3 as z3_solver
@@ -16,11 +17,13 @@ from dsl.backends.z3_backend.capabilities import Z3_CAPABILITIES
 from dsl.backends.z3_backend.symbols import (
     Z3LegacyScalarIdentity,
     Z3ModelOutputIdentity,
+    Z3ModelQuantityIdentity,
     Z3PointFeatureIdentity,
     Z3SymbolIdentity,
     symbol_identity_metadata,
     z3_symbol_name,
 )
+from dsl.ir.ir1.model_quantities import ModelQuantityExpressionIR
 from dsl.ir.ir1.nodes import (
     AndIR,
     AttributeExpressionIR,
@@ -41,6 +44,7 @@ from dsl.ir.ir1.nodes import (
 from dsl.ir.ir2.enums import Polarity
 from dsl.ir.ir2.nodes import (
     AffineExpressionIR2,
+    AffineModelQuantityConstraintIR2,
     AffineOutputConstraintIR2,
     AffineTermIR2,
     AtomIR2,
@@ -180,6 +184,8 @@ class Z3Translator:
             return self._translate_comparison(node)
         if isinstance(node, AffineOutputConstraintIR2):
             return self._translate_affine_output_constraint(node)
+        if isinstance(node, AffineModelQuantityConstraintIR2):
+            return self._translate_affine_model_quantity_constraint(node)
         if isinstance(node, ProblemIR):
             raise NotImplementedError("ProblemIR is not supported by the Z3 backend.")
         if isinstance(node, AndIR):
@@ -203,6 +209,8 @@ class Z3Translator:
             return self._translate_comparison(atom)
         if isinstance(atom, AffineOutputConstraintIR2):
             return self._translate_affine_output_constraint(atom)
+        if isinstance(atom, AffineModelQuantityConstraintIR2):
+            return self._translate_affine_model_quantity_constraint(atom)
         if isinstance(atom, ProblemIR):
             raise NotImplementedError("ProblemIR is not supported by the Z3 backend.")
         raise TypeError(f"Unsupported atom: {type(atom).__name__}")
@@ -223,6 +231,11 @@ class Z3Translator:
         if isinstance(expression, TargetExpressionIR):
             return self._var(
                 self._target_identity(expression),
+                dtype=expression.dtype,
+            )
+        if isinstance(expression, ModelQuantityExpressionIR):
+            return self._var(
+                self._model_quantity_identity(expression),
                 dtype=expression.dtype,
             )
         if isinstance(expression, ConstantExpressionIR):
@@ -349,6 +362,19 @@ class Z3Translator:
             self._translate_affine_expression(atom.expression),
         )
 
+    def _translate_affine_model_quantity_constraint(
+        self,
+        atom: AffineModelQuantityConstraintIR2,
+    ) -> z3_solver.BoolRef:
+        return self._apply_operator(
+            self._var(
+                self._model_quantity_identity(atom.quantity),
+                dtype=atom.quantity.dtype,
+            ),
+            atom.op,
+            self._translate_affine_expression(atom.expression),
+        )
+
     def _translate_affine_expression(
         self,
         expression: AffineExpressionIR2,
@@ -391,7 +417,11 @@ class Z3Translator:
     ) -> None:
         if not isinstance(
             expression,
-            (AttributeExpressionIR, TargetExpressionIR),
+            (
+                AttributeExpressionIR,
+                TargetExpressionIR,
+                ModelQuantityExpressionIR,
+            ),
         ):
             return
         if expression.dtype is None:
@@ -401,11 +431,12 @@ class Z3Translator:
                 f"Z3 numeric profile does not support variable sort "
                 f"'{expression.dtype.value}'."
             )
-        identity = (
-            self._attribute_identity(expression)
-            if isinstance(expression, AttributeExpressionIR)
-            else self._target_identity(expression)
-        )
+        if isinstance(expression, AttributeExpressionIR):
+            identity = self._attribute_identity(expression)
+        elif isinstance(expression, TargetExpressionIR):
+            identity = self._target_identity(expression)
+        else:
+            identity = self._model_quantity_identity(expression)
         previous = collected.get(identity)
         if previous is not None and previous is not expression.dtype:
             raise UnsupportedScalarExpressionError(
@@ -431,7 +462,15 @@ class Z3Translator:
         raise TypeError(f"Unsupported IR2 formula: {type(formula).__name__}")
 
     def _iter_logical_atoms(self, node: LogicalIR) -> Iterator[AtomIR2]:
-        if isinstance(node, (ComparisonIR, AffineOutputConstraintIR2, ProblemIR)):
+        if isinstance(
+            node,
+            (
+                ComparisonIR,
+                AffineOutputConstraintIR2,
+                AffineModelQuantityConstraintIR2,
+                ProblemIR,
+            ),
+        ):
             yield node
             return
         if isinstance(node, (AndIR, OrIR)):
@@ -488,6 +527,16 @@ class Z3Translator:
         return self._legacy_output_identity(
             entity=expression.entity,
             feature=expression.feature,
+        )
+
+    @staticmethod
+    def _model_quantity_identity(
+        expression: ModelQuantityExpressionIR,
+    ) -> Z3ModelQuantityIdentity:
+        return Z3ModelQuantityIdentity(
+            evaluation=expression.evaluation,
+            quantity_kind=expression.quantity_kind,
+            semantic_profile_id=expression.semantic_profile_id,
         )
 
     def _affine_output_identity(
@@ -589,6 +638,11 @@ class Z3Translator:
             return cast(z3_solver.ArithRef, z3_solver.IntVal(value))
         if isinstance(value, float):
             return cast(z3_solver.ArithRef, z3_solver.RealVal(str(value)))
+        if isinstance(value, Decimal):
+            return cast(
+                z3_solver.ArithRef,
+                z3_solver.RealVal(format(value, "f")),
+            )
         raise UnsupportedScalarExpressionError(
             f"Z3 numeric profile does not support scalar constant {value!r}."
         )

@@ -1,6 +1,6 @@
 # SemanticValidatedAST to IR1 Contract
 
-> Status: P0 / Accepted target lowering  
+> Status: P21.4 / Implemented and stabilizing  
 > Scope: Semantic meaning to backend-independent verification task  
 > Audience: IR maintainers, semantic maintainers and pretty-printer authors
 
@@ -74,6 +74,7 @@ IR1 mirrors the validated scalar tree with backend-independent nodes:
 ConstantIR1
 FeatureRefIR1
 TargetRefIR1
+OutputObservableExpressionIR1
 UnaryArithmeticIR1
 BinaryArithmeticIR1
 ComparisonIR1(left_expression, operator, right_expression)
@@ -110,7 +111,7 @@ IR1 does not encode these constraints as Z3 expressions.
 
 ---
 
-## Target Mapping
+## Model Output Mapping
 
 The DSL keyword `target` lowers to one structured model evaluation:
 
@@ -125,11 +126,24 @@ TargetRefIR1(
 ```
 
 `target[x0]` and `target[x1]` therefore remain distinct even though V1 exposes
-one scalar target name. Repeated references to `target[x0]` reuse one interned
+one selected output port. Repeated references to `target[x0]` reuse one interned
 evaluation identity.
 
-The historical `_model.<target>` fields may remain temporarily as compatibility
-projections, but they are not the source of truth.
+Classification observables lower without model-family rewriting:
+
+```text
+OutputObservableExpressionIR(
+    evaluation=ModelEvaluationIR(model, point, output_name),
+    observable=PREDICTED_LABEL | CLASS_PROBABILITY,
+    label=ClassLabelIR(...) | None,
+    dtype=<validated scalar type>,
+)
+```
+
+Observable kind and label are not part of evaluation identity. Two probability
+expressions for different labels remain distinct expressions but reuse one model
+evaluation. The historical `_model.<target>` fields remain compatibility
+projections for scalar regression; they are not the source of truth.
 
 ## Restriction Mapping
 
@@ -212,3 +226,28 @@ It must not become:
 - model output IR;
 - an unconstrained solver variable;
 - an unresolved symbolic name.
+
+## Patch 21 Output-Observable Addendum
+
+ADR-0023 amends the scalar-only `TargetRefIR1` mapping for the Patch 21 target.
+IR1 must represent separately:
+
+```text
+ModelEvaluationIR(model, point, output_port)
+OutputObservableIR(evaluation, observable_kind, optional_label)
+```
+
+P21.4 implements this split with `ModelEvaluationIR`,
+`OutputObservableExpressionIR`, and `ClassLabelIR`. The invariants remain
+normative:
+
+- several observables at the same point reuse one evaluation identity;
+- different labels remain distinct observable expressions;
+- source observable kind and label survive into IR1;
+- internal model quantities are not introduced by ordinary semantic-to-IR1
+  lowering;
+- existing scalar regression references remain a compatibility projection of the
+  regression-value observable.
+
+See [Model Semantic Lowering](model-semantic-lowering.md) for the later boundary
+that may introduce model-family-specific canonical constraints.

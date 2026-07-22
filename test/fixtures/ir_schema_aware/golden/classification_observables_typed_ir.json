@@ -1,0 +1,126 @@
+{
+  "backend": null,
+  "property_type": "LOGIC",
+  "query": {
+    "operands": [
+      {
+        "left": {
+          "dtype": "string",
+          "evaluation": {
+            "model_identity": "credit.joblib",
+            "output_name": "decision",
+            "point": {
+              "binding_kind": "universal",
+              "generated": false,
+              "lexical_depth": 1,
+              "name": "applicant",
+              "source_span": {
+                "column": 1,
+                "end_column": 17,
+                "end_line": 6,
+                "line": 6
+              }
+            }
+          },
+          "label": null,
+          "observable": "predicted_label",
+          "type": "output_observable"
+        },
+        "op": "==",
+        "right": {
+          "dtype": "string",
+          "source_kind": "literal",
+          "source_name": null,
+          "type": "constant",
+          "value": "approved"
+        },
+        "type": "comparison"
+      },
+      {
+        "left": {
+          "dtype": "float",
+          "evaluation": {
+            "model_identity": "credit.joblib",
+            "output_name": "decision",
+            "point": {
+              "binding_kind": "universal",
+              "generated": false,
+              "lexical_depth": 1,
+              "name": "applicant",
+              "source_span": {
+                "column": 1,
+                "end_column": 17,
+                "end_line": 6,
+                "line": 6
+              }
+            }
+          },
+          "label": {
+            "dtype": "string",
+            "source_lexeme": "\"approved\"",
+            "value": "approved"
+          },
+          "observable": "class_probability",
+          "type": "output_observable"
+        },
+        "op": ">=",
+        "right": {
+          "dtype": "float",
+          "source_kind": "literal",
+          "source_name": null,
+          "type": "constant",
+          "value": 0.8
+        },
+        "type": "comparison"
+      }
+    ],
+    "type": "and"
+  },
+  "scope": {
+    "binders": [
+      {
+        "generated": false,
+        "point": "applicant",
+        "quantifier": "forall",
+        "source_span": {
+          "column": 1,
+          "end_column": 17,
+          "end_line": 6,
+          "line": 6
+        }
+      }
+    ],
+    "default_point": "applicant",
+    "domain": null,
+    "kind": "quantifier",
+    "neighborhood": null,
+    "points": [
+      {
+        "binding_kind": "universal",
+        "generated": false,
+        "lexical_depth": 1,
+        "name": "applicant",
+        "source_span": {
+          "column": 1,
+          "end_column": 17,
+          "end_line": 6,
+          "line": 6
+        }
+      }
+    ],
+    "provenance": {
+      "legacy_compatibility": false,
+      "source_kind": "quantifier",
+      "source_span": {
+        "column": 1,
+        "end_column": 17,
+        "end_line": 6,
+        "line": 6
+      }
+    },
+    "restriction": null,
+    "variables": {
+      "applicant": "symbolic"
+    }
+  }
+}

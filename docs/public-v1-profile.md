@@ -1,71 +1,77 @@
 # Public V1 profile
 
-> Release candidate: `1.0.0rc1`  
-> Contract date: 2026-07-19
+> Release candidate: `1.0.0rc2`  
+> Contract date: 2026-07-22
 
-This page is the public source of truth for what FORML V1 supports. Architecture
-and vocabulary may describe future extension points, but they do not expand this
-profile.
+This page is the public source of truth for executable FORML V1 support.
 
-## Supported end-to-end route
+## Supported end-to-end routes
 
-| Axis | V1 support |
-|---|---|
-| Python | 3.11 and 3.12 |
-| Framework | scikit-learn |
-| Model | fitted, single-output `LinearRegression` |
-| Inputs | finite transformed numeric features |
-| Output | one finite numeric regression target |
-| Model encoding | affine equation per requested point evaluation |
-| Bindings | homogeneous `forall` chains or homogeneous `exists` chains |
-| Points | inline anchors, referenced anchors, dataset fallback |
-| Domains | numeric intervals, open/closed bounds, finite numeric sets |
-| Expressions | constants, feature/output references, affine arithmetic, Boolean logic, comparisons |
-| Neighborhood | implemented numeric-affine `Linf` restrictions where accepted by semantic lowering |
-| Backend | Z3 |
-| Results | `PROVED`, `COUNTEREXAMPLE`, `WITNESS`, `NO_WITNESS`, `UNKNOWN` |
-| Evidence | grouped point assignments and real-estimator replay |
-| Reports | text, HTML, Jupyter, records, DataFrame, JSON v5 |
+| Axis | Regression route | Binary-classification route |
+|---|---|---|
+| Python | 3.11 and 3.12 | 3.11 and 3.12 |
+| Framework | scikit-learn | scikit-learn |
+| Model | fitted single-output `LinearRegression` | direct fitted binary `LogisticRegression` |
+| Inputs | finite transformed numeric features | finite transformed numeric features |
+| Output | one numeric regression value | one predicted label plus class probabilities |
+| Public DSL | scalar `target[point]` | `target[point].label`, `target[point].probability(label)` |
+| Encoding | affine output equation | affine oriented-decision equation |
+| Backend | Z3 | Z3 |
+| Reports | text, HTML, Jupyter, records/DataFrame, JSON v5 | same plus additive model-evaluation evidence |
+| Replay | concrete regression output | label, probabilities, decision value, original property |
+
+Both routes support homogeneous `forall` or `exists` bindings, points/anchors,
+numeric domains, affine arithmetic, Boolean logic, and `PROVED`,
+`COUNTEREXAMPLE`, `WITNESS`, `NO_WITNESS`, or `UNKNOWN`.
+
+## Binary-classification semantics
+
+```forml
+model := "binary.joblib"
+target := decision
+
+[LOGIC]:
+forall applicant
+with domain(applicant.income: [3.0, 6.0])
+=> target[applicant].probability("yes") >= 0.80 using Z3
+```
+
+The DSL does not expose the logit, `decision_function`, `predict_proba`, class
+indices, sklearn internals, or Z3 symbols.
+
+The direct binary logistic route uses:
+
+```text
+positive-class probability > 0.5  → positive label
+positive-class probability <= 0.5 → negative label
+```
+
+A user threshold is a distinct property threshold. Order comparisons are
+supported for thresholds strictly inside `(0, 1)`. Pairwise label equality and
+inequality are supported; `CLASSIFICATION.EQUAL()` requires exactly two distinct
+visible evaluations.
 
 ## Numeric meaning
 
-The default source model executes with framework floating-point semantics. The
-built-in affine encoder and Z3 profile reason over an exact real-valued
-abstraction. This route is intentionally registered as:
+The built-in routes reason over exact-real affine abstractions extracted from
+framework floating-point state. Reports preserve numeric compatibility,
+semantic-lowering evidence, provenance, and concrete replay rather than claiming
+bit-exact global sklearn equivalence.
 
-```text
-classification: LOSSY
-semantic target: forml.real_affine_extracted_model
-conclusion scope: semantic_target_only
-```
+## Explicit exclusions
 
-A `PROVED` result proves the property for that declared abstraction. It is not a
-bit-exact proof of every floating-point operation performed by sklearn. Reports
-preserve this distinction.
-
-## Unsupported by the built-in profile
-
-- classifiers, multi-output regressors, trees, ensembles, neural networks;
-- nonlinear or symbolic-division model encodings;
-- preprocessing reconstruction and raw-data-to-model symbolic pipelines;
-- non-finite numeric values;
-- categorical and string backend reasoning;
-- alternating quantifier execution;
-- multiple models or multiple targets in one property;
-- built-in ERAN, MILP, abstract-interpretation, or remote backends;
-- distributed campaigns, registries, dashboards, and governance workflows.
+- multiclass and multi-output classification;
+- trees, ensembles, neural networks, and nonlinear encoders;
+- sklearn `Pipeline` and symbolic preprocessing reconstruction;
+- `FixedThresholdClassifier`, `TunedThresholdClassifierCV`,
+  `CalibratedClassifierCV`, custom wrappers, and custom thresholds;
+- probability equality/inequality, thresholds `0` or `1`, and probability
+  arithmetic;
+- categorical/string backend reasoning, alternating quantifiers, and built-in
+  backends other than Z3.
 
 ## Extension rule
 
-A framework/model/backend combination is not public support merely because an
-adapter can be registered. A supported extension must provide:
-
-1. deterministic framework and model descriptors;
-2. a ModelBridge encoder and semantic target;
-3. backend capabilities and execution capabilities;
-4. a numeric compatibility rule with permitted conclusions;
-5. reporting and provenance evidence;
-6. unit, contract, and end-to-end tests.
-
-The generated matrices expose the currently registered rules without making any
-framework or backend the architecture itself.
+A new route is public only when schema, semantics, encoder, capabilities, numeric
+compatibility, execution, reports, replay, and unit/contract/end-to-end/
+clean-install/release tests agree.

@@ -115,6 +115,10 @@ def render_verification_report_text(
         else:
             lines.extend(_render_assignment_groups(report, resolved))
 
+    if report.model_evaluations:
+        lines.extend(["", "Model evaluations"])
+        lines.extend(_render_model_evaluations(report, resolved))
+
     if compatibility is not None:
         lines.extend(["", "Numeric compatibility"])
         lines.extend(
@@ -182,7 +186,7 @@ def render_verification_report_text(
         )
         lines.extend(
             _indented_wrapped(
-                "Execution policy: " f"{provenance.execution_policy_fingerprint}",
+                f"Execution policy: {provenance.execution_policy_fingerprint}",
                 resolved,
             )
         )
@@ -324,6 +328,85 @@ def _render_assignment(
 ) -> list[str]:
     text = f"{assignment.display_name} = {assignment.value}"
     return [f"    {line}" for line in wrap(text, width=max(20, options.width - 4))]
+
+
+def _render_model_evaluations(
+    report: VerificationReport,
+    options: TextRenderOptions,
+) -> list[str]:
+    lines: list[str] = []
+    for evaluation in report.model_evaluations:
+        lines.append(
+            f"  Point {evaluation.point_name} · output {evaluation.output_name}"
+        )
+        if evaluation.native_probability_threshold is not None:
+            lines.append(
+                "    native decision: probability > "
+                f"{evaluation.native_probability_threshold}; decision value > "
+                f"{evaluation.native_decision_threshold}; equality -> "
+                f"{evaluation.equality_label!r}"
+            )
+        if evaluation.predicted_label is not None:
+            lines.append(f"    predicted label = {evaluation.predicted_label!r}")
+        for probability in evaluation.probabilities:
+            lines.append(
+                "    reconstructed probability"
+                f"({probability.label!r}) = {probability.value} "
+                f"({probability.precision_digits} digits)"
+            )
+        for quantity in evaluation.quantities:
+            lines.append(f"    technical {quantity.kind} = {quantity.value}")
+        for lowering in evaluation.lowerings:
+            if lowering.related_point_name is not None:
+                intent = f"predicted_label[{evaluation.point_name}] {lowering.operator} predicted_label[{lowering.related_point_name}]"
+            else:
+                intent = (
+                    f"{lowering.observable}({lowering.label!r})"
+                    if lowering.observable == "class_probability"
+                    else f"{lowering.observable} == {lowering.label!r}"
+                )
+                if lowering.property_threshold is not None:
+                    intent = f"{lowering.observable}({lowering.label!r}) {lowering.operator} {lowering.property_threshold}"
+            lines.append(f"    intent: {intent}")
+            if lowering.canonical_formula_kind is not None:
+                lines.append(
+                    f"      lowering: {lowering.canonical_formula_kind} at {lowering.quantity_kind} threshold {lowering.canonical_threshold}"
+                )
+            else:
+                lines.append(
+                    f"      lowering: {lowering.quantity_kind} {lowering.canonical_operator} {lowering.canonical_threshold}"
+                )
+            if lowering.exact_threshold_expression is not None:
+                lines.append(
+                    "      threshold: "
+                    f"{lowering.exact_threshold_expression} in [{lowering.threshold_lower_bound}, {lowering.threshold_upper_bound}] (selected {lowering.selected_bound})"
+                )
+            if lowering.property_value is not None:
+                related = (
+                    f"; related[{lowering.related_point_name}]={lowering.related_property_value}"
+                    if lowering.related_point_name is not None
+                    else ""
+                )
+                lines.append(
+                    "      observed: "
+                    f"{lowering.property_value}{related}; satisfied={lowering.property_satisfied}; margin={lowering.property_margin}"
+                )
+            if lowering.quantity_value is not None:
+                related = (
+                    f"; related[{lowering.related_point_name}]={lowering.related_quantity_value}"
+                    if lowering.related_point_name is not None
+                    else ""
+                )
+                lines.append(
+                    "      canonical value: "
+                    f"{lowering.quantity_value}{related}; margin={lowering.canonical_margin}"
+                )
+            lines.append(
+                "      compatibility: "
+                f"{lowering.compatibility_classification}; conclusions="
+                + ", ".join(lowering.permitted_conclusions)
+            )
+    return lines
 
 
 def _render_diagnostic(

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
+from decimal import Decimal
 
+from dsl.ir.ir1.model_quantities import ModelQuantityExpressionIR
 from dsl.ir.ir1.nodes import (
     AttributeExpressionIR,
     BinaryArithmeticExpressionIR,
@@ -11,6 +13,7 @@ from dsl.ir.ir1.nodes import (
     TargetExpressionIR,
     UnaryArithmeticExpressionIR,
 )
+from dsl.ir.ir1.outputs import OutputObservableExpressionIR
 from dsl.language.vocabulary.operators import EnumArithmeticOperator
 
 
@@ -29,7 +32,8 @@ def iter_scalar_expressions(node: ScalarExpressionIR) -> Iterator[ScalarExpressi
 
 def references_model_output(node: ScalarExpressionIR) -> bool:
     return any(
-        isinstance(item, TargetExpressionIR) and item.entity == "_model"
+        (isinstance(item, TargetExpressionIR) and item.entity == "_model")
+        or isinstance(item, (OutputObservableExpressionIR, ModelQuantityExpressionIR))
         for item in iter_scalar_expressions(node)
     )
 
@@ -58,7 +62,11 @@ def _format(
     precedence = _precedence(node)
 
     if isinstance(node, ConstantExpressionIR):
-        text = repr(node.value)
+        text = (
+            format(node.value, "f")
+            if isinstance(node.value, Decimal)
+            else repr(node.value)
+        )
     elif isinstance(node, AttributeExpressionIR):
         text = f"{node.entity}.{node.feature}"
     elif isinstance(node, SymbolLiteralIR):
@@ -68,6 +76,26 @@ def _format(
             text = f"target[{node.point.name}]"
         else:
             text = f"{node.entity}.{node.feature}"
+    elif isinstance(node, OutputObservableExpressionIR):
+        if point_aware:
+            base = f"target[{node.point.name}]"
+        else:
+            base = f"_model.{node.output_name}"
+
+        if node.observable.value == "predicted_label":
+            text = f"{base}.label"
+        elif node.observable.value == "class_probability":
+            if node.label is None:
+                raise ValueError("Class probability IR is missing its class label")
+            text = f"{base}.probability({node.label.value!r})"
+        else:
+            text = f"{base}.{node.observable.value}"
+    elif isinstance(node, ModelQuantityExpressionIR):
+        if point_aware:
+            base = f"target[{node.point.name}]"
+        else:
+            base = f"_model.{node.output_name}[{node.point.name}]"
+        text = f"{base}::<{node.quantity_kind.value}>"
     elif isinstance(node, UnaryArithmeticExpressionIR):
         operand = _format(
             node.operand,

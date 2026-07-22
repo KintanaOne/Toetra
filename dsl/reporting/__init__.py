@@ -10,6 +10,12 @@ from dsl.provenance import (
     SoftwareProvenance,
 )
 from dsl.reporting.builder import build_verification_report
+from dsl.reporting.evaluations import (
+    ReportClassProbability,
+    ReportLoweringTrace,
+    ReportModelEvaluation,
+    ReportModelQuantity,
+)
 from dsl.reporting.html import (
     HtmlRenderOptions,
     render_verification_report_html,
@@ -57,6 +63,10 @@ __all__ = [
     "SoftwareProvenance",
     "HtmlRenderOptions",
     "ReportAssignment",
+    "ReportClassProbability",
+    "ReportLoweringTrace",
+    "ReportModelEvaluation",
+    "ReportModelQuantity",
     "ReportAssignmentKind",
     "ReportBackendExecution",
     "ReportNumericCompatibility",

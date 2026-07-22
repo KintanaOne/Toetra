@@ -1,5 +1,6 @@
 # /dsl/ir/pretty.py
 
+from dsl.ir.ir1.model_quantities import ModelQuantityExpressionIR
 from dsl.ir.ir1.nodes import (
     AndIR,
     AttributeExpressionIR,
@@ -17,6 +18,7 @@ from dsl.ir.ir1.nodes import (
     TargetExpressionIR,
     VerificationTask,
 )
+from dsl.ir.ir1.outputs import OutputObservableExpressionIR
 from dsl.ir.ir1.scalar import format_scalar_expression
 
 # =============================================================================
@@ -170,7 +172,15 @@ def _pretty_logical(node: LogicalIR, indent=0) -> list[str]:
         right = format_scalar_expression(node.right, point_aware=True)
 
         dtype = ""
-        if isinstance(node.left, (AttributeExpressionIR, TargetExpressionIR)):
+        if isinstance(
+            node.left,
+            (
+                AttributeExpressionIR,
+                TargetExpressionIR,
+                OutputObservableExpressionIR,
+                ModelQuantityExpressionIR,
+            ),
+        ):
             if node.left.dtype is not None:
                 dtype = f" : {node.left.dtype.value}"
 

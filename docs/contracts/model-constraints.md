@@ -141,3 +141,20 @@ Expected outcomes:
 | Schema invalid | ModelBridge or schema-semantic rejection. |
 | Constraint invalid | model-constraints rejection. |
 | Constraint valid but challenging | aggregation/lowering continues. |
+
+## Patch 21 Model Quantities and Observable Lowering
+
+Patch 21 separates two contributions that were previously both described as
+"output constraints":
+
+1. **model quantities**, materialized by a ModelBridge encoder from a concrete
+   model artifact, such as an affine latent decision value per evaluation;
+2. **observable lowerings**, defined by a framework-neutral model semantic
+   profile and connecting a public label/probability property to those quantities.
+
+The encoder must not erase the public observable or define DSL vocabulary. The
+backend receives only the canonical constraints after lowering, while reporting
+and provenance retain both the source intention and the generated model
+quantities.
+
+See [Initial Binary Classification Profile](binary-classification-profile.md).

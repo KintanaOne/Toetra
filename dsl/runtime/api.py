@@ -9,7 +9,10 @@ from dsl.backends.execution import BackendExecutionPolicy
 from dsl.backends.registry import BackendRegistry
 from dsl.backends.router import BackendRouter
 from dsl.compatibility.model import NumericCompatibilityContext
-from dsl.compatibility.policy import apply_numeric_compatibility_policy
+from dsl.compatibility.policy import (
+    apply_numeric_compatibility_policy,
+    apply_semantic_lowering_policy,
+)
 from dsl.compatibility.registry import NumericCompatibilityRegistry
 from dsl.ast.nodes.program import ProgramNode
 from dsl.builder.program import parse_program
@@ -104,7 +107,7 @@ def verify(
         target=target,
         schema=schema,
     )
-    _validate_target_contract(loaded.target, resolved.schema.target)
+    _validate_target_contract(loaded.target, resolved.schema.output_name)
     resolved_anchors = _resolve_anchor_bindings(
         loaded.program,
         schema=resolved.schema,
@@ -162,12 +165,17 @@ def verify(
             result,
             route.numeric_compatibility,
         )
+        result = apply_semantic_lowering_policy(
+            result,
+            task.lowering_evidence,
+        )
         report = build_verification_report(
             task,
             route,
             result,
             property_index=property_index,
             provenance_context=provenance_context,
+            schema=resolved.schema,
         )
         executions.append(
             VerificationExecution(
@@ -241,10 +249,10 @@ def _resolve_model(
             raise VerificationConfigurationError(
                 "Provide either 'schema' or model/dataset artifacts, not both"
             )
-        if target is not None and target != schema.target:
+        if target is not None and target != schema.output_name:
             raise VerificationConfigurationError(
                 f"Explicit target '{target}' does not match schema target "
-                f"'{schema.target}'"
+                f"'{schema.output_name}'"
             )
         return _ResolvedModel(
             schema=schema,
@@ -275,7 +283,7 @@ def _resolve_model(
     manager = ModelManager(
         model_path=model_path,
         dataset_path=dataset_path,
-        target_name=resolved_target,
+        output_name=resolved_target,
     )
     resolved_schema = manager.build_schema()
     return _ResolvedModel(

@@ -1,6 +1,6 @@
 # Semantic Layer
 
-> Status: Implemented and stabilized for Patch 15  
+> Status: Implemented through P21.3 output-observable semantics  
 > Scope: AST to semantically annotated AST  
 > Audience: compiler, IR, ModelBridge, backend, and runtime contributors
 
@@ -10,7 +10,8 @@ The semantic layer turns syntax into exact, typed identities. It answers:
 
 ```text
 Which points exist, how were they bound, which references resolve to them,
-and which model evaluation does every target expression denote?
+which model evaluation does every output expression denote, and which public
+observable is selected from it?
 ```
 
 ## Pipeline
@@ -22,7 +23,8 @@ AST
   → expand ordered quantifier binders
   → validate domains and restrictions
   → select or reject a default point
-  → resolve point features and target evaluations
+  → resolve point features and model-output evaluations
+  → bind and type public output observables
   → canonicalize check_at / at / neighborhood sugar
   → attach semantic annotations
   → IR1
@@ -46,7 +48,7 @@ Alternation is semantically valid and preserved. Backend support is decided late
 
 ## Default-point resolution
 
-Bare feature and target references use this exact rule:
+Bare feature and output references use this exact rule:
 
 | Eligible points | Result |
 |---:|---|
@@ -56,15 +58,25 @@ Bare feature and target references use this exact rule:
 
 Specification constants retain precedence over implicit feature names. Explicit `x0.feature` and `target[x0]` never depend on a default point.
 
-## Model evaluation identity
+## Model evaluation and observable identity
 
-Every accepted target reference resolves to a `ModelEvaluationIdentity`:
+Every accepted output reference resolves to a `ModelEvaluationIdentity`:
 
 ```text
-(model identity, point identity, target name)
+(model identity, point identity, output name)
 ```
 
-The registry interns repeated references to the same evaluation and distinguishes references at different points. Source target expressions without a resolved evaluation are rejected before IR1.
+The registry interns repeated references to the same evaluation and distinguishes
+references at different points. Observable kind and probability label are not part
+of evaluation identity. Therefore `target[x].label` and
+`target[x].probability("approved")` reuse one invocation while retaining distinct
+semantic annotations.
+
+For classification, a bare `target[x]` is rejected as ambiguous. Predicted labels
+are typed from `ClassificationOutputSchema.label_dtype`, probabilities are typed
+as `FLOAT`, labels are resolved by type-safe canonical value, and unsupported
+observables fail before IR1. Predicted labels support equality only: arithmetic
+and ordered comparisons are rejected even when labels are numerically encoded.
 
 ## Restrictions and sugar
 

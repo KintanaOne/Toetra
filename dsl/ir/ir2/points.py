@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Iterable
 
+from dsl.ir.ir1.model_quantities import ModelQuantityExpressionIR
 from dsl.ir.ir1.nodes import (
     ModelEvaluationIR,
     PointBindingIR,
@@ -66,7 +67,9 @@ class PointAwareIR2Analyzer:
                 if root is None:
                     continue
                 for expression in iter_scalar_expressions(root):
-                    if (
+                    if isinstance(expression, ModelQuantityExpressionIR):
+                        yield expression.evaluation
+                    elif (
                         isinstance(expression, TargetExpressionIR)
                         and expression.evaluation is not None
                     ):

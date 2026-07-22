@@ -201,9 +201,11 @@ This compatibility is not a grammar concern. It is enforced by semantic validati
 Some properties use problem-level predicates:
 
 ```forml
-CLASSIFICATION.EQUAL()
+[ROBUSTNESS]: forall baseline, candidate => CLASSIFICATION.EQUAL()
 REGRESSION.BETWEEN()
 ```
+
+For the executable binary profile, `CLASSIFICATION.EQUAL()` requires exactly two visible model-input points and is sugar for explicit label equality.
 
 These predicates must be validated against:
 

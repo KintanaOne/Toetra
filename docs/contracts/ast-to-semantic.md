@@ -208,3 +208,24 @@ This boundary additionally guarantees:
 - finite-set symbolic literals are not mistaken for unresolved scalar names.
 
 A valid SemanticValidatedAST contains no semantically unclassified bare scalar reference.
+
+
+## Patch 21.3 Output-Observable Addendum
+
+The semantic boundary now additionally guarantees:
+
+- `ModelOutputRefNode` binds to the declared output port and exact point;
+- `PredictedLabelObservableNode` binds only to classification outputs and receives
+  the schema label dtype;
+- `ClassProbabilityObservableNode` binds only when class probabilities are
+  available and receives `FLOAT` dtype;
+- probability label arguments match the schema dtype and one canonical label by
+  type-safe value identity;
+- one `(model, point, output)` evaluation is interned across all observables;
+- bare classification `target` is rejected with the two legal explicit forms;
+- predicted-label arithmetic and ordering are rejected before IR1;
+- regression bare-target behavior remains unchanged.
+
+The semantic annotation preserves observable kind and resolved label for P21.4.
+It does not introduce a logit, decision function, framework class index, affine
+quantity, or backend symbol.

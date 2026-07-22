@@ -17,7 +17,7 @@ model := "model.onnx"
 target := MyTarget
 
 [ROBUSTNESS]:
-forall x1 => NOT CLASSIFICATION.EQUAL() using Z3
+forall x0, x1 => NOT CLASSIFICATION.EQUAL() using Z3
 """
 
     tasks = _run_ir1_then_nnf(source)
@@ -37,7 +37,7 @@ model := "model.onnx"
 target := MyTarget
 
 [ROBUSTNESS]:
-forall x1 => a <= 1 -> CLASSIFICATION.EQUAL() using Z3
+forall x0, x1 => x0.a <= 1 -> CLASSIFICATION.EQUAL() using Z3
 """
 
     tasks = _run_ir1_then_nnf(source)
@@ -45,5 +45,5 @@ forall x1 => a <= 1 -> CLASSIFICATION.EQUAL() using Z3
     assert len(tasks) == 1
     expr = tasks[0].query.expression
 
-    assert sexpr(expr) == "OR(NOT(CMP(x1.a <= 1)), PROBLEM(CLASSIFICATION.EQUAL))"
+    assert sexpr(expr) == "OR(NOT(CMP(x0.a <= 1)), PROBLEM(CLASSIFICATION.EQUAL))"
     assert_is_nnf(expr)

@@ -63,7 +63,7 @@ The orchestrator should produce:
 When a user explicitly selects a backend:
 
 ```forml
-[ROBUSTNESS]: at x in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUAL() using z3
+[ROBUSTNESS]: forall baseline, candidate => CLASSIFICATION.EQUAL() using z3
 ```
 
 FORML should treat the backend as a user constraint, not as an unconditional instruction.

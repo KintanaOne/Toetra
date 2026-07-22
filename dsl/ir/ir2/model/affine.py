@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from dsl.ir.ir1.model_quantities import ModelQuantityExpressionIR
 from dsl.ir.ir1.nodes import ModelEvaluationIR, PointBindingIR
 from dsl.ir.ir2.model.base import ModelConstraintIR2
 from dsl.language.vocabulary.operators import EnumComparisonOperator
@@ -50,3 +51,30 @@ class AffineOutputConstraintIR2(ModelConstraintIR2):
     def model_identity(self) -> str | None:
         """Return the declared model identity for this equation."""
         return self.evaluation.model_identity if self.evaluation is not None else None
+
+
+@dataclass
+class AffineModelQuantityConstraintIR2(ModelConstraintIR2):
+    """Affine equation defining one internal model-semantic quantity."""
+
+    quantity: ModelQuantityExpressionIR
+    op: EnumComparisonOperator
+    expression: AffineExpressionIR2
+    evaluation: ModelEvaluationIR | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if self.evaluation is None:
+            self.evaluation = self.quantity.evaluation
+        elif self.evaluation != self.quantity.evaluation:
+            raise ValueError(
+                "Affine model quantity and constraint evaluation must match"
+            )
+
+    @property
+    def point(self) -> PointBindingIR:
+        return self.quantity.point
+
+    @property
+    def model_identity(self) -> str:
+        return self.quantity.model_identity

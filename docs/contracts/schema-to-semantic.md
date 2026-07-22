@@ -1,8 +1,8 @@
 # Schema to Semantic Contract
 
-> Status: P0 / Planned / Critical  
+> Status: Implemented for feature validation and P21.3 output observables; broader task contracts remain incremental  
 > Scope: ModelSchema integration into semantic validation  
-> Implementation: Not yet implemented as full integration  
+> Implementation: Schema-aware features and typed output observables are active  
 > Audience: semantic maintainers, ModelBridge authors, compiler maintainers
 
 ## Purpose
@@ -133,3 +133,19 @@ Expected outcome:
 Schema-inconsistent property → schema-to-semantic rejection
 Schema-consistent property   → IR generation may continue
 ```
+
+## Patch 21 Output-Observable Addendum
+
+Schema-aware validation must apply the
+[Model Output Observables Contract](model-output-observables.md):
+
+- a scalar regression output may retain bare `target` syntax;
+- a classification output requires an explicit `label` or
+  `probability(label)` observable;
+- labels are resolved by canonical value, not framework class index;
+- observable availability and scalar type come from the typed output schema;
+- unsupported observables and unknown labels fail at this boundary, before IR or
+  backend routing.
+
+The semantic layer validates public observables. It does not introduce logits,
+decision functions, affine quantities, or backend symbols.

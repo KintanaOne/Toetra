@@ -60,6 +60,7 @@ Backend-specific conditionals must not be scattered through IR construction.
 ### Model and execution
 
 - model assumptions;
+- framework-neutral internal model-semantic quantities;
 - supported model-constraint families;
 - universal-refutation execution;
 - existential-witness execution;
@@ -81,6 +82,7 @@ requires_finite_set_membership
 requires_symbolic_categories
 requires_domain_assumptions
 requires_model_assumptions
+requires_model_semantic_quantities
 verification_semantics
 normal_form
 ```
@@ -114,6 +116,7 @@ A realistic first profile may declare:
 - affine arithmetic;
 - numeric interval domains;
 - affine model assumptions;
+- affine internal model-semantic quantities;
 - NNF/CNF/DNF accepted forms;
 - universal refutation;
 - counterexample extraction.

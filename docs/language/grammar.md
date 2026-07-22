@@ -41,7 +41,7 @@ target := prediction
 The body contains one or more property sections:
 
 ```forml
-[ROBUSTNESS]: at x in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUAL()
+[ROBUSTNESS]: forall baseline, candidate => CLASSIFICATION.EQUAL()
 ```
 
 ---

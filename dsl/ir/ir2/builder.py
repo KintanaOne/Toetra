@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from typing import TYPE_CHECKING
 
 from dsl.ir.ir1.nodes import VerificationTask
 from dsl.ir.ir2.anchor_assumptions import AnchorAssumptionEncoder
@@ -24,6 +25,10 @@ from dsl.ir.ir2.points import PointAwareIR2Analyzer
 from dsl.ir.ir2.requirements import RequirementsAnalyzer
 from dsl.ir.ir2.selector import NormalFormSelector
 from dsl.ir.ir2.validator import IR2Validator
+
+if TYPE_CHECKING:
+    from dsl.ir.ir1.nodes import LogicalIR
+    from model.semantics.evidence import SemanticLoweringEvidence
 
 
 class IR2Builder:
@@ -68,6 +73,8 @@ class IR2Builder:
         *,
         assumptions: tuple[AssumptionIR2, ...] | list[AssumptionIR2] | None = None,
         context: IR2BuildContext | None = None,
+        lowering_evidence: tuple[SemanticLoweringEvidence, ...] = (),
+        source_spec_formula: LogicalIR | None = None,
     ) -> VerificationTaskIR2:
         context = context or IR2BuildContext(
             backend_hint=task_nnf.backend,
@@ -134,6 +141,20 @@ class IR2Builder:
             model_evaluations=model_evaluations,
             quantifier_structure=quantifier_structure,
         )
+        probability_lowerings = tuple(
+            evidence
+            for evidence in lowering_evidence
+            if evidence.source_intent.observable.value == "class_probability"
+        )
+        if probability_lowerings:
+            requirements = replace(
+                requirements,
+                requires_logistic_probability_threshold=True,
+                requires_transcendental_threshold_lowering=any(
+                    evidence.compatibility_classification.value != "exact"
+                    for evidence in probability_lowerings
+                ),
+            )
 
         task_ir2 = VerificationTaskIR2(
             property_type=task_nnf.property_type,
@@ -148,6 +169,7 @@ class IR2Builder:
             point_mappings=point_mappings,
             model_evaluations=model_evaluations,
             quantifier_structure=quantifier_structure,
+            source_spec_formula=source_spec_formula,
             metadata={
                 "source_ir": "ir1_nnf",
                 "builder": "IR2Builder",
@@ -168,6 +190,7 @@ class IR2Builder:
         return replace(
             task_ir2,
             diagnostics=diagnostics,
+            lowering_evidence=lowering_evidence,
         )
 
     @staticmethod
@@ -194,14 +217,21 @@ class IR2Builder:
         *,
         assumptions: tuple[AssumptionIR2, ...] | list[AssumptionIR2] | None = None,
         context: IR2BuildContext | None = None,
+        lowering_evidence: tuple[SemanticLoweringEvidence, ...] = (),
+        source_spec_formulas: tuple[LogicalIR | None, ...] | None = None,
     ) -> list[VerificationTaskIR2]:
+        formulas = source_spec_formulas or tuple(None for _ in tasks_nnf)
+        if len(formulas) != len(tasks_nnf):
+            raise ValueError("source_spec_formulas must align with tasks_nnf")
         return [
             self.build(
                 task,
                 assumptions=assumptions,
                 context=context,
+                lowering_evidence=lowering_evidence,
+                source_spec_formula=source_formula,
             )
-            for task in tasks_nnf
+            for task, source_formula in zip(tasks_nnf, formulas, strict=True)
         ]
 
     def _convert(

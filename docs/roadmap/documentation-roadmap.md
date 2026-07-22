@@ -155,3 +155,21 @@ The documentation-first package is complete when patches 01 through 06 are appli
 ```
 
 The next work belongs to implementation and test delivery, not additional speculative language documentation. Documentation should now evolve alongside concrete code changes and discovered edge cases.
+
+## Patch 21 Classification Specification Freeze
+
+P21.0 applies the same documentation-first rule to binary classification:
+
+```text
+01 typed output and observable ADR
+02 model-semantic lowering ADR
+03 initial binary-classification profile ADR
+04 boundary contracts and amendments
+05 declarative language reference
+06 stable acceptance-test matrix
+07 implementation roadmap with explicit debts
+```
+
+The accepted documents are implementation specifications, not retrospective
+descriptions. Classification must not be added to the current public V1 profile
+until the P21.11 release gate is complete.

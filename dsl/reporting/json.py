@@ -6,6 +6,10 @@ from pathlib import Path
 from typing import Any
 
 from dsl.provenance.model import ArtifactProvenance, ReportProvenance
+from dsl.reporting.evaluations import (
+    ReportLoweringTrace,
+    ReportModelEvaluation,
+)
 from dsl.reporting.model import (
     ReportAssignment,
     ReportNumericCompatibility,
@@ -50,6 +54,15 @@ def verification_report_to_dict(report: VerificationReport) -> dict[str, Any]:
         "provenance": _provenance_to_dict(report.provenance),
         "numeric_compatibility": _numeric_compatibility_to_dict(
             report.numeric_compatibility
+        ),
+        **(
+            {
+                "model_evaluations": [
+                    _model_evaluation_to_dict(item) for item in report.model_evaluations
+                ]
+            }
+            if report.model_evaluations
+            else {}
         ),
         "points": [
             {
@@ -326,6 +339,95 @@ def _numeric_compatibility_to_dict(
     }
 
 
+def _model_evaluation_to_dict(
+    evaluation: ReportModelEvaluation,
+) -> dict[str, Any]:
+    return {
+        "model_identity": evaluation.model_identity,
+        "point": evaluation.point_name,
+        "binding_kind": evaluation.binding_kind,
+        "output_name": evaluation.output_name,
+        "decision_policy": {
+            "native_probability_threshold": evaluation.native_probability_threshold,
+            "native_decision_threshold": evaluation.native_decision_threshold,
+            "equality_label": json_safe_report_value(evaluation.equality_label),
+        },
+        "predicted_label": json_safe_report_value(evaluation.predicted_label),
+        "probabilities": [
+            {
+                "label": json_safe_report_value(item.label),
+                "value": json_safe_report_value(item.value),
+                "source": item.source,
+                "precision_digits": item.precision_digits,
+            }
+            for item in evaluation.probabilities
+        ],
+        "quantities": [
+            {
+                "kind": item.kind,
+                "semantic_profile_id": item.semantic_profile_id,
+                "value": json_safe_report_value(item.value),
+            }
+            for item in evaluation.quantities
+        ],
+        "lowerings": [_lowering_trace_to_dict(item) for item in evaluation.lowerings],
+    }
+
+
+def _lowering_trace_to_dict(trace: ReportLoweringTrace) -> dict[str, Any]:
+    source_intent = {
+        "observable": trace.observable,
+        "operator": trace.operator,
+        "label": json_safe_report_value(trace.label),
+        "property_threshold": trace.property_threshold,
+        "property_value": json_safe_report_value(trace.property_value),
+        "property_satisfied": trace.property_satisfied,
+        "property_margin": json_safe_report_value(trace.property_margin),
+        "logical_polarity": trace.logical_polarity,
+    }
+    if trace.related_point_name is not None:
+        source_intent["related_point"] = trace.related_point_name
+        source_intent["related_property_value"] = json_safe_report_value(
+            trace.related_property_value
+        )
+    canonical_constraint = {
+        "quantity_kind": trace.quantity_kind,
+        "quantity_value": json_safe_report_value(trace.quantity_value),
+        "operator": trace.canonical_operator,
+        "threshold": trace.canonical_threshold,
+        "margin": json_safe_report_value(trace.canonical_margin),
+        "exact_threshold_expression": trace.exact_threshold_expression,
+        "threshold_lower_bound": trace.threshold_lower_bound,
+        "threshold_upper_bound": trace.threshold_upper_bound,
+        "selected_bound": trace.selected_bound,
+        "precision_digits": trace.precision_digits,
+        "working_precision_digits": trace.working_precision_digits,
+        "guard_digits": trace.guard_digits,
+    }
+    if trace.related_point_name is not None:
+        canonical_constraint["related_quantity_value"] = json_safe_report_value(
+            trace.related_quantity_value
+        )
+    if trace.canonical_formula_kind is not None:
+        canonical_constraint["formula_kind"] = trace.canonical_formula_kind
+    return {
+        "source_intent": source_intent,
+        "semantic_profile": {
+            "id": trace.semantic_profile_id,
+            "version": trace.semantic_profile_version,
+        },
+        "transformation": {
+            "id": trace.transformation_id,
+            "version": trace.transformation_version,
+        },
+        "canonical_constraint": canonical_constraint,
+        "compatibility": {
+            "classification": trace.compatibility_classification,
+            "permitted_conclusions": list(trace.permitted_conclusions),
+        },
+    }
+
+
 def _assignment_to_dict(assignment: ReportAssignment) -> dict[str, Any]:
     payload = {
         "name": assignment.display_name,
@@ -338,6 +440,9 @@ def _assignment_to_dict(assignment: ReportAssignment) -> dict[str, Any]:
         "binding_kind": assignment.binding_kind,
         "model_identity": assignment.model_identity,
         "target": assignment.target_name,
+        "output_name": assignment.output_name,
+        "quantity_kind": assignment.quantity_kind,
+        "semantic_profile_id": assignment.semantic_profile_id,
     }
     payload.update({key: value for key, value in optional.items() if value is not None})
     return payload

@@ -175,3 +175,31 @@ A valid IR2 task is:
 - explicit about requirements;
 - complete with respect to property, domain and model assumptions supplied to the boundary;
 - traceable to source-level constructs.
+
+## Patch 21 Model-Semantic Lowering Addendum
+
+For output observables whose meaning depends on a model family, the schema-aware
+path becomes:
+
+```text
+observable-preserving IR1
+→ model-semantic lowering + evidence
+→ NNF/IR2 normalization
+→ model assumptions and aggregated verification condition
+```
+
+This ordering is required when a lowering can produce Boolean structure, such as
+predicted-label equality between two points.
+
+The generic IR1-to-IR2 path without a model semantic profile must reject such an
+observable rather than guessing a representation. Canonical constraints remain
+backend-independent and carry the requirements and numeric compatibility evidence
+introduced by the lowering.
+
+## P21.5 model-semantic gate
+
+Before final NNF normalization, schema-aware compilation resolves public output
+observables through a registered model-family semantic profile. The generic IR2
+entry point rejects such observables when no schema/profile is available. The
+canonical IR2 task retains deterministic lowering evidence and advertises the
+model-semantic-quantity capability requirement.
