@@ -4,6 +4,8 @@
 > Date: 2026-07  
 > Scope: DSL points, anchors, quantifier nesting, scope semantics, ModelBridge evaluations, runtime results
 
+> **Patch 21 target amendment:** this ADR's scalar-target language describes the implemented `1.0.0rc1` profile. ADR-0023 retains point-indexed model evaluation identity but separates the output port from typed public observables for the planned binary-classification route.
+
 ## Context
 
 FORML currently represents evaluation context through mutually exclusive scope forms such as `check_at`, `at`, pairwise syntax, and a single-variable quantifier. That model is sufficient while a property refers to one implicit input and one implicit model output, but it becomes ambiguous as soon as a specification needs any combination of:

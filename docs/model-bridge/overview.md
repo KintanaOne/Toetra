@@ -40,7 +40,7 @@ The encoder validates that every requested evaluation has exactly one equation a
 - scalar numeric output;
 - numeric transformed features;
 - one or more point evaluations of the same model;
-- replay through the real estimator `predict(...)`.
+- replay through a framework-neutral runtime observer; the sklearn observer normalizes `predict`, `predict_proba`, and `decision_function` when required by the typed output profile.
 
 ## Outside V1
 

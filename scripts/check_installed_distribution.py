@@ -15,9 +15,14 @@ from __future__ import annotations
 
 import importlib.util
 from pathlib import Path
+from tempfile import TemporaryDirectory
+
+import joblib
+import pandas as pd
+from sklearn.linear_model import LogisticRegression
 
 import forml
-from forml import VerificationSession, verify
+from forml import VerificationSession, VerificationStatus, verify
 
 module_path = Path(forml.__file__).resolve()
 assert "site-packages" in module_path.parts, module_path
@@ -29,7 +34,47 @@ assert spec is not None and spec.submodule_search_locations
 root = Path(next(iter(spec.submodule_search_locations)))
 assert (root / "forml_grammar.ebnf").is_file()
 assert (root / "forml_grammar.lark").is_file()
-print(f"Installed FORML probe passed from {module_path}")
+with TemporaryDirectory(prefix="forml-installed-classification-") as raw_directory:
+    directory = Path(raw_directory)
+    frame = pd.DataFrame(
+        {
+            "income": [-6.0, -5.0, -4.0, -3.0, 3.0, 4.0, 5.0, 6.0],
+            "decision": ["no", "no", "no", "no", "yes", "yes", "yes", "yes"],
+        }
+    )
+    model = LogisticRegression(random_state=0, max_iter=1000).fit(
+        frame[["income"]], frame["decision"]
+    )
+    model_path = directory / "binary.joblib"
+    dataset_path = directory / "binary.csv"
+    policy_path = directory / "policy.forml"
+    joblib.dump(model, model_path)
+    frame.to_csv(dataset_path, index=False)
+    policy_path.write_text(
+        '''model := "binary.joblib"
+target := decision
+
+[LOGIC]:
+forall applicant
+with domain(applicant.income: [-6.0, -3.0])
+=> target[applicant].label == "no" using Z3
+
+[LOGIC]:
+exists applicant
+with domain(applicant.income: [3.0, 6.0])
+=> target[applicant].probability("yes") >= 0.80 using Z3
+''',
+        encoding="utf-8",
+    )
+    session = verify(policy_path, model=model_path, dataset=dataset_path)
+    assert tuple(report.status for report in session.reports) == (
+        VerificationStatus.PROVED,
+        VerificationStatus.WITNESS,
+    )
+    witness = session.first_witness
+    assert witness is not None and witness.replay().is_consistent
+
+print(f"Installed FORML regression/classification probe passed from {module_path}")
 """
 
 

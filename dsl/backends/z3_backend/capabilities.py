@@ -47,6 +47,7 @@ Z3_CAPABILITIES = BackendCapabilities(
     supports_symbolic_categories=False,
     supports_domain_assumptions=True,
     max_model_evaluations=None,
+    supports_model_semantic_quantities=True,
     execution_capabilities=BackendExecutionCapabilities(
         supports_timeout=True,
         supports_cancellation=True,

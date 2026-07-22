@@ -1,0 +1,25 @@
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🧠 Verification Task
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Property : EnumProperty.LOGIC
+Backend  : None
+
+📍 Scope
+  Type        : quantifier
+  Variables   :
+    - applicant → symbolic
+
+  Points      :
+    - applicant    → universal (depth=1)
+
+  Binders     :
+    - forall applicant
+
+  Default     : applicant
+  Source form : quantifier
+
+🔍 Query
+  AND
+    - target[applicant].label : string == 'approved'
+    - target[applicant].probability('approved') : float >= 0.8
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

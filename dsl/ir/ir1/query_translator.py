@@ -153,8 +153,11 @@ class QueryTranslator:
                 else EnumFunction(node.function)
             )
 
-        return ProblemIR(
-            problem=problem,
-            function=function,
-            args={},
-        )
+        args = {}
+        semantic = node.semantic
+        if semantic is not None and semantic.resolved_evaluations:
+            args["evaluations"] = tuple(
+                self.scalar_translator.point_registry.evaluation(evaluation)
+                for evaluation in semantic.resolved_evaluations
+            )
+        return ProblemIR(problem=problem, function=function, args=args)

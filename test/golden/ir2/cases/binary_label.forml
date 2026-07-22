@@ -1,0 +1,6 @@
+model := "credit.joblib"
+target := decision
+
+[LOGIC]:
+forall applicant =>
+    target[applicant].label == "approved"

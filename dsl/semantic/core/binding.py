@@ -16,6 +16,11 @@ from dsl.ast.nodes.domain import (
 )
 from dsl.ast.nodes.header import SpecificationConstantDeclarationNode
 from dsl.ast.nodes.neighborhood import NeighborhoodMembershipNode
+from dsl.ast.nodes.outputs import (
+    ClassProbabilityObservableNode,
+    OutputObservableNode,
+    PredictedLabelObservableNode,
+)
 from dsl.ast.nodes.primitives import (
     AttributeNode,
     BinaryArithmeticNode,
@@ -26,6 +31,7 @@ from dsl.ast.nodes.primitives import (
     UnaryArithmeticNode,
 )
 from dsl.semantic.context.context import SemanticContext
+from dsl.semantic.core.output_observables import OutputObservableResolver
 from dsl.semantic.core.restrictions import NeighborhoodLowerer
 from dsl.semantic.core.specification_constants import SPECIFICATION_CONSTANT_KIND
 from dsl.semantic.errors.errors import UnboundVariableError
@@ -40,6 +46,7 @@ class BindingValidator:
     def __init__(self, tracer=None, model_schema=None):
         self.tracer = tracer or ValidationTracer()
         self.model_schema = model_schema
+        self.output_observable_resolver = OutputObservableResolver(model_schema)
 
     def validate(
         self,
@@ -127,6 +134,10 @@ class BindingValidator:
         allow_implicit_feature: bool,
     ) -> ScalarExpressionNode:
         if isinstance(node, ConstantNode):
+            return node
+
+        if isinstance(node, OutputObservableNode):
+            self._resolve_output_observable(node, context)
             return node
 
         if isinstance(node, TargetRefNode):
@@ -267,18 +278,92 @@ class BindingValidator:
         target: TargetRefNode,
         context: SemanticContext,
     ) -> None:
+        self.output_observable_resolver.validate_bare_target()
         semantic = self._ensure_semantic(target)
+        self._bind_output_port(
+            point_name=target.point,
+            context=context,
+            semantic=semantic,
+            resolved_type="model_output",
+        )
 
+    def _resolve_output_observable(
+        self,
+        node: OutputObservableNode,
+        context: SemanticContext,
+    ) -> None:
+        output_semantic = self._ensure_semantic(node.output)
+        self._bind_output_port(
+            point_name=node.output.point,
+            context=context,
+            semantic=output_semantic,
+            resolved_type="model_output_port",
+        )
+
+        resolved = self.output_observable_resolver.resolve(node)
+        semantic = self._ensure_semantic(node)
+        semantic.resolved_entity = output_semantic.resolved_entity
+        semantic.resolved_symbol = output_semantic.resolved_symbol
+        semantic.resolved_point = output_semantic.resolved_point
+        semantic.resolved_evaluation = output_semantic.resolved_evaluation
+        semantic.resolved_output_observable = resolved.kind
+        semantic.resolved_label = resolved.label
+        semantic.inferred_dtype = resolved.dtype
+        semantic.resolved_type = (
+            resolved.dtype.value if resolved.dtype is not None else resolved.kind.value
+        )
+        semantic.arithmetic_allowed = resolved.arithmetic_allowed
+        semantic.ordering_allowed = resolved.ordering_allowed
+
+        if context.model_target is None:
+            raise UnboundVariableError(
+                "Cannot resolve model-output observable: missing model target"
+            )
+
+        semantic.resolved_path = [
+            "_model",
+            context.model_target,
+            resolved.kind.value,
+        ]
+        if resolved.label is not None:
+            semantic.resolved_path.append(repr(resolved.label))
+
+        if isinstance(node, ClassProbabilityObservableNode):
+            if node.label.semantic is None:
+                node.label.semantic = SemanticAnnotations()
+            node.label.semantic.inferred_dtype = node.label.dtype
+            node.label.semantic.resolved_type = node.label.dtype.value
+        elif not isinstance(node, PredictedLabelObservableNode):
+            raise TypeError(
+                f"Unsupported output observable type: {type(node).__name__}"
+            )
+
+    def _bind_output_port(
+        self,
+        *,
+        point_name: str | None,
+        context: SemanticContext,
+        semantic: SemanticAnnotations,
+        resolved_type: str,
+    ) -> None:
         if context.model_target is None:
             raise UnboundVariableError(
                 "Cannot resolve 'target': missing model target in semantic context"
             )
 
-        if target.point is not None:
-            point = context.point_environment.resolve(target.point)
+        if self.model_schema is not None:
+            schema_output_name = self.model_schema.output_name
+            if schema_output_name != context.model_target:
+                raise UnboundVariableError(
+                    "Declared target does not match the selected model output: "
+                    f"{context.model_target!r} != {schema_output_name!r}"
+                )
+
+        if point_name is not None:
+            point = context.point_environment.resolve(point_name)
             if point is None:
                 raise UnboundVariableError(
-                    f"Unknown target point '{target.point}'. Visible points: "
+                    f"Unknown target point '{point_name}'. Visible points: "
                     f"{list(context.point_environment.names())}"
                 )
         else:
@@ -293,14 +378,13 @@ class BindingValidator:
         evaluation = context.evaluation_registry.intern(
             model_identity=context.model_identity,
             point=point,
-            target_name=context.model_target,
+            output_name=context.model_target,
         )
 
         semantic.resolved_entity = "_model"
         semantic.resolved_symbol = None
-        # Keep the historical path stable until point-aware IR1 lands in 15.6.
         semantic.resolved_path = ["_model", context.model_target]
-        semantic.resolved_type = "model_output"
+        semantic.resolved_type = resolved_type
         semantic.resolved_point = point
         semantic.resolved_evaluation = evaluation
 

@@ -5,24 +5,44 @@ from dataclasses import dataclass, field
 from dsl.semantic.symbols.point import PointSymbol
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, init=False)
 class ModelEvaluationIdentity:
-    """Stable semantic identity for one model invocation at one point.
+    """Stable identity for one model-output invocation at one point.
 
-    FORML V1 exposes one scalar target per model header. The target name is
-    retained as metadata, while identity itself is the pair ``(model, point)``.
+    Identity is the triple ``(model, point, output port)``. Observable kind is
+    intentionally not part of this identity. ``target_name`` remains a
+    read-only compatibility projection during Patch 21.
     """
 
     model_identity: str
     point: PointSymbol
-    target_name: str
+    output_name: str
+
+    def __init__(
+        self,
+        model_identity: str,
+        point: PointSymbol,
+        output_name: str | None = None,
+        *,
+        target_name: str | None = None,
+    ) -> None:
+        resolved_output_name = _resolve_output_name(output_name, target_name)
+        object.__setattr__(self, "model_identity", model_identity)
+        object.__setattr__(self, "point", point)
+        object.__setattr__(self, "output_name", resolved_output_name)
+
+    @property
+    def target_name(self) -> str:
+        """Compatibility projection for pre-Patch-21 consumers."""
+
+        return self.output_name
 
 
 @dataclass
 class ModelEvaluationRegistry:
-    """Intern model evaluations so repeated target references share identity."""
+    """Intern evaluations so all observables reuse one model invocation."""
 
-    _evaluations: dict[tuple[str, str], ModelEvaluationIdentity] = field(
+    _evaluations: dict[tuple[str, str, str], ModelEvaluationIdentity] = field(
         default_factory=dict
     )
 
@@ -31,26 +51,42 @@ class ModelEvaluationRegistry:
         *,
         model_identity: str,
         point: PointSymbol,
-        target_name: str,
+        output_name: str | None = None,
+        target_name: str | None = None,
     ) -> ModelEvaluationIdentity:
-        key = (model_identity, point.name)
+        resolved_output_name = _resolve_output_name(output_name, target_name)
+        key = (model_identity, point.name, resolved_output_name)
         existing = self._evaluations.get(key)
 
         if existing is not None:
-            if existing.target_name != target_name:
-                raise ValueError(
-                    "One model-point evaluation cannot be associated with "
-                    "several target names"
-                )
             return existing
 
         evaluation = ModelEvaluationIdentity(
             model_identity=model_identity,
             point=point,
-            target_name=target_name,
+            output_name=resolved_output_name,
         )
         self._evaluations[key] = evaluation
         return evaluation
 
     def all(self) -> tuple[ModelEvaluationIdentity, ...]:
         return tuple(self._evaluations.values())
+
+
+def _resolve_output_name(
+    output_name: str | None,
+    target_name: str | None,
+) -> str:
+    if (
+        output_name is not None
+        and target_name is not None
+        and output_name != target_name
+    ):
+        raise ValueError(
+            "Model evaluation output_name and compatibility target_name must match"
+        )
+
+    resolved = output_name if output_name is not None else target_name
+    if resolved is None or not resolved.strip():
+        raise ValueError("Model evaluation requires a non-empty output name")
+    return resolved

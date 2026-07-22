@@ -2,4 +2,4 @@ model := "model.onnx"
 target := MyTarget
 
 [ROBUSTNESS]:
-forall x1 => a <= 1 -> CLASSIFICATION.EQUAL() using Z3
+forall x0, x1 => x0.a <= 1 -> CLASSIFICATION.EQUAL() using Z3

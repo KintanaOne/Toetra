@@ -156,3 +156,23 @@ Expected outcome:
 Invalid schema mutation → schema or semantic rejection
 Valid schema mutation   → semantic integration may continue
 ```
+
+## Patch 21 Typed Output Addendum
+
+Patch 21 replaces the loose scalar-target assumption with the accepted
+[Model Output Observables Contract](model-output-observables.md).
+
+The P21.1 `ModelSchema` now exposes `output_name` plus a typed
+`output_schema`. The normalized schema contains:
+
+- output-port identity;
+- task kind;
+- available public observables;
+- observable scalar types;
+- canonical labels for classification;
+- the model semantic profile needed for lowering.
+
+Free-form metadata such as `classes` remains source material for an
+introspector, but it is not itself the normalized output contract. `target`,
+`target_dtype`, and `target_source_dtype` are temporary read-only projections from
+the typed output schema while internal consumers migrate.

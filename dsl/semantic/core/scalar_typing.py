@@ -3,6 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+from dsl.ast.nodes.outputs import (
+    ClassProbabilityObservableNode,
+    PredictedLabelObservableNode,
+)
 from dsl.ast.nodes.primitives import (
     AttributeNode,
     BinaryArithmeticNode,
@@ -39,6 +43,8 @@ class ScalarAnalysis:
     dtype: EnumDataType | None
     arithmetic_class: EnumArithmeticClass | None
     constant_value: Any = _NO_CONSTANT
+    arithmetic_allowed: bool = True
+    ordering_allowed: bool = True
 
     @property
     def is_constant(self) -> bool:
@@ -81,6 +87,26 @@ class ScalarTypeAnalyzer:
             self._annotate(node, result)
             return result
 
+        if isinstance(node, PredictedLabelObservableNode):
+            dtype = _dtype_from_annotation(node)
+            result = ScalarAnalysis(
+                dtype=dtype,
+                arithmetic_class=None,
+                arithmetic_allowed=False,
+                ordering_allowed=False,
+            )
+            self._annotate(node, result)
+            return result
+
+        if isinstance(node, ClassProbabilityObservableNode):
+            dtype = _dtype_from_annotation(node) or EnumDataType.FLOAT
+            result = ScalarAnalysis(
+                dtype=dtype,
+                arithmetic_class=None,
+            )
+            self._annotate(node, result)
+            return result
+
         if isinstance(node, TargetRefNode):
             dtype = self._target_dtype()
             result = ScalarAnalysis(
@@ -96,7 +122,7 @@ class ScalarTypeAnalyzer:
 
         if isinstance(node, UnaryArithmeticNode):
             operand = self.analyze(node.operand)
-            self._require_numeric(operand.dtype, "unary arithmetic")
+            self._require_arithmetic_operand(operand, "unary arithmetic")
 
             constant_value: Any = _NO_CONSTANT
             if operand.is_numeric_constant:
@@ -121,8 +147,8 @@ class ScalarTypeAnalyzer:
             left = self.analyze(node.left)
             right = self.analyze(node.right)
 
-            self._require_numeric(left.dtype, "left arithmetic operand")
-            self._require_numeric(right.dtype, "right arithmetic operand")
+            self._require_arithmetic_operand(left, "left arithmetic operand")
+            self._require_arithmetic_operand(right, "right arithmetic operand")
 
             result = self._analyze_binary(node.operator, left, right)
             self._annotate(node, result)
@@ -139,16 +165,22 @@ class ScalarTypeAnalyzer:
         operator: Any,
     ) -> None:
         """Validate comparison compatibility when both operand types are known."""
-        if left.dtype is None or right.dtype is None:
-            return
-
         operator_value = getattr(operator, "value", str(operator))
         if operator_value in {"<", "<=", ">", ">="}:
+            if not left.ordering_allowed or not right.ordering_allowed:
+                raise InvalidPropertyError(
+                    "Ordering comparisons are not defined for predicted labels"
+                )
+            if left.dtype is None or right.dtype is None:
+                return
             if not (_is_numeric_dtype(left.dtype) and _is_numeric_dtype(right.dtype)):
                 raise InvalidPropertyError(
                     "Ordering comparisons require numeric operands, got "
                     f"{left.dtype.value} and {right.dtype.value}"
                 )
+            return
+
+        if left.dtype is None or right.dtype is None:
             return
 
         if operator_value in {"==", "!="} and not _compatible_types(
@@ -262,14 +294,18 @@ class ScalarTypeAnalyzer:
             return None
         return self.model_schema.target_dtype
 
-    def _require_numeric(
+    def _require_arithmetic_operand(
         self,
-        dtype: EnumDataType | None,
+        analysis: ScalarAnalysis,
         position: str,
     ) -> None:
-        if dtype is not None and not _is_numeric_dtype(dtype):
+        if not analysis.arithmetic_allowed:
             raise InvalidArithmeticError(
-                f"{position} must be numeric, got {dtype.value}"
+                "Predicted labels cannot participate in arithmetic expressions"
+            )
+        if analysis.dtype is not None and not _is_numeric_dtype(analysis.dtype):
+            raise InvalidArithmeticError(
+                f"{position} must be numeric, got {analysis.dtype.value}"
             )
 
     def _annotate(
@@ -282,6 +318,8 @@ class ScalarTypeAnalyzer:
 
         node.semantic.inferred_dtype = result.dtype
         node.semantic.arithmetic_class = result.arithmetic_class
+        node.semantic.arithmetic_allowed = result.arithmetic_allowed
+        node.semantic.ordering_allowed = result.ordering_allowed
         if result.dtype is not None:
             node.semantic.resolved_type = result.dtype.value
 

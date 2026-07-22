@@ -62,7 +62,12 @@ class AttributeNode(ScalarExpressionNode):
 
 @dataclass
 class TargetRefNode(ScalarExpressionNode):
-    """Reference to the unique model output, optionally indexed by a point."""
+    """Legacy scalar projection of the declared model output.
+
+    This node preserves the public V1 regression surface ``target[point]``.
+    Classification observables use :class:`ModelOutputRefNode` plus an explicit
+    ``label`` or ``probability(label)`` projection instead.
+    """
 
     point: str | None = None
     name: str = "target"

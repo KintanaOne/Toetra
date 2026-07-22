@@ -68,14 +68,22 @@ subtype of the backend-neutral result. Historical accessors `solver_status` and
 - numeric compatibility route, semantic target and conclusion scope;
 - backend execution status, duration, reason and policy snapshot;
 - content-addressed verification provenance and completeness.
+- per-evaluation output-observable evidence and semantic-lowering traces.
 
 Assignments are classified as:
 
 ```text
 INPUT      x0.a
 OUTPUT     _model.score → score
-AUXILIARY  backend-introduced names
+AUXILIARY  internal model quantities and backend-introduced names
 ```
+
+Classification labels and probabilities are not forced into the legacy scalar
+`OUTPUT` collection. They are exposed through `report.model_evaluations`, which
+retains the public intent, reconstructed views, native decision policy, internal
+quantity and lowering evidence. Reconstructed probabilities are marked as
+approximate presentation evidence; proof soundness continues to rely on the
+canonical constraint and numeric compatibility policy.
 
 This distinction lets all renderers display a counterexample without exposing
 backend naming conventions. Application code can also access normalized values:
@@ -222,7 +230,7 @@ their numerator and denominator rather than being rounded:
 }
 ```
 
-Historical schemas remain as golden fixtures. Schema version 3 added `numeric_compatibility`. Schema version 4 added backend execution evidence. Schema version 5 adds content-addressed artifact, software, compiler, route and verification provenance; it is protected by `verification_report_v5.json`.
+Historical schemas remain as golden fixtures. Schema version 3 added `numeric_compatibility`. Schema version 4 added backend execution evidence. Schema version 5 adds content-addressed artifact, software, compiler, route and verification provenance; it is protected by `verification_report_v5.json`. P21.9 extends v5 additively with an optional `model_evaluations` field; no existing assignment or provenance field changes meaning.
 
 ## HTML and Jupyter Rendering
 

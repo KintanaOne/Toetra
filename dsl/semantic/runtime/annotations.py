@@ -10,6 +10,7 @@ from dsl.semantic.types.enums import EnumArithmeticClass, EnumDataType
 if TYPE_CHECKING:
     from dsl.semantic.context.evaluations import ModelEvaluationIdentity
     from dsl.semantic.symbols.point import PointSymbol
+    from model.schema.output_schema import EnumOutputObservable, ModelLabel
 
 
 @dataclass
@@ -118,7 +119,22 @@ class SemanticAnnotations:
     """Exact input point selected for an indexed or short model reference."""
 
     resolved_evaluation: ModelEvaluationIdentity | None = None
-    """Interned ``(model, point)`` evaluation identity, when applicable."""
+    """Interned ``(model, point, output)`` evaluation identity, when applicable."""
+
+    resolved_evaluations: tuple[ModelEvaluationIdentity, ...] = ()
+    """Ordered model evaluations resolved for one multi-point semantic sugar."""
+
+    resolved_output_observable: EnumOutputObservable | None = None
+    """Framework-neutral public observable selected from a model output."""
+
+    resolved_label: ModelLabel | None = None
+    """Canonical user-facing class label selected by an observable, if any."""
+
+    arithmetic_allowed: bool | None = None
+    """Whether this scalar observable may participate in arithmetic."""
+
+    ordering_allowed: bool | None = None
+    """Whether this scalar observable may participate in ordered comparison."""
 
     resolved_candidate_point: PointSymbol | None = None
     """Resolved neighborhood candidate point, when applicable."""

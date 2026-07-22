@@ -23,6 +23,7 @@ from dsl.language.vocabulary.properties import EnumProperty
 
 if TYPE_CHECKING:
     from dsl.ir.ir2.requirements import IR2Requirements
+    from model.semantics.evidence import SemanticLoweringEvidence
 
 
 AtomIR2: TypeAlias = AtomicIR
@@ -148,3 +149,5 @@ class VerificationTaskIR2:
     )
     metadata: dict[str, Any] = field(default_factory=dict)
     diagnostics: tuple[IR2Diagnostic, ...] = ()
+    lowering_evidence: tuple[SemanticLoweringEvidence, ...] = ()
+    source_spec_formula: LogicalIR | None = None

@@ -3,10 +3,8 @@ from typing import Any
 import pandas as pd
 
 from sklearn import __version__ as sklearn_version
-from sklearn.base import (
-    ClassifierMixin,
-    RegressorMixin,
-)
+from sklearn.base import is_classifier, is_regressor
+from sklearn.linear_model import LogisticRegression
 
 from dsl.compatibility.descriptors import (
     FrameworkModelDescriptor,
@@ -18,8 +16,18 @@ from model.detector.model_framework import EnumModelFramework
 from model.introspector.base_introspector import BaseIntrospector
 from model.schema.feature_schema import FeatureSchema
 from model.schema.model_schema import ModelSchema
+from model.schema.output_schema import (
+    BinaryClassificationDecisionPolicy,
+    ClassificationOutputSchema,
+    RegressionOutputSchema,
+    UnknownOutputSchema,
+)
 
 from model.errors.introspection import MissingFeatureMetadataError
+from model.families import (
+    BINARY_LOGISTIC_AFFINE_MODEL_FAMILY,
+    BINARY_LOGISTIC_AFFINE_SEMANTIC_PROFILE_ID,
+)
 
 
 class SklearnIntrospector(BaseIntrospector):
@@ -43,14 +51,21 @@ class SklearnIntrospector(BaseIntrospector):
 
         task = self._detect_task()
         metadata = self._build_metadata()
+        target_dtype = self._detect_target_dtype(target)
         target_source_dtype = self._detect_target_source_dtype(target)
+        output_schema = self._build_output_schema(
+            task=task,
+            target_dtype=target_dtype,
+            target_source_dtype=target_source_dtype,
+            metadata=metadata,
+        )
         return ModelSchema(
             framework=EnumModelFramework.SKLEARN,
             model_type=type(self.model).__name__,
             features=features,
             task=task,
-            target=target,
-            target_dtype=self._detect_target_dtype(target),
+            output_name=target,
+            output_schema=output_schema,
             metadata=metadata,
             compatibility=self._compatibility_descriptor(
                 features=features,
@@ -58,7 +73,6 @@ class SklearnIntrospector(BaseIntrospector):
                 metadata=metadata,
                 target_source_dtype=target_source_dtype,
             ),
-            target_source_dtype=target_source_dtype,
         )
 
     # ======================================================
@@ -150,10 +164,10 @@ class SklearnIntrospector(BaseIntrospector):
         Detect ML task type.
         """
 
-        if isinstance(self.model, ClassifierMixin):
+        if is_classifier(self.model):
             return "classification"
 
-        if isinstance(self.model, RegressorMixin):
+        if is_regressor(self.model):
             return "regression"
 
         return "unknown"
@@ -194,6 +208,65 @@ class SklearnIntrospector(BaseIntrospector):
             return None
 
         return self._map_dtype(data[target].dtype)
+
+    # ======================================================
+    # Output schema
+    # ======================================================
+
+    def _build_output_schema(
+        self,
+        *,
+        task: str,
+        target_dtype: EnumDataType | None,
+        target_source_dtype: str | None,
+        metadata: dict[str, Any],
+    ):
+        if task == "regression":
+            return RegressionOutputSchema(
+                value_dtype=target_dtype,
+                value_source_dtype=target_source_dtype,
+            )
+
+        if task == "classification":
+            raw_labels = metadata.get("classes")
+            labels = self._to_python(raw_labels) if raw_labels is not None else []
+            if not isinstance(labels, list):
+                labels = list(labels)
+            normalized_labels = tuple(self._normalize_label(label) for label in labels)
+            probability_available = callable(getattr(self.model, "predict_proba", None))
+            decision_policy = None
+            if self._supports_binary_logistic_profile(
+                labels=normalized_labels,
+                metadata=metadata,
+            ):
+                decision_policy = BinaryClassificationDecisionPolicy(
+                    negative_label=normalized_labels[0],
+                    positive_label=normalized_labels[1],
+                    semantic_profile_id=(BINARY_LOGISTIC_AFFINE_SEMANTIC_PROFILE_ID),
+                )
+            return ClassificationOutputSchema(
+                label_dtype=target_dtype,
+                labels=normalized_labels,
+                label_source_dtype=target_source_dtype,
+                probability_available=probability_available,
+                decision_policy=decision_policy,
+            )
+
+        return UnknownOutputSchema(
+            value_dtype=target_dtype,
+            value_source_dtype=target_source_dtype,
+        )
+
+    @staticmethod
+    def _normalize_label(value: Any) -> str | int | float | bool:
+        if hasattr(value, "item"):
+            value = value.item()
+        if not isinstance(value, (str, int, float, bool)):
+            raise TypeError(
+                "Classification labels must normalize to string, integer, "
+                "float, or boolean values"
+            )
+        return value
 
     # ======================================================
     # Metadata extraction
@@ -278,11 +351,15 @@ class SklearnIntrospector(BaseIntrospector):
 
         numeric_semantics, profile_id = self._numeric_profile(parameter_dtypes)
         model_type = type(self.model).__name__
-        model_family = (
-            "affine_regression"
-            if model_type == "LinearRegression" and task == "regression"
-            else f"unknown:{task}:{model_type}"
-        )
+        if model_type == "LinearRegression" and task == "regression":
+            model_family = "affine_regression"
+        elif self._supports_binary_logistic_profile(
+            labels=self._normalized_metadata_labels(metadata),
+            metadata=metadata,
+        ):
+            model_family = BINARY_LOGISTIC_AFFINE_MODEL_FAMILY
+        else:
+            model_family = f"unknown:{task}:{model_type}"
         return FrameworkModelDescriptor(
             framework_adapter_id=EnumModelFramework.SKLEARN.value,
             framework_version=sklearn_version,
@@ -296,6 +373,48 @@ class SklearnIntrospector(BaseIntrospector):
             ),
             output_dtype=target_source_dtype,
         )
+
+    def _supports_binary_logistic_profile(
+        self,
+        *,
+        labels: tuple[Any, ...] | list[Any],
+        metadata: dict[str, Any],
+    ) -> bool:
+        """Return whether this exact estimator matches the frozen P21 profile."""
+
+        if type(self.model) is not LogisticRegression:
+            return False
+        if len(labels) != 2:
+            return False
+        if not callable(getattr(self.model, "predict_proba", None)):
+            return False
+        if not callable(getattr(self.model, "decision_function", None)):
+            return False
+
+        linear = metadata.get("linear")
+        if not isinstance(linear, dict):
+            return False
+        coef = linear.get("coef")
+        intercept = linear.get("intercept")
+        if not isinstance(coef, list) or len(coef) != 1:
+            return False
+        if not isinstance(coef[0], list):
+            return False
+        if not isinstance(intercept, list) or len(intercept) != 1:
+            return False
+        return True
+
+    def _normalized_metadata_labels(
+        self,
+        metadata: dict[str, Any],
+    ) -> tuple[Any, ...]:
+        raw_labels = metadata.get("classes")
+        if raw_labels is None:
+            return ()
+        labels = self._to_python(raw_labels)
+        if not isinstance(labels, list):
+            labels = list(labels)
+        return tuple(self._normalize_label(label) for label in labels)
 
     @staticmethod
     def _numeric_profile(

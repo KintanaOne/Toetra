@@ -115,7 +115,7 @@ Common composition rules:
 A user property:
 
 ```forml
-[ROBUSTNESS]: at x in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUAL()
+[ROBUSTNESS]: forall baseline, candidate => CLASSIFICATION.EQUAL()
 ```
 
 May produce an aggregated problem containing:

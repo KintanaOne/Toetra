@@ -8,6 +8,12 @@ from model.errors.introspection import MissingFeatureMetadataError
 from model.introspector.sklearn_introspector import SklearnIntrospector
 from model.schema.feature_schema import FeatureSchema
 from model.schema.model_schema import ModelSchema
+from model.schema.output_schema import (
+    BinaryClassificationDecisionPolicy,
+    ClassificationOutputSchema,
+    EnumOutputObservable,
+    RegressionOutputSchema,
+)
 from test.fixtures.model_bridge.factories import (
     dataset_path,
     train_classification_model,
@@ -27,7 +33,22 @@ def test_sklearn_introspector_builds_classification_schema_with_explicit_target(
     assert schema.framework is EnumModelFramework.SKLEARN
     assert schema.model_type == "LogisticRegression"
     assert schema.task == "classification"
+    assert schema.output_name == "MyTarget"
     assert schema.target == "MyTarget"
+    assert schema.output_schema == ClassificationOutputSchema(
+        label_dtype=EnumDataType.INT,
+        labels=(0, 1),
+        label_source_dtype="int64",
+        probability_available=True,
+        decision_policy=BinaryClassificationDecisionPolicy(
+            negative_label=0,
+            positive_label=1,
+        ),
+    )
+    assert schema.output_schema.available_observables == (
+        EnumOutputObservable.PREDICTED_LABEL,
+        EnumOutputObservable.CLASS_PROBABILITY,
+    )
     assert schema.target_dtype is EnumDataType.INT
     assert "MyTarget" not in schema.features
     assert set(schema.features) == {"age", "income", "score"}
@@ -60,6 +81,10 @@ def test_sklearn_introspector_preserves_integer_target_dtype_for_regression(
     ).introspect()
 
     assert schema.task == "regression"
+    assert schema.output_schema == RegressionOutputSchema(
+        value_dtype=EnumDataType.INT,
+        value_source_dtype="int64",
+    )
     assert schema.target_dtype is EnumDataType.INT
 
 
@@ -99,7 +124,17 @@ def test_sklearn_introspector_uses_external_schema_before_target_name():
         target_name="MyTarget",
     ).introspect()
 
+    assert schema.output_name == "ExternalTarget"
     assert schema.target == "ExternalTarget"
+    assert schema.output_schema == ClassificationOutputSchema(
+        label_dtype=EnumDataType.STRING,
+        labels=(0, 1),
+        probability_available=True,
+        decision_policy=BinaryClassificationDecisionPolicy(
+            negative_label=0,
+            positive_label=1,
+        ),
+    )
     assert schema.target_dtype is EnumDataType.STRING
     assert set(schema.features) == {"external_feature"}
 

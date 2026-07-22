@@ -9,15 +9,18 @@ from dsl.ir.ir1.nodes import (
     AndIR,
     AtomicIR,
     ComparisonIR,
+    ImplyIR,
     LogicalIR,
     NotIR,
     OrIR,
     ProblemIR,
 )
-from dsl.ir.ir1.scalar import format_scalar_expression
+from dsl.ir.ir1.outputs import OutputObservableExpressionIR
+from dsl.ir.ir1.scalar import format_scalar_expression, iter_scalar_expressions
 from dsl.ir.ir2.nodes import NNFFormulaIR2, VerificationTaskIR2
 from dsl.provenance.builder import build_report_provenance
 from dsl.provenance.model import VerificationProvenanceContext
+from dsl.reporting.evaluations import build_report_model_evaluations
 from dsl.reporting.model import (
     ReportAssignment,
     ReportAssignmentKind,
@@ -28,6 +31,7 @@ from dsl.reporting.model import (
     ReportScopeVariable,
     VerificationReport,
 )
+from model.schema.model_schema import ModelSchema
 
 
 def build_verification_report(
@@ -37,6 +41,7 @@ def build_verification_report(
     *,
     property_index: int,
     provenance_context: VerificationProvenanceContext | None = None,
+    schema: ModelSchema | None = None,
 ) -> VerificationReport:
     """Combine an IR2 task, routing decision and backend result into a report."""
 
@@ -50,13 +55,34 @@ def build_verification_report(
         result.assignments,
         result.metadata.get("assignment_symbol_mapping"),
     )
+    quantity_values = {
+        (
+            item.model_identity,
+            item.point_name,
+            item.output_name,
+            item.quantity_kind,
+        ): item.exact_value
+        for item in assignments
+        if item.kind is ReportAssignmentKind.AUXILIARY
+        and item.model_identity is not None
+        and item.point_name is not None
+        and item.output_name is not None
+        and item.quantity_kind is not None
+    }
+    model_evaluations = build_report_model_evaluations(
+        schema=schema,
+        lowering_evidence=task.lowering_evidence,
+        quantity_values=quantity_values,
+    )
 
     return VerificationReport(
         property_index=property_index,
         property_type=task.property_type,
         semantics=task.semantics,
         scope=_build_scope(task),
-        specification=_format_specification(task.spec_formula),
+        specification=_format_logical(
+            task.source_spec_formula or task.spec_formula.expression
+        ),
         backend=result.backend,
         backend_status=result.backend_status,
         status=result.status,
@@ -68,6 +94,7 @@ def build_verification_report(
         points=_build_point_evidence(task, assignments),
         numeric_compatibility=_build_numeric_compatibility(route),
         backend_execution=_build_backend_execution(result),
+        model_evaluations=model_evaluations,
         provenance=(
             build_report_provenance(
                 provenance_context,
@@ -228,6 +255,36 @@ def _build_assignment(
                 else None
             ),
             target_name=target_name,
+            output_name=target_name,
+        )
+
+    if kind == "model_quantity":
+        output_name = str(identity.get("output_name", "output"))
+        quantity_kind = str(identity.get("quantity_kind", "model_quantity"))
+        display_name = (
+            f"{output_name}[{point_name}]::<{quantity_kind}>"
+            if point_name is not None
+            else f"{output_name}::<{quantity_kind}>"
+        )
+        return ReportAssignment(
+            raw_name=name,
+            display_name=display_name,
+            value=value,
+            kind=ReportAssignmentKind.AUXILIARY,
+            point_name=point_name,
+            binding_kind=str(binding_kind) if binding_kind is not None else None,
+            model_identity=(
+                str(identity.get("model_identity"))
+                if identity.get("model_identity") is not None
+                else None
+            ),
+            output_name=output_name,
+            quantity_kind=quantity_kind,
+            semantic_profile_id=(
+                str(identity.get("semantic_profile_id"))
+                if identity.get("semantic_profile_id") is not None
+                else None
+            ),
         )
 
     if kind == "point_feature":
@@ -332,10 +389,15 @@ def _format_specification(formula: NNFFormulaIR2) -> str:
     return _format_logical(formula.expression)
 
 
-def _format_logical(node: LogicalIR) -> str:
+def _format_logical(node: LogicalIR, *, point_aware: bool | None = None) -> str:
+    resolved_point_aware = (
+        _requires_point_aware_observable_format(node)
+        if point_aware is None
+        else point_aware
+    )
     if isinstance(node, ComparisonIR):
-        left = format_scalar_expression(node.left)
-        right = format_scalar_expression(node.right)
+        left = format_scalar_expression(node.left, point_aware=resolved_point_aware)
+        right = format_scalar_expression(node.right, point_aware=resolved_point_aware)
         return f"{left} {node.op.value} {right}"
 
     if isinstance(node, ProblemIR):
@@ -343,13 +405,20 @@ def _format_logical(node: LogicalIR) -> str:
         return f"{node.problem.value}.{function}({node.args or {}})"
 
     if isinstance(node, NotIR):
-        return f"not ({_format_logical(node.operand)})"
+        return (
+            f"not ({_format_logical(node.operand, point_aware=resolved_point_aware)})"
+        )
 
     if isinstance(node, AndIR):
-        return _join_logical("and", node.operands)
+        return _join_logical("and", node.operands, point_aware=resolved_point_aware)
 
     if isinstance(node, OrIR):
-        return _join_logical("or", node.operands)
+        return _join_logical("or", node.operands, point_aware=resolved_point_aware)
+
+    if isinstance(node, ImplyIR):
+        left = _format_logical(node.left, point_aware=resolved_point_aware)
+        right = _format_logical(node.right, point_aware=resolved_point_aware)
+        return f"({left}) -> ({right})"
 
     if isinstance(node, AtomicIR):
         return repr(node)
@@ -357,5 +426,31 @@ def _format_logical(node: LogicalIR) -> str:
     raise TypeError(f"Unsupported report specification node: {type(node).__name__}")
 
 
-def _join_logical(operator: str, operands: list[LogicalIR]) -> str:
-    return f" {operator} ".join(f"({_format_logical(item)})" for item in operands)
+def _join_logical(
+    operator: str, operands: list[LogicalIR], *, point_aware: bool
+) -> str:
+    return f" {operator} ".join(
+        f"({_format_logical(item, point_aware=point_aware)})" for item in operands
+    )
+
+
+def _requires_point_aware_observable_format(node: LogicalIR) -> bool:
+    points: set[str] = set()
+
+    def collect(current: LogicalIR) -> None:
+        if isinstance(current, ComparisonIR):
+            for root in (current.left, current.right):
+                for expression in iter_scalar_expressions(root):
+                    if isinstance(expression, OutputObservableExpressionIR):
+                        points.add(expression.point.name)
+        elif isinstance(current, (AndIR, OrIR)):
+            for operand in current.operands:
+                collect(operand)
+        elif isinstance(current, NotIR):
+            collect(current.operand)
+        elif isinstance(current, ImplyIR):
+            collect(current.left)
+            collect(current.right)
+
+    collect(node)
+    return len(points) > 1

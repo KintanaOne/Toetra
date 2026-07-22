@@ -1,0 +1,25 @@
+model := "binary_decision.joblib"
+target := decision
+
+[LOGIC]:
+forall applicant
+with domain(applicant.income: [-6.0, -3.0])
+=> target[applicant].label == "no" using Z3
+
+[LOGIC]:
+forall applicant
+with domain(applicant.income: [-1.0, 1.0])
+=> target[applicant].label == "yes" using Z3
+
+[LOGIC]:
+exists applicant
+with domain(applicant.income: [3.0, 6.0])
+=> target[applicant].probability("yes") >= 0.80 using Z3
+
+[ROBUSTNESS]:
+forall left, right
+with domain(
+    left.income: [-6.0, -3.0],
+    right.income: [-6.0, -3.0]
+)
+=> CLASSIFICATION.EQUAL() using Z3

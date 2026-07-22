@@ -19,6 +19,7 @@ from dsl.ir.ir1.nodes import (
     UnaryArithmeticExpressionIR,
     VerificationTask,
 )
+from dsl.ir.ir1.outputs import OutputObservableExpressionIR
 from dsl.ir.ir1.scalar import iter_scalar_expressions
 from dsl.ir.ir1.translator import IRTranslator
 from dsl.parser.parser import parse_forml_code
@@ -112,6 +113,27 @@ def serialize_scalar(node: ScalarExpressionIR):
                 if node.evaluation is not None
                 else None
             ),
+        }
+
+    if isinstance(node, OutputObservableExpressionIR):
+        return {
+            "type": "output_observable",
+            "observable": node.observable.value,
+            "dtype": node.dtype.value if node.dtype is not None else None,
+            "label": (
+                {
+                    "value": node.label.value,
+                    "dtype": node.label.dtype.value,
+                    "source_lexeme": node.label.source_lexeme,
+                }
+                if node.label is not None
+                else None
+            ),
+            "evaluation": {
+                "model_identity": node.evaluation.model_identity,
+                "point": serialize_point(node.evaluation.point),
+                "output_name": node.evaluation.output_name,
+            },
         }
 
     if isinstance(node, UnaryArithmeticExpressionIR):

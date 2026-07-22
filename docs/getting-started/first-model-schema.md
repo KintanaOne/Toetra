@@ -43,7 +43,7 @@ The DSL can express properties such as:
 ```forml
 age >= 18
 score <= 0.9
-CLASSIFICATION.EQUAL()
+target[baseline].label == target[candidate].label
 ```
 
 But FORML must know whether:

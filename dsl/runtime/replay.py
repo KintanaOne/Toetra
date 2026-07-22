@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from html import escape
-from typing import Any, Mapping, Protocol, cast
+from types import MappingProxyType
+from typing import Any, Mapping
 
 import pandas as pd
 
 from dsl.backends.results import VerificationStatus
+from dsl.ir.ir1.model_quantities import ModelQuantityExpressionIR
 from dsl.ir.ir1.nodes import (
     AndIR,
     AttributeExpressionIR,
@@ -21,16 +23,70 @@ from dsl.ir.ir1.nodes import (
     TargetExpressionIR,
     UnaryArithmeticExpressionIR,
 )
+from dsl.ir.ir1.outputs import OutputObservableExpressionIR
 from dsl.ir.ir2.nodes import VerificationTaskIR2
 from dsl.reporting.accessors import point_input_values, point_output_values
+from dsl.reporting.evaluations import ReportModelEvaluation
 from dsl.reporting.model import VerificationReport
-from dsl.reporting.values import python_report_value
 from dsl.runtime.errors import ReplayUnavailableError
+from dsl.runtime.model_observer import (
+    ModelObservation,
+    ModelObserverRegistry,
+)
+from model.runtime.sklearn_observer import create_default_model_observer_registry
 from model.schema.model_schema import ModelSchema
+from model.schema.output_schema import EnumOutputObservable
 
 
-class _Predictor(Protocol):
-    def predict(self, values: Any) -> Any: ...
+@dataclass(frozen=True)
+class EvaluationReplay:
+    """Concrete comparison of every relevant view of one model evaluation."""
+
+    output_name: str
+    formal_label: Any | None = None
+    model_label: Any | None = None
+    label_matches: bool | None = None
+    formal_probabilities: Mapping[Any, float] = field(
+        default_factory=lambda: MappingProxyType({})
+    )
+    model_probabilities: Mapping[Any, float] = field(
+        default_factory=lambda: MappingProxyType({})
+    )
+    probability_errors: Mapping[Any, float | None] = field(
+        default_factory=lambda: MappingProxyType({})
+    )
+    formal_quantities: Mapping[str, Any] = field(
+        default_factory=lambda: MappingProxyType({})
+    )
+    model_quantities: Mapping[str, float] = field(
+        default_factory=lambda: MappingProxyType({})
+    )
+    quantity_errors: Mapping[str, float | None] = field(
+        default_factory=lambda: MappingProxyType({})
+    )
+
+    def __post_init__(self) -> None:
+        for name in (
+            "formal_probabilities",
+            "model_probabilities",
+            "probability_errors",
+            "formal_quantities",
+            "model_quantities",
+            "quantity_errors",
+        ):
+            object.__setattr__(self, name, MappingProxyType(dict(getattr(self, name))))
+
+    def is_consistent(self, *, tolerance: float) -> bool:
+        label_consistent = self.label_matches is not False
+        probability_consistent = all(
+            error is not None and error <= tolerance
+            for error in self.probability_errors.values()
+        )
+        quantity_consistent = all(
+            error is not None and error <= tolerance
+            for error in self.quantity_errors.values()
+        )
+        return label_consistent and probability_consistent and quantity_consistent
 
 
 @dataclass(frozen=True)
@@ -42,6 +98,7 @@ class PointReplay:
     backend_outputs: Mapping[str, Any]
     model_outputs: Mapping[str, Any]
     absolute_errors: Mapping[str, float | None]
+    evaluations: tuple[EvaluationReplay, ...] = ()
 
     @property
     def is_consistent(self) -> bool:
@@ -111,6 +168,16 @@ class CounterexampleReplay:
             for error in point.absolute_errors.values()
             if error is not None
         ]
+        errors.extend(
+            error
+            for point in self.points.values()
+            for evaluation in point.evaluations
+            for error in (
+                *evaluation.probability_errors.values(),
+                *evaluation.quantity_errors.values(),
+            )
+            if error is not None
+        )
         return max(errors) if errors else None
 
     @property
@@ -120,12 +187,22 @@ class CounterexampleReplay:
             for point in self.points.values()
             for error in point.absolute_errors.values()
         )
+        evaluations_consistent = all(
+            evaluation.is_consistent(tolerance=self.tolerance)
+            for point in self.points.values()
+            for evaluation in point.evaluations
+        )
         assertion_consistent = (
             self.expected_assertion_satisfied is None
             or self.assertion_satisfied == self.expected_assertion_satisfied
         )
         relation_consistent = self.relation_satisfied is not False
-        return outputs_consistent and assertion_consistent and relation_consistent
+        return (
+            outputs_consistent
+            and evaluations_consistent
+            and assertion_consistent
+            and relation_consistent
+        )
 
     def to_records(self) -> list[dict[str, Any]]:
         records: list[dict[str, Any]] = []
@@ -139,6 +216,10 @@ class CounterexampleReplay:
                 record[f"model_{target}"] = value
             for target, value in point.absolute_errors.items():
                 record[f"absolute_error_{target}"] = value
+            if point.evaluations:
+                record["model_evaluations"] = tuple(
+                    _evaluation_record(item) for item in point.evaluations
+                )
             if len(self.points) > 1:
                 record["relation_satisfied"] = self.relation_satisfied
                 record["assertion_satisfied"] = self.assertion_satisfied
@@ -170,6 +251,26 @@ class CounterexampleReplay:
                 lines.append(f"  {target} (FORML) = {point.backend_outputs[target]}")
                 lines.append(f"  {target} (model) = {point.model_outputs.get(target)}")
                 lines.append(f"  absolute error = {point.absolute_errors.get(target)}")
+            for evaluation in point.evaluations:
+                lines.append(f"  Evaluation {evaluation.output_name}")
+                if evaluation.formal_label is not None:
+                    lines.append(
+                        f"    label: FORML={evaluation.formal_label}, "
+                        f"model={evaluation.model_label}, "
+                        f"match={evaluation.label_matches}"
+                    )
+                for label, formal in evaluation.formal_probabilities.items():
+                    lines.append(
+                        f"    probability({label!r}): FORML={formal}, "
+                        f"model={evaluation.model_probabilities.get(label)}, "
+                        f"error={evaluation.probability_errors.get(label)}"
+                    )
+                for quantity, formal in evaluation.formal_quantities.items():
+                    lines.append(
+                        f"    {quantity}: FORML={formal}, "
+                        f"model={evaluation.model_quantities.get(quantity)}, "
+                        f"error={evaluation.quantity_errors.get(quantity)}"
+                    )
         lines.append(f"Relation      : {self.relation_satisfied}")
         lines.append(f"Assertion     : {self.assertion_satisfied}")
         return "\n".join(lines)
@@ -198,20 +299,19 @@ def replay_verification_report(
     schema: ModelSchema,
     model: object,
     tolerance: float = 1e-9,
+    observer_registry: ModelObserverRegistry | None = None,
 ) -> CounterexampleReplay:
     """Replay every distinct referenced evaluation against the real model."""
 
-    predictor = getattr(model, "predict", None)
-    if not callable(predictor):
-        raise ReplayUnavailableError(
-            "The supplied model does not expose a callable 'predict' method"
-        )
     if not task.model_evaluations:
         raise ReplayUnavailableError("The property does not reference a model output")
 
+    registry = observer_registry or create_default_model_observer_registry()
+    observer = registry.require(schema=schema, model=model)
     replay_points: dict[str, PointReplay] = {}
-    concrete_outputs: dict[str, dict[str, Any]] = {}
+    concrete_observations: dict[str, ModelObservation] = {}
     ordered_evaluations = _ordered_model_evaluations(task)
+
     for evaluation in ordered_evaluations:
         point_name = evaluation.point.name
         if point_name in replay_points:
@@ -232,41 +332,53 @@ def replay_verification_report(
                 + ", ".join(missing)
             )
         ordered_inputs = {name: input_values[name] for name in schema.features}
-        prediction = _first_prediction(
-            cast(_Predictor, model).predict(pd.DataFrame([ordered_inputs]))
+        observation = observer.observe(
+            schema=schema,
+            model=model,
+            inputs=ordered_inputs,
         )
-        model_outputs = {schema.target: python_report_value(prediction)}
-        backend_outputs = point_output_values(report_point)
-        if schema.target not in backend_outputs:
-            raise ReplayUnavailableError(
-                f"Point {point_name!r} has no formal output for {schema.target!r}"
-            )
-        errors = {
-            schema.target: _absolute_error(
-                backend_outputs[schema.target], model_outputs[schema.target]
-            )
-        }
+        concrete_observations[point_name] = observation
+
+        report_evaluations = tuple(
+            item
+            for item in report.model_evaluations
+            if item.point_name == point_name
+            and item.output_name == evaluation.output_name
+        )
+        evaluation_replays = tuple(
+            _compare_classification_evaluation(item, observation)
+            for item in report_evaluations
+        )
+        backend_outputs, model_outputs, errors = _legacy_output_comparison(
+            report_point=report_point,
+            schema=schema,
+            observation=observation,
+            evaluation_replays=evaluation_replays,
+        )
         replay_points[point_name] = PointReplay(
             name=point_name,
             inputs=ordered_inputs,
             backend_outputs=backend_outputs,
             model_outputs=model_outputs,
             absolute_errors=errors,
+            evaluations=evaluation_replays,
         )
-        concrete_outputs[point_name] = model_outputs
 
     point_inputs = {name: dict(point.inputs) for name, point in replay_points.items()}
     relation = (
         _evaluate_logical(
-            task.scope.restriction.expression, point_inputs, concrete_outputs
+            task.scope.restriction.expression,
+            point_inputs,
+            concrete_observations,
         )
         if task.scope.restriction is not None
         else None
     )
+    assertion_formula = task.source_spec_formula or task.spec_formula.expression
     assertion = _evaluate_logical(
-        task.spec_formula.expression,
+        assertion_formula,
         point_inputs,
-        concrete_outputs,
+        concrete_observations,
     )
     expected = {
         VerificationStatus.COUNTEREXAMPLE: False,
@@ -282,15 +394,96 @@ def replay_verification_report(
     )
 
 
+def _compare_classification_evaluation(
+    formal: ReportModelEvaluation,
+    concrete: ModelObservation,
+) -> EvaluationReplay:
+    formal_probabilities = {
+        item.label: float(item.value)
+        for item in formal.probabilities
+        if item.value is not None
+    }
+    concrete_probabilities = dict(concrete.class_probabilities)
+    probability_errors = {
+        label: _absolute_error(value, concrete_probabilities.get(label))
+        for label, value in formal_probabilities.items()
+    }
+    formal_quantities = {
+        item.kind: item.python_value
+        for item in formal.quantities
+        if item.value is not None
+    }
+    concrete_quantities = dict(concrete.model_quantities)
+    quantity_errors = {
+        kind: _absolute_error(value, concrete_quantities.get(kind))
+        for kind, value in formal_quantities.items()
+    }
+    label_matches = (
+        None
+        if formal.predicted_label is None or concrete.predicted_label is None
+        else formal.predicted_label == concrete.predicted_label
+    )
+    return EvaluationReplay(
+        output_name=formal.output_name,
+        formal_label=formal.predicted_label,
+        model_label=concrete.predicted_label,
+        label_matches=label_matches,
+        formal_probabilities=formal_probabilities,
+        model_probabilities=concrete_probabilities,
+        probability_errors=probability_errors,
+        formal_quantities=formal_quantities,
+        model_quantities=concrete_quantities,
+        quantity_errors=quantity_errors,
+    )
+
+
+def _legacy_output_comparison(
+    *,
+    report_point: object,
+    schema: ModelSchema,
+    observation: ModelObservation,
+    evaluation_replays: tuple[EvaluationReplay, ...],
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, float | None]]:
+    backend_outputs = point_output_values(report_point)
+    if backend_outputs:
+        if observation.regression_value is None:
+            raise ReplayUnavailableError(
+                f"Concrete observer returned no regression value for {schema.output_name!r}"
+            )
+        model_outputs = {schema.output_name: observation.regression_value}
+        if schema.output_name not in backend_outputs:
+            raise ReplayUnavailableError(
+                f"Point has no formal output for {schema.output_name!r}"
+            )
+        return (
+            backend_outputs,
+            model_outputs,
+            {
+                schema.output_name: _absolute_error(
+                    backend_outputs[schema.output_name],
+                    model_outputs[schema.output_name],
+                )
+            },
+        )
+
+    formal_flat: dict[str, Any] = {}
+    concrete_flat: dict[str, Any] = {}
+    errors: dict[str, float | None] = {}
+    for evaluation in evaluation_replays:
+        if evaluation.formal_label is not None:
+            key = f"{evaluation.output_name}.label"
+            formal_flat[key] = evaluation.formal_label
+            concrete_flat[key] = evaluation.model_label
+            errors[key] = 0.0 if evaluation.label_matches else None
+        for label, formal in evaluation.formal_probabilities.items():
+            key = f"{evaluation.output_name}.probability[{label!r}]"
+            formal_flat[key] = formal
+            concrete_flat[key] = evaluation.model_probabilities.get(label)
+            errors[key] = evaluation.probability_errors.get(label)
+    return formal_flat, concrete_flat, errors
+
+
 def _ordered_model_evaluations(task: VerificationTaskIR2):
-    """Return evaluations in canonical source-point order.
-
-    Expression traversal order may reference ``x1`` before ``x0``. Public replay
-    artifacts instead follow ``point_mappings``, which preserves declaration and
-    binder order. Any manually injected evaluation without a point mapping is
-    appended deterministically afterwards.
-    """
-
     remaining = list(task.model_evaluations)
     ordered = []
     for mapping in task.point_mappings:
@@ -310,11 +503,11 @@ def _ordered_model_evaluations(task: VerificationTaskIR2):
 def _evaluate_logical(
     node: LogicalIR,
     inputs: Mapping[str, Mapping[str, Any]],
-    outputs: Mapping[str, Mapping[str, Any]],
+    observations: Mapping[str, ModelObservation],
 ) -> bool:
     if isinstance(node, ComparisonIR):
-        left = _evaluate_scalar(node.left, inputs, outputs)
-        right = _evaluate_scalar(node.right, inputs, outputs)
+        left = _evaluate_scalar(node.left, inputs, observations)
+        right = _evaluate_scalar(node.right, inputs, observations)
         operator = node.op.value
         return {
             "==": left == right,
@@ -325,15 +518,19 @@ def _evaluate_logical(
             ">=": left >= right,
         }[operator]
     if isinstance(node, AndIR):
-        return all(_evaluate_logical(item, inputs, outputs) for item in node.operands)
-    if isinstance(node, OrIR):
-        return any(_evaluate_logical(item, inputs, outputs) for item in node.operands)
-    if isinstance(node, NotIR):
-        return not _evaluate_logical(node.operand, inputs, outputs)
-    if isinstance(node, ImplyIR):
-        return (not _evaluate_logical(node.left, inputs, outputs)) or _evaluate_logical(
-            node.right, inputs, outputs
+        return all(
+            _evaluate_logical(item, inputs, observations) for item in node.operands
         )
+    if isinstance(node, OrIR):
+        return any(
+            _evaluate_logical(item, inputs, observations) for item in node.operands
+        )
+    if isinstance(node, NotIR):
+        return not _evaluate_logical(node.operand, inputs, observations)
+    if isinstance(node, ImplyIR):
+        return (
+            not _evaluate_logical(node.left, inputs, observations)
+        ) or _evaluate_logical(node.right, inputs, observations)
     raise ReplayUnavailableError(
         f"Replay cannot evaluate logical node {type(node).__name__}"
     )
@@ -342,7 +539,7 @@ def _evaluate_logical(
 def _evaluate_scalar(
     node: ScalarExpressionIR,
     inputs: Mapping[str, Mapping[str, Any]],
-    outputs: Mapping[str, Mapping[str, Any]],
+    observations: Mapping[str, ModelObservation],
 ) -> Any:
     if isinstance(node, ConstantExpressionIR):
         return node.value
@@ -359,19 +556,43 @@ def _evaluate_scalar(
             raise ReplayUnavailableError(
                 "Replay target has no point evaluation identity"
             )
+        observation = _observation_for(node.evaluation.point.name, observations)
+        if observation.regression_value is None:
+            raise ReplayUnavailableError(
+                f"Replay output missing for {node.evaluation.output_name!r}"
+            )
+        return observation.regression_value
+    if isinstance(node, OutputObservableExpressionIR):
+        observation = _observation_for(node.evaluation.point.name, observations)
+        if node.observable is EnumOutputObservable.PREDICTED_LABEL:
+            if observation.predicted_label is None:
+                raise ReplayUnavailableError("Replay predicted label is unavailable")
+            return observation.predicted_label
+        if node.observable is EnumOutputObservable.CLASS_PROBABILITY:
+            if node.label is None:
+                raise ReplayUnavailableError(
+                    "Replay class-probability observable has no label selector"
+                )
+            try:
+                return observation.class_probabilities[node.label.value]
+            except KeyError as error:
+                raise ReplayUnavailableError(
+                    f"Replay probability missing for label {node.label.value!r}"
+                ) from error
+    if isinstance(node, ModelQuantityExpressionIR):
+        observation = _observation_for(node.evaluation.point.name, observations)
         try:
-            return outputs[node.evaluation.point.name][node.evaluation.target_name]
+            return observation.model_quantities[node.quantity_kind.value]
         except KeyError as error:
             raise ReplayUnavailableError(
-                "Replay output missing for "
-                f"{node.evaluation.target_name}[{node.evaluation.point.name}]"
+                f"Replay model quantity missing: {node.quantity_kind.value}"
             ) from error
     if isinstance(node, UnaryArithmeticExpressionIR):
-        value = _evaluate_scalar(node.operand, inputs, outputs)
+        value = _evaluate_scalar(node.operand, inputs, observations)
         return -value if node.operator.value == "-" else +value
     if isinstance(node, BinaryArithmeticExpressionIR):
-        left = _evaluate_scalar(node.left, inputs, outputs)
-        right = _evaluate_scalar(node.right, inputs, outputs)
+        left = _evaluate_scalar(node.left, inputs, observations)
+        right = _evaluate_scalar(node.right, inputs, observations)
         return {
             "+": lambda: left + right,
             "-": lambda: left - right,
@@ -381,6 +602,18 @@ def _evaluate_scalar(
     raise ReplayUnavailableError(
         f"Replay cannot evaluate scalar node {type(node).__name__}"
     )
+
+
+def _observation_for(
+    point_name: str,
+    observations: Mapping[str, ModelObservation],
+) -> ModelObservation:
+    try:
+        return observations[point_name]
+    except KeyError as error:
+        raise ReplayUnavailableError(
+            f"Replay observation missing for point {point_name!r}"
+        ) from error
 
 
 def _point_html(point: PointReplay) -> str:
@@ -397,25 +630,65 @@ def _point_html(point: PointReplay) -> str:
         "</tr>"
         for name in point.backend_outputs
     )
+    evaluation_html = "".join(_evaluation_html(item) for item in point.evaluations)
     return (
         f"<h4>Point {escape(point.name)}</h4><ul>{inputs}</ul>"
         '<table style="border-collapse:collapse;width:100%">'
         "<thead><tr><th>Output</th><th>FORML</th><th>Model</th>"
         f"<th>Absolute error</th></tr></thead><tbody>{rows}</tbody></table>"
+        f"{evaluation_html}"
     )
 
 
-def _first_prediction(value: Any) -> Any:
-    iloc = getattr(value, "iloc", None)
-    if iloc is not None:
-        return value.iloc[0]
-    try:
-        return value[0]
-    except (IndexError, KeyError, TypeError):
-        return value
+def _evaluation_html(evaluation: EvaluationReplay) -> str:
+    rows: list[str] = []
+    if evaluation.formal_label is not None:
+        rows.append(
+            "<tr><td>label</td>"
+            f"<td>{escape(str(evaluation.formal_label))}</td>"
+            f"<td>{escape(str(evaluation.model_label))}</td>"
+            f"<td>{escape(str(evaluation.label_matches))}</td></tr>"
+        )
+    for label, formal in evaluation.formal_probabilities.items():
+        rows.append(
+            f"<tr><td>probability({escape(str(label))})</td>"
+            f"<td>{escape(str(formal))}</td>"
+            f"<td>{escape(str(evaluation.model_probabilities.get(label)))}</td>"
+            f"<td>{escape(str(evaluation.probability_errors.get(label)))}</td></tr>"
+        )
+    for kind, formal in evaluation.formal_quantities.items():
+        rows.append(
+            f"<tr><td>{escape(kind)}</td>"
+            f"<td>{escape(str(formal))}</td>"
+            f"<td>{escape(str(evaluation.model_quantities.get(kind)))}</td>"
+            f"<td>{escape(str(evaluation.quantity_errors.get(kind)))}</td></tr>"
+        )
+    return (
+        f"<h5>Evaluation {escape(evaluation.output_name)}</h5>"
+        '<table style="border-collapse:collapse;width:100%">'
+        "<thead><tr><th>View</th><th>FORML</th><th>Model</th><th>Match/error</th>"
+        f"</tr></thead><tbody>{''.join(rows)}</tbody></table>"
+    )
+
+
+def _evaluation_record(evaluation: EvaluationReplay) -> dict[str, Any]:
+    return {
+        "output_name": evaluation.output_name,
+        "formal_label": evaluation.formal_label,
+        "model_label": evaluation.model_label,
+        "label_matches": evaluation.label_matches,
+        "formal_probabilities": dict(evaluation.formal_probabilities),
+        "model_probabilities": dict(evaluation.model_probabilities),
+        "probability_errors": dict(evaluation.probability_errors),
+        "formal_quantities": dict(evaluation.formal_quantities),
+        "model_quantities": dict(evaluation.model_quantities),
+        "quantity_errors": dict(evaluation.quantity_errors),
+    }
 
 
 def _absolute_error(left: Any, right: Any) -> float | None:
+    if right is None:
+        return None
     try:
         return abs(float(left) - float(right))
     except (TypeError, ValueError):

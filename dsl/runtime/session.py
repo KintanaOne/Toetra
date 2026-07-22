@@ -27,6 +27,7 @@ from dsl.runtime.replay import CounterexampleReplay, replay_verification_report
 from model.schema.model_schema import ModelSchema
 
 if TYPE_CHECKING:
+    from dsl.runtime.model_observer import ModelObserverRegistry
     from dsl.semantic.symbols.point import ResolvedAnchorBinding
 
 
@@ -104,6 +105,7 @@ class VerificationFinding:
         model: object | None = None,
         *,
         tolerance: float = 1e-9,
+        observer_registry: ModelObserverRegistry | None = None,
     ) -> CounterexampleReplay:
         """Replay this assignment on the original or explicitly supplied model."""
 
@@ -128,6 +130,7 @@ class VerificationFinding:
             schema=self.schema,
             model=resolved_model,
             tolerance=tolerance,
+            observer_registry=observer_registry,
         )
 
     def to_text(self) -> str:

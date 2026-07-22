@@ -27,7 +27,10 @@ The goal of the ADR section is to make explicit:
 - why backend execution policy and termination evidence are backend-neutral,
 - why verification provenance is content-addressed, portable and explicit about incomplete evidence,
 - why CI, distributions and review bundles are verified release contracts,
-- and why the public V1 profile is narrow, executable and explicitly frozen.
+- why the public V1 profile is narrow, executable and explicitly frozen,
+- why model outputs are typed ports with declarative observables,
+- why model-family semantic lowering is explicit and auditable,
+- and why the first binary-classification profile is deliberately constrained.
 
 ## ADR format
 
@@ -69,6 +72,10 @@ Impact on FORML
 | ADR-0020 | Make verification provenance content-addressed and portable |
 | ADR-0021 | Treat release engineering as a verified product contract |
 | ADR-0022 | Freeze the public V1 profile, compatibility policy and license |
+| ADR-0023 | Represent model outputs as typed ports and declarative observables |
+| ADR-0024 | Lower observables through explicit model-family semantics |
+| ADR-0025 | Define the initial binary logistic classification profile |
+| ADR-0026 | Extend the public V1 profile with binary classification |
 
 ## Decision status vocabulary
 

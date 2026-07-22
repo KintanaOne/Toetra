@@ -4,6 +4,8 @@
 > Date: 2026-07  
 > Scope: DSL assertions, arithmetic AST, IR1, requirements, and backend lowering
 
+> **Patch 21 target amendment:** ADR-0023 distinguishes a model output-port reference from a scalar observable selected from that output. Comparisons remain relations between scalar expressions, but a classification output must first select an explicit observable such as `label` or `probability(label)`.
+
 ## Context
 
 The initial comparison shape in FORML is asymmetric:

@@ -13,6 +13,10 @@ from dsl.semantic.types.enums import EnumDataType
 from model.detector.model_framework import EnumModelFramework
 from model.schema.feature_schema import FeatureSchema
 from model.schema.model_schema import ModelSchema
+from model.schema.output_schema import (
+    BinaryClassificationDecisionPolicy,
+    ClassificationOutputSchema,
+)
 
 
 def _schema(*, coefficient: float = 2.0) -> ModelSchema:
@@ -94,3 +98,94 @@ def test_schema_change_changes_input_identity() -> None:
     first = _context(schema=_schema(coefficient=2.0))
     second = _context(schema=_schema(coefficient=3.0))
     assert first.input_fingerprint != second.input_fingerprint
+
+
+def test_typed_output_schema_changes_model_schema_fingerprint() -> None:
+    base = {
+        "framework": EnumModelFramework.SKLEARN,
+        "model_type": "Classifier",
+        "features": {
+            "a": FeatureSchema(
+                name="a", dtype=EnumDataType.FLOAT, source_dtype="float64"
+            )
+        },
+        "output_name": "decision",
+        "task": "classification",
+        "metadata": {},
+    }
+    without_probability = ModelSchema(
+        **base,
+        output_schema=ClassificationOutputSchema(
+            label_dtype=EnumDataType.STRING,
+            labels=("rejected", "approved"),
+            probability_available=False,
+        ),
+    )
+    with_probability = ModelSchema(
+        **base,
+        output_schema=ClassificationOutputSchema(
+            label_dtype=EnumDataType.STRING,
+            labels=("rejected", "approved"),
+            probability_available=True,
+        ),
+    )
+
+    first = _context(schema=without_probability)
+    second = _context(schema=with_probability)
+
+    first_schema = first.artifacts["model_schema"].fingerprint
+    second_schema = second.artifacts["model_schema"].fingerprint
+    assert first_schema is not None
+    assert second_schema is not None
+    assert first_schema.canonicalization == "forml_model_schema_canonical_json_v3"
+    assert second_schema.canonicalization == "forml_model_schema_canonical_json_v3"
+    assert first_schema != second_schema
+
+
+def test_binary_decision_policy_changes_model_schema_fingerprint() -> None:
+    base = {
+        "framework": EnumModelFramework.SKLEARN,
+        "model_type": "LogisticRegression",
+        "features": {
+            "a": FeatureSchema(
+                name="a", dtype=EnumDataType.FLOAT, source_dtype="float64"
+            )
+        },
+        "output_name": "decision",
+        "task": "classification",
+        "metadata": {},
+    }
+    native = ModelSchema(
+        **base,
+        output_schema=ClassificationOutputSchema(
+            label_dtype=EnumDataType.STRING,
+            labels=("rejected", "approved"),
+            probability_available=True,
+            decision_policy=BinaryClassificationDecisionPolicy(
+                negative_label="rejected",
+                positive_label="approved",
+            ),
+        ),
+    )
+    changed_threshold = ModelSchema(
+        **base,
+        output_schema=ClassificationOutputSchema(
+            label_dtype=EnumDataType.STRING,
+            labels=("rejected", "approved"),
+            probability_available=True,
+            decision_policy=BinaryClassificationDecisionPolicy(
+                negative_label="rejected",
+                positive_label="approved",
+                probability_threshold="0.6",
+            ),
+        ),
+    )
+
+    first = _context(schema=native).artifacts["model_schema"].fingerprint
+    second = _context(schema=changed_threshold).artifacts["model_schema"].fingerprint
+
+    assert first is not None
+    assert second is not None
+    assert first.canonicalization == "forml_model_schema_canonical_json_v3"
+    assert second.canonicalization == "forml_model_schema_canonical_json_v3"
+    assert first != second

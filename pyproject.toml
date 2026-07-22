@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "forml"
-version = "1.0.0rc1"
+version = "1.0.0rc2"
 description = "Declarative behavioral specification and formal verification for machine-learning models"
 authors = [{ name = "KintanaOne", email = "KintanaOne@proton.me" }]
 readme = "README.md"

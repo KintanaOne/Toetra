@@ -328,19 +328,16 @@ def _schema_artifact(schema: ModelSchema) -> ArtifactProvenance:
             }
             for feature in schema.features.values()
         ],
-        "target": schema.target,
+        "output_name": schema.output_name,
         "task": schema.task,
-        "target_dtype": (
-            schema.target_dtype.value if schema.target_dtype is not None else None
-        ),
-        "target_source_dtype": schema.target_source_dtype,
+        "output_schema": _output_schema_payload(schema.output_schema),
         "metadata": schema.metadata,
         "compatibility": schema.compatibility,
     }
     try:
         fingerprint = fingerprint_canonical_json(
             payload,
-            canonicalization="forml_model_schema_canonical_json_v1",
+            canonicalization="forml_model_schema_canonical_json_v3",
         )
     except CanonicalizationError as error:
         return ArtifactProvenance(
@@ -355,6 +352,41 @@ def _schema_artifact(schema: ModelSchema) -> ArtifactProvenance:
         status=FingerprintStatus.AVAILABLE,
         fingerprint=fingerprint,
     )
+
+
+def _output_schema_payload(output_schema: object) -> dict[str, object]:
+    kind = getattr(getattr(output_schema, "kind", None), "value", "unknown")
+    observables = [
+        getattr(value, "value", str(value))
+        for value in getattr(output_schema, "available_observables", ())
+    ]
+    payload: dict[str, object] = {
+        "kind": kind,
+        "available_observables": observables,
+        "primary_dtype": getattr(
+            getattr(output_schema, "primary_dtype", None), "value", None
+        ),
+        "source_dtype": getattr(output_schema, "source_dtype", None),
+    }
+    labels = getattr(output_schema, "labels", None)
+    if labels is not None:
+        payload["labels"] = list(labels)
+    probability_available = getattr(output_schema, "probability_available", None)
+    if probability_available is not None:
+        payload["probability_available"] = bool(probability_available)
+    policy = getattr(output_schema, "decision_policy", None)
+    if policy is not None:
+        payload["decision_policy"] = {
+            "negative_label": policy.negative_label,
+            "positive_label": policy.positive_label,
+            "probability_threshold": policy.probability_threshold,
+            "oriented_decision_threshold": (policy.oriented_decision_threshold),
+            "positive_when_strictly_greater": (policy.positive_when_strictly_greater),
+            "equality_label": policy.equality_label,
+            "policy_source": policy.policy_source,
+            "semantic_profile_id": policy.semantic_profile_id,
+        }
+    return payload
 
 
 def _software_provenance() -> SoftwareProvenance:

@@ -30,7 +30,12 @@ from dsl.runtime.errors import (
     VerificationConfigurationError,
     VerificationRuntimeError,
 )
-from dsl.runtime.replay import CounterexampleReplay
+from dsl.runtime.model_observer import (
+    ModelObservation,
+    ModelObserverRegistry,
+    ModelRuntimeObserver,
+)
+from dsl.runtime.replay import CounterexampleReplay, EvaluationReplay
 from dsl.runtime.session import (
     VerificationExecution,
     VerificationFinding,
@@ -51,6 +56,10 @@ __all__ = [
     "BackendRunnerNotRegisteredError",
     "BackendRunnerRegistry",
     "CounterexampleReplay",
+    "ModelRuntimeObserver",
+    "ModelObserverRegistry",
+    "ModelObservation",
+    "EvaluationReplay",
     "DataFrameAnchorResolver",
     "ReplayUnavailableError",
     "VerificationConfigurationError",

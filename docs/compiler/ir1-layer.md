@@ -1,6 +1,6 @@
 # IR1 Layer
 
-> Status: P0 / Implemented / Stabilizing  
+> Status: P21.4 / Implemented / Stabilizing  
 > Scope: SemanticValidatedAST to IR1  
 > Implementation: VerificationTask and logical IR tree  
 > Audience: IR authors, backend authors, testing authors
@@ -41,7 +41,9 @@ IR1 receives semantically validated properties and produces backend-independent 
 | `ScopeIR` | Semantic scope extracted from LHS. |
 | `PointBindingIR` | Stable identity and binding kind of one input point. |
 | `QuantifierBinderIR` | One ordered expanded quantifier frame. |
-| `ModelEvaluationIR` | Structured `(model, point, target)` evaluation identity. |
+| `ModelEvaluationIR` | Structured `(model, point, output port)` evaluation identity. |
+| `OutputObservableExpressionIR` | Declarative label or class-probability view of one shared evaluation. |
+| `ClassLabelIR` | Canonical user-facing label selector retained as IR metadata. |
 | `RestrictionIR` | Canonical `where` or neighborhood relation with provenance. |
 | `NeighborhoodIR` | Perturbation space or local neighborhood. |
 | `DomainIR` | Typed domain constraints with resolved subjects and preserved boundary/literal kinds. |
@@ -85,6 +87,7 @@ IR1 is responsible for:
 - preserving ordered and alternating binder chains;
 - preserving canonical restrictions separately from the property formula;
 - representing indexed model outputs as structured model evaluations;
+- representing public output observables separately from evaluation identity;
 - representing RHS logic as backend-independent nodes;
 - preserving resolved semantic bindings;
 - flattening associative boolean operators where appropriate;
@@ -252,6 +255,7 @@ ScalarIR
 ├── ConstantIR
 ├── FeatureRefIR
 ├── ModelOutputRefIR
+├── OutputObservableExpressionIR
 ├── UnaryArithmeticIR
 └── BinaryArithmeticIR
 ```
@@ -269,12 +273,15 @@ ComparisonIR(
 Required guarantees:
 
 - feature references reuse the exact resolved `PointBindingIR`;
-- model-output references contain `ModelEvaluationIR(model, point, target)`;
-- repeated references to the same model and point reuse one evaluation identity;
+- model-output references contain `ModelEvaluationIR(model, point, output_name)`;
+- label and probability expressions retain observable kind and canonical label;
+- repeated observables of the same model, point, and output reuse one evaluation identity;
+- different points produce distinct evaluation identities;
 - arithmetic operators are canonical;
 - expression order and associativity are preserved;
 - no Z3 expression is created;
-- no unsupported nonlinear form is silently converted into an affine form.
+- no unsupported nonlinear form is silently converted into an affine form;
+- no latent decision value, logit, sklearn method, or backend term is introduced.
 
 Logical normalization treats a complete `ComparisonIR` as an atom. Arithmetic children are not boolean-normalized.
 

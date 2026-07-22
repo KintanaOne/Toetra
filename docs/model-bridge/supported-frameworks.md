@@ -1,32 +1,26 @@
 # Supported frameworks and model families
 
-The ModelBridge architecture is framework-neutral, but public support is declared
-per complete framework/model/encoder/backend route.
+Public support is declared per complete framework/model/semantic-profile/backend
+route.
 
-## Built-in V1 support
+| Framework | Model family | Encoding | Backend | End-to-end |
+|---|---|---|---|---:|
+| scikit-learn | fitted single-output `LinearRegression` | affine output | Z3 | yes |
+| scikit-learn | direct fitted binary `LogisticRegression` | affine oriented decision | Z3 | yes |
+| scikit-learn | other estimators/wrappers | no public encoder | none | no |
+| XGBoost/PyTorch/TensorFlow/ONNX | extension or experiments | no public route | none | no |
 
-| Framework | Model family | Loading/introspection | Model encoding | Backend route | End-to-end |
-|---|---|---:|---:|---:|---:|
-| scikit-learn | single-output `LinearRegression` | yes | affine equation | Z3 exact-real profile | yes |
-| scikit-learn | other estimators | partial metadata may exist | no built-in V1 encoder | none | no |
-| XGBoost | metadata/introspection experiments | partial | no | none | no |
-| PyTorch | extension architecture only | no built-in V1 adapter | no | none | no |
-| TensorFlow/Keras | extension architecture only | no built-in V1 adapter | no | none | no |
-| ONNX | future framework-neutral representation | no built-in V1 adapter | no | none | no |
+The binary route accepts exactly two classes, one output, finite numeric features
+and parameters, deterministic labels, and the native strict `p > 0.5` policy. It
+rejects multiclass estimators, pipelines, `FixedThresholdClassifier`,
+`TunedThresholdClassifierCV`, `CalibratedClassifierCV`, custom wrappers, and
+custom thresholds before backend execution.
 
-Detection or schema introspection alone does not constitute verification support.
-A model is end-to-end supported only when loading, normalized schema, semantic
-validation, model constraints, numeric compatibility, backend capabilities,
-execution, reports, and tests all agree.
+```text
+LinearRegression   → target[point]
+LogisticRegression → target[point].label
+LogisticRegression → target[point].probability(label)
+```
 
-## V1 sklearn restrictions
-
-- fitted `LinearRegression`;
-- regression task;
-- one output and one declared target;
-- finite numeric coefficients, intercept, features, domains, and anchors;
-- feature order consistent with the fitted model/schema;
-- transformed model inputs rather than reconstructed raw preprocessing.
-
-The generated numeric compatibility matrices are the runtime-derived source for
-registered framework/model/backend routes.
+The internal oriented decision value is not a DSL observable. Generated numeric
+compatibility matrices are the runtime-derived guarantee source.

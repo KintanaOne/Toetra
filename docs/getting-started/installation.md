@@ -1,42 +1,34 @@
 # Installation
 
-FORML `1.0.0rc1` supports Python 3.11 and 3.12.
-
-## Install the project
-
-From a source checkout:
+FORML `1.0.0rc2` supports Python 3.11 and 3.12.
 
 ```bash
 python -m pip install .
 ```
 
-## Development environment
+Development setup:
 
 ```bash
 python -m pip install -r requirements-dev.txt
 make ci
 ```
 
-`make ci` is non-mutating: it checks lint, formatting, typing, generated
-compatibility matrices, the public documentation contract, tests, notebooks, and
-MkDocs without rewriting the checkout.
-
-## Release validation
+Before the first rc2 release check:
 
 ```bash
+make release-metadata
+make ci
 make release-check
 make review-bundle-check
 ```
 
-The first command builds reproducible wheel and source distributions and installs
-the wheel in a clean virtual environment outside the repository. The second
-builds the review bundle twice and compares the resulting bytes.
-
-## Import check
+The distribution gate builds reproducible artifacts, installs the wheel outside
+the checkout, and executes both import and binary-classification public-API
+probes.
 
 ```python
 from forml import verify, VerificationSession, VerificationStatus
 ```
 
-Normal user code should import from `forml`. The `dsl` and `model` packages expose
-internal and extension contracts and are not the primary compatibility surface.
+Normal user code imports from `forml`; `dsl` and `model` are internal/extension
+surfaces.

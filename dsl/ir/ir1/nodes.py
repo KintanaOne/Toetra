@@ -102,13 +102,44 @@ class QuantifierBinderIR:
     generated: bool = False
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, init=False)
 class ModelEvaluationIR:
-    """Structured identity of one model invocation at one point."""
+    """Structured identity of one model-output invocation at one point."""
 
     model_identity: str
     point: PointBindingIR
-    target_name: str
+    output_name: str
+
+    def __init__(
+        self,
+        model_identity: str,
+        point: PointBindingIR,
+        output_name: str | None = None,
+        *,
+        target_name: str | None = None,
+    ) -> None:
+        if (
+            output_name is not None
+            and target_name is not None
+            and output_name != target_name
+        ):
+            raise ValueError(
+                "ModelEvaluationIR output_name and compatibility target_name "
+                "must match"
+            )
+        resolved = output_name if output_name is not None else target_name
+        if resolved is None or not resolved.strip():
+            raise ValueError("ModelEvaluationIR requires a non-empty output name")
+
+        object.__setattr__(self, "model_identity", model_identity)
+        object.__setattr__(self, "point", point)
+        object.__setattr__(self, "output_name", resolved)
+
+    @property
+    def target_name(self) -> str:
+        """Compatibility projection for pre-Patch-21 consumers."""
+
+        return self.output_name
 
 
 @dataclass(frozen=True)

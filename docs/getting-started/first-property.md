@@ -37,3 +37,24 @@ Existential properties use `WITNESS`, `NO_WITNESS`, or `UNKNOWN`.
 The V1 route proves properties of `forml.real_affine_extracted_model`, not a
 bit-exact model of sklearn floating-point execution. The report records that
 numeric scope explicitly.
+
+
+## First binary-classification property
+
+```forml
+model := "binary_decision.joblib"
+target := decision
+
+[LOGIC]:
+forall applicant
+with domain(applicant.income: [3.0, 6.0])
+=> target[applicant].label == "yes" using Z3
+
+[LOGIC]:
+exists applicant
+with domain(applicant.income: [3.0, 6.0])
+=> target[applicant].probability("yes") >= 0.80 using Z3
+```
+
+The user never writes the logistic decision value. FORML records the lowering,
+numeric policy, and concrete sklearn replay in the resulting evidence.

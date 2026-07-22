@@ -16,6 +16,7 @@ from dsl.ir.ir2.dsl.nodes import (
 )
 from dsl.ir.ir2.model import (
     AffineExpressionIR2,
+    AffineModelQuantityConstraintIR2,
     AffineOutputConstraintIR2,
     AffineTermIR2,
     ModelConstraintIR2,
@@ -34,6 +35,7 @@ valid during the refactor.
 
 __all__ = [
     "AffineExpressionIR2",
+    "AffineModelQuantityConstraintIR2",
     "AffineOutputConstraintIR2",
     "AffineTermIR2",
     "AssumptionIR2",

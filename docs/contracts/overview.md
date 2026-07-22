@@ -69,6 +69,26 @@ It operationalizes ADR-0017 across the complete compiler, ModelBridge, backend a
 
 ---
 
+## Model Output and Classification Contracts
+
+The implemented Patch 21 public contracts are:
+
+- [Model Output Observables](model-output-observables.md), separating output ports,
+  model evaluations, public observables, and internal quantities;
+- [Model Semantic Lowering](model-semantic-lowering.md), defining the only boundary
+  where a declarative observable may become model-family-specific constraints;
+- [Initial Binary Classification Profile](binary-classification-profile.md),
+  freezing the first logistic binary route and its decision boundary.
+- [Model Output Reporting and Replay](output-reporting-and-replay.md),
+  preserving source intent, formal reconstruction, observer-based concrete replay,
+  and the additive JSON v5 evidence contract.
+
+These contracts are public in `1.0.0rc2` for the direct fitted binary sklearn
+`LogisticRegression` route. They do not generalize support to other classifiers,
+wrappers, thresholds, frameworks, or backends.
+
+---
+
 ## Numeric Compatibility Contract
 
 The backend-neutral contract for framework/model profiles, ModelBridge encoders, backend numeric profiles, deterministic rule resolution and permitted conclusions is:
@@ -94,9 +114,9 @@ The [Public V1 Contract](public-v1-contract.md) freezes the supported Python fac
 | Category | Main documents | Purpose |
 |---|---|---|
 | Syntax | `source-to-cst`, `cst-to-ast`, `ast-contract` | Preserve legal syntax as typed domain objects. |
-| Semantics | `ast-to-semantic`, `schema-to-semantic` | Resolve binding, types, scopes and model meaning. |
+| Semantics | `ast-to-semantic`, `schema-to-semantic`, `model-output-observables`, `model-semantic-lowering` | Resolve binding, typed observables, scopes and model meaning. |
 | Logical IR | `semantic-to-ir1`, `ir1-to-ir2` | Preserve meaning while normalizing logic. |
-| Composition | `assertion-aggregation`, `model-constraints` | Build the complete verification condition. |
+| Composition | `assertion-aggregation`, `model-constraints`, `binary-classification-profile` | Build the complete verification condition under an explicit model profile. |
 | Backend | `ir-to-backend`, `lowering-minimization` | Check capabilities and produce solver artifacts. |
 | Cross-cutting | `errors`, `type-normalization`, `mutation-boundaries` | Stabilize diagnostics, types and validation campaigns. |
 

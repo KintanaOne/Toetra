@@ -50,3 +50,16 @@ def test_build_toolchain_and_dev_extra_are_pinned() -> None:
     dev = project["project"]["optional-dependencies"]["dev"]
     assert "build==1.5.0" in dev
     assert all("==" in requirement for requirement in dev)
+
+
+def test_rc2_release_probe_exercises_binary_classification() -> None:
+    probe = (ROOT / "scripts" / "check_installed_distribution.py").read_text(
+        encoding="utf-8"
+    )
+    makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+    assert "LogisticRegression" in probe
+    assert "target[applicant].label" in probe
+    assert "target[applicant].probability" in probe
+    assert "VerificationStatus.WITNESS" in probe
+    assert "release-metadata" in makefile
+    assert "demo-classification" in makefile

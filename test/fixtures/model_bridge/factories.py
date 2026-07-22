@@ -90,6 +90,8 @@ def schema_to_contract(schema) -> dict[str, Any]:
         "framework": getattr(schema.framework, "value", str(schema.framework)),
         "model_type": schema.model_type,
         "task": schema.task,
+        "output_name": schema.output_name,
+        "output_schema": output_schema_to_contract(schema.output_schema),
         "target": schema.target,
         "target_dtype": (
             schema.target_dtype.value if schema.target_dtype is not None else None
@@ -108,6 +110,38 @@ def schema_to_contract(schema) -> dict[str, Any]:
             "n_features_in": _to_builtin(metadata.get("n_features_in")),
         },
     }
+
+
+def output_schema_to_contract(output_schema) -> dict[str, Any]:
+    contract = {
+        "kind": output_schema.kind.value,
+        "available_observables": [
+            observable.value for observable in output_schema.available_observables
+        ],
+        "primary_dtype": (
+            output_schema.primary_dtype.value
+            if output_schema.primary_dtype is not None
+            else None
+        ),
+        "source_dtype": output_schema.source_dtype,
+    }
+    if hasattr(output_schema, "labels"):
+        contract["labels"] = list(output_schema.labels)
+    if hasattr(output_schema, "probability_available"):
+        contract["probability_available"] = bool(output_schema.probability_available)
+    policy = getattr(output_schema, "decision_policy", None)
+    if policy is not None:
+        contract["decision_policy"] = {
+            "negative_label": policy.negative_label,
+            "positive_label": policy.positive_label,
+            "probability_threshold": policy.probability_threshold,
+            "oriented_decision_threshold": policy.oriented_decision_threshold,
+            "positive_when_strictly_greater": (policy.positive_when_strictly_greater),
+            "equality_label": policy.equality_label,
+            "policy_source": policy.policy_source,
+            "semantic_profile_id": policy.semantic_profile_id,
+        }
+    return contract
 
 
 def load_golden(name: str) -> dict[str, Any]:

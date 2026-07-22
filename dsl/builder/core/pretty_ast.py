@@ -15,6 +15,11 @@ from dsl.ast.nodes.primitives import (
     ArgNode,
     TargetRefNode,
 )
+from dsl.ast.nodes.outputs import (
+    ClassProbabilityObservableNode,
+    ModelOutputRefNode,
+    PredictedLabelObservableNode,
+)
 
 from dsl.ast.nodes.expressions import (
     AtExprNode,
@@ -117,8 +122,14 @@ def _expr(node):
     if isinstance(node, ConstantNode):
         return repr(node.value)
 
-    if isinstance(node, TargetRefNode):
+    if isinstance(node, (TargetRefNode, ModelOutputRefNode)):
         return "target" if node.point is None else f"target[{node.point}]"
+
+    if isinstance(node, PredictedLabelObservableNode):
+        return f"{_expr(node.output)}.label"
+
+    if isinstance(node, ClassProbabilityObservableNode):
+        return f"{_expr(node.output)}.probability({_expr(node.label)})"
 
     if isinstance(node, SymbolLiteralNode):
         return node.name
@@ -176,6 +187,21 @@ def _pretty_const(node: ConstantNode, indent: int):
 
 @register(TargetRefNode)
 def _pretty_target(node: TargetRefNode, indent: int):
+    return _pad(indent) + _expr(node)
+
+
+@register(ModelOutputRefNode)
+def _pretty_model_output(node: ModelOutputRefNode, indent: int):
+    return _pad(indent) + _expr(node)
+
+
+@register(PredictedLabelObservableNode)
+def _pretty_predicted_label(node: PredictedLabelObservableNode, indent: int):
+    return _pad(indent) + _expr(node)
+
+
+@register(ClassProbabilityObservableNode)
+def _pretty_class_probability(node: ClassProbabilityObservableNode, indent: int):
     return _pad(indent) + _expr(node)
 
 

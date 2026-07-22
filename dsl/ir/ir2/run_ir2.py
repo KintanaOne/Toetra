@@ -8,6 +8,7 @@ from dsl.ir.ir2.builder import IR2Builder
 from dsl.ir.ir2.context import IR2BuildContext
 from dsl.ir.ir2.nodes import AssumptionIR2, NNFFormulaIR2, VerificationTaskIR2
 from dsl.ir.normalization.nnf import NNFNormalizer
+from model.semantics.lowering import ModelSemanticLowerer
 
 if TYPE_CHECKING:
     from model.encoder.context import ModelEncodingContext
@@ -31,11 +32,13 @@ def run_ir2(
     """
 
     ir1_tasks = run_ir(source)
+    ModelSemanticLowerer.assert_no_unlowered_observables(ir1_tasks)
     nnf_tasks = NNFNormalizer().normalize_tasks(ir1_tasks)
     return IR2Builder().build_tasks(
         nnf_tasks,
         assumptions=assumptions,
         context=context,
+        source_spec_formulas=tuple(task.query.expression for task in ir1_tasks),
     )
 
 
@@ -63,14 +66,16 @@ def run_ir2_with_model_schema(
         model_schema=schema,
         resolved_anchors=resolved_anchors,
     )
-    nnf_tasks = NNFNormalizer().normalize_tasks(ir1_tasks)
+    lowerer = ModelSemanticLowerer()
+    lowered_tasks = [lowerer.lower_task(task, schema=schema) for task in ir1_tasks]
 
     builder = IR2Builder()
     factory = encoder_factory or ModelEncoderFactory()
 
     tasks: list[VerificationTaskIR2] = []
 
-    for task in nnf_tasks:
+    for lowered in lowered_tasks:
+        task = NNFNormalizer().normalize_task(lowered.task)
         spec_formula = NNFFormulaIR2(expression=task.query.expression)
         requested_evaluations = builder.point_analyzer.model_evaluations(
             spec_formula=spec_formula,
@@ -85,6 +90,8 @@ def run_ir2_with_model_schema(
                 task,
                 assumptions=model_assumptions,
                 context=ir2_context,
+                lowering_evidence=lowered.evidence,
+                source_spec_formula=ir1_tasks[len(tasks)].query.expression,
             )
         )
 

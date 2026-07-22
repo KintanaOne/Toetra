@@ -107,3 +107,12 @@ Future IR2 work includes:
 - unsat-core and proof-trace mappings;
 - additional assumption sources;
 - optimizer policies for large CNF/DNF expansions.
+
+## Model-semantic quantities
+
+P21.5 allows IR2 to carry framework-neutral internal model quantities produced
+by semantic lowering. Their presence is exposed through
+`requires_model_semantic_quantities`, and deterministic lowering evidence remains
+attached to the task. The Z3 numeric-affine profile now declares and implements
+this capability for affine internal quantities; other backends must still opt in
+explicitly before routing can select them.

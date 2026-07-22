@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from decimal import Decimal
 
 import pytest
 
@@ -33,3 +34,11 @@ def test_canonicalization_preserves_float_identity() -> None:
 def test_opaque_object_fails_closed() -> None:
     with pytest.raises(CanonicalizationError):
         canonical_json_bytes(object())
+
+
+def test_decimal_canonicalization_is_stable_and_representation_preserving() -> None:
+    assert canonical_json_bytes(Decimal("0.80")) == canonical_json_bytes(
+        Decimal("0.80")
+    )
+    assert canonical_json_bytes(Decimal("0.80")) != canonical_json_bytes(Decimal("0.8"))
+    assert canonical_json_bytes(Decimal("0")) != canonical_json_bytes(Decimal("-0"))

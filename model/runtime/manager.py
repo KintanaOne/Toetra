@@ -30,6 +30,8 @@ class ModelManager:
         dataset_path: str | Path | None = None,
         schema=None,
         target_name: str | None = None,
+        *,
+        output_name: str | None = None,
     ):
 
         # --------------------------------------------------
@@ -42,7 +44,15 @@ class ModelManager:
 
         self.schema = schema
 
-        self.target_name = target_name
+        if (
+            output_name is not None
+            and target_name is not None
+            and output_name != target_name
+        ):
+            raise ValueError(
+                "ModelManager output_name and compatibility target_name must match"
+            )
+        self.output_name = output_name if output_name is not None else target_name
 
         # --------------------------------------------------
         # Runtime artifacts
@@ -51,6 +61,12 @@ class ModelManager:
         self.model = None
         self.framework: EnumModelFramework | None = None
         self.model_schema: ModelSchema | None = None
+
+    @property
+    def target_name(self) -> str | None:
+        """Compatibility projection for pre-Patch-21 callers."""
+
+        return self.output_name
 
     # ======================================================
     # Public API
@@ -89,7 +105,7 @@ class ModelManager:
             dataset_path=self.dataset_path,
             schema=self.schema,
             serialization_format=self.model_path.suffix,
-            target_name=self.target_name,
+            target_name=self.output_name,
         )
 
         # --------------------------------------------------

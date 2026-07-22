@@ -5,6 +5,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Mapping
 
+from dsl.reporting.evaluations import ReportModelEvaluation
 from dsl.reporting.values import exact_report_value, python_report_value
 from dsl.provenance.model import ReportProvenance
 
@@ -35,6 +36,9 @@ class ReportAssignment:
     binding_kind: str | None = None
     model_identity: str | None = None
     target_name: str | None = None
+    output_name: str | None = None
+    quantity_kind: str | None = None
+    semantic_profile_id: str | None = None
 
     @property
     def exact_value(self) -> Any:
@@ -180,6 +184,7 @@ class VerificationReport:
     numeric_compatibility: ReportNumericCompatibility | None = None
     backend_execution: ReportBackendExecution | None = None
     provenance: ReportProvenance | None = None
+    model_evaluations: tuple[ReportModelEvaluation, ...] = ()
 
     @property
     def inputs(self) -> tuple[ReportAssignment, ...]:
@@ -235,6 +240,17 @@ class VerificationReport:
         if grouped:
             return next(iter(grouped.values()))
         return {}
+
+    @property
+    def model_evaluations_by_point(
+        self,
+    ) -> dict[str, tuple[ReportModelEvaluation, ...]]:
+        """Return enriched model evaluations grouped by exact point identity."""
+
+        grouped: dict[str, list[ReportModelEvaluation]] = {}
+        for evaluation in self.model_evaluations:
+            grouped.setdefault(evaluation.point_name, []).append(evaluation)
+        return {name: tuple(items) for name, items in grouped.items()}
 
     @property
     def output_values(self) -> dict[str, Any]:

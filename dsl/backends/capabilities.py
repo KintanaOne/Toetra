@@ -49,6 +49,7 @@ class BackendCapabilities:
     supports_symbolic_categories: bool = False
     supports_domain_assumptions: bool = False
     max_model_evaluations: int | None = None
+    supports_model_semantic_quantities: bool = False
     numeric_profile: BackendProfileDescriptor | None = None
     execution_capabilities: BackendExecutionCapabilities = (
         BackendExecutionCapabilities()
@@ -82,6 +83,12 @@ class BackendCapabilities:
             and not self.supports_model_assertions
         ):
             reasons.append("model assertions")
+
+        if (
+            requirements.requires_model_semantic_quantities
+            and not self.supports_model_semantic_quantities
+        ):
+            reasons.append("model semantic quantities")
 
         if (
             self.max_model_evaluations is not None

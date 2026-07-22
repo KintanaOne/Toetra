@@ -1,0 +1,18 @@
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🧠 Verification Task IR2
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Property      : LOGIC
+Backend       : None
+Scope         : quantifier
+Semantics     : refutation
+Normal form   : dnf
+Requirements  : boolean_logic, numeric_comparisons, model_semantic_quantities
+Assumptions   : 0
+Lowerings     : 1
+Spec formula  :
+  NNF
+    LITERAL[positive](_model.decision[applicant]::<oriented_decision_value> > 0)
+Verification condition:
+  DNF
+    AND
+      LITERAL[negative](_model.decision[applicant]::<oriented_decision_value> > 0)

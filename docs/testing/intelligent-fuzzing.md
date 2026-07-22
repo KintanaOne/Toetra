@@ -102,7 +102,7 @@ Grammar-aware fuzzing generates strings that remain close to the grammar.
 Examples:
 
 ```text
-[ROBUSTNESS]: at x in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUAL()
+[ROBUSTNESS]: forall baseline, candidate => CLASSIFICATION.EQUAL()
 [BOUND]: check_at x => age <= 30
 [MONOTONICITY]: x ~ x' in neighborhood(metric=L1, eps=1) => score >= 0
 ```

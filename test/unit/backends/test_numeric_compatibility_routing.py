@@ -5,7 +5,10 @@ from dsl.backends.defaults import create_default_backend_registry
 from dsl.backends.execution import BackendExecutionCapabilities
 from dsl.backends.registry import BackendRegistry
 from dsl.backends.router import BackendRouter
-from dsl.compatibility.defaults import SKLEARN_AFFINE_TO_EXACT_REAL_RULE_ID
+from dsl.compatibility.defaults import (
+    SKLEARN_AFFINE_TO_EXACT_REAL_RULE_ID,
+    SKLEARN_BINARY_LOGISTIC_TO_EXACT_REAL_RULE_ID,
+)
 from dsl.compatibility.descriptors import (
     BackendProfileDescriptor,
     FrameworkModelDescriptor,
@@ -34,11 +37,19 @@ from dsl.ir.ir1.nodes import (
 )
 from dsl.ir.ir2.enums import NormalFormKind, VerificationSemantics
 from dsl.ir.ir2.nodes import NNFFormulaIR2, VerificationTaskIR2
+from dsl.ir.ir2.run_ir2 import run_ir2_with_model_schema
 from dsl.ir.ir2.requirements import IR2Requirements
 from dsl.language.vocabulary.backends import EnumBackend
 from dsl.language.vocabulary.operators import EnumComparisonOperator
 from dsl.language.vocabulary.properties import EnumProperty
 from dsl.semantic.types.enums import EnumDataType
+from model.compatibility import framework_model_descriptor
+from model.encoder.profile import model_encoder_descriptor
+from model.encoder.sklearn.logistic import SklearnLogisticRegressionEncoder
+from test.fixtures.binary_classification import (
+    binary_label_property,
+    make_sklearn_logistic_schema,
+)
 
 
 def _task(backend: EnumBackend = EnumBackend.Z3) -> VerificationTaskIR2:
@@ -180,3 +191,25 @@ def test_router_supports_a_non_sklearn_non_z3_compatibility_route() -> None:
     assert (
         route.numeric_compatibility.conclusion_scope is ConclusionScope.SOURCE_ARTIFACT
     )
+
+
+def test_router_attaches_binary_logistic_label_compatibility_assessment() -> None:
+    schema = make_sklearn_logistic_schema(coefficient=2.0, intercept=-1.0)
+    task = run_ir2_with_model_schema(
+        binary_label_property(),
+        schema=schema,
+    )[0]
+    context = NumericCompatibilityContext(
+        source_model=framework_model_descriptor(schema),
+        model_encoder=model_encoder_descriptor(SklearnLogisticRegressionEncoder()),
+    )
+    route = BackendRouter(create_default_backend_registry()).route(
+        task,
+        numeric_compatibility_context=context,
+    )
+    assessment = route.numeric_compatibility
+    assert assessment is not None
+    assert assessment.matched_rule_id == SKLEARN_BINARY_LOGISTIC_TO_EXACT_REAL_RULE_ID
+    assert assessment.classification is CompatibilityClassification.LOSSY
+    assert assessment.semantic_target == "forml.oriented-decision-value"
+    assert assessment.conclusion_scope is ConclusionScope.SEMANTIC_TARGET_ONLY

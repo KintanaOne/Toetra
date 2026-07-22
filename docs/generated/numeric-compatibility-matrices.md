@@ -7,12 +7,18 @@ Do not edit the tables manually.
 
 | Rule | Framework | Model family | Source profile | Encoder | Backend kind | Backend profile | Property requirements | Support |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| forml.p21.sklearn-binary-logistic-probability-to-smt-directed-bound | sklearn | binary_logistic_affine_classifier | * | forml.binary-logistic-affine-equation@1 | smt | z3 / smt_real_affine_exact | affine_arithmetic, logistic_probability_threshold, model_semantic_quantities, transcendental_threshold_lowering | supported |
+| forml.p21.sklearn-binary-logistic-probability-to-smt-exact-boundary | sklearn | binary_logistic_affine_classifier | * | forml.binary-logistic-affine-equation@1 | smt | z3 / smt_real_affine_exact | affine_arithmetic, logistic_probability_threshold, model_semantic_quantities | supported |
+| forml.p21.sklearn-binary-logistic-to-smt-exact-real-abstraction | sklearn | binary_logistic_affine_classifier | * | forml.binary-logistic-affine-equation@1 | smt | z3 / smt_real_affine_exact | affine_arithmetic, model_semantic_quantities | supported |
 | forml.v1.sklearn-affine-to-smt-exact-real-abstraction | sklearn | affine_regression | * | forml.affine-equation@1 | smt | z3 / smt_real_affine_exact | — | supported |
 
 ## Semantic guarantee matrix
 
 | Rule | Classification | Semantic target | Conclusion scope | Permitted conclusions | Replay required for | Evidence |
 | --- | --- | --- | --- | --- | --- | --- |
+| forml.p21.sklearn-binary-logistic-probability-to-smt-directed-bound | lossy | forml.oriented-decision-value-directed-bound | semantic_target_only | existential_no_witness, existential_witness, universal_counterexample, universal_proof | existential_witness, universal_counterexample | ADR-0024#probability-threshold-lowering |
+| forml.p21.sklearn-binary-logistic-probability-to-smt-exact-boundary | lossy | forml.oriented-decision-value | semantic_target_only | existential_no_witness, existential_witness, universal_counterexample, universal_proof | existential_witness, universal_counterexample | ADR-0025#native-binary-decision-profile |
+| forml.p21.sklearn-binary-logistic-to-smt-exact-real-abstraction | lossy | forml.oriented-decision-value | semantic_target_only | existential_no_witness, existential_witness, universal_counterexample, universal_proof | existential_witness, universal_counterexample | ADR-0025#native-binary-decision-profile |
 | forml.v1.sklearn-affine-to-smt-exact-real-abstraction | lossy | forml.real_affine_extracted_model | semantic_target_only | existential_no_witness, existential_witness, universal_counterexample, universal_proof | existential_witness, universal_counterexample | ADR-0018#initial-v1-instantiation |
 
 ## Reading the matrices

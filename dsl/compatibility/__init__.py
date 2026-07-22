@@ -2,6 +2,9 @@
 
 from dsl.compatibility.defaults import (
     SKLEARN_AFFINE_TO_EXACT_REAL_RULE_ID,
+    SKLEARN_BINARY_LOGISTIC_EXACT_PROBABILITY_RULE_ID,
+    SKLEARN_BINARY_LOGISTIC_PROBABILITY_RULE_ID,
+    SKLEARN_BINARY_LOGISTIC_TO_EXACT_REAL_RULE_ID,
     create_default_numeric_compatibility_registry,
 )
 from dsl.compatibility.descriptors import (
@@ -42,7 +45,10 @@ from dsl.compatibility.model import (
     NumericCompatibilityContext,
     NumericCompatibilityQuery,
 )
-from dsl.compatibility.policy import apply_numeric_compatibility_policy
+from dsl.compatibility.policy import (
+    apply_numeric_compatibility_policy,
+    apply_semantic_lowering_policy,
+)
 from dsl.compatibility.registry import NumericCompatibilityRegistry
 
 __all__ = [
@@ -71,9 +77,13 @@ __all__ = [
     "PropertyNumericRequirements",
     "RangeBehavior",
     "SKLEARN_AFFINE_TO_EXACT_REAL_RULE_ID",
+    "SKLEARN_BINARY_LOGISTIC_EXACT_PROBABILITY_RULE_ID",
+    "SKLEARN_BINARY_LOGISTIC_PROBABILITY_RULE_ID",
+    "SKLEARN_BINARY_LOGISTIC_TO_EXACT_REAL_RULE_ID",
     "SpecialValuePolicy",
     "SupportStatus",
     "apply_numeric_compatibility_policy",
+    "apply_semantic_lowering_policy",
     "write_compatibility_matrices_markdown",
     "render_compatibility_matrices_markdown",
     "compatibility_matrix_rows",

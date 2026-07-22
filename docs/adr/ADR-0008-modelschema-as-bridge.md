@@ -4,6 +4,8 @@
 > Date: 2026-06  
 > Scope: ModelBridge
 
+> **Patch 21 target amendment:** ADR-0023 replaces the assumption that the selected `target` is always one directly addressable scalar value. The current `1.0.0rc1` implementation remains governed by this ADR, while typed output ports and observables are the accepted target for `1.0.0rc2`.
+
 ## Context
 
 FORML properties refer to model-facing concepts such as features, targets, task types, and model behavior.

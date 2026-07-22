@@ -100,7 +100,7 @@ class SklearnLinearRegressorEncoder:
             )
             atom = AffineOutputConstraintIR2(
                 output_entity="_model",
-                output_feature=schema.target,
+                output_feature=schema.output_name,
                 op=EnumComparisonOperator.EQ,
                 expression=expression,
                 evaluation=evaluation,
@@ -110,7 +110,7 @@ class SklearnLinearRegressorEncoder:
                     "task": schema.task,
                     "model_identity": evaluation.model_identity,
                     "point": point.name,
-                    "target": evaluation.target_name,
+                    "target": evaluation.output_name,
                 },
             )
             assumptions.append(
@@ -127,7 +127,7 @@ class SklearnLinearRegressorEncoder:
                         "model_identity": evaluation.model_identity,
                         "point": point.name,
                         "point_binding_kind": point.binding_kind,
-                        "target": schema.target,
+                        "target": schema.output_name,
                     },
                 )
             )
@@ -139,10 +139,10 @@ class SklearnLinearRegressorEncoder:
         schema: ModelSchema,
         evaluation: ModelEvaluationIR,
     ) -> None:
-        if evaluation.target_name != schema.target:
+        if evaluation.output_name != schema.output_name:
             raise UnsupportedModelParameterError(
                 "Requested evaluation target does not match ModelSchema.target: "
-                f"{evaluation.target_name!r} != {schema.target!r}."
+                f"{evaluation.output_name!r} != {schema.output_name!r}."
             )
         if not evaluation.model_identity:
             raise UnsupportedModelParameterError(

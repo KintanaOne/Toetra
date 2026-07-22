@@ -16,8 +16,36 @@ if str(ROOT) not in sys.path:
 from dsl.builder.program import parse_program  # noqa: E402
 from dsl.parser.parser import parse_forml_code  # noqa: E402
 
-EXPECTED_VERSION = "1.0.0rc1"
+EXPECTED_VERSION = "1.0.0rc2"
 EXPECTED_LICENSE = "Apache-2.0"
+
+CLASSIFICATION_TARGET_DOCUMENTS = (
+    ROOT / "docs" / "adr" / "ADR-0023-typed-model-outputs-and-observables.md",
+    ROOT / "docs" / "adr" / "ADR-0024-model-semantic-lowering.md",
+    ROOT / "docs" / "adr" / "ADR-0025-binary-classification-profile.md",
+    ROOT / "docs" / "contracts" / "model-output-observables.md",
+    ROOT / "docs" / "contracts" / "model-semantic-lowering.md",
+    ROOT / "docs" / "contracts" / "binary-classification-profile.md",
+    ROOT / "docs" / "language" / "model-output-observables.md",
+    ROOT / "docs" / "testing" / "binary-classification-test-matrix.md",
+    ROOT / "docs" / "roadmap" / "binary-classification-implementation-roadmap.md",
+)
+
+CLASSIFICATION_AMENDED_DOCUMENTS = (
+    ROOT / "docs" / "adr" / "ADR-0008-modelschema-as-bridge.md",
+    ROOT / "docs" / "adr" / "ADR-0014-scalar-expression-comparisons.md",
+    ROOT
+    / "docs"
+    / "adr"
+    / "ADR-0017-first-class-points-and-indexed-model-evaluations.md",
+    ROOT / "docs" / "adr" / "ADR-0018-numeric-semantics-and-backend-compatibility.md",
+    ROOT / "docs" / "adr" / "ADR-0020-verification-provenance.md",
+    ROOT / "docs" / "contracts" / "model-to-schema.md",
+    ROOT / "docs" / "contracts" / "schema-to-semantic.md",
+    ROOT / "docs" / "contracts" / "semantic-to-ir1.md",
+    ROOT / "docs" / "contracts" / "ir1-to-ir2.md",
+    ROOT / "docs" / "contracts" / "model-constraints.md",
+)
 
 
 class PublicContractError(RuntimeError):
@@ -93,6 +121,137 @@ def _validate_mkdocs_navigation() -> None:
             raise PublicContractError(f"MkDocs navigation target is missing: {target}")
 
 
+def _validate_classification_target_contract() -> None:
+    """Validate the public Patch 21 binary-classification contract."""
+
+    for document in (
+        *CLASSIFICATION_TARGET_DOCUMENTS,
+        *CLASSIFICATION_AMENDED_DOCUMENTS,
+    ):
+        if not document.is_file():
+            raise PublicContractError(
+                "Missing Patch 21 target document: " f"{document.relative_to(ROOT)}"
+            )
+        _validate_local_links(document)
+
+    for document in CLASSIFICATION_TARGET_DOCUMENTS[:6]:
+        source = document.read_text(encoding="utf-8")
+        if "1.0.0rc2" not in source:
+            raise PublicContractError(
+                "Patch 21 normative document is not marked public for rc2: "
+                f"{document.relative_to(ROOT)}"
+            )
+        if "public adoption pending" in source:
+            raise PublicContractError(
+                "Patch 21 normative document still declares pending adoption: "
+                f"{document.relative_to(ROOT)}"
+            )
+
+    language = (ROOT / "docs" / "language" / "model-output-observables.md").read_text(
+        encoding="utf-8"
+    )
+    required_language_markers = (
+        'target[x0].label == "approved"',
+        'target[x0].probability("approved") >= 0.80',
+        "intentionally not DSL observables",
+        "positive-class probability > 0.5",
+        "positive-class probability <= 0.5",
+    )
+    missing_language = tuple(
+        marker for marker in required_language_markers if marker not in language
+    )
+    if missing_language:
+        raise PublicContractError(
+            "Patch 21 language contract is missing markers: "
+            + ", ".join(missing_language)
+        )
+
+    profile = (
+        ROOT / "docs" / "contracts" / "binary-classification-profile.md"
+    ).read_text(encoding="utf-8")
+    required_profile_markers = (
+        "direct fitted `sklearn.linear_model.LogisticRegression`",
+        "`FixedThresholdClassifier`",
+        "`TunedThresholdClassifierCV`",
+        "`CalibratedClassifierCV`",
+        "negative label",
+        "property threshold",
+    )
+    missing_profile = tuple(
+        marker for marker in required_profile_markers if marker not in profile
+    )
+    if missing_profile:
+        raise PublicContractError(
+            "Patch 21 binary profile is missing markers: " + ", ".join(missing_profile)
+        )
+
+    amended_markers = {
+        "ADR-0008-modelschema-as-bridge.md": "Patch 21 target amendment",
+        "ADR-0014-scalar-expression-comparisons.md": ("Patch 21 target amendment"),
+        "ADR-0017-first-class-points-and-indexed-model-evaluations.md": (
+            "Patch 21 target amendment"
+        ),
+        "ADR-0018-numeric-semantics-and-backend-compatibility.md": (
+            "Patch 21 application"
+        ),
+        "ADR-0020-verification-provenance.md": "Patch 21 application",
+        "model-to-schema.md": "Patch 21 Typed Output Addendum",
+        "schema-to-semantic.md": "Patch 21 Output-Observable Addendum",
+        "semantic-to-ir1.md": "Patch 21 Output-Observable Addendum",
+        "ir1-to-ir2.md": "Patch 21 Model-Semantic Lowering Addendum",
+        "model-constraints.md": ("Patch 21 Model Quantities and Observable Lowering"),
+    }
+    for document in CLASSIFICATION_AMENDED_DOCUMENTS:
+        required_marker = amended_markers[document.name]
+        if required_marker not in document.read_text(encoding="utf-8"):
+            raise PublicContractError(
+                "Patch 21 amendment marker is missing from "
+                f"{document.relative_to(ROOT)}"
+            )
+
+    current_profile = (ROOT / "docs" / "public-v1-profile.md").read_text(
+        encoding="utf-8"
+    )
+    current_markers = (
+        "Release candidate: `1.0.0rc2`",
+        "fitted single-output `LinearRegression`",
+        "direct fitted binary `LogisticRegression`",
+        "target[point].label",
+        "target[point].probability(label)",
+        "CLASSIFICATION.EQUAL()",
+        "`FixedThresholdClassifier`",
+    )
+    missing_current = tuple(
+        marker for marker in current_markers if marker not in current_profile
+    )
+    if missing_current:
+        raise PublicContractError(
+            "Patch 21 public rc2 profile is missing markers: "
+            + ", ".join(missing_current)
+        )
+
+    release_documents = (
+        ROOT / "docs" / "adr" / "ADR-0026-public-v1-binary-classification-extension.md",
+        ROOT / "docs" / "releases" / "1.0.0rc2.md",
+    )
+    for document in release_documents:
+        if not document.is_file():
+            raise PublicContractError(
+                f"Missing rc2 release document: {document.relative_to(ROOT)}"
+            )
+        _validate_local_links(document)
+
+    demo = ROOT / "demo" / "binary_classification_policy.forml"
+    if not demo.is_file():
+        raise PublicContractError("Missing binary-classification release demo")
+    try:
+        parse_program(parse_forml_code(demo.read_text(encoding="utf-8")))
+    except Exception as error:
+        raise PublicContractError(
+            f"Invalid binary-classification release demo: {error}"
+        ) from error
+
+
 def _validate_sdist_manifest() -> None:
     manifest_path = ROOT / "MANIFEST.in"
     if not manifest_path.is_file():
@@ -163,6 +322,7 @@ def check_public_contract() -> None:
         _validate_forml_examples(document)
 
     _validate_mkdocs_navigation()
+    _validate_classification_target_contract()
     _validate_sdist_manifest()
 
     readme = (ROOT / "README.md").read_text(encoding="utf-8")

@@ -115,7 +115,7 @@ class PointIRRegistry:
         evaluation = ModelEvaluationIR(
             model_identity=identity.model_identity,
             point=self.point(identity.point),
-            target_name=identity.target_name,
+            output_name=identity.output_name,
         )
         self._evaluations[key] = evaluation
         return evaluation

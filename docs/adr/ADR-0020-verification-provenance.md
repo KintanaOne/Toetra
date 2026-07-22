@@ -105,3 +105,18 @@ Rejected because identical reruns would never share an identity.
 ### Add signatures in V1 Core
 
 Deferred because signatures require key management and trust policy beyond portable local provenance.
+
+## Patch 21 application
+
+ADR-0024 extends provenance with model-semantic lowering evidence. Classification
+reports must preserve both the declarative label/probability intention and the
+canonical constraint executed by a backend; the latter must never replace the
+former in content-addressed evidence.
+
+## P21.9 additive report evidence
+
+Binary-classification evidence is added to JSON v5 through the optional
+`model_evaluations` field. Existing assignment, provenance, execution, and
+numeric-compatibility fields retain their previous meaning. Each lowering trace
+records semantic-profile and transformation versions, including the certified
+probability-threshold transformation version introduced by P21.8.1.

@@ -11,8 +11,9 @@ from dsl.ast.nodes.primitives import (
 )
 from dsl.builder.core.ast_utils import node_value, parse_attribute, parse_value
 from dsl.builder.core.source import with_source_span
-from dsl.builder.core.utils import find_child
+from dsl.builder.core.utils import find_node
 from dsl.builder.core.utils import get_token_value
+from dsl.builder.outputs import parse_output_observable
 from dsl.language.vocabulary.operators import (
     EnumArithmeticOperator,
     EnumUnaryOperator,
@@ -82,8 +83,11 @@ def parse_scalar_expression(node: Tree) -> ScalarExpressionNode:
 
         return attribute
 
+    if rule == "output_observable":
+        return parse_output_observable(node)
+
     if rule == "target_ref":
-        identifier = find_child(node, "identifier")
+        identifier = find_node(node, "identifier")
         point = node_value(identifier) if identifier is not None else None
         return with_source_span(TargetRefNode(point=point), node)
 

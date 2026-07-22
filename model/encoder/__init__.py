@@ -19,7 +19,10 @@ from model.encoder.registry import (
     ModelEncoderRegistration,
     ModelEncoderRegistry,
 )
-from model.encoder.sklearn import SklearnLinearRegressorEncoder
+from model.encoder.sklearn import (
+    SklearnLinearRegressorEncoder,
+    SklearnLogisticRegressionEncoder,
+)
 
 __all__ = [
     "InvalidModelAssumptionError",
@@ -32,6 +35,7 @@ __all__ = [
     "ModelEncoderRegistry",
     "ModelEncodingContext",
     "SklearnLinearRegressorEncoder",
+    "SklearnLogisticRegressionEncoder",
     "UnsupportedModelEncoderError",
     "UnsupportedModelParameterError",
     "create_default_model_encoder_registry",

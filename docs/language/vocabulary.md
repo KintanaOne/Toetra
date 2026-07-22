@@ -52,7 +52,7 @@ Problem types describe the ML task or semantic problem being referenced by a pro
 
 | Problem | Meaning | Current Status |
 |---|---|---|
-| `CLASSIFICATION` | Classification task. | implemented |
+| `CLASSIFICATION` | Classification task vocabulary. | public binary profile in `1.0.0rc2` |
 | `PREDICTION` | Generic prediction task. | grammar-level support |
 | `REGRESSION` | Regression task. | implemented |
 | `CLUSTERING` | Clustering task. | partial semantic support |
@@ -62,7 +62,7 @@ Problem types describe the ML task or semantic problem being referenced by a pro
 Problem types appear in problem-level predicates:
 
 ```forml
-CLASSIFICATION.EQUAL()
+[ROBUSTNESS]: forall baseline, candidate => CLASSIFICATION.EQUAL()
 REGRESSION.BETWEEN()
 ```
 
@@ -74,7 +74,7 @@ Functions describe semantic operations attached to problem predicates.
 
 | Function | Example | Intended Meaning |
 |---|---|---|
-| `EQUAL` | `CLASSIFICATION.EQUAL()` | Equality or output preservation. |
+| `EQUAL` | `forall baseline, candidate => CLASSIFICATION.EQUAL()` | Equality of two binary predicted labels. |
 | `EQUITY` | `CLASSIFICATION.EQUITY()` | Equity/fairness-oriented equality. |
 | `BETWEEN` | `REGRESSION.BETWEEN()` | Output lies in an interval. |
 | `INCREASING` | `REGRESSION.INCREASING()` | Monotonic increase. |
@@ -86,7 +86,7 @@ For example:
 
 | Problem | Compatible Functions |
 |---|---|
-| `CLASSIFICATION` | `EQUAL`, `EQUITY`, `BETWEEN` |
+| `CLASSIFICATION` | `EQUAL` executable for exactly two binary label evaluations; other functions remain vocabulary-only |
 | `REGRESSION` | `EQUAL`, `INCREASING`, `DECREASING`, `BETWEEN` |
 | `CLUSTERING` | currently empty / to define |
 
@@ -159,6 +159,32 @@ SYMBOLIC_LITERAL
 ```
 
 See [Specification Constants](specification-constants.md).
+
+## Model Output Observables
+
+`target` names the output port declared by the specification header. Patch 21
+separates that port from the scalar observable selected from an evaluation.
+
+| Vocabulary | Meaning | Target status |
+|---|---|---|
+| `target[x0]` | scalar regression value evaluated at `x0` | implemented for the regression V1 profile |
+| `target[x0].label` | predicted classification label | accepted Patch 21 target |
+| `target[x0].probability(label)` | class probability estimate for a named label | accepted Patch 21 target |
+
+The following terms are deliberately not public DSL observables:
+
+```text
+logit
+decision_function
+predict_proba
+classes_
+score
+```
+
+They may appear in technical lowering evidence, but the language remains
+framework- and backend-independent. See [Model Output Observables](model-output-observables.md).
+
+---
 
 ## Domain Vocabulary
 

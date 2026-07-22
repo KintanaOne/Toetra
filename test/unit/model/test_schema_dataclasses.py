@@ -2,6 +2,10 @@ from dsl.semantic.types.enums import EnumDataType
 from model.detector.model_framework import EnumModelFramework
 from model.schema.feature_schema import FeatureSchema
 from model.schema.model_schema import ModelSchema
+from model.schema.output_schema import (
+    ClassificationOutputSchema,
+    RegressionOutputSchema,
+)
 
 
 def test_feature_schema_stores_name_dtype_and_nullable():
@@ -27,7 +31,9 @@ def test_model_schema_stores_core_contract():
     )
 
     assert schema.framework is EnumModelFramework.SKLEARN
+    assert schema.output_name == "MyTarget"
     assert schema.target == "MyTarget"
+    assert schema.output_schema == ClassificationOutputSchema()
     assert schema.target_dtype is None
     assert schema.features == features
     assert schema.metadata["model_class"] == "LogisticRegression"
@@ -43,4 +49,7 @@ def test_model_schema_stores_optional_target_dtype():
         target_dtype=EnumDataType.FLOAT,
     )
 
+    assert schema.output_schema == RegressionOutputSchema(
+        value_dtype=EnumDataType.FLOAT
+    )
     assert schema.target_dtype is EnumDataType.FLOAT

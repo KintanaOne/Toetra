@@ -16,6 +16,11 @@ from dsl.ast.nodes.assertion import (
     ProblemNode,
 )
 
+from dsl.ast.nodes.outputs import (
+    ClassProbabilityObservableNode,
+    OutputObservableNode,
+    PredictedLabelObservableNode,
+)
 from dsl.ast.nodes.primitives import (
     AttributeNode,
     BinaryArithmeticNode,
@@ -169,7 +174,11 @@ class LogicValidator:
 
         self.tracer.log(f"Validating ProblemNode: {node}")
 
-        ProblemValidator(tracer=self.tracer).validate(node)
+        ProblemValidator(tracer=self.tracer).validate(
+            node,
+            context=context,
+            model_schema=self.model_schema,
+        )
 
     # ─────────────────────────────
     # OPERANDS (LEAVES)
@@ -181,6 +190,9 @@ class LogicValidator:
 
         Binding has already been performed upstream.
         """
+
+        if isinstance(node, OutputObservableNode):
+            return self._validate_output_observable(node, context)
 
         if isinstance(node, TargetRefNode):
             return self._validate_target_ref(node, context)
@@ -204,6 +216,49 @@ class LogicValidator:
             raise InvalidPropertyError(f"Unresolved scalar name '{node.name}'")
 
         raise InvalidPropertyError(f"Invalid operand type: {type(node)}")
+
+    def _validate_output_observable(self, node: OutputObservableNode, context):
+        semantic = node.semantic
+        output_semantic = node.output.semantic
+
+        if semantic is None or output_semantic is None:
+            raise InvalidPropertyError("Unbound model output observable")
+        if semantic.resolved_entity != "_model":
+            raise InvalidPropertyError(
+                "Invalid model output observable binding: expected '_model'"
+            )
+        if semantic.resolved_evaluation is None:
+            raise InvalidPropertyError(
+                "Invalid model output observable: missing evaluation identity"
+            )
+        if semantic.resolved_evaluation is not output_semantic.resolved_evaluation:
+            raise InvalidPropertyError(
+                "Model output observable and output port resolved to different evaluations"
+            )
+        if semantic.resolved_output_observable is None:
+            raise InvalidPropertyError(
+                "Invalid model output observable: missing observable kind"
+            )
+        if context.model_target is None:
+            raise InvalidPropertyError(
+                "Invalid model output observable: missing model target"
+            )
+        if not semantic.resolved_path or semantic.resolved_path[:2] != [
+            "_model",
+            context.model_target,
+        ]:
+            raise InvalidPropertyError(
+                "Invalid model output observable: inconsistent resolved path"
+            )
+        if isinstance(node, ClassProbabilityObservableNode):
+            if semantic.resolved_label is None:
+                raise InvalidPropertyError(
+                    "Class probability observable is missing its resolved label"
+                )
+        elif not isinstance(node, PredictedLabelObservableNode):
+            raise InvalidPropertyError(
+                f"Unsupported model output observable '{type(node).__name__}'"
+            )
 
     def _validate_target_ref(self, node: TargetRefNode, context):
         semantic = node.semantic
