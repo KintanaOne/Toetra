@@ -49,12 +49,22 @@ replay.backend_outputs_by_point
 replay.model_outputs_by_point
 replay.relation_satisfied
 replay.assertion_satisfied
+replay.relation_consistent
+replay.assertion_consistent
 replay.to_records()
 replay.to_dataframe()
 replay.points["x"].evaluations
 ```
 
 Flat replay properties are intentionally rejected when several points make them ambiguous.
+
+Numeric ordering comparisons use three-valued replay semantics. When concrete
+IEEE-754 values land within the absolute replay tolerance of an ordering
+boundary, `relation_satisfied` or `assertion_satisfied` is `None` rather than a
+false contradiction. The corresponding `*_consistent` property remains true
+because the concrete replay is numerically indeterminate, not incompatible with
+the exact-real backend result. Comparisons clearly outside the tolerance band
+remain decisive.
 
 ## Runtime boundaries
 

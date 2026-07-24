@@ -148,14 +148,21 @@ Replay compares each view independently:
 | class probability | absolute error under replay tolerance |
 | internal decision quantity | absolute error under replay tolerance |
 | scalar regression output | historical absolute-error comparison |
-| original property | concrete reevaluation of the preserved source IR1 formula |
-| scope restriction | concrete reevaluation when present and supported |
+| original property | tolerance-aware concrete reevaluation of the preserved source IR1 formula |
+| scope restriction | tolerance-aware concrete reevaluation when present and supported |
 
 A replay is consistent only when every available formal/concrete comparison is
 within tolerance and the original property agrees with the expected status:
 
 - `COUNTEREXAMPLE` expects the concrete property to be false;
 - `WITNESS` expects the concrete property to be true.
+
+For numeric `<`, `<=`, `>`, and `>=` atoms, a concrete value within the
+absolute replay tolerance of the comparison boundary is reported as
+indeterminate (`None`). Three-valued logic propagates that state through the
+formula. An indeterminate boundary does not count as a contradiction, while a
+clear concrete result opposite to the formal status remains inconsistent.
+Numeric `==` and `!=` use the same absolute tolerance directly.
 
 Missing required features, observables or model quantities cause an explicit
 `ReplayUnavailableError`; replay is never silently partial.

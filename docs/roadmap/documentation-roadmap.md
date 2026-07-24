@@ -49,7 +49,7 @@ P0 documents define the architecture and contracts required for V1.
 They include:
 
 - `index.md`
-- `docs-roadmap.md`
+- `roadmap/documentation-roadmap.md`
 - architecture overview,
 - pipeline views,
 - runtime flow,

@@ -313,4 +313,4 @@ replay.relation_consistent
 replay.assertion_consistent
 ```
 
-A replay is consistent only when every formal/concrete output comparison is within tolerance and every supported concrete relation/assertion check agrees with the formal result. Missing model features produce a `REPLAY_POINT_MISSING` failure; FORML never reports a silently partial replay.
+A replay is consistent only when every formal/concrete output comparison is within tolerance and no supported concrete relation/assertion check contradicts the formal result. Numeric ordering atoms within the absolute replay tolerance of their boundary are indeterminate (`None`), not contradictory; use `relation_consistent` and `assertion_consistent` for the stable consistency decision. Missing model features produce a `REPLAY_POINT_MISSING` failure; FORML never reports a silently partial replay.

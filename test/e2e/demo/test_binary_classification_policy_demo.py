@@ -5,7 +5,10 @@ import subprocess
 import sys
 import textwrap
 
-from demo.binary_classification_policy import EXPECTED_STATUSES, run_demo
+from demo.classification.binary_classification_policy import (
+    EXPECTED_STATUSES,
+    run_demo,
+)
 
 
 def test_binary_classification_demo_runs_reports_and_replay(tmp_path: Path) -> None:
@@ -25,7 +28,7 @@ def test_binary_classification_demo_runs_reports_and_replay(tmp_path: Path) -> N
 NOTEBOOK_PATH = (
     Path(__file__).parents[3]
     / "demo"
-    / "notebooks"
+    / "classification"
     / "binary_classification_policy.ipynb"
 )
 

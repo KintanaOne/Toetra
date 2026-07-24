@@ -20,7 +20,7 @@ serialized model + reference dataset + FORML policy
 The executable example is:
 
 ```text
-demo/notebooks/credit_risk_validation.ipynb
+demo/regression/credit_risk_validation.ipynb
 ```
 
 ## Minimal notebook usage

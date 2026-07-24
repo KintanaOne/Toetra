@@ -64,7 +64,7 @@ def test_credit_risk_notebook_workflow_runs_and_replays_counterexample(
 
 
 NOTEBOOK_PATH = (
-    Path(__file__).parents[3] / "demo" / "notebooks" / "credit_risk_validation.ipynb"
+    Path(__file__).parents[3] / "demo" / "regression" / "credit_risk_validation.ipynb"
 )
 
 

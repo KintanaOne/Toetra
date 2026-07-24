@@ -20,9 +20,10 @@ from packaging.utils import parse_sdist_filename, parse_wheel_filename
 
 DEFAULT_SOURCE_DATE_EPOCH = 1_700_000_000
 EXPECTED_TOP_LEVEL_PACKAGES = ("forml", "dsl", "model")
-EXPECTED_GRAMMAR_FILES = (
+EXPECTED_PACKAGE_DATA = (
     "dsl/language/grammar/forml_grammar.ebnf",
     "dsl/language/grammar/forml_grammar.lark",
+    "forml/examples/credit_risk_policy.forml",
 )
 
 
@@ -195,16 +196,43 @@ def _write_checksums(artifacts: DistributionArtifacts) -> Path:
     return checksum_path
 
 
+def ensure_clean_repository(repository: Path) -> None:
+    """Require release artifacts to originate from one committed source state."""
+
+    try:
+        completed = subprocess.run(
+            ["git", "status", "--porcelain", "--untracked-files=all"],
+            cwd=repository,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise DistributionContractError(
+            "A clean Git checkout is required for release artifacts."
+        ) from exc
+
+    status = completed.stdout.strip()
+    if status:
+        raise DistributionContractError(
+            "Release artifacts require a clean Git checkout. Pending changes:\n"
+            + status
+        )
+
+
 def build_distributions(
     repository: Path,
     output: Path,
     *,
     check_reproducible: bool = False,
+    require_clean: bool = False,
 ) -> DistributionArtifacts:
     """Build release artifacts and optionally prove byte reproducibility."""
 
     repository = repository.resolve()
     output = output.resolve()
+    if require_clean:
+        ensure_clean_repository(repository)
     epoch = source_date_epoch(repository)
 
     if output.exists():
@@ -261,12 +289,12 @@ def _check_required_members(members: Iterable[str], *, archive_kind: str) -> Non
             raise DistributionContractError(
                 f"{archive_kind} does not contain the {package!r} package."
             )
-    for grammar in EXPECTED_GRAMMAR_FILES:
+    for resource in EXPECTED_PACKAGE_DATA:
         if not any(
-            name == grammar or name.endswith(f"/{grammar}") for name in normalized
+            name == resource or name.endswith(f"/{resource}") for name in normalized
         ):
             raise DistributionContractError(
-                f"{archive_kind} does not contain required package data {grammar!r}."
+                f"{archive_kind} does not contain required package data {resource!r}."
             )
 
 

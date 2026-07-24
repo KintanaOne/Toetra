@@ -9,15 +9,16 @@ This contract defines how a FORML source state becomes a reviewable and installa
 A release candidate must satisfy all of the following:
 
 1. `make ci` passes without modifying any source file.
-2. Python 3.11 and Python 3.12 pass the same quality gate.
-3. two distribution builds made with the same source epoch have identical SHA-256 hashes;
-4. the wheel and sdist identify the same project and version;
-5. the wheel contains `forml`, `dsl`, `model` and both generated/source grammar files;
-6. the wheel contains no repository-only `test`, `docs`, `demo` or workflow trees;
-7. the wheel installs in a clean virtual environment outside the checkout;
-8. `from forml import verify, VerificationSession` succeeds from that environment;
-9. the review bundle contains every critical V1 artifact;
-10. two review-bundle builds produce identical bytes.
+2. the release source is a clean Git checkout with no tracked or untracked changes;
+3. Python 3.11 and Python 3.12 pass the same quality gate;
+4. two distribution builds made with the same source epoch have identical SHA-256 hashes;
+5. the wheel and sdist identify the same project and version;
+6. the wheel contains `forml`, `dsl`, `model`, both generated/source grammar files and the packaged public example policy;
+7. the wheel contains no repository-only `test`, `docs`, `demo` or workflow trees;
+8. the wheel installs in a clean virtual environment outside the checkout;
+9. `from forml import verify, VerificationSession` succeeds from that environment;
+10. the review bundle contains every critical V1 artifact;
+11. two review-bundle builds produce identical bytes.
 
 ## Commands
 
@@ -49,7 +50,7 @@ Package inventory is checked structurally rather than inferred from a successful
 
 Critical paths include:
 
-- the public `forml` package;
+- the public `forml` package and packaged example policy;
 - the CI workflow and packaging metadata;
 - the EBNF source and generated Lark grammar;
 - the canonical notebook;

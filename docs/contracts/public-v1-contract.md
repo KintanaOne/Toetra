@@ -47,7 +47,6 @@ Classification adds optional model-evaluation and lowering evidence only.
 ## Release gates
 
 ```bash
-make release-metadata
 make ci
 make release-check
 make review-bundle-check

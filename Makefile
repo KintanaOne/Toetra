@@ -4,8 +4,8 @@
 
 .PHONY: install test test-wip test-all lint format format-check type \
 	notebooks-clean notebooks-check generated-check public-contract-check docs-check ci \
-	release-metadata dist dist-check install-check release-check review-bundle \
-	review-bundle-check demo-affine demo-user demo-classification clean
+	dist dist-check install-check release-check review-bundle \
+	review-bundle-check demo-regression demo-quickstart demo-classification clean
 
 install:
 	python -m pip install -e ".[dev,docs]"
@@ -23,10 +23,10 @@ lint:
 	python -m ruff check .
 
 notebooks-clean:
-	python scripts/clean_notebooks.py demo/notebooks
+	python scripts/clean_notebooks.py demo
 
 notebooks-check:
-	python scripts/clean_notebooks.py --check demo/notebooks
+	python scripts/clean_notebooks.py --check demo
 
 generated-check:
 	python scripts/generate_numeric_compatibility_matrices.py --check
@@ -57,12 +57,9 @@ ci-check:
 	python -m pyright
 	python -m pytest -q
 
-release-metadata:
-	python scripts/prepare_rc2_changelog.py
-
 # Build deterministic wheel and sdist artifacts.
 dist:
-	python scripts/build_distribution.py --output dist --check-reproducible
+	python scripts/build_distribution.py --output dist --check-reproducible --require-clean
 
 dist-check:
 	python scripts/check_distribution.py dist
@@ -79,17 +76,17 @@ review-bundle:
 review-bundle-check:
 	python scripts/build_review_bundle.py --check-reproducible
 
-# Run the canonical affine end-to-end demo.
-demo-affine:
-	python -m demo.affine_specification_constants_z3
+# Run the public affine-regression demonstration.
+demo-regression:
+	python -m demo.regression.affine_regression
 
-# Run the self-contained public verify(...) script example.
-demo-user:
-	python -m demo.user_verify_script --demo
+# Run the self-contained public verify(...) quickstart.
+demo-quickstart:
+	python -m demo.quickstart.verify_model --demo
 
 # Run the public binary-classification release demo.
 demo-classification:
-	python -m demo.binary_classification_policy
+	python -m demo.classification.binary_classification_policy
 
 clean:
 	python -c "import shutil; [shutil.rmtree(p, ignore_errors=True) for p in ('build', 'dist', 'site')]"
