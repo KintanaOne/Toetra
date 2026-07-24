@@ -15,7 +15,7 @@ with your own fitted `LinearRegression`, reference dataset, and `.forml` policy.
 
 ```bash
 python -m pip install -r requirements-dev.txt
-make demo-user
+make demo-quickstart
 ```
 
 The demo exercises the public `forml.verify` API and prints a universal result and

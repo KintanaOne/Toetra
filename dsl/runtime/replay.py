@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from html import escape
 from types import MappingProxyType
@@ -116,6 +117,10 @@ class CounterexampleReplay:
     expected_assertion_satisfied: bool | None
     tolerance: float
 
+    def __post_init__(self) -> None:
+        if not math.isfinite(self.tolerance) or self.tolerance < 0:
+            raise ValueError("Replay tolerance must be a finite non-negative value")
+
     @property
     def inputs_by_point(self) -> dict[str, dict[str, Any]]:
         return {name: dict(point.inputs) for name, point in self.points.items()}
@@ -181,6 +186,27 @@ class CounterexampleReplay:
         return max(errors) if errors else None
 
     @property
+    def assertion_consistent(self) -> bool:
+        """Whether concrete assertion replay contradicts the formal result.
+
+        ``None`` means that numeric replay landed inside the configured
+        tolerance band around an ordering boundary. Such a result is
+        indeterminate rather than contradictory.
+        """
+
+        return (
+            self.expected_assertion_satisfied is None
+            or self.assertion_satisfied is None
+            or self.assertion_satisfied == self.expected_assertion_satisfied
+        )
+
+    @property
+    def relation_consistent(self) -> bool:
+        """Whether the concrete point is compatible with its scope restriction."""
+
+        return self.relation_satisfied is not False
+
+    @property
     def is_consistent(self) -> bool:
         outputs_consistent = all(
             error is not None and error <= self.tolerance
@@ -192,16 +218,11 @@ class CounterexampleReplay:
             for point in self.points.values()
             for evaluation in point.evaluations
         )
-        assertion_consistent = (
-            self.expected_assertion_satisfied is None
-            or self.assertion_satisfied == self.expected_assertion_satisfied
-        )
-        relation_consistent = self.relation_satisfied is not False
         return (
             outputs_consistent
             and evaluations_consistent
-            and assertion_consistent
-            and relation_consistent
+            and self.assertion_consistent
+            and self.relation_consistent
         )
 
     def to_records(self) -> list[dict[str, Any]]:
@@ -370,6 +391,7 @@ def replay_verification_report(
             task.scope.restriction.expression,
             point_inputs,
             concrete_observations,
+            tolerance=tolerance,
         )
         if task.scope.restriction is not None
         else None
@@ -379,6 +401,7 @@ def replay_verification_report(
         assertion_formula,
         point_inputs,
         concrete_observations,
+        tolerance=tolerance,
     )
     expected = {
         VerificationStatus.COUNTEREXAMPLE: False,
@@ -504,11 +527,87 @@ def _evaluate_logical(
     node: LogicalIR,
     inputs: Mapping[str, Mapping[str, Any]],
     observations: Mapping[str, ModelObservation],
-) -> bool:
+    *,
+    tolerance: float,
+) -> bool | None:
+    """Evaluate preserved logic with a three-valued numeric boundary policy.
+
+    Numeric ordering comparisons that land inside ``tolerance`` of their
+    boundary return ``None``. This prevents an exact-real Z3 witness from being
+    rejected solely because its concrete IEEE-754 replay rounded to the other
+    side of a strict or non-strict boundary.
+    """
+
     if isinstance(node, ComparisonIR):
         left = _evaluate_scalar(node.left, inputs, observations)
         right = _evaluate_scalar(node.right, inputs, observations)
-        operator = node.op.value
+        return _evaluate_comparison(
+            left,
+            node.op.value,
+            right,
+            tolerance=tolerance,
+        )
+    if isinstance(node, AndIR):
+        return _truth_and(
+            tuple(
+                _evaluate_logical(
+                    item,
+                    inputs,
+                    observations,
+                    tolerance=tolerance,
+                )
+                for item in node.operands
+            )
+        )
+    if isinstance(node, OrIR):
+        return _truth_or(
+            tuple(
+                _evaluate_logical(
+                    item,
+                    inputs,
+                    observations,
+                    tolerance=tolerance,
+                )
+                for item in node.operands
+            )
+        )
+    if isinstance(node, NotIR):
+        return _truth_not(
+            _evaluate_logical(
+                node.operand,
+                inputs,
+                observations,
+                tolerance=tolerance,
+            )
+        )
+    if isinstance(node, ImplyIR):
+        left = _evaluate_logical(
+            node.left,
+            inputs,
+            observations,
+            tolerance=tolerance,
+        )
+        right = _evaluate_logical(
+            node.right,
+            inputs,
+            observations,
+            tolerance=tolerance,
+        )
+        return _truth_or((_truth_not(left), right))
+    raise ReplayUnavailableError(
+        f"Replay cannot evaluate logical node {type(node).__name__}"
+    )
+
+
+def _evaluate_comparison(
+    left: Any,
+    operator: str,
+    right: Any,
+    *,
+    tolerance: float,
+) -> bool | None:
+    numeric_values = _finite_numeric_pair(left, right)
+    if numeric_values is None:
         return {
             "==": left == right,
             "!=": left != right,
@@ -517,23 +616,52 @@ def _evaluate_logical(
             ">": left > right,
             ">=": left >= right,
         }[operator]
-    if isinstance(node, AndIR):
-        return all(
-            _evaluate_logical(item, inputs, observations) for item in node.operands
-        )
-    if isinstance(node, OrIR):
-        return any(
-            _evaluate_logical(item, inputs, observations) for item in node.operands
-        )
-    if isinstance(node, NotIR):
-        return not _evaluate_logical(node.operand, inputs, observations)
-    if isinstance(node, ImplyIR):
-        return (
-            not _evaluate_logical(node.left, inputs, observations)
-        ) or _evaluate_logical(node.right, inputs, observations)
-    raise ReplayUnavailableError(
-        f"Replay cannot evaluate logical node {type(node).__name__}"
-    )
+
+    numeric_left, numeric_right = numeric_values
+    distance = abs(numeric_left - numeric_right)
+    if operator == "==":
+        return distance <= tolerance
+    if operator == "!=":
+        return distance > tolerance
+    if tolerance > 0 and distance <= tolerance:
+        return None
+    return {
+        "<": numeric_left < numeric_right,
+        "<=": numeric_left <= numeric_right,
+        ">": numeric_left > numeric_right,
+        ">=": numeric_left >= numeric_right,
+    }[operator]
+
+
+def _finite_numeric_pair(left: Any, right: Any) -> tuple[float, float] | None:
+    try:
+        numeric_left = float(left)
+        numeric_right = float(right)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    if not math.isfinite(numeric_left) or not math.isfinite(numeric_right):
+        return None
+    return numeric_left, numeric_right
+
+
+def _truth_not(value: bool | None) -> bool | None:
+    return None if value is None else not value
+
+
+def _truth_and(values: tuple[bool | None, ...]) -> bool | None:
+    if any(value is False for value in values):
+        return False
+    if any(value is None for value in values):
+        return None
+    return True
+
+
+def _truth_or(values: tuple[bool | None, ...]) -> bool | None:
+    if any(value is True for value in values):
+        return True
+    if any(value is None for value in values):
+        return None
+    return False
 
 
 def _evaluate_scalar(

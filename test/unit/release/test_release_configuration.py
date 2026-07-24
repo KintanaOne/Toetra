@@ -52,7 +52,7 @@ def test_build_toolchain_and_dev_extra_are_pinned() -> None:
     assert all("==" in requirement for requirement in dev)
 
 
-def test_rc2_release_probe_exercises_binary_classification() -> None:
+def test_release_probe_exercises_binary_classification() -> None:
     probe = (ROOT / "scripts" / "check_installed_distribution.py").read_text(
         encoding="utf-8"
     )
@@ -61,5 +61,10 @@ def test_rc2_release_probe_exercises_binary_classification() -> None:
     assert "target[applicant].label" in probe
     assert "target[applicant].probability" in probe
     assert "VerificationStatus.WITNESS" in probe
-    assert "release-metadata" in makefile
+    assert "from forml.examples import credit_risk_policy" in probe
+    assert "target := risk_score" in probe
+    assert "demo-quickstart" in makefile
+    assert "demo-regression" in makefile
     assert "demo-classification" in makefile
+    assert "prepare_rc2_changelog" not in makefile
+    assert "--require-clean" in makefile

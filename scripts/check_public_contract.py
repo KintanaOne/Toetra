@@ -241,7 +241,7 @@ def _validate_classification_target_contract() -> None:
             )
         _validate_local_links(document)
 
-    demo = ROOT / "demo" / "binary_classification_policy.forml"
+    demo = ROOT / "demo" / "classification" / "binary_classification_policy.forml"
     if not demo.is_file():
         raise PublicContractError("Missing binary-classification release demo")
     try:

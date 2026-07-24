@@ -17,12 +17,14 @@ def main() -> int:
     parser.add_argument("--repository", type=Path, default=Path.cwd())
     parser.add_argument("--output", type=Path, default=Path("dist"))
     parser.add_argument("--check-reproducible", action="store_true")
+    parser.add_argument("--require-clean", action="store_true")
     arguments = parser.parse_args()
 
     artifacts = build_distributions(
         arguments.repository,
         arguments.output,
         check_reproducible=arguments.check_reproducible,
+        require_clean=arguments.require_clean,
     )
     for name, digest in artifacts.sha256().items():
         print(f"{digest}  {name}")

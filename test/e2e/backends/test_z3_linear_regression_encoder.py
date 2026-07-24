@@ -1,19 +1,19 @@
 from __future__ import annotations
 
-from demo.internals.affine_model_assumption_z3 import (
+from demo.internals.linear_regression_encoder_z3 import (
     BOUND_SAMPLE,
-    constant_output_assumption,
-    linear_output_assumption,
-    run_forml_z3_with_assumption,
+    constant_like_linear_schema,
+    run_linear_regression_encoder,
+    unbounded_linear_schema,
 )
 from dsl.backends.z3_backend.runner import VerificationStatus
 from dsl.language.vocabulary.backends import EnumBackend
 
 
-def test_z3_e2e_proves_bound_with_constant_affine_model_assumption() -> None:
-    results = run_forml_z3_with_assumption(
+def test_z3_linear_regression_encoder_proves_constant_like_model() -> None:
+    results = run_linear_regression_encoder(
         BOUND_SAMPLE,
-        constant_output_assumption(),
+        constant_like_linear_schema(),
     )
 
     assert len(results) == 1
@@ -28,10 +28,10 @@ def test_z3_e2e_proves_bound_with_constant_affine_model_assumption() -> None:
     assert result.model is None
 
 
-def test_z3_e2e_finds_counterexample_for_unbounded_linear_model_assumption() -> None:
-    results = run_forml_z3_with_assumption(
+def test_z3_linear_regression_encoder_finds_unbounded_counterexample() -> None:
+    results = run_linear_regression_encoder(
         BOUND_SAMPLE,
-        linear_output_assumption(),
+        unbounded_linear_schema(),
     )
 
     assert len(results) == 1

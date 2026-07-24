@@ -12,6 +12,7 @@ import pytest
 from scripts.release.distribution import (
     DistributionContractError,
     check_distribution_directory,
+    ensure_clean_repository,
     normalize_sdist,
     sha256_file,
 )
@@ -29,6 +30,7 @@ WHEEL_MEMBERS = {
     "model/__init__.py": b"",
     "dsl/language/grammar/forml_grammar.ebnf": b"start = program\n",
     "dsl/language/grammar/forml_grammar.lark": b"start: program\n",
+    "forml/examples/credit_risk_policy.forml": b"target := risk_score\n",
     f"{DIST_INFO}/METADATA": (
         f"Metadata-Version: 2.1\nName: forml\nVersion: {PROJECT_VERSION}\n\n".encode()
     ),
@@ -37,9 +39,19 @@ WHEEL_MEMBERS = {
 }
 
 
-def _write_wheel(path: Path, *, leak_tests: bool = False) -> None:
+def _write_wheel(
+    path: Path,
+    *,
+    leak_tests: bool = False,
+    include_public_example: bool = True,
+) -> None:
     with zipfile.ZipFile(path, mode="w") as archive:
         for name, payload in WHEEL_MEMBERS.items():
+            if (
+                not include_public_example
+                and name == "forml/examples/credit_risk_policy.forml"
+            ):
+                continue
             archive.writestr(name, payload)
         if leak_tests:
             archive.writestr("test/test_leak.py", b"")
@@ -58,6 +70,9 @@ def _write_sdist(path: Path, *, mtime: int) -> None:
         f"{SDIST_ROOT}/model/__init__.py": b"",
         f"{SDIST_ROOT}/dsl/language/grammar/forml_grammar.ebnf": b"start=program\n",
         f"{SDIST_ROOT}/dsl/language/grammar/forml_grammar.lark": b"start: program\n",
+        f"{SDIST_ROOT}/forml/examples/credit_risk_policy.forml": (
+            b"target := risk_score\n"
+        ),
     }
     with path.open("wb") as raw:
         with gzip.GzipFile(fileobj=raw, mode="wb", mtime=mtime) as compressed:
@@ -104,3 +119,43 @@ def test_sdist_normalization_removes_timestamp_differences(tmp_path: Path) -> No
     normalize_sdist(second, epoch=1_700_000_000)
 
     assert sha256_file(first) == sha256_file(second)
+
+
+def test_distribution_contract_rejects_missing_public_example(tmp_path: Path) -> None:
+    _write_wheel(
+        tmp_path / f"forml-{PROJECT_VERSION}-py3-none-any.whl",
+        include_public_example=False,
+    )
+    _write_sdist(tmp_path / f"forml-{PROJECT_VERSION}.tar.gz", mtime=100)
+
+    with pytest.raises(DistributionContractError, match="credit_risk_policy"):
+        check_distribution_directory(tmp_path)
+
+
+def test_release_source_accepts_a_clean_git_checkout(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    class Completed:
+        stdout = ""
+
+    monkeypatch.setattr(
+        "scripts.release.distribution.subprocess.run",
+        lambda *args, **kwargs: Completed(),
+    )
+
+    ensure_clean_repository(tmp_path)
+
+
+def test_release_source_rejects_a_dirty_git_checkout(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    class Completed:
+        stdout = " M dsl/runtime/replay.py\n?? local.patch\n"
+
+    monkeypatch.setattr(
+        "scripts.release.distribution.subprocess.run",
+        lambda *args, **kwargs: Completed(),
+    )
+
+    with pytest.raises(DistributionContractError, match="clean Git checkout"):
+        ensure_clean_repository(tmp_path)

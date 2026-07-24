@@ -13,10 +13,9 @@ python -m pip install -r requirements-dev.txt
 make ci
 ```
 
-Before the first rc2 release check:
+Validate the release candidate from a clean checkout:
 
 ```bash
-make release-metadata
 make ci
 make release-check
 make review-bundle-check

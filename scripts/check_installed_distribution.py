@@ -23,11 +23,15 @@ from sklearn.linear_model import LogisticRegression
 
 import forml
 from forml import VerificationSession, VerificationStatus, verify
+from forml.examples import credit_risk_policy
 
 module_path = Path(forml.__file__).resolve()
 assert "site-packages" in module_path.parts, module_path
 assert callable(verify)
 assert VerificationSession is not None
+policy_source = credit_risk_policy()
+assert "target := risk_score" in policy_source
+assert "exists applicant" in policy_source
 
 spec = importlib.util.find_spec("dsl.language.grammar")
 assert spec is not None and spec.submodule_search_locations

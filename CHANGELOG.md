@@ -12,6 +12,8 @@
 
 - Stable Decimal provenance canonicalization and certified logistic-threshold
   interval materialization.
+- Tolerance-aware three-valued replay at numeric ordering boundaries, avoiding
+  false exact-real/IEEE-754 witness mismatches.
 
 ### Compatibility
 

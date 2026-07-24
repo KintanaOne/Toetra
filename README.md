@@ -64,7 +64,7 @@ latent quantities, and backend symbols remain internal.
 ## Demos
 
 ```bash
-make demo-user
+make demo-quickstart
 make demo-classification
 ```
 
@@ -118,14 +118,12 @@ Classification evidence is optional and additive.
 ## Release validation
 
 ```bash
-make release-metadata
 make ci
 make release-check
 make review-bundle-check
 ```
 
-`release-metadata` safely adds the rc2 section to an existing changelog. The
-remaining gates are non-mutating.
+These release gates are non-mutating.
 
 ## License
 

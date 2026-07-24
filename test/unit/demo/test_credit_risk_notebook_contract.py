@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 NOTEBOOK_PATH = (
-    Path(__file__).parents[3] / "demo" / "notebooks" / "credit_risk_validation.ipynb"
+    Path(__file__).parents[3] / "demo" / "regression" / "credit_risk_validation.ipynb"
 )
 
 

@@ -108,6 +108,7 @@ nav:
       - Domains: language/domains.md
       - Assertions: language/assertions.md
       - Arithmetic Expressions: language/arithmetic-expressions.md
+      - Specification Constants: language/specification-constants.md
       - Backends Syntax: language/backends.md
       - Examples: language/examples.md
       - Invalid Examples: language/invalid-examples.md
@@ -154,6 +155,7 @@ nav:
       - Semantic to IR1: contracts/semantic-to-ir1.md
       - IR1 to IR2: contracts/ir1-to-ir2.md
       - Quantified Domains and Scalar Expressions: contracts/quantified-domain-scalar-expressions.md
+      - Specification Constants: contracts/specification-constants.md
       - Point Binding and Evaluation: contracts/point-binding-and-evaluation.md
       - Model Output Observables: contracts/model-output-observables.md
       - Model Semantic Lowering: contracts/model-semantic-lowering.md
@@ -205,6 +207,7 @@ nav:
       - Compiler Contract Tests: testing/compiler-contract-tests.md
       - Golden Samples: testing/golden-samples.md
       - Language Evolution Test Matrix: testing/language-evolution-test-matrix.md
+      - Specification Constants Test Matrix: testing/specification-constants-tests.md
       - Point Binding and Evaluation Test Matrix: testing/point-binding-evaluation-test-matrix.md
       - Binary Classification Test Matrix: testing/binary-classification-test-matrix.md
       - End-to-End Tests: testing/end-to-end-tests.md

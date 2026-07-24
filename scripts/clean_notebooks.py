@@ -12,7 +12,7 @@ import json
 from collections.abc import Iterable
 from pathlib import Path
 
-DEFAULT_NOTEBOOK_ROOT = Path("demo/notebooks")
+DEFAULT_NOTEBOOK_ROOT = Path("demo")
 
 
 def iter_notebook_paths(paths: Iterable[Path]) -> tuple[Path, ...]:

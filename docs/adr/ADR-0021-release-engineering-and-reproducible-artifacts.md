@@ -26,7 +26,7 @@ FORML adopts four independent release gates.
 
 ### 2. Reproducible Python distributions
 
-Wheel and source distribution builds use:
+Wheel and source distribution builds require a clean Git checkout and use:
 
 - pinned build-system versions;
 - a stable `SOURCE_DATE_EPOCH`;
@@ -37,7 +37,7 @@ The wheel and sdist are then checked for project identity, safe paths, public pa
 
 ### 3. Clean-install contract
 
-The built wheel is installed in a fresh virtual environment outside the repository. The probe imports the public `forml` API and packaged grammar resources with checkout paths removed from Python resolution.
+The built wheel is installed in a fresh virtual environment outside the repository. The probe imports the public `forml` API, the packaged example policy and grammar resources with checkout paths removed from Python resolution.
 
 An editable installation is not release evidence.
 

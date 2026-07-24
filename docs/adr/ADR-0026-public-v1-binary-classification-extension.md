@@ -76,7 +76,6 @@ assignments, not a global IEEE-754 proof.
 ## Release gate
 
 ```bash
-make release-metadata
 make ci
 make release-check
 make review-bundle-check

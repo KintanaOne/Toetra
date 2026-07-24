@@ -62,9 +62,11 @@ def test_e2e_03_two_point_counterexample_is_grouped_and_replayable(tmp_path) -> 
         _ = finding.input_values
 
     replay = finding.replay()
-    assert replay.is_consistent is True
-    assert replay.relation_satisfied is True
-    assert bool(replay.assertion_satisfied) is False
+    assert replay.is_consistent is True, replay.to_text()
+    assert replay.relation_consistent is True
+    assert replay.assertion_consistent is True
+    assert replay.relation_satisfied is not False
+    assert replay.assertion_satisfied is not True
     assert tuple(replay.inputs_by_point) == ("x0", "x1")
     assert tuple(replay.model_outputs_by_point) == ("x0", "x1")
 
@@ -92,9 +94,11 @@ def test_e2e_05_existential_adversarial_case_is_a_witness(tmp_path) -> None:
     assert tuple(finding.output_values_by_point) == ("x0", "x1")
 
     replay = finding.replay(tolerance=1e-8)
-    assert replay.is_consistent is True
-    assert replay.relation_satisfied is True
-    assert bool(replay.assertion_satisfied) is True
+    assert replay.is_consistent is True, replay.to_text()
+    assert replay.relation_consistent is True
+    assert replay.assertion_consistent is True
+    assert replay.relation_satisfied is not False
+    assert replay.assertion_satisfied is not False
 
 
 def test_e2e_06_alternating_quantifiers_are_rejected_before_translation(

@@ -27,6 +27,20 @@ EXCLUDED_PARTS = {
 }
 EXCLUDED_PREFIXES = ("context/", "_meta/")
 EXCLUDED_SUFFIXES = (".pyc", ".pyo", ".joblib", ".pkl")
+SENSITIVE_FILE_NAMES = frozenset(
+    {
+        ".env",
+        ".npmrc",
+        ".pypirc",
+        "credentials",
+        "credentials.json",
+        "id_dsa",
+        "id_ed25519",
+        "id_rsa",
+        "secrets.json",
+    }
+)
+SENSITIVE_SUFFIXES = frozenset({".key", ".p12", ".pem", ".pfx"})
 CRITICAL_PATHS = (
     ".github/workflows/ci.yml",
     "CHANGELOG.md",
@@ -35,9 +49,10 @@ CRITICAL_PATHS = (
     "README.md",
     "pyproject.toml",
     "forml/__init__.py",
+    "forml/examples/credit_risk_policy.forml",
     "dsl/language/grammar/forml_grammar.ebnf",
     "dsl/language/grammar/forml_grammar.lark",
-    "demo/notebooks/credit_risk_validation.ipynb",
+    "demo/regression/credit_risk_validation.ipynb",
     "test/fixtures/model_bridge/datasets/classification.csv",
     "test/fixtures/model_bridge/datasets/regression.csv",
 )
@@ -94,6 +109,15 @@ def _tracked_and_untracked_files(repository: Path) -> tuple[Path, ...]:
     )
 
 
+def _is_sensitive(relative: Path) -> bool:
+    name = relative.name.lower()
+    return (
+        name in SENSITIVE_FILE_NAMES
+        or name.startswith(".env.")
+        or relative.suffix.lower() in SENSITIVE_SUFFIXES
+    )
+
+
 def _included(repository: Path, path: Path) -> bool:
     relative = path.relative_to(repository)
     posix = relative.as_posix()
@@ -102,6 +126,8 @@ def _included(repository: Path, path: Path) -> bool:
     if posix.startswith(EXCLUDED_PREFIXES):
         return False
     if posix.endswith(EXCLUDED_SUFFIXES):
+        return False
+    if _is_sensitive(relative):
         return False
     return path.is_file() and not path.is_symlink()
 

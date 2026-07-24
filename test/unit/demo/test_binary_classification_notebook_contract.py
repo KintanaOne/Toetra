@@ -6,7 +6,7 @@ from pathlib import Path
 NOTEBOOK_PATH = (
     Path(__file__).parents[3]
     / "demo"
-    / "notebooks"
+    / "classification"
     / "binary_classification_policy.ipynb"
 )
 
