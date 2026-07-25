@@ -98,9 +98,9 @@ def test_router_attaches_the_generic_numeric_compatibility_assessment() -> None:
             numeric_semantics=NumericSemanticDescriptor.binary_float(64),
         ),
         model_encoder=ModelEncoderDescriptor(
-            encoder_id="forml.affine-equation",
+            encoder_id="toetra.affine-equation",
             version="1",
-            semantic_target="forml.real_affine_extracted_model",
+            semantic_target="toetra.real_affine_extracted_model",
         ),
     )
 
@@ -149,7 +149,7 @@ def test_router_supports_a_non_sklearn_non_z3_compatibility_route() -> None:
             pattern=CompatibilityRulePattern(
                 framework_adapter_id="pytorch",
                 model_family="relu_network",
-                model_encoder_id="forml.relu-network",
+                model_encoder_id="toetra.relu-network",
                 backend_kind=BackendKind.ABSTRACT_INTERPRETATION.value,
                 backend_adapter_id="relu-abstractor",
                 backend_profile_id="interval-relu-overapprox",
@@ -171,7 +171,7 @@ def test_router_supports_a_non_sklearn_non_z3_compatibility_route() -> None:
             numeric_semantics=NumericSemanticDescriptor.binary_float(32),
         ),
         model_encoder=ModelEncoderDescriptor(
-            encoder_id="forml.relu-network",
+            encoder_id="toetra.relu-network",
             version="1",
             semantic_target="pytorch.relu.source-semantics",
         ),
@@ -211,5 +211,5 @@ def test_router_attaches_binary_logistic_label_compatibility_assessment() -> Non
     assert assessment is not None
     assert assessment.matched_rule_id == SKLEARN_BINARY_LOGISTIC_TO_EXACT_REAL_RULE_ID
     assert assessment.classification is CompatibilityClassification.LOSSY
-    assert assessment.semantic_target == "forml.oriented-decision-value"
+    assert assessment.semantic_target == "toetra.oriented-decision-value"
     assert assessment.conclusion_scope is ConclusionScope.SEMANTIC_TARGET_ONLY

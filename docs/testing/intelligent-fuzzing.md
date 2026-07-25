@@ -116,7 +116,7 @@ This is more useful than pure random string fuzzing because FORML is a structure
 Target:
 
 ```text
-forml.ast
+toetra.ast
 ```
 
 Examples:
@@ -139,7 +139,7 @@ AST contracts and semantic validation reject invalid structures.
 Target:
 
 ```text
-forml.semantic_ast
+toetra.semantic_ast
 ```
 
 Examples:
@@ -162,8 +162,8 @@ Semantic-to-IR1 boundary rejects inconsistent semantic artifacts.
 Targets:
 
 ```text
-forml.ir1
-forml.ir2
+toetra.ir1
+toetra.ir2
 ```
 
 Examples:

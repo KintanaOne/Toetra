@@ -191,8 +191,8 @@ Every JSON payload is explicitly versioned:
 
 ```json
 {
-  "schema": "forml.verification-report",
-  "schema_version": 5
+  "schema": "toetra.verification-report",
+  "schema_version": 6
 }
 ```
 
@@ -209,13 +209,13 @@ A report collection uses a separate envelope:
 ```python
 from dsl.reporting import write_verification_reports_json
 
-write_verification_reports_json(reports, "artifacts/forml-report.json")
+write_verification_reports_json(reports, "artifacts/toetra-report.json")
 ```
 
 Its schema identifier is:
 
 ```text
-forml.verification-report-collection
+toetra.verification-report-collection
 ```
 
 Z3 integer values become JSON integers. Exact non-integral rationals preserve
@@ -230,7 +230,7 @@ their numerator and denominator rather than being rounded:
 }
 ```
 
-Historical schemas remain as golden fixtures. Schema version 3 added `numeric_compatibility`. Schema version 4 added backend execution evidence. Schema version 5 adds content-addressed artifact, software, compiler, route and verification provenance; it is protected by `verification_report_v5.json`. P21.9 extends v5 additively with an optional `model_evaluations` field; no existing assignment or provenance field changes meaning.
+Historical schemas remain as golden fixtures. Schema version 3 added `numeric_compatibility`. Schema version 4 added backend execution evidence. Schema version 5 added content-addressed artifact, software, compiler, route and verification provenance and remains protected by `verification_report_v5.json`. P21.9 extended v5 additively with an optional `model_evaluations` field. Schema version 6 adopts the canonical `toetra.*` identity and renames software provenance fields to `toetra_version` and `toetra_build_id`; it is protected by `verification_report_v6.json` without changing verification conclusions.
 
 ## HTML and Jupyter Rendering
 

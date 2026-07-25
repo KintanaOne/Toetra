@@ -114,6 +114,27 @@ def report_schema_version() -> int:
     raise PublicContractError("REPORT_SCHEMA_VERSION was not found")
 
 
+def report_schema_identities() -> tuple[str, str]:
+    source = (ROOT / "dsl" / "reporting" / "json.py").read_text(encoding="utf-8")
+    module = ast.parse(source)
+    values: dict[str, str] = {}
+    for node in module.body:
+        if not isinstance(node, ast.Assign):
+            continue
+        for target in node.targets:
+            if not isinstance(target, ast.Name):
+                continue
+            if target.id not in {"REPORT_SCHEMA", "REPORT_COLLECTION_SCHEMA"}:
+                continue
+            value = ast.literal_eval(node.value)
+            if isinstance(value, str):
+                values[target.id] = value
+    try:
+        return values["REPORT_SCHEMA"], values["REPORT_COLLECTION_SCHEMA"]
+    except KeyError as error:
+        raise PublicContractError("Report schema identifiers were not found") from error
+
+
 def _validate_mkdocs_navigation() -> None:
     source = (ROOT / "mkdocs.yml").read_text(encoding="utf-8")
     targets = re.findall(r":\s+([A-Za-z0-9_./-]+\.md)\s*$", source, re.MULTILINE)
@@ -293,10 +314,18 @@ def check_public_contract() -> None:
         raise PublicContractError(
             f"Expected SPDX license {EXPECTED_LICENSE}, got {project.get('license')!r}"
         )
-    if report_schema_version() != 5:
+    if report_schema_version() != 6:
         raise PublicContractError(
-            "JSON report schema v5 is frozen for Toetra 1.x; use a new schema "
+            "JSON report schema v6 is frozen for the Toetra identity; use a new schema "
             "version for incompatible changes."
+        )
+    expected_schema_ids = (
+        "toetra.verification-report",
+        "toetra.verification-report-collection",
+    )
+    if report_schema_identities() != expected_schema_ids:
+        raise PublicContractError(
+            "JSON report schema identifiers must use the canonical Toetra identity."
         )
 
     license_text = (ROOT / "LICENSE").read_text(encoding="utf-8")

@@ -66,7 +66,7 @@ def _report(
 def test_text_renderer_groups_counterexample_assignments() -> None:
     rendered = _report().to_text()
 
-    assert "FORML Verification Report · Property 2" in rendered
+    assert "Toetra Verification Report · Property 2" in rendered
     assert "✗ COUNTEREXAMPLE" in rendered
     assert "Scope         : forall x0" in rendered
     assert "Counterexample" in rendered

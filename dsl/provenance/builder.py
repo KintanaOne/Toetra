@@ -337,7 +337,7 @@ def _schema_artifact(schema: ModelSchema) -> ArtifactProvenance:
     try:
         fingerprint = fingerprint_canonical_json(
             payload,
-            canonicalization="forml_model_schema_canonical_json_v3",
+            canonicalization="toetra_model_schema_canonical_json_v3",
         )
     except CanonicalizationError as error:
         return ArtifactProvenance(
@@ -397,8 +397,8 @@ def _software_provenance() -> SoftwareProvenance:
         except importlib.metadata.PackageNotFoundError:
             continue
     return SoftwareProvenance(
-        forml_version=_distribution_version("toetra"),
-        forml_build_id=_forml_build_id(),
+        toetra_version=_distribution_version("toetra"),
+        toetra_build_id=_toetra_build_id(),
         python_version=platform.python_version(),
         python_implementation=platform.python_implementation(),
         platform=f"{platform.system()}-{platform.release()}-{platform.machine()}",
@@ -406,8 +406,8 @@ def _software_provenance() -> SoftwareProvenance:
     )
 
 
-def _forml_build_id() -> str | None:
-    explicit = os.environ.get("FORML_BUILD_ID")
+def _toetra_build_id() -> str | None:
+    explicit = os.environ.get("TOETRA_BUILD_ID")
     if explicit:
         return explicit.strip() or None
 

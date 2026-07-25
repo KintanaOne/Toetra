@@ -14,7 +14,7 @@ is intentionally narrower than the general classification vocabulary.
 Stable semantic profile identifier:
 
 ```text
-forml.binary_logistic_affine_classifier
+toetra.binary_logistic_affine_classifier
 ```
 
 The identifier describes a mathematical and decision-semantic family, not a

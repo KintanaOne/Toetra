@@ -52,17 +52,17 @@ Recommended FORML artifact kinds for Miova:
 
 | Artifact Kind | Layer |
 |---|---|
-| `forml.source` | source string |
-| `forml.cst` | parsed CST |
-| `forml.ast` | syntax AST |
-| `forml.semantic_ast` | semantic-validated AST |
-| `forml.ir1` | IR1 logical representation |
-| `forml.ir2` | IR2 normal form |
-| `forml.model_schema` | normalized model schema |
-| `forml.model_constraints` | model-derived constraints |
-| `forml.aggregated_assertions` | aggregated verification problem |
-| `forml.lowered_query` | minimized/lowered query |
-| `forml.backend_query` | backend-specific query |
+| `toetra.source` | source string |
+| `toetra.cst` | parsed CST |
+| `toetra.ast` | syntax AST |
+| `toetra.semantic_ast` | semantic-validated AST |
+| `toetra.ir1` | IR1 logical representation |
+| `toetra.ir2` | IR2 normal form |
+| `toetra.model_schema` | normalized model schema |
+| `toetra.model_constraints` | model-derived constraints |
+| `toetra.aggregated_assertions` | aggregated verification problem |
+| `toetra.lowered_query` | minimized/lowered query |
+| `toetra.backend_query` | backend-specific query |
 
 ## Campaign Types
 
@@ -71,7 +71,7 @@ Recommended FORML artifact kinds for Miova:
 Target:
 
 ```text
-forml.source
+toetra.source
 ```
 
 Examples:
@@ -94,7 +94,7 @@ Valid syntax-preserving mutations continue to next layer.
 Target:
 
 ```text
-forml.ast
+toetra.ast
 ```
 
 Examples:
@@ -116,7 +116,7 @@ Builder or semantic contracts detect invalid structure or incompatibility.
 Target:
 
 ```text
-forml.semantic_ast
+toetra.semantic_ast
 ```
 
 Examples:
@@ -138,7 +138,7 @@ Semantic-to-IR contract rejects unresolved or inconsistent artifacts.
 Target:
 
 ```text
-forml.ir1
+toetra.ir1
 ```
 
 Examples:
@@ -160,7 +160,7 @@ IR1 invariants or IR1-to-IR2 contracts detect invalid logical structure.
 Target:
 
 ```text
-forml.ir2
+toetra.ir2
 ```
 
 Examples:
@@ -181,7 +181,7 @@ IR2 normal-form invariants fail.
 Target:
 
 ```text
-forml.model_schema
+toetra.model_schema
 ```
 
 Examples:
@@ -203,7 +203,7 @@ Schema-semantic validation detects mismatch.
 Target:
 
 ```text
-forml.aggregated_assertions
+toetra.aggregated_assertions
 ```
 
 Examples:
@@ -224,7 +224,7 @@ Aggregation or lowering detects inconsistency or traceability violation.
 Target:
 
 ```text
-forml.backend_query
+toetra.backend_query
 ```
 
 Examples:

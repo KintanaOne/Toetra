@@ -31,7 +31,7 @@ forall x0
     )
 
     captured = capsys.readouterr().out
-    assert "FORML Verification Report" in captured
+    assert "Toetra Verification Report" in captured
     assert "PROVED" in captured
     assert "JSON report written to" in captured
     assert report_path.is_file()
@@ -45,7 +45,7 @@ def test_verify_model_demo_mode_runs_without_external_files(tmp_path, capsys) ->
     exit_code = main(["--demo", "--json-output", str(report_path)])
 
     captured = capsys.readouterr().out
-    assert "FORML Verification Report" in captured
+    assert "Toetra Verification Report" in captured
     assert "PROVED" in captured
     assert "WITNESS" in captured
     assert "JSON report written to" in captured

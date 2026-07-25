@@ -57,7 +57,7 @@ def test_session_renders_and_serializes_report_collection(tmp_path) -> None:
     session = verify(_SOURCE, schema=_schema())
 
     text = session.to_text()
-    assert "FORML Verification Report" in text
+    assert "Toetra Verification Report" in text
     assert "PROVED" in text
 
     stream = StringIO()
@@ -65,7 +65,7 @@ def test_session_renders_and_serializes_report_collection(tmp_path) -> None:
     assert stream.getvalue().rstrip() == text
 
     payload = session.to_dict()
-    assert payload["schema"] == "forml.verification-report-collection"
+    assert payload["schema"] == "toetra.verification-report-collection"
     assert payload["report_count"] == 1
     assert '"status": "proved"' in session.to_json()
 
@@ -74,7 +74,7 @@ def test_session_renders_and_serializes_report_collection(tmp_path) -> None:
     assert output.read_text(encoding="utf-8").endswith("\n")
 
     html = session.to_html()
-    assert "FORML Verification Session" in html
+    assert "Toetra Verification Session" in html
     assert "LinearRegression · target score · 1 properties" in html
     assert session._repr_html_() == html
 

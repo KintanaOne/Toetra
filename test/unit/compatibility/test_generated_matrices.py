@@ -62,7 +62,7 @@ def test_generated_matrix_accepts_non_sklearn_non_smt_rows() -> None:
             pattern=CompatibilityRulePattern(
                 framework_adapter_id="pytorch",
                 model_family="relu_network",
-                model_encoder_id="forml.relu-network",
+                model_encoder_id="toetra.relu-network",
                 model_encoder_version="2",
                 backend_kind="abstract_interpretation",
                 backend_adapter_id="eran",

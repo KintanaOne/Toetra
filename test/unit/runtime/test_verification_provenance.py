@@ -58,7 +58,7 @@ def test_provenance_is_exported_to_all_report_surfaces() -> None:
     payload = json.loads(session.to_json())
     report_payload = payload["reports"][0]
 
-    assert payload["schema_version"] == 5
+    assert payload["schema_version"] == 6
     assert set(payload["provenance"]["fingerprints"]) == {"inputs"}
     assert "verification" in report_payload["provenance"]["fingerprints"]
     assert "Verification provenance" in session.to_text()

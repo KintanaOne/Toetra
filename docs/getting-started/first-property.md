@@ -34,7 +34,7 @@ session.print()
 Possible universal outcomes are `PROVED`, `COUNTEREXAMPLE`, or `UNKNOWN`.
 Existential properties use `WITNESS`, `NO_WITNESS`, or `UNKNOWN`.
 
-The V1 route proves properties of `forml.real_affine_extracted_model`, not a
+The V1 route proves properties of `toetra.real_affine_extracted_model`, not a
 bit-exact model of sklearn floating-point execution. The report records that
 numeric scope explicitly.
 

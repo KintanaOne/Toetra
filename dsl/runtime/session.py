@@ -59,7 +59,7 @@ def _unique_group_values(
 
 @dataclass(frozen=True)
 class VerificationExecution:
-    """One compiled, routed, executed and reported FORML property."""
+    """One compiled, routed, executed and reported Toetra property."""
 
     task: VerificationTaskIR2
     route: BackendRoute
@@ -413,7 +413,7 @@ class VerificationSession(Sequence[VerificationExecution]):
         directory: str | Path,
         *,
         formats: Iterable[str] = ("json", "html"),
-        stem: str = "forml-verification-report",
+        stem: str = "toetra-verification-report",
     ) -> dict[str, Path]:
         """Write several user-facing report formats into one directory."""
 

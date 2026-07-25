@@ -63,6 +63,9 @@ def test_finding_replays_attached_artifact_model(tmp_path: Path) -> None:
     replay = finding.replay()
     assert replay.inputs == {"a": 3}
     assert replay.backend_outputs == {"score": 7}
+    record = replay.to_record()
+    assert record["toetra_score"] == 7
+    assert "forml_score" not in record
     assert replay.is_consistent is True
     assert replay.max_absolute_error is not None
     assert replay.max_absolute_error < 1e-12

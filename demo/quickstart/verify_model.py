@@ -40,7 +40,7 @@ def run_self_contained_demo(
 ) -> VerificationSession:
     """Run the user-script example without requiring pre-existing artifacts."""
 
-    with TemporaryDirectory(prefix="forml-user-demo-") as raw_directory:
+    with TemporaryDirectory(prefix="toetra-user-demo-") as raw_directory:
         model_path, dataset_path = build_demo_artifacts(Path(raw_directory))
         return run_verification(
             DEMO_SPEC_PATH,

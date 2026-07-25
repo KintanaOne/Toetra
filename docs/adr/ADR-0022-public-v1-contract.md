@@ -27,7 +27,7 @@ FORML `1.0.0rc1` freezes a deliberately narrow public profile:
 - JSON report schema v5.
 
 The built-in numeric route remains explicitly `LOSSY` and scoped to
-`forml.real_affine_extracted_model`. Broader framework and backend vocabulary is
+`toetra.real_affine_extracted_model`. Broader framework and backend vocabulary is
 an extension architecture, not a V1 support claim.
 
 The repository license is Apache-2.0. README, package metadata, documentation,

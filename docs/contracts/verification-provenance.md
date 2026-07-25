@@ -2,7 +2,7 @@
 
 > Status: Implemented  
 > Source of truth: `dsl.provenance`  
-> Report schema: `forml.verification-report` version 5
+> Report schema: `toetra.verification-report` version 6
 
 ## Purpose
 
@@ -37,7 +37,7 @@ A content fingerprint records algorithm, digest, canonical byte size and canonic
 |---|---|
 | Specification source | `utf8_compiler_source` |
 | File model, dataset or anchors | `raw_file_bytes` |
-| Model schema | `forml_model_schema_canonical_json_v1` |
+| Model schema | `toetra_model_schema_canonical_json_v3` |
 | pandas anchors | `pandas_dataframe_canonical_json_v1` |
 
 Canonical JSON preserves deterministic mapping order, sequence order, type distinctions and exact floating-point identity. Unsupported opaque values fail closed rather than using unstable `repr(...)` output.
@@ -65,7 +65,7 @@ report.provenance.artifacts["model"]
 
 Records and DataFrames add `verification_fingerprint`, `input_fingerprint` and `captured_at_utc`.
 
-## JSON v5
+## JSON v6
 
 ```json
 {
@@ -80,7 +80,10 @@ Records and DataFrames add `verification_fingerprint`, `input_fingerprint` and `
       "verification": "sha256:..."
     },
     "artifacts": {},
-    "software": {},
+    "software": {
+      "toetra_version": "1.0.0rc2",
+      "toetra_build_id": "git:..."
+    },
     "compiler": {}
   }
 }

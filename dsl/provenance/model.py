@@ -24,7 +24,7 @@ class ProvenanceCompleteness(str, Enum):
 
 @dataclass(frozen=True)
 class ContentFingerprint:
-    """Portable digest of the exact or canonical content consumed by FORML."""
+    """Portable digest of the exact or canonical content consumed by Toetra."""
 
     algorithm: str
     digest: str
@@ -101,8 +101,8 @@ class ArtifactProvenance:
 class SoftwareProvenance:
     """Minimal runtime identity needed to interpret a verification report."""
 
-    forml_version: str
-    forml_build_id: str | None
+    toetra_version: str
+    toetra_build_id: str | None
     python_version: str
     python_implementation: str
     platform: str

@@ -78,7 +78,7 @@ def test_software_provenance_uses_toetra_distribution_identity(
 
     context = _context()
 
-    assert context.software.forml_version == "version:toetra"
+    assert context.software.toetra_version == "version:toetra"
     assert "toetra" in requested
     assert "forml" not in requested
 
@@ -124,6 +124,17 @@ def test_schema_change_changes_input_identity() -> None:
     assert first.input_fingerprint != second.input_fingerprint
 
 
+def test_software_provenance_uses_toetra_build_id(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("TOETRA_BUILD_ID", "build:toetra-test")
+    monkeypatch.setenv("FORML_BUILD_ID", "legacy-build-id")
+
+    context = _context()
+
+    assert context.software.toetra_build_id == "build:toetra-test"
+
+
 def test_typed_output_schema_changes_model_schema_fingerprint() -> None:
     base = {
         "framework": EnumModelFramework.SKLEARN,
@@ -161,8 +172,8 @@ def test_typed_output_schema_changes_model_schema_fingerprint() -> None:
     second_schema = second.artifacts["model_schema"].fingerprint
     assert first_schema is not None
     assert second_schema is not None
-    assert first_schema.canonicalization == "forml_model_schema_canonical_json_v3"
-    assert second_schema.canonicalization == "forml_model_schema_canonical_json_v3"
+    assert first_schema.canonicalization == "toetra_model_schema_canonical_json_v3"
+    assert second_schema.canonicalization == "toetra_model_schema_canonical_json_v3"
     assert first_schema != second_schema
 
 
@@ -210,6 +221,6 @@ def test_binary_decision_policy_changes_model_schema_fingerprint() -> None:
 
     assert first is not None
     assert second is not None
-    assert first.canonicalization == "forml_model_schema_canonical_json_v3"
-    assert second.canonicalization == "forml_model_schema_canonical_json_v3"
+    assert first.canonicalization == "toetra_model_schema_canonical_json_v3"
+    assert second.canonicalization == "toetra_model_schema_canonical_json_v3"
     assert first != second

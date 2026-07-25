@@ -11,16 +11,16 @@ from dsl.compatibility.model import CompatibilityRule, CompatibilityRulePattern
 from dsl.compatibility.registry import NumericCompatibilityRegistry
 
 SKLEARN_AFFINE_TO_EXACT_REAL_RULE_ID = (
-    "forml.v1.sklearn-affine-to-smt-exact-real-abstraction"
+    "toetra.v1.sklearn-affine-to-smt-exact-real-abstraction"
 )
 SKLEARN_BINARY_LOGISTIC_TO_EXACT_REAL_RULE_ID = (
-    "forml.p21.sklearn-binary-logistic-to-smt-exact-real-abstraction"
+    "toetra.p21.sklearn-binary-logistic-to-smt-exact-real-abstraction"
 )
 SKLEARN_BINARY_LOGISTIC_PROBABILITY_RULE_ID = (
-    "forml.p21.sklearn-binary-logistic-probability-to-smt-directed-bound"
+    "toetra.p21.sklearn-binary-logistic-probability-to-smt-directed-bound"
 )
 SKLEARN_BINARY_LOGISTIC_EXACT_PROBABILITY_RULE_ID = (
-    "forml.p21.sklearn-binary-logistic-probability-to-smt-exact-boundary"
+    "toetra.p21.sklearn-binary-logistic-probability-to-smt-exact-boundary"
 )
 
 
@@ -34,7 +34,7 @@ def create_default_numeric_compatibility_registry() -> NumericCompatibilityRegis
             pattern=CompatibilityRulePattern(
                 framework_adapter_id="sklearn",
                 model_family="binary_logistic_affine_classifier",
-                model_encoder_id="forml.binary-logistic-affine-equation",
+                model_encoder_id="toetra.binary-logistic-affine-equation",
                 model_encoder_version="1",
                 backend_kind=BackendKind.SMT.value,
                 backend_adapter_id="z3",
@@ -49,7 +49,7 @@ def create_default_numeric_compatibility_registry() -> NumericCompatibilityRegis
             ),
             support_status=SupportStatus.SUPPORTED,
             classification=CompatibilityClassification.LOSSY,
-            semantic_target="forml.oriented-decision-value",
+            semantic_target="toetra.oriented-decision-value",
             evidence_id="ADR-0025#native-binary-decision-profile",
             permitted_conclusions=frozenset(ConclusionKind),
             conclusion_scope=ConclusionScope.SEMANTIC_TARGET_ONLY,
@@ -80,7 +80,7 @@ def create_default_numeric_compatibility_registry() -> NumericCompatibilityRegis
             pattern=CompatibilityRulePattern(
                 framework_adapter_id="sklearn",
                 model_family="affine_regression",
-                model_encoder_id="forml.affine-equation",
+                model_encoder_id="toetra.affine-equation",
                 model_encoder_version="1",
                 backend_kind=BackendKind.SMT.value,
                 backend_adapter_id="z3",
@@ -88,7 +88,7 @@ def create_default_numeric_compatibility_registry() -> NumericCompatibilityRegis
             ),
             support_status=SupportStatus.SUPPORTED,
             classification=CompatibilityClassification.LOSSY,
-            semantic_target="forml.real_affine_extracted_model",
+            semantic_target="toetra.real_affine_extracted_model",
             evidence_id="ADR-0018#initial-v1-instantiation",
             permitted_conclusions=frozenset(ConclusionKind),
             conclusion_scope=ConclusionScope.SEMANTIC_TARGET_ONLY,
@@ -119,7 +119,7 @@ def create_default_numeric_compatibility_registry() -> NumericCompatibilityRegis
             pattern=CompatibilityRulePattern(
                 framework_adapter_id="sklearn",
                 model_family="binary_logistic_affine_classifier",
-                model_encoder_id="forml.binary-logistic-affine-equation",
+                model_encoder_id="toetra.binary-logistic-affine-equation",
                 model_encoder_version="1",
                 backend_kind=BackendKind.SMT.value,
                 backend_adapter_id="z3",
@@ -130,7 +130,7 @@ def create_default_numeric_compatibility_registry() -> NumericCompatibilityRegis
             ),
             support_status=SupportStatus.SUPPORTED,
             classification=CompatibilityClassification.LOSSY,
-            semantic_target="forml.oriented-decision-value",
+            semantic_target="toetra.oriented-decision-value",
             evidence_id="ADR-0025#native-binary-decision-profile",
             permitted_conclusions=frozenset(ConclusionKind),
             conclusion_scope=ConclusionScope.SEMANTIC_TARGET_ONLY,
@@ -163,7 +163,7 @@ def create_default_numeric_compatibility_registry() -> NumericCompatibilityRegis
             pattern=CompatibilityRulePattern(
                 framework_adapter_id="sklearn",
                 model_family="binary_logistic_affine_classifier",
-                model_encoder_id="forml.binary-logistic-affine-equation",
+                model_encoder_id="toetra.binary-logistic-affine-equation",
                 model_encoder_version="1",
                 backend_kind=BackendKind.SMT.value,
                 backend_adapter_id="z3",
@@ -179,7 +179,7 @@ def create_default_numeric_compatibility_registry() -> NumericCompatibilityRegis
             ),
             support_status=SupportStatus.SUPPORTED,
             classification=CompatibilityClassification.LOSSY,
-            semantic_target="forml.oriented-decision-value-directed-bound",
+            semantic_target="toetra.oriented-decision-value-directed-bound",
             evidence_id="ADR-0024#probability-threshold-lowering",
             permitted_conclusions=frozenset(ConclusionKind),
             conclusion_scope=ConclusionScope.SEMANTIC_TARGET_ONLY,

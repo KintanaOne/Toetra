@@ -17,13 +17,13 @@ from dsl.reporting.model import (
 )
 from dsl.reporting.values import json_safe_report_value
 
-REPORT_SCHEMA = "forml.verification-report"
-REPORT_COLLECTION_SCHEMA = "forml.verification-report-collection"
-REPORT_SCHEMA_VERSION = 5  # Frozen for the FORML 1.x public contract.
+REPORT_SCHEMA = "toetra.verification-report"
+REPORT_COLLECTION_SCHEMA = "toetra.verification-report-collection"
+REPORT_SCHEMA_VERSION = 6  # First schema carrying the canonical Toetra identity.
 
 
 def verification_report_to_dict(report: VerificationReport) -> dict[str, Any]:
-    """Serialize one report to the stable JSON-ready FORML contract."""
+    """Serialize one report to the stable JSON-ready Toetra contract."""
 
     return {
         "schema": REPORT_SCHEMA,
@@ -194,8 +194,8 @@ def _collection_provenance_to_dict(
             for role, artifact in provenance.artifacts.items()
         },
         "software": {
-            "forml_version": software.forml_version,
-            "forml_build_id": software.forml_build_id,
+            "toetra_version": software.toetra_version,
+            "toetra_build_id": software.toetra_build_id,
             "python_version": software.python_version,
             "python_implementation": software.python_implementation,
             "platform": software.platform,
@@ -234,8 +234,8 @@ def _provenance_to_dict(
             for role, artifact in provenance.artifacts.items()
         },
         "software": {
-            "forml_version": software.forml_version,
-            "forml_build_id": software.forml_build_id,
+            "toetra_version": software.toetra_version,
+            "toetra_build_id": software.toetra_build_id,
             "python_version": software.python_version,
             "python_implementation": software.python_implementation,
             "platform": software.platform,

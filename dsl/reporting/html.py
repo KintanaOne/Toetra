@@ -18,7 +18,7 @@ class HtmlRenderOptions:
 
     include_route_reason: bool = True
     include_inline_styles: bool = True
-    collection_title: str = "FORML Verification Session"
+    collection_title: str = "Toetra Verification Session"
     collection_subtitle: str | None = None
 
 
@@ -39,86 +39,86 @@ _STATUS_CLASSES = {
 }
 
 _STYLES = """
-.forml-report-root {
-  --forml-bg: #ffffff;
-  --forml-surface: #f8fafc;
-  --forml-border: #dbe3ee;
-  --forml-text: #172033;
-  --forml-muted: #5d6b82;
-  --forml-accent: #4f46e5;
-  --forml-success: #087f5b;
-  --forml-success-bg: #e9fbf4;
-  --forml-failure: #b42318;
-  --forml-failure-bg: #fff0ee;
-  --forml-warning: #a15c00;
-  --forml-warning-bg: #fff7e8;
-  --forml-neutral: #475467;
-  --forml-neutral-bg: #f2f4f7;
-  color: var(--forml-text);
+.toetra-report-root {
+  --toetra-bg: #ffffff;
+  --toetra-surface: #f8fafc;
+  --toetra-border: #dbe3ee;
+  --toetra-text: #172033;
+  --toetra-muted: #5d6b82;
+  --toetra-accent: #4f46e5;
+  --toetra-success: #087f5b;
+  --toetra-success-bg: #e9fbf4;
+  --toetra-failure: #b42318;
+  --toetra-failure-bg: #fff0ee;
+  --toetra-warning: #a15c00;
+  --toetra-warning-bg: #fff7e8;
+  --toetra-neutral: #475467;
+  --toetra-neutral-bg: #f2f4f7;
+  color: var(--toetra-text);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;
   line-height: 1.45;
 }
-.forml-report-root * { box-sizing: border-box; }
-.forml-session-header {
+.toetra-report-root * { box-sizing: border-box; }
+.toetra-session-header {
   margin: 0 0 1rem;
   padding: 1rem 1.1rem;
-  border: 1px solid var(--forml-border);
+  border: 1px solid var(--toetra-border);
   border-radius: 14px;
   background: linear-gradient(135deg, #f7f8ff, #ffffff);
 }
-.forml-session-header h2 { margin: 0; font-size: 1.15rem; }
-.forml-session-header p { margin: .35rem 0 0; color: var(--forml-muted); }
-.forml-session-counts { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .75rem; }
-.forml-count {
-  border: 1px solid var(--forml-border);
+.toetra-session-header h2 { margin: 0; font-size: 1.15rem; }
+.toetra-session-header p { margin: .35rem 0 0; color: var(--toetra-muted); }
+.toetra-session-counts { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .75rem; }
+.toetra-count {
+  border: 1px solid var(--toetra-border);
   border-radius: 999px;
-  background: var(--forml-bg);
+  background: var(--toetra-bg);
   padding: .2rem .6rem;
   font-size: .8rem;
 }
-.forml-report-card {
+.toetra-report-card {
   overflow: hidden;
   margin: 0 0 1rem;
-  border: 1px solid var(--forml-border);
+  border: 1px solid var(--toetra-border);
   border-radius: 14px;
-  background: var(--forml-bg);
+  background: var(--toetra-bg);
   box-shadow: 0 6px 20px rgba(23, 32, 51, .06);
 }
-.forml-report-card header {
+.toetra-report-card header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
   padding: 1rem 1.1rem;
-  border-bottom: 1px solid var(--forml-border);
-  background: var(--forml-surface);
+  border-bottom: 1px solid var(--toetra-border);
+  background: var(--toetra-surface);
 }
-.forml-report-card h3 { margin: 0; font-size: 1.05rem; }
-.forml-kicker { margin: 0 0 .2rem; color: var(--forml-muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; }
-.forml-badge { display: inline-flex; align-items: center; border-radius: 999px; padding: .3rem .68rem; font-size: .78rem; font-weight: 700; white-space: nowrap; }
-.forml-badge.success { color: var(--forml-success); background: var(--forml-success-bg); }
-.forml-badge.failure { color: var(--forml-failure); background: var(--forml-failure-bg); }
-.forml-badge.warning { color: var(--forml-warning); background: var(--forml-warning-bg); }
-.forml-badge.neutral { color: var(--forml-neutral); background: var(--forml-neutral-bg); }
-.forml-report-body { padding: 1rem 1.1rem 1.1rem; }
-.forml-summary { margin: 0 0 1rem; font-size: .95rem; }
-.forml-meta {
+.toetra-report-card h3 { margin: 0; font-size: 1.05rem; }
+.toetra-kicker { margin: 0 0 .2rem; color: var(--toetra-muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; }
+.toetra-badge { display: inline-flex; align-items: center; border-radius: 999px; padding: .3rem .68rem; font-size: .78rem; font-weight: 700; white-space: nowrap; }
+.toetra-badge.success { color: var(--toetra-success); background: var(--toetra-success-bg); }
+.toetra-badge.failure { color: var(--toetra-failure); background: var(--toetra-failure-bg); }
+.toetra-badge.warning { color: var(--toetra-warning); background: var(--toetra-warning-bg); }
+.toetra-badge.neutral { color: var(--toetra-neutral); background: var(--toetra-neutral-bg); }
+.toetra-report-body { padding: 1rem 1.1rem 1.1rem; }
+.toetra-summary { margin: 0 0 1rem; font-size: .95rem; }
+.toetra-meta {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: .65rem;
   margin: 0 0 1rem;
 }
-.forml-meta div { padding: .65rem .75rem; border-radius: 10px; background: var(--forml-surface); }
-.forml-meta dt { margin: 0 0 .15rem; color: var(--forml-muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; }
-.forml-meta dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
-.forml-section { margin-top: 1rem; }
-.forml-section h4 { margin: 0 0 .5rem; font-size: .88rem; }
-.forml-specification {
+.toetra-meta div { padding: .65rem .75rem; border-radius: 10px; background: var(--toetra-surface); }
+.toetra-meta dt { margin: 0 0 .15rem; color: var(--toetra-muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; }
+.toetra-meta dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.toetra-section { margin-top: 1rem; }
+.toetra-section h4 { margin: 0 0 .5rem; font-size: .88rem; }
+.toetra-specification {
   display: block;
   overflow-x: auto;
   padding: .7rem .8rem;
-  border: 1px solid var(--forml-border);
+  border: 1px solid var(--toetra-border);
   border-radius: 10px;
   background: #111827;
   color: #f8fafc;
@@ -126,31 +126,31 @@ _STYLES = """
   font-size: .84rem;
   white-space: pre-wrap;
 }
-.forml-assignment-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .75rem; }
-.forml-assignment-group { border: 1px solid var(--forml-border); border-radius: 10px; overflow: hidden; }
-.forml-assignment-group h5 { margin: 0; padding: .55rem .7rem; background: var(--forml-surface); font-size: .8rem; }
-.forml-assignment-group table { width: 100%; border-collapse: collapse; font-size: .82rem; }
-.forml-assignment-group th, .forml-assignment-group td { padding: .48rem .7rem; border-top: 1px solid var(--forml-border); text-align: left; vertical-align: top; overflow-wrap: anywhere; }
-.forml-assignment-group th { width: 48%; color: var(--forml-muted); font-weight: 600; }
-.forml-diagnostics { margin: .25rem 0 0; padding: 0; list-style: none; }
-.forml-diagnostic { margin-top: .45rem; padding: .65rem .75rem; border-left: 4px solid var(--forml-warning); border-radius: 8px; background: var(--forml-warning-bg); }
-.forml-diagnostic strong { display: block; font-size: .8rem; }
-.forml-diagnostic span { color: var(--forml-muted); font-size: .82rem; }
-.forml-route { margin-top: .75rem; color: var(--forml-muted); font-size: .78rem; }
+.toetra-assignment-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .75rem; }
+.toetra-assignment-group { border: 1px solid var(--toetra-border); border-radius: 10px; overflow: hidden; }
+.toetra-assignment-group h5 { margin: 0; padding: .55rem .7rem; background: var(--toetra-surface); font-size: .8rem; }
+.toetra-assignment-group table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.toetra-assignment-group th, .toetra-assignment-group td { padding: .48rem .7rem; border-top: 1px solid var(--toetra-border); text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+.toetra-assignment-group th { width: 48%; color: var(--toetra-muted); font-weight: 600; }
+.toetra-diagnostics { margin: .25rem 0 0; padding: 0; list-style: none; }
+.toetra-diagnostic { margin-top: .45rem; padding: .65rem .75rem; border-left: 4px solid var(--toetra-warning); border-radius: 8px; background: var(--toetra-warning-bg); }
+.toetra-diagnostic strong { display: block; font-size: .8rem; }
+.toetra-diagnostic span { color: var(--toetra-muted); font-size: .82rem; }
+.toetra-route { margin-top: .75rem; color: var(--toetra-muted); font-size: .78rem; }
 @media (prefers-color-scheme: dark) {
-  .forml-report-root {
-    --forml-bg: #111827;
-    --forml-surface: #182234;
-    --forml-border: #344054;
-    --forml-text: #f8fafc;
-    --forml-muted: #b8c2d1;
-    --forml-success-bg: #0c3b2e;
-    --forml-failure-bg: #4a1d1a;
-    --forml-warning-bg: #46310d;
-    --forml-neutral-bg: #273244;
+  .toetra-report-root {
+    --toetra-bg: #111827;
+    --toetra-surface: #182234;
+    --toetra-border: #344054;
+    --toetra-text: #f8fafc;
+    --toetra-muted: #b8c2d1;
+    --toetra-success-bg: #0c3b2e;
+    --toetra-failure-bg: #4a1d1a;
+    --toetra-warning-bg: #46310d;
+    --toetra-neutral-bg: #273244;
   }
-  .forml-session-header { background: linear-gradient(135deg, #1d2345, #111827); }
-  .forml-specification { background: #0b1020; }
+  .toetra-session-header { background: linear-gradient(135deg, #1d2345, #111827); }
+  .toetra-specification { background: #0b1020; }
 }
 """.strip()
 
@@ -166,7 +166,7 @@ def render_verification_report_html(
     styles = _style_block() if resolved.include_inline_styles else ""
     return (
         styles
-        + '<div class="forml-report-root">'
+        + '<div class="toetra-report-root">'
         + _render_report_card(report, resolved)
         + "</div>"
     )
@@ -185,7 +185,7 @@ def render_verification_reports_html(
     cards = "".join(_render_report_card(report, resolved) for report in report_items)
     return (
         styles
-        + '<div class="forml-report-root">'
+        + '<div class="toetra-report-root">'
         + _render_collection_header(report_items, resolved)
         + cards
         + "</div>"
@@ -202,11 +202,11 @@ def write_verification_report_html(
 
     resolved = options or HtmlRenderOptions()
     body = (
-        '<div class="forml-report-root">'
+        '<div class="toetra-report-root">'
         + _render_report_card(report, resolved)
         + "</div>"
     )
-    return _write_html(path, _standalone_document("FORML Verification Report", body))
+    return _write_html(path, _standalone_document("Toetra Verification Report", body))
 
 
 def write_verification_reports_html(
@@ -220,7 +220,7 @@ def write_verification_reports_html(
     resolved = options or HtmlRenderOptions()
     report_items = tuple(reports)
     body = (
-        '<div class="forml-report-root">'
+        '<div class="toetra-report-root">'
         + _render_collection_header(report_items, resolved)
         + "".join(_render_report_card(report, resolved) for report in report_items)
         + "</div>"
@@ -234,7 +234,7 @@ def _render_collection_header(
 ) -> str:
     counts = Counter(report.status for report in reports)
     count_items = "".join(
-        '<span class="forml-count">'
+        '<span class="toetra-count">'
         f"{escape(_STATUS_LABELS[status])}: {counts[status]}"
         "</span>"
         for status in VerificationStatus
@@ -246,10 +246,10 @@ def _render_collection_header(
         else ""
     )
     return (
-        '<div class="forml-session-header">'
+        '<div class="toetra-session-header">'
         f"<h2>{escape(options.collection_title)}</h2>"
         + subtitle
-        + f'<div class="forml-session-counts">{count_items}</div>'
+        + f'<div class="toetra-session-counts">{count_items}</div>'
         + "</div>"
     )
 
@@ -267,22 +267,22 @@ def _render_report_card(
     provenance = _render_provenance(report)
     diagnostics = _render_diagnostics(report.diagnostics)
     route = (
-        f'<p class="forml-route"><strong>Route:</strong> {escape(report.route_reason)}</p>'
+        f'<p class="toetra-route"><strong>Route:</strong> {escape(report.route_reason)}</p>'
         if options.include_route_reason
         else ""
     )
     return (
-        f'<section class="forml-report-card" aria-label="FORML property {report.property_index + 1}">'
+        f'<section class="toetra-report-card" aria-label="Toetra property {report.property_index + 1}">'
         "<header>"
         "<div>"
-        f'<p class="forml-kicker">Property {report.property_index + 1}</p>'
+        f'<p class="toetra-kicker">Property {report.property_index + 1}</p>'
         f"<h3>{escape(report.property_type.value)}</h3>"
         "</div>"
-        f'<span class="forml-badge {status_class}">{escape(_STATUS_LABELS[report.status])}</span>'
+        f'<span class="toetra-badge {status_class}">{escape(_STATUS_LABELS[report.status])}</span>'
         "</header>"
-        '<div class="forml-report-body">'
-        f'<p class="forml-summary">{escape(report.summary or "No summary was provided.")}</p>'
-        '<dl class="forml-meta">'
+        '<div class="toetra-report-body">'
+        f'<p class="toetra-summary">{escape(report.summary or "No summary was provided.")}</p>'
+        '<dl class="toetra-meta">'
         + _meta_item("Semantics", report.semantics.value)
         + _meta_item("Scope", scope)
         + _meta_item("Backend", f"{report.backend.value} · {report.backend_status}")
@@ -317,9 +317,9 @@ def _render_report_card(
             else ""
         )
         + "</dl>"
-        '<div class="forml-section">'
+        '<div class="toetra-section">'
         "<h4>Specification</h4>"
-        f'<code class="forml-specification">{escape(report.specification)}</code>'
+        f'<code class="toetra-specification">{escape(report.specification)}</code>'
         "</div>"
         + backend_execution
         + numeric_compatibility
@@ -392,9 +392,9 @@ def _render_backend_execution(report: VerificationReport) -> str:
         for label, value in rows
     )
     return (
-        '<div class="forml-section">'
+        '<div class="toetra-section">'
         "<h4>Backend execution</h4>"
-        '<div class="forml-assignment-group">'
+        '<div class="toetra-assignment-group">'
         f"<table><tbody>{table_rows}</tbody></table>"
         "</div></div>"
     )
@@ -437,18 +437,18 @@ def _render_numeric_compatibility(report: VerificationReport) -> str:
     )
     if note_items:
         notes = (
-            '<ul class="forml-diagnostics">'
+            '<ul class="toetra-diagnostics">'
             + "".join(
-                '<li class="forml-diagnostic"><span>' + escape(item) + "</span></li>"
+                '<li class="toetra-diagnostic"><span>' + escape(item) + "</span></li>"
                 for item in note_items
             )
             + "</ul>"
         )
 
     return (
-        '<div class="forml-section">'
+        '<div class="toetra-section">'
         "<h4>Numeric compatibility</h4>"
-        '<div class="forml-assignment-group">'
+        '<div class="toetra-assignment-group">'
         f"<table><tbody>{table_rows}</tbody></table>"
         "</div>" + notes + "</div>"
     )
@@ -467,8 +467,8 @@ def _render_provenance(report: VerificationReport) -> str:
         ("Route", provenance.route_fingerprint),
         ("Execution policy", provenance.execution_policy_fingerprint),
         ("Verification", provenance.verification_fingerprint),
-        ("FORML version", provenance.software.forml_version),
-        ("FORML build", provenance.software.forml_build_id or "unavailable"),
+        ("Toetra version", provenance.software.toetra_version),
+        ("Toetra build", provenance.software.toetra_build_id or "unavailable"),
         (
             "Compiler",
             f"{provenance.compiler.actual_normal_form} / "
@@ -482,14 +482,14 @@ def _render_provenance(report: VerificationReport) -> str:
     unavailable = ""
     if provenance.unavailable_inputs:
         unavailable = (
-            '<p class="forml-route"><strong>Unavailable inputs:</strong> '
+            '<p class="toetra-route"><strong>Unavailable inputs:</strong> '
             + escape(", ".join(provenance.unavailable_inputs))
             + "</p>"
         )
     return (
-        '<div class="forml-section">'
+        '<div class="toetra-section">'
         "<h4>Verification provenance</h4>"
-        '<div class="forml-assignment-group">'
+        '<div class="toetra-assignment-group">'
         f"<table><tbody>{table_rows}</tbody></table>"
         "</div>" + unavailable + "</div>"
     )
@@ -573,16 +573,16 @@ def _render_model_evaluations(report: VerificationReport) -> str:
             for label, value in rows
         )
         groups.append(
-            '<div class="forml-assignment-group">'
+            '<div class="toetra-assignment-group">'
             f"<h5>Point {escape(evaluation.point_name)} · "
             f"{escape(evaluation.output_name)}</h5>"
             f"<table><tbody>{table_rows}</tbody></table>"
             "</div>"
         )
     return (
-        '<div class="forml-section">'
+        '<div class="toetra-section">'
         "<h4>Model evaluations</h4>"
-        f'<div class="forml-assignment-grid">{"".join(groups)}</div>'
+        f'<div class="toetra-assignment-grid">{"".join(groups)}</div>'
         "</div>"
     )
 
@@ -624,9 +624,9 @@ def _render_assignments(report: VerificationReport) -> str:
         )
     )
     return (
-        '<div class="forml-section">'
+        '<div class="toetra-section">'
         f"<h4>{escape(title)}</h4>"
-        f'<div class="forml-assignment-grid">{rendered}</div>'
+        f'<div class="toetra-assignment-grid">{rendered}</div>'
         "</div>"
     )
 
@@ -643,7 +643,7 @@ def _render_assignment_group(
         for assignment in assignments
     )
     return (
-        '<div class="forml-assignment-group">'
+        '<div class="toetra-assignment-group">'
         f"<h5>{escape(label)}</h5>"
         f"<table><tbody>{rows}</tbody></table>"
         "</div>"
@@ -656,16 +656,16 @@ def _render_diagnostics(
     if not diagnostics:
         return ""
     items = "".join(
-        '<li class="forml-diagnostic">'
+        '<li class="toetra-diagnostic">'
         f"<strong>{escape(diagnostic.severity.value.upper())} · {escape(diagnostic.code)}</strong>"
         f"<span>{escape(diagnostic.message)}</span>"
         "</li>"
         for diagnostic in diagnostics
     )
     return (
-        '<div class="forml-section">'
+        '<div class="toetra-section">'
         "<h4>Diagnostics</h4>"
-        f'<ul class="forml-diagnostics">{items}</ul>'
+        f'<ul class="toetra-diagnostics">{items}</ul>'
         "</div>"
     )
 

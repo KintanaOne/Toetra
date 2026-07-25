@@ -60,7 +60,7 @@ def run_demo() -> tuple[ModelSchema, VerificationSession]:
     """Run the self-contained demo without leaving generated artifacts behind."""
 
     source = SPEC_PATH.read_text(encoding="utf-8")
-    with TemporaryDirectory(prefix="forml-affine-demo-") as raw_directory:
+    with TemporaryDirectory(prefix="toetra-affine-demo-") as raw_directory:
         directory = Path(raw_directory)
         model_path, dataset_path = build_demo_artifacts(directory)
         schema = build_demo_schema(model_path, dataset_path)

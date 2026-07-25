@@ -123,8 +123,8 @@ def _report() -> VerificationReport:
                 ),
             },
             software=SoftwareProvenance(
-                forml_version="1.0.0rc1",
-                forml_build_id="git:abc123",
+                toetra_version="1.0.0rc1",
+                toetra_build_id="git:abc123",
                 python_version="3.11.9",
                 python_implementation="CPython",
                 platform="Linux-6.0-x86_64",
@@ -177,6 +177,11 @@ def test_report_to_dict_uses_versioned_stable_contract() -> None:
         "sha256:" + "5" * 64
     )
     assert payload["provenance"]["artifacts"]["model"]["status"] == ("not_provided")
+    software = payload["provenance"]["software"]
+    assert software["toetra_version"] == "1.0.0rc1"
+    assert software["toetra_build_id"] == "git:abc123"
+    assert "forml_version" not in software
+    assert "forml_build_id" not in software
 
 
 def test_report_to_json_is_valid_utf8_json() -> None:
@@ -215,7 +220,7 @@ def test_report_json_matches_versioned_golden_contract() -> None:
         / "fixtures"
         / "reporting"
         / "golden"
-        / "verification_report_v5.json"
+        / "verification_report_v6.json"
     )
 
     assert _report().to_dict() == json.loads(golden_path.read_text(encoding="utf-8"))

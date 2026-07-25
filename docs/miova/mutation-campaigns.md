@@ -62,7 +62,7 @@ Challenge source-level syntax handling.
 Target artifact:
 
 ```text
-forml.source
+toetra.source
 ```
 
 Examples:
@@ -90,7 +90,7 @@ Challenge CST → AST assumptions.
 Target artifact:
 
 ```text
-forml.cst
+toetra.cst
 ```
 
 Examples:
@@ -117,7 +117,7 @@ Challenge variable resolution, implicit entity binding, and scope compatibility.
 Target artifact:
 
 ```text
-forml.ast
+toetra.ast
 ```
 
 Examples:
@@ -144,8 +144,8 @@ Challenge logical transformation guarantees.
 Target artifacts:
 
 ```text
-forml.ir1
-forml.ir2
+toetra.ir1
+toetra.ir2
 ```
 
 Examples:
@@ -173,7 +173,7 @@ Challenge model metadata extraction and schema-aware validation.
 Target artifact:
 
 ```text
-forml.model_schema
+toetra.model_schema
 ```
 
 Examples:
@@ -201,9 +201,9 @@ Challenge the full preparation path before backend execution.
 Target artifacts:
 
 ```text
-forml.aggregated_assertions
-forml.lowered_query
-forml.backend_query
+toetra.aggregated_assertions
+toetra.lowered_query
+toetra.backend_query
 ```
 
 Examples:

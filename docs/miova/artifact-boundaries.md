@@ -59,17 +59,17 @@ Miova should use stable artifact kinds to identify mutation targets.
 
 | Kind | Meaning |
 |---|---|
-| `forml.source` | Raw Toetra source text. |
-| `forml.cst` | Parser-produced CST. |
-| `forml.ast` | Builder-produced AST. |
-| `forml.semantic_ast` | AST enriched by semantic validation. |
-| `forml.ir1` | First logical IR, including NNF-oriented normalization. |
-| `forml.ir2` | Clause or normal-form IR. |
-| `forml.model_schema` | Normalized model schema from ModelBridge. |
-| `forml.model_constraints` | Future model-derived constraints. |
-| `forml.aggregated_assertions` | Combined verification problem. |
-| `forml.lowered_query` | Simplified backend-preparation query. |
-| `forml.backend_query` | Backend-specific executable query artifact. |
+| `toetra.source` | Raw Toetra source text. |
+| `toetra.cst` | Parser-produced CST. |
+| `toetra.ast` | Builder-produced AST. |
+| `toetra.semantic_ast` | AST enriched by semantic validation. |
+| `toetra.ir1` | First logical IR, including NNF-oriented normalization. |
+| `toetra.ir2` | Clause or normal-form IR. |
+| `toetra.model_schema` | Normalized model schema from ModelBridge. |
+| `toetra.model_constraints` | Future model-derived constraints. |
+| `toetra.aggregated_assertions` | Combined verification problem. |
+| `toetra.lowered_query` | Simplified backend-preparation query. |
+| `toetra.backend_query` | Backend-specific executable query artifact. |
 
 ## Mutation Safety
 

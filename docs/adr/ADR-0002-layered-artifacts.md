@@ -27,17 +27,17 @@ Each compiler layer is treated as a distinct artifact with its own identity, inv
 Example artifact kinds:
 
 ```text
-forml.source
-forml.cst
-forml.ast
-forml.semantic_ast
-forml.ir1
-forml.ir2
-forml.model_schema
-forml.model_constraints
-forml.aggregated_assertions
-forml.lowered_query
-forml.backend_query
+toetra.source
+toetra.cst
+toetra.ast
+toetra.semantic_ast
+toetra.ir1
+toetra.ir2
+toetra.model_schema
+toetra.model_constraints
+toetra.aggregated_assertions
+toetra.lowered_query
+toetra.backend_query
 ```
 
 ## Rationale

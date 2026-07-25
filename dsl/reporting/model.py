@@ -161,7 +161,7 @@ class ReportBackendExecution:
 
 @dataclass(frozen=True)
 class VerificationReport:
-    """User-facing representation of one completed FORML verification task.
+    """User-facing representation of one completed Toetra verification task.
 
     The report contains normalized data only. Text, JSON and HTML renderers are
     separate concerns and will consume this model without importing a backend.
@@ -210,7 +210,7 @@ class VerificationReport:
 
     @property
     def qualified_input_values(self) -> dict[str, Any]:
-        """Return input assignments keyed by their qualified FORML names."""
+        """Return input assignments keyed by their qualified Toetra names."""
 
         return {item.display_name: item.python_value for item in self.inputs}
 
@@ -287,14 +287,14 @@ class VerificationReport:
         return verification_report_to_dict(self)
 
     def to_json(self, *, indent: int | None = 2) -> str:
-        """Serialize this report using the stable FORML JSON contract."""
+        """Serialize this report using the stable Toetra JSON contract."""
 
         from dsl.reporting.json import verification_report_to_json
 
         return verification_report_to_json(self, indent=indent)
 
     def write_json(self, path: str | Path, *, indent: int | None = 2) -> Path:
-        """Write this report to disk using the stable FORML JSON contract."""
+        """Write this report to disk using the stable Toetra JSON contract."""
 
         from dsl.reporting.json import write_verification_report_json
 

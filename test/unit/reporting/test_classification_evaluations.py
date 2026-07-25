@@ -97,7 +97,7 @@ def test_probability_report_distinguishes_native_and_property_thresholds() -> No
     assert lowering.compatibility_classification == "sound_under_approximation"
 
 
-def test_json_v5_adds_classification_evaluations_without_reinterpreting_assignments() -> (
+def test_json_v6_preserves_classification_evaluations_without_reinterpreting_assignments() -> (
     None
 ):
     _task, report = _report(
@@ -106,8 +106,8 @@ def test_json_v5_adds_classification_evaluations_without_reinterpreting_assignme
     )
 
     payload = report.to_dict()
-    assert REPORT_SCHEMA_VERSION == 5
-    assert payload["schema_version"] == 5
+    assert REPORT_SCHEMA_VERSION == 6
+    assert payload["schema_version"] == 6
     assert payload["assignments"]["outputs"] == []
     assert payload["assignments"]["auxiliary"][0]["quantity_kind"] == (
         "oriented_decision_value"
@@ -150,10 +150,16 @@ def test_historical_report_fixtures_remain_readable_json() -> None:
     versions = []
     for path in sorted(fixture_dir.glob("verification_report_v*.json")):
         payload = json.loads(path.read_text(encoding="utf-8"))
-        assert payload["schema"] == "forml.verification-report"
-        versions.append(payload["schema_version"])
+        version = payload["schema_version"]
+        expected_schema = (
+            "forml.verification-report"
+            if version <= 5
+            else "toetra.verification-report"
+        )
+        assert payload["schema"] == expected_schema
+        versions.append(version)
 
-    assert versions == [1, 2, 3, 4, 5]
+    assert versions == [1, 2, 3, 4, 5, 6]
 
 
 def test_pairwise_report_preserves_two_points_and_related_evidence() -> None:

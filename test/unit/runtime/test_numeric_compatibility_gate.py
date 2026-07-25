@@ -46,7 +46,7 @@ def test_verify_exposes_the_matched_abstraction_route() -> None:
     assessment = session[0].route.numeric_compatibility
     assert assessment is not None
     assert assessment.matched_rule_id == SKLEARN_AFFINE_TO_EXACT_REAL_RULE_ID
-    assert assessment.semantic_target == "forml.real_affine_extracted_model"
+    assert assessment.semantic_target == "toetra.real_affine_extracted_model"
     assert "conclusion scope=semantic_target_only" in session.reports[0].route_reason
 
 

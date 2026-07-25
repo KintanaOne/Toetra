@@ -55,7 +55,7 @@ A `CompatibilityRulePattern` can constrain any subset of these dimensions:
 | Framework version/opset | `1.8.0`, `opset-19`, or wildcard |
 | Model family | `affine_regression`, `tree_ensemble`, `relu_network` |
 | Source execution profile | `ieee754_binary64`, `integer_exact`, device-specific profile |
-| Model encoder | `forml.affine-equation`, tree-path encoder, abstract-network encoder |
+| Model encoder | `toetra.affine-equation`, tree-path encoder, abstract-network encoder |
 | Encoder version | Explicit contract version |
 | Backend kind | SMT, MILP, interval analysis, abstract interpretation, concrete search, remote service |
 | Backend adapter | `z3`, another solver adapter, a service adapter |
@@ -128,7 +128,7 @@ instantiation of the generic contract, not the architecture itself.
 
 | Framework | Model family | Source profile | Encoder | Backend kind | Adapter/profile | Classification | Semantic target | Scope |
 |---|---|---|---|---|---|---|---|---|
-| sklearn | affine regression | discovered binary float or unknown | `forml.affine-equation@1` | SMT | `z3 / smt_real_affine_exact` | `LOSSY` | `forml.real_affine_extracted_model` | semantic target only |
+| sklearn | affine regression | discovered binary float or unknown | `toetra.affine-equation@1` | SMT | `z3 / smt_real_affine_exact` | `LOSSY` | `toetra.real_affine_extracted_model` | semantic target only |
 
 The pattern deliberately does not require a specific sklearn version or binary
 float width. Those values are preserved in the query and report provenance,

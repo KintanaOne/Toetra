@@ -43,7 +43,7 @@ def run_demo(*, artifact_directory: Path | None = None) -> VerificationSession:
         session.write_artifacts(artifact_directory / "reports")
         return session
 
-    with TemporaryDirectory(prefix="forml-binary-demo-") as raw_directory:
+    with TemporaryDirectory(prefix="toetra-binary-demo-") as raw_directory:
         root = Path(raw_directory)
         model_path, dataset_path = build_demo_artifacts(root)
         return verify(DEMO_SPEC_PATH, model=model_path, dataset=dataset_path)
