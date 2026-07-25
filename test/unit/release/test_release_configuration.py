@@ -27,6 +27,8 @@ def test_ci_covers_supported_python_versions_and_checks_checkout() -> None:
     assert "git status --porcelain" in workflow
     assert "make release-check" in workflow
     assert "make review-bundle-check" in workflow
+    makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+    assert "dist/toetra_review_bundle.zip" in makefile
 
 
 def test_ci_installs_project_runtime_and_all_required_extras() -> None:

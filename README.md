@@ -3,7 +3,7 @@
 Toetra is a Python framework and declarative language for specifying and verifying
 behavioral properties of machine-learning models.
 
-**Release status:** `1.0.0rc2` — V1 release candidate with regression and direct
+**Release status:** `1.0.0rc3` — V1 release candidate with regression and direct
 binary-classification routes.
 
 ## V1 scope
@@ -107,7 +107,7 @@ Classification evidence is optional and additive.
 ## Documentation
 
 - [Public V1 profile](docs/public-v1-profile.md)
-- [1.0.0rc2 release notes](docs/releases/1.0.0rc2.md)
+- [1.0.0rc3 release notes](docs/releases/1.0.0rc3.md)
 - [Getting started](docs/getting-started/overview.md)
 - [Language reference](docs/language/overview.md)
 - [Compatibility matrices](docs/generated/numeric-compatibility-matrices.md)

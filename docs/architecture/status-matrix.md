@@ -1,7 +1,7 @@
 # Toetra V1 implementation status
 
-> Status date: 2026-07-22  
-> Release candidate: `1.0.0rc2`
+> Status date: 2026-07-26
+> Release candidate: `1.0.0rc3`
 
 | Layer | Status | Public guarantee |
 |---|---|---|

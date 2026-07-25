@@ -2,26 +2,32 @@
 
 ## [Unreleased]
 
+## [1.0.0rc3] - 2026-07-26
+
 ### Changed
 
+- Renamed the Python distribution and sole public import namespace to `toetra`.
+- Renamed the specification extension, grammars, parser entry points, examples,
+  demos, fixtures, and documentation to the Toetra Specification Language
+  identity and `.toetra`.
 - Advanced JSON reporting to schema v6 under the canonical
   `toetra.verification-report` and
   `toetra.verification-report-collection` identities.
 - Renamed software provenance fields and build override to `toetra_version`,
   `toetra_build_id`, and `TOETRA_BUILD_ID`.
 - Migrated numeric-compatibility, encoder, semantic-target, Miova artifact,
-  HTML, text, and default report identifiers to `toetra.*`.
-- Renamed the canonical specification extension from `.forml` to `.toetra`.
-- Renamed grammar artifacts and parser entry points to the Toetra Specification
-  Language identity.
-- Removed runtime acceptance of the legacy `.forml` extension.
+  replay, HTML, text, and default report identifiers to `toetra.*`.
+- Renamed the repository, documentation URLs, review bundle, and release
+  metadata to the canonical Toetra identity.
 
-## [Unreleased]
+### Compatibility
 
-### Changed
+- Verification semantics and the regression/classification routes remain those
+  accepted in `1.0.0rc2`.
+- The legacy `forml` import namespace and `.forml` extension are intentionally
+  unsupported because no project-controlled stable release used them.
+- JSON schema v5 remains historical; current reports use schema v6.
 
-- Renamed the Python distribution and sole public import namespace to `toetra`.
-- Moved packaged examples to `toetra.examples`; no `forml` import alias is retained.
 ## [1.0.0rc2] - 2026-07-22
 
 ### Added

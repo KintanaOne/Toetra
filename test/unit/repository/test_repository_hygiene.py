@@ -29,6 +29,7 @@ def test_repository_has_no_historical_artifacts() -> None:
     assert not present
     assert not obsolete_code
     assert not (ROOT / ".docs").exists()
+    assert not tuple(ROOT.glob("toetra_review_bundle_*.zip"))
     assert not tuple(ROOT.glob("forml_review_bundle_*.zip"))
     assert not tuple(ROOT.glob("P*_*.patch"))
 
@@ -49,7 +50,8 @@ def test_local_review_artifacts_are_ignored() -> None:
     }
 
     assert "/.docs/" in ignore_rules
-    assert "/forml_review_bundle_*.zip" in ignore_rules
+    assert "/toetra_review_bundle_*.zip" in ignore_rules
+    assert "/forml_review_bundle_*.zip" not in ignore_rules
 
 
 def test_every_documentation_page_is_in_mkdocs_navigation() -> None:

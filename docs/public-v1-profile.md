@@ -1,7 +1,7 @@
 # Public V1 profile
 
-> Release candidate: `1.0.0rc2`  
-> Contract date: 2026-07-22
+> Release candidate: `1.0.0rc3`
+> Contract date: 2026-07-26
 
 This page is the public source of truth for executable Toetra V1 support.
 

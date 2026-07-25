@@ -19,7 +19,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repository", type=Path, default=Path.cwd())
     parser.add_argument(
-        "--output", type=Path, default=Path("dist/forml_review_bundle.zip")
+        "--output", type=Path, default=Path("dist/toetra_review_bundle.zip")
     )
     parser.add_argument("--check-reproducible", action="store_true")
     parser.add_argument("--allow-incomplete", action="store_true")

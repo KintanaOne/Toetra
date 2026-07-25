@@ -1,6 +1,6 @@
 # Public V1 contract
 
-> Status: frozen for `1.0.0rc2`
+> Status: frozen for `1.0.0rc3`
 
 ## Stable public surfaces
 

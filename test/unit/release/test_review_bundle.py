@@ -36,6 +36,8 @@ def test_review_bundle_is_byte_reproducible_and_manifested(tmp_path: Path) -> No
     with zipfile.ZipFile(first.path) as archive:
         manifest = json.loads(archive.read("_meta/manifest.json"))
         assert manifest["schema_version"] == 2
+        assert manifest["bundle_kind"] == "toetra_review_source_snapshot"
+        assert manifest["repository_root_name"] == "Toetra"
         assert manifest["missing_critical_paths"] == []
         assert "toetra/__init__.py" in archive.namelist()
         assert not any("__pycache__" in name for name in archive.namelist())

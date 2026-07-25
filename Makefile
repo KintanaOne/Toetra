@@ -3,7 +3,7 @@
 # =========================
 
 .PHONY: install test test-wip test-all lint format format-check type \
-	notebooks-clean notebooks-check generated-check public-contract-check docs-check ci \
+	notebooks-clean notebooks-check generated-check identity-check public-contract-check docs-check ci \
 	dist dist-check install-check release-check review-bundle \
 	review-bundle-check demo-regression demo-quickstart demo-classification clean
 
@@ -31,6 +31,9 @@ notebooks-check:
 generated-check:
 	python scripts/generate_numeric_compatibility_matrices.py --check
 
+identity-check:
+	python scripts/check_identity_contract.py
+
 public-contract-check:
 	python scripts/check_public_contract.py
 
@@ -47,13 +50,14 @@ docs-check:
 	python -m mkdocs build --strict
 
 # Non-mutating local verification gate.
-ci: lint format-check generated-check public-contract-check type test docs-check
+ci: lint format-check generated-check identity-check public-contract-check type test docs-check
 
 ci-check:
 	python -m ruff check --fix
 	python -m ruff check .
 	python -m black .
 	python -m black --check .
+	python scripts/check_identity_contract.py
 	python -m pyright
 	python -m pytest -q
 
@@ -68,12 +72,12 @@ dist-check:
 install-check:
 	python scripts/check_installed_distribution.py dist
 
-release-check: dist dist-check install-check
+release-check: identity-check dist dist-check install-check
 
 review-bundle:
-	python scripts/build_review_bundle.py --output dist/forml_review_bundle.zip
+	python scripts/build_review_bundle.py --output dist/toetra_review_bundle.zip
 
-review-bundle-check:
+review-bundle-check: identity-check
 	python scripts/build_review_bundle.py --check-reproducible
 
 # Run the public affine-regression demonstration.
