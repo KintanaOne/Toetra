@@ -6,7 +6,7 @@ import pytest
 from lark import Token, Tree
 from lark.exceptions import UnexpectedInput
 
-from dsl.parser.parser import parse_forml_code
+from dsl.parser.parser import parse_toetra_code
 
 
 @pytest.mark.parametrize(
@@ -77,7 +77,7 @@ def test_quantifier_requires_and_preserves_explicit_identifier(
     single_cst_tree: Callable[[Tree, str], Tree],
     first_cst_token: Callable[[Tree], Token],
 ) -> None:
-    tree = parse_forml_code(source)
+    tree = parse_toetra_code(source)
     quantifier_expr = single_cst_tree(tree, "quantifier_expr")
 
     quantifier = next(
@@ -150,4 +150,4 @@ def test_quantifier_requires_and_preserves_explicit_identifier(
 )
 def test_quantifier_without_identifier_is_rejected(source: str) -> None:
     with pytest.raises(UnexpectedInput):
-        parse_forml_code(source)
+        parse_toetra_code(source)

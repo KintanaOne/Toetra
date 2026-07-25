@@ -11,14 +11,14 @@ from dsl.ast.nodes.primitives import (
 )
 from dsl.builder.program import parse_program
 from dsl.parser.errors import ParserError
-from dsl.parser.parser import parse_forml_code
-from dsl.semantic.core.validator import FORMLValidator
+from dsl.parser.parser import parse_toetra_code
+from dsl.semantic.core.validator import ToetraValidator
 from dsl.semantic.runtime.tracer import ValidationTracer
 
 
 def _build_and_validate(source: str):
-    program = parse_program(parse_forml_code(source))
-    FORMLValidator().validate(
+    program = parse_program(parse_toetra_code(source))
+    ToetraValidator().validate(
         program,
         tracer=ValidationTracer(enabled=False),
     )
@@ -144,7 +144,7 @@ def test_binding_recurses_through_arithmetic_tree() -> None:
 
 
 def test_unknown_explicit_entity_is_not_aliased_to_only_scope_variable() -> None:
-    program = parse_program(parse_forml_code("""
+    program = parse_program(parse_toetra_code("""
         model := "model.onnx"
         target := MyTarget
 
@@ -153,4 +153,4 @@ def test_unknown_explicit_entity_is_not_aliased_to_only_scope_variable() -> None
         """))
 
     with pytest.raises(ParserError, match="Unknown variable 'y'"):
-        FORMLValidator().validate(program, tracer=ValidationTracer(enabled=False))
+        ToetraValidator().validate(program, tracer=ValidationTracer(enabled=False))

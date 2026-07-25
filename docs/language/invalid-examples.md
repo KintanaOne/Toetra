@@ -19,7 +19,7 @@ Every example has a stable identifier suitable for tests and diagnostics. Every 
 
 ### SYN-Q-001 — Missing Quantified Identifier
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -34,7 +34,7 @@ PARSER_QUANTIFIER_IDENTIFIER_REQUIRED
 
 ### SYN-DOM-001 — Empty Domain Block
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -49,7 +49,7 @@ PARSER_DOMAIN_REQUIRES_ENTRY
 
 ### SYN-DOM-002 — Empty Finite Set
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -67,7 +67,7 @@ PARSER_FINITE_SET_REQUIRES_VALUE
 
 ### SYN-DOM-003 — Unsupported Parenthesis Interval Notation
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -91,7 +91,7 @@ PARSER_INVALID_INTERVAL_DELIMITER
 
 ### SYN-SPC-001 — Non-Literal Declaration Value
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -115,7 +115,7 @@ Derived declaration expressions are reserved for a later language extension.
 
 ### SEM-BIND-001 — Mismatched Quantified Entity
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -132,7 +132,7 @@ The compiler must not alias `candidate` to `x0` merely because only one variable
 
 ### SEM-DOM-001 — Implicit Domain Subject
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -152,7 +152,7 @@ Assertions may use an implicit default entity. Domain subjects may not.
 
 ### SEM-DOM-002 — Subject Bound to Another Entity
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -168,7 +168,7 @@ SEMANTIC_DOMAIN_ENTITY_MISMATCH
 
 ### SEM-DOM-003 — Duplicate Domain Subject
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -187,7 +187,7 @@ SEMANTIC_DUPLICATE_DOMAIN_SUBJECT
 
 ### SEM-DOM-004 — Reversed Numeric Interval
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -203,7 +203,7 @@ SEMANTIC_INVALID_INTERVAL_ORDER
 
 ### SEM-DOM-005 — Empty Open Interval
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -221,7 +221,7 @@ SEMANTIC_EMPTY_INTERVAL
 
 ### SEM-DOM-006 — Target in Domain Bound
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -237,7 +237,7 @@ SEMANTIC_TARGET_NOT_ALLOWED_IN_DOMAIN
 
 ### SEM-ARI-001 — Non-Numeric Arithmetic
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -252,7 +252,7 @@ SEMANTIC_NON_NUMERIC_ARITHMETIC
 
 ### SEM-ARI-002 — Literal Division by Zero
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -265,7 +265,7 @@ SEMANTIC_DIVISION_BY_ZERO
 
 ### SEM-SPC-001 — Duplicate Specification Constant
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -281,7 +281,7 @@ SEMANTIC_DUPLICATE_SPECIFICATION_CONSTANT
 
 ### SEM-SPC-002 — Scope Variable Collision
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -298,7 +298,7 @@ FORML rejects this collision rather than silently shadowing either declaration.
 
 ### SEM-SPC-003 — Incompatible Constant Use
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -315,7 +315,7 @@ SEMANTIC_INCOMPATIBLE_SPECIFICATION_CONSTANT_TYPE
 
 ### SEM-SPC-004 — Bare Domain Feature Is Not Implicit
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -337,7 +337,7 @@ Domain bounds do not fall back to implicit feature resolution. Write `x0.b` expl
 
 ### SEM-SPC-005 — Reserved Specification-Constant Name
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -360,7 +360,7 @@ These complete programs must pass parser, builder and semantic validation before
 
 ### UNSUP-ARI-001 — Symbolic Product
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -375,7 +375,7 @@ BACKEND_UNSUPPORTED_NONLINEAR_ARITHMETIC
 
 ### UNSUP-ARI-002 — Symbolic Denominator
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -389,7 +389,7 @@ BACKEND_UNSUPPORTED_SYMBOLIC_DIVISION
 
 ### UNSUP-DOM-001 — Symbolic Categories Without Encoding Capability
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -406,7 +406,7 @@ BACKEND_UNSUPPORTED_CATEGORICAL_DOMAIN
 
 ### UNSUP-SPC-001 — String Constant Reaches Numeric-Only Categorical Backend
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 

@@ -4,7 +4,7 @@ from collections.abc import Callable
 
 from lark import Tree
 
-from dsl.parser.parser import parse_forml_code
+from dsl.parser.parser import parse_toetra_code
 
 
 def test_arithmetic_precedence_is_preserved_in_cst(
@@ -21,7 +21,7 @@ def test_arithmetic_precedence_is_preserved_in_cst(
         using Z3
     """
 
-    tree = parse_forml_code(source)
+    tree = parse_toetra_code(source)
     comparison = single_cst_tree(tree, "comparison_expr")
     left = next(
         child
@@ -59,7 +59,7 @@ def test_unary_sign_is_preserved_in_cst(
         using Z3
     """
 
-    tree = parse_forml_code(source)
+    tree = parse_toetra_code(source)
 
     assert cst_operator_values(tree, "unary_operator") == ["-"]
 
@@ -78,7 +78,7 @@ def test_parenthesized_arithmetic_group_is_preserved_in_cst(
         using Z3
     """
 
-    tree = parse_forml_code(source)
+    tree = parse_toetra_code(source)
     parenthesized = single_cst_tree(tree, "parenthesized_scalar")
 
     assert cst_operator_values(parenthesized, "additive_operator") == ["+"]
@@ -98,7 +98,7 @@ def test_symbolic_division_parses_for_later_capability_analysis(
         using Z3
     """
 
-    tree = parse_forml_code(source)
+    tree = parse_toetra_code(source)
 
     assert cst_operator_values(tree, "multiplicative_operator") == ["/"]
 
@@ -120,7 +120,7 @@ def test_arithmetic_interval_bounds_parse(
         using Z3
     """
 
-    tree = parse_forml_code(source)
+    tree = parse_toetra_code(source)
     interval = single_cst_tree(tree, "closed_closed_interval")
 
     assert cst_operator_values(interval, "additive_operator") == ["-", "+"]

@@ -33,7 +33,7 @@ FORML represents domains as typed structured constraints and lowers them into ex
 
 A domain block contains one or more entries:
 
-```forml
+```toetra
 with domain(
     x0.a: [0.0, 3.0],
     x0.b: {obj1, obj2},
@@ -62,19 +62,19 @@ Domain subjects are always explicitly qualified.
 
 For:
 
-```forml
+```toetra
 forall x0
 ```
 
 this is valid:
 
-```forml
+```toetra
 x0.age: [18, 65]
 ```
 
 while these are invalid:
 
-```forml
+```toetra
 age: [18, 65]
 y.age: [18, 65]
 ```
@@ -114,7 +114,7 @@ Finite-set members preserve their scalar type and source meaning.
 
 Examples:
 
-```forml
+```toetra
 x0.active: {true, false}
 x0.code: {1, 7}
 x0.region: {EU, US}
@@ -127,7 +127,7 @@ Unquoted identifiers in finite sets are symbolic categorical literals, not varia
 
 Numeric interval bounds may be scalar arithmetic expressions:
 
-```forml
+```toetra
 with domain(
     x0.a: [x0.b - 1.0, x0.b + 1.0]
 )
@@ -151,7 +151,7 @@ Conceptual lowering examples follow.
 
 Closed interval:
 
-```forml
+```toetra
 x0.a: [0, 3]
 ```
 
@@ -165,7 +165,7 @@ x0.a <= 3
 
 Open interval:
 
-```forml
+```toetra
 x0.a: ]0, 3[
 ```
 
@@ -179,7 +179,7 @@ x0.a < 3
 
 Finite set:
 
-```forml
+```toetra
 x0.region: {EU, US}
 ```
 

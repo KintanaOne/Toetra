@@ -7,12 +7,12 @@
 
 ## Purpose
 
-This document decomposes the FORML DSL Compiler into internal components.
+This document decomposes the Toetra Specification Language Compiler into internal components.
 
 It answers:
 
 ```text
-How does FORML transform `.forml` source into semantically valid IR?
+How does FORML transform `.toetra` source into semantically valid IR?
 ```
 
 ---
@@ -21,7 +21,7 @@ How does FORML transform `.forml` source into semantically valid IR?
 
 ```mermaid
 flowchart TD
-    Source[.forml Source]
+    Source[.toetra Source]
         --> Grammar[Language Grammar]
 
     Grammar
@@ -73,7 +73,7 @@ flowchart TD
 
 | Component | Responsibility | Output | Status |
 |---|---|---|---|
-| Language Grammar | Defines legal FORML syntax. | Grammar rules | Implemented / stabilizing |
+| Language Grammar | Defines legal Toetra syntax. | Grammar rules | Implemented / stabilizing |
 | Lark Parser | Parses source text. | CST | Implemented |
 | AST Builder | Converts CST into typed AST nodes, including declaration and bare-name nodes. | AST | Implemented / target evolution pending |
 | Specification Constant Collector | Registers immutable program-level declarations. | Program symbol table | Accepted target / implementation pending |
@@ -121,7 +121,7 @@ The grammar is not responsible for semantic validity. It only defines what can b
 
 ## Parser
 
-The parser converts raw `.forml` source into a concrete syntax tree.
+The parser converts raw `.toetra` source into a concrete syntax tree.
 
 Responsibilities:
 

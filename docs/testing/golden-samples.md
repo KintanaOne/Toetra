@@ -16,7 +16,7 @@ A fully materialized sample may contain:
 
 ```text
 <sample-id>/
-├── source.forml
+├── source.toetra
 ├── metadata.yaml
 ├── cst.json
 ├── ast.json

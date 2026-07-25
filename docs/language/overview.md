@@ -11,7 +11,7 @@ The FORML language is a domain-specific language for expressing behavioral prope
 
 Its role is to let a user describe what a model should satisfy, without directly writing solver constraints, backend-specific queries, or framework-specific model encodings.
 
-A FORML specification connects three concerns:
+A Toetra specification connects three concerns:
 
 1. **The model under verification** — declared in the header.
 2. **The target or output of interest** — declared in the header.
@@ -21,7 +21,7 @@ A FORML specification connects three concerns:
 The language is intentionally designed to be compiled through a sequence of progressively more formal representations:
 
 ```text
-.forml source
+.toetra source
 → CST
 → AST
 → SemanticValidatedAST
@@ -53,7 +53,7 @@ The FORML language aims to provide:
 
 ## Current Language Shape
 
-A FORML program currently contains:
+A Toetra program currently contains:
 
 ```text
 header
@@ -62,21 +62,21 @@ body
 
 The header declares at least:
 
-```forml
+```toetra
 model := "model.joblib"
 target := prediction
 ```
 
 The header may also declare reusable immutable specification constants:
 
-```forml
+```toetra
 max_risk := 0.20
 minimum_income := 25000.0
 ```
 
 The body contains one or more property sections:
 
-```forml
+```toetra
 [ROBUSTNESS]: forall baseline, candidate => CLASSIFICATION.EQUAL()
 ```
 
@@ -96,7 +96,7 @@ A property has:
 
 Specification constants name immutable scalar values used by domains and assertions:
 
-```forml
+```toetra
 max_risk := 0.20
 max_ratio := 0.35
 
@@ -114,7 +114,7 @@ See [Specification Constants](specification-constants.md).
 
 A typed domain restricts the admissible values of explicitly qualified input features:
 
-```forml
+```toetra
 [LOGIC]:
 forall x0
     with domain(
@@ -142,13 +142,13 @@ Domain subjects are always explicit (`x0.a`) so semantic validation can verify t
 
 FORML comparisons accept expressions on both sides:
 
-```forml
+```toetra
 2 * x0.a + x0.b <= target
 ```
 
 Arithmetic expressions may also define interval bounds:
 
-```forml
+```toetra
 with domain(
     x0.a: [x0.b - 1.0, x0.b + 1.0]
 )
@@ -164,7 +164,7 @@ The FORML language defines syntax. The semantic layer defines meaning.
 
 For example:
 
-```forml
+```toetra
 [ROBUSTNESS]: at x in neighborhood(metric=L2, eps=0.1) => age <= 30
 ```
 
@@ -197,7 +197,7 @@ ModelBridge provides a normalized `ModelSchema` used to connect DSL references w
 The target architecture uses the language and ModelBridge together:
 
 ```text
-.forml source
+.toetra source
 + ModelSchema
 → schema-aware semantic validation
 → model-aware constraints

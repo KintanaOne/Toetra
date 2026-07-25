@@ -2,8 +2,8 @@ import pytest
 
 from dsl.ast.nodes.assertion import ComparisonNode
 from dsl.builder.program import parse_program
-from dsl.parser.parser import parse_forml_code
-from dsl.semantic.core.validator import FORMLValidator
+from dsl.parser.parser import parse_toetra_code
+from dsl.semantic.core.validator import ToetraValidator
 from dsl.semantic.runtime.tracer import ValidationTracer
 from dsl.semantic.types.enums import EnumDataType
 
@@ -40,7 +40,7 @@ def _schema() -> ModelSchema:
 
 
 def _build(source: str):
-    return parse_program(parse_forml_code(source))
+    return parse_program(parse_toetra_code(source))
 
 
 def test_schema_aware_validation_accepts_known_feature():
@@ -54,7 +54,7 @@ def test_schema_aware_validation_accepts_known_feature():
 
     ast = _build(source)
 
-    assert FORMLValidator().validate(
+    assert ToetraValidator().validate(
         ast,
         tracer=ValidationTracer(enabled=False),
         model_schema=_schema(),
@@ -73,7 +73,7 @@ def test_schema_aware_validation_rejects_unknown_feature():
     ast = _build(source)
 
     with pytest.raises(Exception, match="Unknown feature 'unknown'"):
-        FORMLValidator().validate(
+        ToetraValidator().validate(
             ast,
             tracer=ValidationTracer(enabled=False),
             model_schema=_schema(),
@@ -91,7 +91,7 @@ def test_schema_aware_validation_sets_resolved_type_on_attribute():
 
     ast = _build(source)
 
-    FORMLValidator().validate(
+    ToetraValidator().validate(
         ast,
         tracer=ValidationTracer(enabled=False),
         model_schema=_schema(),
@@ -123,7 +123,7 @@ def test_schema_aware_validation_is_optional_without_model_schema():
 
     ast = _build(source)
 
-    assert FORMLValidator().validate(
+    assert ToetraValidator().validate(
         ast,
         tracer=ValidationTracer(enabled=False),
     )

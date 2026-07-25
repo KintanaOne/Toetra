@@ -45,7 +45,7 @@ Source separation is required before and after composition for diagnostics, trac
 
 For:
 
-```forml
+```toetra
 forall x0 with domain(...) => P
 ```
 
@@ -71,7 +71,7 @@ Expected interpretation:
 
 For:
 
-```forml
+```toetra
 exists x0 with domain(...) => P
 ```
 

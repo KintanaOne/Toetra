@@ -11,7 +11,7 @@ from dsl.ast.nodes.expressions import (
 from dsl.builder.program import parse_program
 from dsl.language.vocabulary.backends import EnumBackend
 from dsl.language.vocabulary.properties import EnumProperty
-from dsl.parser.parser import parse_forml_code
+from dsl.parser.parser import parse_toetra_code
 
 T = TypeVar("T")
 
@@ -48,12 +48,12 @@ def parse(code: str) -> Tree:
     Parse raw FORML code into a Lark parse tree.
     """
 
-    return parse_forml_code(code)
+    return parse_toetra_code(code)
 
 
 def build_program(code: str):
     """
-    Parse and build a full FORML program.
+    Parse and build a full Toetra program.
     """
 
     return parse_program(parse(code))
@@ -61,7 +61,7 @@ def build_program(code: str):
 
 def build_property(code: str):
     """
-    Parse and build the first property of a FORML program.
+    Parse and build the first property of a Toetra program.
     """
 
     return build_program(code).body[0]

@@ -9,7 +9,7 @@ Z3 is the only built-in V1 execution backend. It supports the implemented affine
 numeric route, Boolean logic, numeric comparisons, domain assumptions, finite
 numeric sets, and the normal forms declared by its capability profile.
 
-The backend receives IR2 tasks and model assumptions. It does not parse `.forml`
+The backend receives IR2 tasks and model assumptions. It does not parse `.toetra`
 source or inspect framework model objects directly.
 
 ## Generic backend contract

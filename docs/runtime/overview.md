@@ -10,7 +10,7 @@ The FORML runtime owns the user-facing execution path from a specification and
 model artifacts to backend-neutral reports.
 
 ```text
-.forml file or source
+.toetra file or source
 → model schema construction
 → AST and semantic validation
 → IR1
@@ -33,7 +33,7 @@ from toetra import verify
 
 ```python
 session = verify(
-    "policy.forml",
+    "policy.toetra",
     model="model.joblib",
     dataset="reference.csv",
 )
@@ -48,8 +48,8 @@ session = verify(source, schema=model_schema)
 Providing both `schema` and model artifacts is rejected because it would make
 the source of model metadata ambiguous.
 
-When a `.forml` path is supplied and `model` is omitted, the `model := ...`
-reference from the FORML header is resolved relative to the specification file.
+When a `.toetra` path is supplied and `model` is omitted, the `model := ...`
+reference from the Toetra header is resolved relative to the specification file.
 The target name defaults to the header target and must match the resulting
 `ModelSchema`. This prevents the property and model assumptions from referring
 to different outputs.

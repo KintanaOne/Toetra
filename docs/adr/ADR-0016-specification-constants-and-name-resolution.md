@@ -10,7 +10,7 @@ FORML already allows header declarations using `identifier := value`, but those 
 
 The language also allows bare identifiers inside scalar expressions:
 
-```forml
+```toetra
 [LOGIC]: forall applicant => income >= minimum_income
 ```
 
@@ -36,7 +36,7 @@ FORML calls user-declared immutable scalar values **specification constants**.
 
 Initial syntax:
 
-```forml
+```toetra
 max_risk := 0.20
 minimum_income := 25000.0
 strict_mode := true
@@ -127,7 +127,7 @@ It provides:
 
 ### Positive
 
-- FORML specifications become easier to read and audit.
+- Toetra specifications become easier to read and audit.
 - The same value can be reused across properties and domains.
 - Bare names remain concise.
 - Explicit feature qualification removes ambiguity when names overlap.

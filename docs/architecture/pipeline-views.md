@@ -12,7 +12,7 @@ Its purpose is not to describe every implementation detail. Its purpose is to ma
 
 FORML is designed as an end-to-end behavioral specification and verification platform for machine learning systems. A complete FORML request is expected to combine:
 
-- a `.forml` specification expressing behavioral properties;
+- a `.toetra` specification expressing behavioral properties;
 - a model artifact or model schema handled through ModelBridge;
 - a compiler pipeline that transforms the DSL into semantic and logical intermediate representations;
 - a logical verification pipeline that normalizes, aggregates, lowers, and prepares assertions;
@@ -45,7 +45,7 @@ What is FORML globally?
 ```mermaid
 flowchart LR
     U[User]
-        --> S[.forml Specification]
+        --> S[.toetra Specification]
 
     MA[Serialized ML Model / Dataset]
         --> MB[ModelBridge]
@@ -80,7 +80,7 @@ flowchart LR
 
 | Subsystem | Responsibility | Status |
 |---|---|---|
-| `.forml` specification | Express user verification intent. | Implemented / stabilizing |
+| `.toetra` specification | Express user verification intent. | Implemented / stabilizing |
 | DSL Compiler Pipeline | Parse, build, validate, and translate DSL properties. | Implemented until IR1 |
 | ModelBridge | Load and introspect ML models into normalized schemas. | Partially implemented |
 | Logical Verification Pipeline | Normalize and prepare logical assertions. | Structural IR1 implemented; NNF and later stages planned |
@@ -98,13 +98,13 @@ FORML should not be understood as a parser only. It is a layered verification ar
 
 ### Question answered
 
-How does FORML transform a `.forml` specification into a validated logical representation?
+How does FORML transform a `.toetra` specification into a validated logical representation?
 
 ### View
 
 ```mermaid
 flowchart TD
-    A[.forml Source]
+    A[.toetra Source]
         -->|Lark parser| B[CST]
 
     B
@@ -124,7 +124,7 @@ flowchart TD
 
 | Stage | Role | Status |
 |---|---|---|
-| Source | Raw `.forml` text. | Implemented |
+| Source | Raw `.toetra` text. | Implemented |
 | CST | Concrete syntax tree produced by the parser. | Implemented |
 | AST | Typed structural representation of the DSL. | Implemented / stabilizing |
 | SemanticValidatedAST | AST enriched with semantic context and bindings. | Implemented / stabilizing |
@@ -278,7 +278,7 @@ It is the bridge between:
 - future model constraint generation;
 - backend lowering.
 
-A `.forml` specification says what should be verified. ModelBridge determines what the specification can refer to and what model-side constraints must be introduced before verification.
+A `.toetra` specification says what should be verified. ModelBridge determines what the specification can refer to and what model-side constraints must be introduced before verification.
 
 ---
 

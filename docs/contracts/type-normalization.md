@@ -51,7 +51,7 @@ UNKNOWN_MODEL_DEPENDENT
 
 Example:
 
-```forml
+```toetra
 x0.region: {EU, US}
 ```
 

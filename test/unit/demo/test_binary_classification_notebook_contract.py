@@ -24,7 +24,7 @@ def test_binary_classification_notebook_uses_only_public_api() -> None:
     assert source.index("sys.path.insert(0, _repository_root_text)") < source.index(
         "from toetra import verify"
     )
-    assert "target[applicant].probability" not in source  # policy remains in .forml
+    assert "target[applicant].probability" not in source  # policy remains in .toetra
     assert "session = verify(" in source
     assert "counterexample.replay" in source
     assert "session.write_artifacts" in source

@@ -4,7 +4,7 @@ FORML V1 verifies numeric affine model behavior over concrete and symbolic point
 
 ## Global bound
 
-```forml
+```toetra
 model := "credit_risk.joblib"
 target := RiskScore
 
@@ -22,7 +22,7 @@ With one visible point, `target` means `target[applicant]`.
 
 ## Real observation
 
-```forml
+```toetra
 anchor customer := ref(
     key = "application_id",
     value = "APP-1842"
@@ -45,7 +45,7 @@ The dataset may supply both schema/introspection evidence and the default anchor
 
 ## Two-point monotonicity
 
-```forml
+```toetra
 [MONOTONICITY]:
 forall lower, higher
 with domain(
@@ -60,7 +60,7 @@ FORML creates two model equations, distinct Z3 outputs, grouped evidence, and a 
 
 ## Local robustness sugar
 
-```forml
+```toetra
 anchor customer := { a: 1.0 }
 
 [ROBUSTNESS]:

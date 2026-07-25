@@ -7,7 +7,7 @@ from dsl.backends.results import VerificationStatus
 
 def test_verify_model_runs_public_api_and_writes_json(tmp_path, capsys) -> None:
     model_path, dataset_path = build_demo_artifacts(tmp_path)
-    specification_path = tmp_path / "policy.forml"
+    specification_path = tmp_path / "policy.toetra"
     report_path = tmp_path / "artifacts" / "verification.json"
     specification_path.write_text(
         """

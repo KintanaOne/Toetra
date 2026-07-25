@@ -6,7 +6,7 @@ import pytest
 from lark import Token, Tree
 from lark.exceptions import UnexpectedInput
 
-from dsl.parser.parser import parse_forml_code
+from dsl.parser.parser import parse_toetra_code
 
 
 @pytest.mark.parametrize(
@@ -83,7 +83,7 @@ def test_interval_delimiters_are_preserved_by_named_cst_rules(
     expected_rule: str,
     single_cst_tree: Callable[[Tree, str], Tree],
 ) -> None:
-    tree = parse_forml_code(source)
+    tree = parse_toetra_code(source)
     interval_domain = single_cst_tree(tree, "interval_domain")
 
     interval_children = [
@@ -168,7 +168,7 @@ def test_finite_set_values_and_order_are_preserved(
     single_cst_tree: Callable[[Tree, str], Tree],
     first_cst_token: Callable[[Tree], Token],
 ) -> None:
-    tree = parse_forml_code(source)
+    tree = parse_toetra_code(source)
     finite_set = single_cst_tree(tree, "finite_set_domain")
 
     values = [
@@ -195,7 +195,7 @@ def test_domain_accepts_multiple_entries_and_trailing_comma() -> None:
         using Z3
     """
 
-    tree = parse_forml_code(source)
+    tree = parse_toetra_code(source)
 
     assert len(list(tree.find_data("domain_entry"))) == 2
 
@@ -250,7 +250,7 @@ def test_domain_accepts_multiple_entries_and_trailing_comma() -> None:
 )
 def test_invalid_domain_syntax_is_rejected(source: str) -> None:
     with pytest.raises(UnexpectedInput):
-        parse_forml_code(source)
+        parse_toetra_code(source)
 
 
 def test_unqualified_domain_subject_parses_for_semantic_rejection(
@@ -270,7 +270,7 @@ def test_unqualified_domain_subject_parses_for_semantic_rejection(
         using Z3
     """
 
-    tree = parse_forml_code(source)
+    tree = parse_toetra_code(source)
     domain_entry = single_cst_tree(tree, "domain_entry")
     subject = next(
         child
@@ -297,6 +297,6 @@ def test_target_bound_parses_for_semantic_rejection() -> None:
         using Z3
     """
 
-    tree = parse_forml_code(source)
+    tree = parse_toetra_code(source)
 
     assert len(list(tree.find_data("target_ref"))) == 2

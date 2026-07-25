@@ -1,25 +1,25 @@
 # Syntax
 
-> Status: Stabilizing  
-> Scope: User-facing FORML syntax  
-> Priority: P1  
+> Status: Stabilizing
+> Scope: User-facing Toetra syntax
+> Priority: P1
 > Audience: FORML users, test authors, documentation readers
 
 ## Purpose
 
-This document describes the user-facing syntax of FORML specifications.
+This document describes the user-facing syntax of Toetra specifications.
 
-It focuses on how to write `.forml` files, not on how the compiler internally represents them.
+It focuses on how to write `.toetra` files, not on how the compiler internally represents them.
 
-A FORML specification describes behavioral properties that a machine learning model should satisfy.
+A Toetra specification describes behavioral properties that a machine learning model should satisfy.
 
 ---
 
 ## Minimal Program
 
-A minimal FORML program declares a model, a target, and at least one property:
+A minimal Toetra program declares a model, a target, and at least one property:
 
-```forml
+```toetra
 model := "model.joblib"
 target := prediction
 
@@ -38,14 +38,14 @@ For the model declared in the header, evaluate a BOUND property at point x and a
 
 The header provides global inputs to the verification pipeline.
 
-```forml
+```toetra
 model := "model.joblib"
 target := prediction
 ```
 
 Optional declarations may include a dataset and specification constants:
 
-```forml
+```toetra
 dataset := "data.csv"
 
 max_risk := 0.20
@@ -67,13 +67,13 @@ region_name := "EU"
 
 A specification constant uses the declaration form:
 
-```forml
+```toetra
 identifier := scalar_literal
 ```
 
 Canonical formatting places one declaration on each line. Initial values are integer, real, boolean or quoted-string literals. Declarations are global to the specification, immutable and must appear before the first property.
 
-```forml
+```toetra
 max_risk := 0.20
 max_ratio := 0.35
 
@@ -85,7 +85,7 @@ forall applicant
 
 In assertions, a bare name resolves first to a matching specification constant, otherwise to an implicit feature. An explicitly qualified name always denotes a feature:
 
-```forml
+```toetra
 max_risk := 0.20
 
 [LOGIC]:
@@ -101,7 +101,7 @@ See [Specification Constants](specification-constants.md).
 
 A property follows this shape:
 
-```forml
+```toetra
 [PROPERTY_TYPE]: scope => assertion using backend
 ```
 
@@ -109,7 +109,7 @@ The backend is optional.
 
 Examples:
 
-```forml
+```toetra
 [ROBUSTNESS]: at x in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUAL()
 
 [BOUND]: check_at x => score >= 0
@@ -123,7 +123,7 @@ Examples:
 
 Property types are written between brackets:
 
-```forml
+```toetra
 [ROBUSTNESS]
 [BOUND]
 [FAIRNESS]
@@ -144,7 +144,7 @@ It does not alone define the full verification problem. The scope and assertion 
 
 Pointwise evaluation:
 
-```forml
+```toetra
 [BOUND]: check_at x => score >= 0
 ```
 
@@ -160,7 +160,7 @@ Evaluate the property at one point x.
 
 Local evaluation around an anchor:
 
-```forml
+```toetra
 [ROBUSTNESS]: at x in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUAL()
 ```
 
@@ -178,7 +178,7 @@ Implicit feature references are resolved against `x'` by default.
 
 Pairwise relation between two variables:
 
-```forml
+```toetra
 [FAIRNESS]: x ~ x' in neighborhood(metric=L2, eps=0.1) => score == score
 ```
 
@@ -201,11 +201,11 @@ The semantic layer interprets:
 
 Quantified evaluation introduces an explicitly named symbolic input variable:
 
-```forml
+```toetra
 [BOUND]: forall x0 => target >= 0
 ```
 
-```forml
+```toetra
 [BOUND]: exists candidate => candidate.score > 0
 ```
 
@@ -228,13 +228,13 @@ See [Quantified Variable Bindings](quantified-bindings.md) for the normative bin
 
 Neighborhoods define perturbation spaces.
 
-```forml
+```toetra
 in neighborhood(metric=L2, eps=0.1)
 ```
 
 Examples:
 
-```forml
+```toetra
 in neighborhood(metric=L1, eps=1.0)
 in neighborhood(metric=L2, eps=0.1)
 in neighborhood(metric=Linf, eps=0.05)
@@ -252,7 +252,7 @@ The most important argument is usually:
 
 Domains restrict admissible input valuations.
 
-```forml
+```toetra
 with domain(
     x0.a: [0.0, 3.0],
     x0.b: {obj1, obj2},
@@ -270,13 +270,13 @@ qualified_attribute : domain_constraint
 
 The subject must be explicit:
 
-```forml
+```toetra
 x0.age: [18, 65]
 ```
 
 This is invalid:
 
-```forml
+```toetra
 age: [18, 65]
 ```
 
@@ -291,7 +291,7 @@ age: [18, 65]
 
 Bounds may be arithmetic expressions and may reference specification constants:
 
-```forml
+```toetra
 tolerance := 1.0
 minimum_b := 0.0
 maximum_b := 10.0
@@ -306,7 +306,7 @@ All input-feature references inside a domain are explicit. Bare names in bounds 
 
 ### Finite sets
 
-```forml
+```toetra
 x0.segment: {obj1, obj2}
 x0.level: {0.0, 7.0}
 ```
@@ -333,7 +333,7 @@ scalar_expression comparison_operator scalar_expression
 
 Examples:
 
-```forml
+```toetra
 target >= 0
 x0.age == 42
 x0.a + x0.b <= 7
@@ -356,7 +356,7 @@ unary +  unary -  *  /  +  -
 
 Example:
 
-```forml
+```toetra
 2 * x0.a + x0.b <= target
 ```
 
@@ -364,7 +364,7 @@ The initial verification profile is affine: multiplication by a constant and div
 
 ### Boolean composition
 
-```forml
+```toetra
 x0.a >= 0 AND x0.b <= 1
 x0.segment == "A" OR x0.segment == "B"
 NOT target < 0
@@ -372,31 +372,31 @@ NOT target < 0
 
 ### Logical implication
 
-```forml
+```toetra
 x0.age >= 18 -> target >= 0.5
 ```
 
 ### Parentheses
 
-```forml
+```toetra
 (x0.a + x0.b <= 7 AND target >= 0) OR target == -1
 ```
 
 ### Invalid chained comparison
 
-```forml
+```toetra
 0 <= x0.a <= 3
 ```
 
 Write instead:
 
-```forml
+```toetra
 0 <= x0.a AND x0.a <= 3
 ```
 
 ### Problem predicates
 
-```forml
+```toetra
 [ROBUSTNESS]: forall baseline, candidate => CLASSIFICATION.EQUAL()
 REGRESSION.BETWEEN()
 ```
@@ -409,13 +409,13 @@ See [Assertions](assertions.md) and [Arithmetic Expressions](arithmetic-expressi
 
 A property can optionally specify a backend:
 
-```forml
+```toetra
 [ROBUSTNESS]: at x in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUAL() using z3
 ```
 
 With arguments:
 
-```forml
+```toetra
 using z3(timeout=30)
 ```
 
@@ -427,7 +427,7 @@ The backend syntax is a request or hint. The backend boundary still validates co
 
 Recommended style for readability:
 
-```forml
+```toetra
 model := "model.joblib"
 target := prediction
 dataset := "data.csv"
@@ -448,7 +448,7 @@ This style is not necessarily required by the parser, but it improves readabilit
 
 ### Missing header
 
-```forml
+```toetra
 [BOUND]: check_at x => score >= 0
 ```
 
@@ -456,7 +456,7 @@ Invalid because `model` and `target` are missing.
 
 ### Missing assertion
 
-```forml
+```toetra
 [BOUND]: check_at x =>
 ```
 
@@ -464,7 +464,7 @@ Invalid because the property has no RHS assertion.
 
 ### Invalid pairwise form
 
-```forml
+```toetra
 [FAIRNESS]: x ~ y in neighborhood(metric=L2, eps=0.1) => score == score
 ```
 

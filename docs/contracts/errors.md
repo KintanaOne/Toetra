@@ -79,7 +79,7 @@ BACKEND_UNSUPPORTED_CATEGORY_ENCODING
 
 For:
 
-```forml
+```toetra
 forall x0 => y.a <= 3
 ```
 
@@ -99,7 +99,7 @@ It must not silently reinterpret `y.a` as `x0.a`.
 
 For a meaningful but unsupported expression:
 
-```forml
+```toetra
 forall x0 => x0.a * x0.b <= target
 ```
 

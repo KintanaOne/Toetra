@@ -15,7 +15,7 @@ It answers:
 Who uses FORML, what does FORML interact with, and what problem does it solve?
 ```
 
-FORML is a behavioral specification and verification platform for machine learning systems. It allows a user to express behavioral properties in a `.forml` DSL, validate those properties, connect them to model metadata through ModelBridge, and prepare backend-specific verification queries.
+FORML is a behavioral specification and verification platform for machine learning systems. It allows a user to express behavioral properties in a `.toetra` DSL, validate those properties, connect them to model metadata through ModelBridge, and prepare backend-specific verification queries.
 
 ---
 
@@ -24,7 +24,7 @@ FORML is a behavioral specification and verification platform for machine learni
 ```mermaid
 flowchart LR
     User[ML Engineer / AI Systems Engineer]
-        -->|writes| Spec[.forml Specification]
+        -->|writes| Spec[.toetra Specification]
 
     User
         -->|provides| Model[Serialized ML Model]
@@ -83,7 +83,7 @@ flowchart LR
 
 At the context level, FORML is responsible for:
 
-- parsing user-defined `.forml` specifications;
+- parsing user-defined `.toetra` specifications;
 - validating syntax, structure, semantics, and property compatibility;
 - introspecting ML models through ModelBridge;
 - normalizing logical intent through IR layers;
@@ -115,7 +115,7 @@ The first functional V1 should have this context boundary:
 
 ```text
 User inputs:
-    - .forml specification
+    - .toetra specification
     - serialized sklearn/XGBoost-compatible model or external schema
     - optional dataset
 

@@ -6,8 +6,8 @@ from dsl.ast.nodes.outputs import (
     PredictedLabelObservableNode,
 )
 from dsl.builder.program import parse_program
-from dsl.parser.parser import parse_forml_code
-from dsl.semantic.core.validator import FORMLValidator
+from dsl.parser.parser import parse_toetra_code
+from dsl.semantic.core.validator import ToetraValidator
 from dsl.semantic.runtime.tracer import ValidationTracer
 from dsl.semantic.types.enums import EnumDataType
 from model.detector.model_framework import EnumModelFramework
@@ -38,8 +38,8 @@ def test_output_observables_survive_source_to_schema_aware_semantics() -> None:
             probability_available=True,
         ),
     )
-    program = parse_program(parse_forml_code(source))
-    assert FORMLValidator().validate(
+    program = parse_program(parse_toetra_code(source))
+    assert ToetraValidator().validate(
         program,
         tracer=ValidationTracer(enabled=False),
         model_schema=schema,

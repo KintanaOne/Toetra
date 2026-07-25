@@ -11,7 +11,7 @@ FORML arithmetic expressions allow users to express relations between model inpu
 
 Examples:
 
-```forml
+```toetra
 x0.revenue - x0.cost >= 0
 2 * x0.a + x0.b <= target
 (target - x0.baseline) / 2 <= 7
@@ -19,7 +19,7 @@ x0.revenue - x0.cost >= 0
 
 Arithmetic expressions may also appear as bounds of a typed numeric interval:
 
-```forml
+```toetra
 with domain(
     x0.a: [x0.b - 1.0, x0.b + 1.0]
 )
@@ -71,7 +71,7 @@ A scalar expression may contain:
 
 String and boolean literals or specification constants remain valid comparison operands for compatible equality checks, but they cannot participate in arithmetic operators.
 
-```forml
+```toetra
 x0.segment == "A"
 x0.enabled != false
 ```
@@ -111,7 +111,7 @@ logical implication
 
 Therefore:
 
-```forml
+```toetra
 x0.a + 2 * x0.b <= target
 ```
 
@@ -123,13 +123,13 @@ x0.a + (2 * x0.b) <= target
 
 Comparison operators are not associative. Chained comparisons are rejected:
 
-```forml
+```toetra
 0 <= x0.a <= 3
 ```
 
 The equivalent valid assertion is:
 
-```forml
+```toetra
 0 <= x0.a AND x0.a <= 3
 ```
 
@@ -158,7 +158,7 @@ division              → numeric real-compatible result
 
 The semantic layer rejects arithmetic involving incompatible types:
 
-```forml
+```toetra
 x0.segment + 1
 x0.enabled * 2
 ```
@@ -173,7 +173,7 @@ The AST and IR represent arithmetic structurally, but the first end-to-end verif
 
 Supported initially:
 
-```forml
+```toetra
 x0.a + x0.b
 x0.a - x0.b
 -x0.a
@@ -194,7 +194,7 @@ Unsupported forms must produce a precise capability diagnostic rather than being
 
 A constant zero denominator is always a semantic error:
 
-```forml
+```toetra
 x0.a / 0
 ```
 
@@ -204,7 +204,7 @@ x0.a / 0
 
 Arithmetic expressions may appear on either side of a comparison:
 
-```forml
+```toetra
 x0.a + x0.b <= 7
 2 * target >= x0.a - 1
 0 <= target - x0.baseline
@@ -212,13 +212,13 @@ x0.a + x0.b <= 7
 
 Boolean operators combine complete predicates:
 
-```forml
+```toetra
 x0.a + x0.b <= 7 AND target - x0.baseline >= 0
 ```
 
 This is invalid because a numeric expression is not itself a predicate:
 
-```forml
+```toetra
 x0.a + x0.b AND target <= 7
 ```
 
@@ -228,7 +228,7 @@ x0.a + x0.b AND target <= 7
 
 Numeric interval bounds may be arithmetic expressions:
 
-```forml
+```toetra
 tolerance := 1.0
 minimum_b := 0.0
 maximum_b := 10.0
@@ -265,7 +265,7 @@ Mutually dependent constraints are allowed because the domain is a conjunction, 
 
 In assertions, bare names resolve first to specification constants and then to implicit features:
 
-```forml
+```toetra
 offset := 1
 
 [LOGIC]: forall x0 => a + offset <= target
@@ -275,7 +275,7 @@ offset := 1
 
 In domains, references remain explicit:
 
-```forml
+```toetra
 with domain(
     x0.a: [x0.b - 1, x0.b + 1]
 )
@@ -283,7 +283,7 @@ with domain(
 
 The following is rejected when `b` is not a specification constant:
 
-```forml
+```toetra
 with domain(
     x0.a: [b - 1, b + 1]
 )
@@ -291,7 +291,7 @@ with domain(
 
 A bare specification constant is valid:
 
-```forml
+```toetra
 tolerance := 1
 
 with domain(
@@ -309,7 +309,7 @@ A mismatched entity is also rejected.
 
 It may appear alone or inside arithmetic assertions, on either side of a comparison:
 
-```forml
+```toetra
 target <= 7
 target - x0.baseline <= 2
 2 * target >= x0.a + x0.b
@@ -409,7 +409,7 @@ A later analysis may canonicalize eligible expressions into affine form, but use
 
 Valid:
 
-```forml
+```toetra
 x0.a + x0.b <= 7
 2 * x0.a - 3 * x0.b >= target
 -(x0.a - x0.b) <= 1
@@ -419,7 +419,7 @@ x0.a: [x0.b - 1, x0.b + 1]
 
 Invalid or unsupported:
 
-```forml
+```toetra
 0 <= x0.a <= 3
 x0.segment + 1 <= 2
 x0.a / 0 <= 1

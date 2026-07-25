@@ -12,7 +12,7 @@ The language layer defines the expressive boundary of FORML.
 It answers the question:
 
 ```text
-What can a user express in a `.forml` specification?
+What can a user express in a `.toetra` specification?
 ```
 
 The language layer is responsible for:
@@ -37,7 +37,7 @@ The language layer defines:
 | Concern | Responsibility |
 |---|---|
 | Vocabulary | Define official properties, problems, functions, metrics, backends and operators. |
-| Grammar | Define legal FORML source syntax. |
+| Grammar | Define legal Toetra source syntax. |
 | Tokens | Define lexical units such as identifiers, strings, numbers and operators. |
 | Property syntax | Define how properties are declared and scoped. |
 | Assertion syntax | Define boolean and comparison expressions. |
@@ -51,16 +51,16 @@ FORML currently supports the following major language concepts.
 
 ### Header
 
-A FORML program starts with declarations such as:
+A Toetra program starts with declarations such as:
 
-```forml
+```toetra
 model := "model.joblib"
 target := label
 ```
 
 Future or optional declarations may include:
 
-```forml
+```toetra
 dataset := "dataset.csv"
 ```
 
@@ -74,7 +74,7 @@ A property section defines a behavioral property to verify.
 
 Conceptually:
 
-```forml
+```toetra
 [PROPERTY_TYPE]: scope => assertion using backend(...)
 ```
 
@@ -118,7 +118,7 @@ They may contain:
 
 Examples:
 
-```forml
+```toetra
 age <= 30
 x.score >= 0.8
 NOT risk > 0.5
@@ -134,7 +134,7 @@ Backend hints specify the verification backend or abstract domain preferred by t
 
 Example:
 
-```forml
+```toetra
 using z3()
 ```
 

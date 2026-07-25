@@ -16,11 +16,11 @@ def test_cli_requires_a_specification_outside_demo_mode(capsys) -> None:
 
 def test_cli_reports_a_missing_specification_without_a_traceback(capsys) -> None:
     with pytest.raises(SystemExit) as raised:
-        main(["missing-policy.forml"])
+        main(["missing-policy.toetra"])
 
     assert raised.value.code == 2
     error = capsys.readouterr().err
-    assert "FORML specification not found" in error
+    assert "Toetra specification not found" in error
     assert "Traceback" not in error
 
 

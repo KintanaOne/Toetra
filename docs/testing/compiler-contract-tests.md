@@ -52,7 +52,7 @@ Each contract test should define:
 ### Input
 
 ```text
-.forml source string
+.toetra source string
 ```
 
 ### Output
@@ -504,4 +504,4 @@ test_backend_encodes_specification_constant_as_literal
 test_backend_does_not_create_variable_for_specification_constant
 ```
 
-Every source-driven case uses a complete `.forml` program. The detailed split and fixture catalog are defined in [Specification Constants Test Plan](specification-constants-tests.md).
+Every source-driven case uses a complete `.toetra` program. The detailed split and fixture catalog are defined in [Specification Constants Test Plan](specification-constants-tests.md).

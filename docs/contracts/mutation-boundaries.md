@@ -40,7 +40,7 @@ Miova explores whether those contracts hold under controlled mutations.
 
 | Layer | Artifact | Example Mutation |
 |---|---|---|
-| Source | `.forml` text | corrupt keyword, delete operator |
+| Source | `.toetra` text | corrupt keyword, delete operator |
 | CST | parser tree | remove subtree, reorder section |
 | AST | `ProgramNode`, `PropertyNode` | delete scope, mutate assertion |
 | Semantic | annotations/context | remove binding, corrupt symbol table |

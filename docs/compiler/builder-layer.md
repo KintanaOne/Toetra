@@ -12,7 +12,7 @@ The builder layer converts the Concrete Syntax Tree into FORML AST nodes.
 It answers the question:
 
 ```text
-What structured FORML program does this syntactic tree represent?
+What structured Toetra program does this syntactic tree represent?
 ```
 
 The builder is the first layer that turns grammar-specific structures into domain-specific compiler artifacts.
@@ -52,7 +52,7 @@ The builder produces a tree of FORML AST nodes, including:
 
 | AST Node | Meaning |
 |---|---|
-| `ProgramNode` | Full FORML program. |
+| `ProgramNode` | Full Toetra program. |
 | `HeaderNode` | Model and target declarations. |
 | `PropertyNode` | One property section. |
 | `PropertyRuleNode` | Scope + assertion. |
@@ -179,7 +179,7 @@ The builder:
 
 The following two expressions must remain structurally distinguishable:
 
-```forml
+```toetra
 threshold
 x0.threshold
 ```

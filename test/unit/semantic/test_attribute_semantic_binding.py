@@ -1,17 +1,17 @@
 from dsl.ast.nodes.assertion import AndNode, ComparisonNode, OrNode
 from dsl.ast.nodes.primitives import AttributeNode
 from dsl.builder.program import parse_program
-from dsl.parser.parser import parse_forml_code
-from dsl.semantic.core.validator import FORMLValidator
+from dsl.parser.parser import parse_toetra_code
+from dsl.semantic.core.validator import ToetraValidator
 from dsl.semantic.runtime.annotations import SemanticAnnotations
 from dsl.semantic.runtime.tracer import ValidationTracer
 
 
 def _build_and_validate(source: str):
-    cst = parse_forml_code(source)
+    cst = parse_toetra_code(source)
     ast = parse_program(cst)
 
-    FORMLValidator().validate(
+    ToetraValidator().validate(
         ast,
         tracer=ValidationTracer(enabled=False),
     )

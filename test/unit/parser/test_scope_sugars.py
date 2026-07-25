@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from lark import Token
-from dsl.parser.parser import parse_forml_code
+from dsl.parser.parser import parse_toetra_code
 from test.unit.parser._point_binding_helpers import (
     direct_trees,
     program,
@@ -11,7 +11,7 @@ from test.unit.parser._point_binding_helpers import (
 
 
 def test_par_chk_001_check_at_selection_sugar_parses() -> None:
-    tree = parse_forml_code(
+    tree = parse_toetra_code(
         program(
             declarations="anchor x0 := { age: 42 }",
             body="check_at x0 => target <= 7",
@@ -23,7 +23,7 @@ def test_par_chk_001_check_at_selection_sugar_parses() -> None:
 
 
 def test_par_at_001_local_sugar_preserves_anchor_candidate_and_arguments() -> None:
-    tree = parse_forml_code(
+    tree = parse_toetra_code(
         program(
             declarations="anchor x0 := { age: 42 }",
             body="""
@@ -52,7 +52,7 @@ def test_par_at_001_local_sugar_preserves_anchor_candidate_and_arguments() -> No
 
 
 def test_par_at_002_legacy_at_has_explicit_legacy_cst_branch() -> None:
-    tree = parse_forml_code(
+    tree = parse_toetra_code(
         program(body="at x0 in neighborhood(L2, eps=0.01) => x0.age <= 7")
     )
 
@@ -62,7 +62,7 @@ def test_par_at_002_legacy_at_has_explicit_legacy_cst_branch() -> None:
 
 
 def test_par_pair_001_legacy_pairwise_has_explicit_cst_branch() -> None:
-    tree = parse_forml_code(
+    tree = parse_toetra_code(
         program(body="x ~ x' in neighborhood(L2, eps=0.01) => x.age <= 7")
     )
 

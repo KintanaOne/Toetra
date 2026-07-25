@@ -44,7 +44,7 @@ This makes it possible to test not only whether generated examples compile, but 
 ```text
 Hypothesis strategy
     ↓
-generated FORML source or artifact
+generated Toetra source or artifact
     ↓
 normal FORML pipeline
     ↓
@@ -60,7 +60,7 @@ classified result
 ## Example Campaign Pattern
 
 ```text
-@given(valid_forml_source())
+@given(valid_toetra_source())
 def test_generated_source_survives_expected_mutations(source):
     cst = parse(source)
     ast = build(cst)

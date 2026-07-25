@@ -25,7 +25,7 @@ No raw Lark node is required downstream after a successful build.
 
 Source:
 
-```forml
+```toetra
 forall x0
 ```
 
@@ -53,7 +53,7 @@ The builder:
 
 Source:
 
-```forml
+```toetra
 with domain(
     x0.a: ]0.0, 3.0],
     x0.region: {EU, US}

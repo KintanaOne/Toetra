@@ -14,7 +14,7 @@ Its role is to test whether FORML remains correct, predictable, and diagnosable 
 
 ```text
 Normal FORML path:
-.forml → CST → AST → SemanticValidatedAST → IR1 → IR2 → Aggregation → Lowering → BackendQuery
+.toetra → CST → AST → SemanticValidatedAST → IR1 → IR2 → Aggregation → Lowering → BackendQuery
 
 Miova path:
 Artifact → Mutation → Contract / Invariant Checks → Result Classification

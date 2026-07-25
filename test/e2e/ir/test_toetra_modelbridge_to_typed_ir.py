@@ -5,15 +5,15 @@ from dsl.ir.ir1.nodes import (
     ConstantExpressionIR,
 )
 from dsl.ir.ir1.translator import IRTranslator
-from dsl.parser.parser import parse_forml_code
-from dsl.semantic.core.validator import FORMLValidator
+from dsl.parser.parser import parse_toetra_code
+from dsl.semantic.core.validator import ToetraValidator
 from dsl.semantic.runtime.tracer import ValidationTracer
 from dsl.semantic.types.enums import EnumDataType
 from model.runtime.manager import ModelManager
 from test.fixtures.ir_schema_aware.e2e_factories import create_tiny_sklearn_artifacts
 
 
-def test_forml_modelbridge_schema_validation_to_typed_ir(tmp_path):
+def test_toetra_modelbridge_schema_validation_to_typed_ir(tmp_path):
     model_path, dataset_path = create_tiny_sklearn_artifacts(tmp_path)
 
     schema = ModelManager(
@@ -30,9 +30,9 @@ def test_forml_modelbridge_schema_validation_to_typed_ir(tmp_path):
     forall x0 => x0.income <= 1000
     """
 
-    ast = parse_program(parse_forml_code(source))
+    ast = parse_program(parse_toetra_code(source))
 
-    FORMLValidator().validate(
+    ToetraValidator().validate(
         ast,
         tracer=ValidationTracer(enabled=False),
         model_schema=schema,
@@ -51,7 +51,7 @@ def test_forml_modelbridge_schema_validation_to_typed_ir(tmp_path):
     assert comparison.right.dtype is EnumDataType.INT
 
 
-def test_forml_modelbridge_rejects_unknown_feature_before_ir(tmp_path):
+def test_toetra_modelbridge_rejects_unknown_feature_before_ir(tmp_path):
     model_path, dataset_path = create_tiny_sklearn_artifacts(tmp_path)
 
     schema = ModelManager(
@@ -68,10 +68,10 @@ def test_forml_modelbridge_rejects_unknown_feature_before_ir(tmp_path):
     forall x0 => x0.unknown <= 1000
     """
 
-    ast = parse_program(parse_forml_code(source))
+    ast = parse_program(parse_toetra_code(source))
 
     try:
-        FORMLValidator().validate(
+        ToetraValidator().validate(
             ast,
             tracer=ValidationTracer(enabled=False),
             model_schema=schema,

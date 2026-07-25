@@ -60,7 +60,7 @@ exclude = ["test*", "tests*", "docs*"]
 
 [tool.setuptools.package-data]
 "dsl.language.grammar" = ["*.lark", "*.ebnf"]
-"toetra.examples" = ["*.forml"]
+"toetra.examples" = ["*.toetra"]
 
 [tool.black]
 line-length = 88

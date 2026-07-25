@@ -7,7 +7,7 @@
 
 ## Purpose
 
-The parser layer converts raw `.forml` source code into a Concrete Syntax Tree.
+The parser layer converts raw `.toetra` source code into a Concrete Syntax Tree.
 
 It answers the question:
 
@@ -22,7 +22,7 @@ The parser does not interpret semantic meaning. It only recognizes whether the s
 ## Input and Output
 
 ```text
-Input:  raw `.forml` source string
+Input:  raw `.toetra` source string
 Output: CST / Lark Tree
 ```
 
@@ -34,7 +34,7 @@ The CST preserves syntax-level structure and grammar shape.
 
 The parser layer is responsible for:
 
-- loading the FORML grammar;
+- loading the Toetra grammar;
 - configuring the parser;
 - parsing raw text;
 - producing a CST;
@@ -50,7 +50,7 @@ The current parser is based on Lark.
 Conceptually:
 
 ```python
-forml_parser = Lark(
+toetra_parser = Lark(
     grammar,
     start="program",
     parser="lalr",
@@ -58,7 +58,7 @@ forml_parser = Lark(
     maybe_placeholders=True,
 )
 
-cst = forml_parser.parse(source)
+cst = toetra_parser.parse(source)
 ```
 
 The parser currently targets the `program` grammar rule.
@@ -70,7 +70,7 @@ The parser currently targets the `program` grammar rule.
 The parser contract is:
 
 ```text
-Valid FORML source
+Valid Toetra source
     → CST
 
 Invalid syntax

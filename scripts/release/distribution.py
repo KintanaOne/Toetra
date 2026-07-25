@@ -23,9 +23,9 @@ EXPECTED_DISTRIBUTION_NAME = "toetra"
 EXPECTED_TOP_LEVEL_PACKAGES = ("toetra", "dsl", "model")
 FORBIDDEN_TOP_LEVEL_PACKAGES = ("forml",)
 EXPECTED_PACKAGE_DATA = (
-    "dsl/language/grammar/forml_grammar.ebnf",
-    "dsl/language/grammar/forml_grammar.lark",
-    "toetra/examples/credit_risk_policy.forml",
+    "dsl/language/grammar/toetra_grammar.ebnf",
+    "dsl/language/grammar/toetra_grammar.lark",
+    "toetra/examples/credit_risk_policy.toetra",
 )
 
 

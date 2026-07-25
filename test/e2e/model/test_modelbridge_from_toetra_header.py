@@ -1,6 +1,6 @@
 from dsl.builder.program import parse_program
-from dsl.parser.parser import parse_forml_code
-from dsl.semantic.core.validator import FORMLValidator
+from dsl.parser.parser import parse_toetra_code
+from dsl.semantic.core.validator import ToetraValidator
 from dsl.semantic.runtime.tracer import ValidationTracer
 from model.runtime.manager import ModelManager
 from test.fixtures.model_bridge.factories import (
@@ -9,7 +9,7 @@ from test.fixtures.model_bridge.factories import (
 )
 
 
-def test_forml_header_target_is_used_by_modelbridge_end_to_end(tmp_path):
+def test_toetra_header_target_is_used_by_modelbridge_end_to_end(tmp_path):
     model_path = make_classification_joblib(tmp_path)
 
     source = f"""
@@ -20,10 +20,10 @@ target := MyTarget
 forall x0 => x0.age >= 0
 """
 
-    cst = parse_forml_code(source)
+    cst = parse_toetra_code(source)
     ast = parse_program(cst)
 
-    FORMLValidator().validate(ast, tracer=ValidationTracer(enabled=False))
+    ToetraValidator().validate(ast, tracer=ValidationTracer(enabled=False))
 
     schema = ModelManager(
         model_path=ast.header.model,

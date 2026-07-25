@@ -204,7 +204,7 @@ Model constraint generation should produce precise diagnostics when:
 
 Given the DSL expression:
 
-```forml
+```toetra
 [ROBUSTNESS]: forall baseline, candidate => CLASSIFICATION.EQUAL()
 ```
 

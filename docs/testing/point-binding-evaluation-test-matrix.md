@@ -21,7 +21,7 @@ This document does not redefine patch sequencing. The accepted mapping from gate
 
 ## Complete-program rule
 
-Parser, builder-from-source, semantic-from-source, pipeline, and end-to-end cases MUST use complete `.forml` programs with required `model` and `target` declarations.
+Parser, builder-from-source, semantic-from-source, pipeline, and end-to-end cases MUST use complete `.toetra` programs with required `model` and `target` declarations.
 
 Short fragments shown in tables are case labels only, except for pure lexer or helper tests.
 
@@ -341,7 +341,7 @@ The public result and replay preserve all point identities and all referenced mo
 
 ### E2E-01 — Inline anchor direct check
 
-```forml
+```toetra
 model := "linear.joblib"
 target := score
 
@@ -364,7 +364,7 @@ Required assertions:
 
 ### E2E-02 — Referenced anchor with `check_at`
 
-```forml
+```toetra
 model := "linear.joblib"
 target := score
 
@@ -387,7 +387,7 @@ Required assertions:
 
 ### E2E-03 — Two-point universal property
 
-```forml
+```toetra
 model := "linear.joblib"
 target := score
 
@@ -413,7 +413,7 @@ Required assertions:
 
 Sugar fixture:
 
-```forml
+```toetra
 anchor x0 := { a: 1.0 }
 
 [ROBUSTNESS]:
@@ -427,7 +427,7 @@ at x0 with x1 in neighborhood(
 
 Explicit fixture:
 
-```forml
+```toetra
 anchor x0 := { a: 1.0 }
 
 [ROBUSTNESS]:
@@ -447,7 +447,7 @@ Required assertion:
 
 ### E2E-05 — Existential adversarial witness
 
-```forml
+```toetra
 anchor x0 := { a: 1.0 }
 
 [ROBUSTNESS]:
@@ -470,7 +470,7 @@ Required assertions:
 
 ### E2E-06 — Alternating quantifier capability rejection
 
-```forml
+```toetra
 [LOGIC]:
 forall x0
 exists x1

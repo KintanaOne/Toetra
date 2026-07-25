@@ -8,7 +8,7 @@ import random
 import re
 
 # -------------------------------------------------
-# Regex approximations (adjust to FORML grammar if needed)
+# Regex approximations (adjust to Toetra grammar if needed)
 # -------------------------------------------------
 
 IDENTIFIER_RE = re.compile(r"\b[A-Za-z_][A-Za-z0-9_]*\b")

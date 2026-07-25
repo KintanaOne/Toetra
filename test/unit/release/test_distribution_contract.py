@@ -28,9 +28,9 @@ WHEEL_MEMBERS = {
     "toetra/__init__.py": b"from dsl.runtime import verify\n",
     "dsl/__init__.py": b"",
     "model/__init__.py": b"",
-    "dsl/language/grammar/forml_grammar.ebnf": b"start = program\n",
-    "dsl/language/grammar/forml_grammar.lark": b"start: program\n",
-    "toetra/examples/credit_risk_policy.forml": b"target := risk_score\n",
+    "dsl/language/grammar/toetra_grammar.ebnf": b"start = program\n",
+    "dsl/language/grammar/toetra_grammar.lark": b"start: program\n",
+    "toetra/examples/credit_risk_policy.toetra": b"target := risk_score\n",
     f"{DIST_INFO}/METADATA": (
         f"Metadata-Version: 2.1\nName: toetra\nVersion: {PROJECT_VERSION}\n\n".encode()
     ),
@@ -50,7 +50,7 @@ def _write_wheel(
         for name, payload in WHEEL_MEMBERS.items():
             if (
                 not include_public_example
-                and name == "toetra/examples/credit_risk_policy.forml"
+                and name == "toetra/examples/credit_risk_policy.toetra"
             ):
                 continue
             archive.writestr(name, payload)
@@ -71,9 +71,9 @@ def _write_sdist(path: Path, *, mtime: int) -> None:
         f"{SDIST_ROOT}/toetra/__init__.py": b"",
         f"{SDIST_ROOT}/dsl/__init__.py": b"",
         f"{SDIST_ROOT}/model/__init__.py": b"",
-        f"{SDIST_ROOT}/dsl/language/grammar/forml_grammar.ebnf": b"start=program\n",
-        f"{SDIST_ROOT}/dsl/language/grammar/forml_grammar.lark": b"start: program\n",
-        f"{SDIST_ROOT}/toetra/examples/credit_risk_policy.forml": (
+        f"{SDIST_ROOT}/dsl/language/grammar/toetra_grammar.ebnf": b"start=program\n",
+        f"{SDIST_ROOT}/dsl/language/grammar/toetra_grammar.lark": b"start: program\n",
+        f"{SDIST_ROOT}/toetra/examples/credit_risk_policy.toetra": (
             b"target := risk_score\n"
         ),
     }

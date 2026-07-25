@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 from lark.exceptions import UnexpectedInput
-from dsl.parser.parser import parse_forml_code
+from dsl.parser.parser import parse_toetra_code
 from test.unit.parser._point_binding_helpers import (
     program,
     single_tree,
@@ -15,13 +15,13 @@ from test.unit.parser._point_binding_helpers import (
 
 
 def test_par_tgt_001_indexed_target_preserves_point_identifier() -> None:
-    tree = parse_forml_code(program(body="forall x0 => target[x0] <= 7"))
+    tree = parse_toetra_code(program(body="forall x0 => target[x0] <= 7"))
     target = single_tree(tree, "target_ref")
     assert token_text(single_tree(target, "identifier")) == "x0"
 
 
 def test_par_tgt_002_unindexed_target_remains_distinct() -> None:
-    tree = parse_forml_code(program(body="forall x0 => target <= 7"))
+    tree = parse_toetra_code(program(body="forall x0 => target <= 7"))
     target = single_tree(tree, "target_ref")
     assert not list(target.find_data("identifier"))
 
@@ -36,11 +36,11 @@ def test_par_tgt_002_unindexed_target_remains_distinct() -> None:
 )
 def test_invalid_target_index_surface_is_rejected(target: str) -> None:
     with pytest.raises(UnexpectedInput):
-        parse_forml_code(program(body=f"forall x0 => {target} <= 7"))
+        parse_toetra_code(program(body=f"forall x0 => {target} <= 7"))
 
 
 def test_par_dir_001_direct_assertion_has_no_scope_implication() -> None:
-    tree = parse_forml_code(
+    tree = parse_toetra_code(
         program(
             declarations="anchor x0 := { age: 42 }",
             body="target[x0] <= 7 using Z3",
@@ -54,7 +54,7 @@ def test_par_dir_001_direct_assertion_has_no_scope_implication() -> None:
 
 
 def test_par_dir_002_scoped_property_retains_explicit_implication() -> None:
-    tree = parse_forml_code(program(body="forall x0 => target <= 7 using Z3"))
+    tree = parse_toetra_code(program(body="forall x0 => target <= 7 using Z3"))
     property_node = single_tree(tree, "property")
 
     assert len(list(property_node.find_data("property_expr"))) == 1

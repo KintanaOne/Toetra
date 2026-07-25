@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 from lark.exceptions import UnexpectedInput
 from lark import Token
-from dsl.parser.parser import parse_forml_code
+from dsl.parser.parser import parse_toetra_code
 from test.unit.parser._point_binding_helpers import (
     direct_trees,
     program,
@@ -13,7 +13,7 @@ from test.unit.parser._point_binding_helpers import (
 
 
 def test_par_nbh_001_natural_membership_preserves_all_arguments() -> None:
-    tree = parse_forml_code(
+    tree = parse_toetra_code(
         program(
             declarations="anchor x0 := { age: 42 }",
             body="""
@@ -71,7 +71,7 @@ def test_invalid_natural_neighborhood_surface_is_rejected(
     restriction: str,
 ) -> None:
     with pytest.raises(UnexpectedInput):
-        parse_forml_code(
+        parse_toetra_code(
             program(
                 declarations="anchor x0 := { age: 42 }",
                 body=f"forall x1 where {restriction} => target[x1] >= target[x0]",

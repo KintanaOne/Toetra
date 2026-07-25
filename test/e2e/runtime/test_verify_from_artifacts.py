@@ -9,7 +9,7 @@ from dsl.runtime import verify
 from dsl.semantic.types.enums import EnumDataType
 
 
-def test_verify_resolves_header_model_relative_to_forml_file(tmp_path) -> None:
+def test_verify_resolves_header_model_relative_to_toetra_file(tmp_path) -> None:
     frame = pd.DataFrame(
         {
             "a": [0.0, 1.0, 2.0, 3.0],
@@ -20,7 +20,7 @@ def test_verify_resolves_header_model_relative_to_forml_file(tmp_path) -> None:
 
     model_path = tmp_path / "affine_score.joblib"
     dataset_path = tmp_path / "affine_score.csv"
-    specification_path = tmp_path / "policy.forml"
+    specification_path = tmp_path / "policy.toetra"
     joblib.dump(model, model_path)
     frame.to_csv(dataset_path, index=False)
     specification_path.write_text(

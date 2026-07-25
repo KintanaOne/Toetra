@@ -4,7 +4,7 @@ FORML is a staged compiler and verification runtime for declarative behavioral
 properties of machine-learning models.
 
 ```text
-.forml source
+.toetra source
 → parser and syntax AST
 → semantic binding and typing
 → declarative IR1

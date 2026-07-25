@@ -7,14 +7,14 @@
 
 ## Purpose
 
-The FORML compiler pipeline transforms a `.forml` specification into progressively more formal, normalized, and backend-preparable representations.
+The FORML compiler pipeline transforms a `.toetra` specification into progressively more formal, normalized, and backend-preparable representations.
 
 The compiler is not a single parsing step. It is a sequence of explicit artifact transformations, each with its own responsibilities, guarantees, and failure boundaries.
 
 Its target end-to-end path is:
 
 ```text
-.forml source
+.toetra source
     ↓
 Language definition
     ↓
@@ -56,7 +56,7 @@ Each layer receives an artifact from the previous layer and produces a stronger 
 | Layer | Input | Output | Strength Added |
 |---|---|---|---|
 | Language | Vocabulary and grammar definitions | DSL syntax rules | Expressive boundary |
-| Parser | Raw `.forml` source | CST | Syntax structure |
+| Parser | Raw `.toetra` source | CST | Syntax structure |
 | Builder | CST | AST | Typed domain structure |
 | Semantic | AST | SemanticValidatedAST | Scope, binding, compatibility |
 | IR1 | SemanticValidatedAST | IR1 task/query | Logical normalization, NNF |
@@ -72,7 +72,7 @@ Each layer receives an artifact from the previous layer and produces a stronger 
 | Stage | Status | Notes |
 |---|---|---|
 | Language vocabulary | Implemented / needs cleanup | Grammar and enum vocabulary exist; normalization rules need stabilization. |
-| Parser | Implemented | Lark parser produces CST from `.forml` source. |
+| Parser | Implemented | Lark parser produces CST from `.toetra` source. |
 | Builder | Implemented / stabilizing | CST is converted into FORML AST nodes. |
 | AST | Implemented / stabilizing | Most domain nodes exist; semantic attachment policy needs harmonization. |
 | Semantic validation | Implemented / stabilizing | LHS validation, binding, logic validation and compatibility checks exist. |
@@ -87,9 +87,9 @@ Each layer receives an artifact from the previous layer and produces a stronger 
 
 ## Compiler Inputs
 
-The compiler consumes a `.forml` specification.
+The compiler consumes a `.toetra` specification.
 
-A FORML specification may include:
+A Toetra specification may include:
 
 - model declaration;
 - target declaration;
@@ -211,7 +211,7 @@ For each boundary, FORML should define:
 
 ```mermaid
 flowchart TD
-    A[.forml source]
+    A[.toetra source]
         --> B[Parser]
         --> C[CST]
         --> D[Builder]

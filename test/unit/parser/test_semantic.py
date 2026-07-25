@@ -14,7 +14,7 @@ from dsl.ast.nodes.primitives import NameRefNode
 from dsl.builder.program import parse_program
 from dsl.language.vocabulary.backends import EnumBackend
 from dsl.language.vocabulary.properties import EnumProperty
-from dsl.parser.parser import parse_forml_code
+from dsl.parser.parser import parse_toetra_code
 
 from test.fixtures.program_samples import (
     INVALID_BODY_MISSING_EXPRESSION,
@@ -36,7 +36,7 @@ from test.fixtures.properties_samples import (
 
 
 def parse(code: str) -> Tree:
-    return parse_forml_code(code)
+    return parse_toetra_code(code)
 
 
 def build_program(code: str):

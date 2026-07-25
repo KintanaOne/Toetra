@@ -9,7 +9,7 @@ A notebook user should not manipulate IR2, backend routers, Z3 objects or solver
 number representations. The supported workflow is:
 
 ```text
-serialized model + reference dataset + FORML policy
+serialized model + reference dataset + Toetra policy
 → verify(...)
 → VerificationSession
 → rich notebook report
@@ -29,7 +29,7 @@ demo/regression/credit_risk_validation.ipynb
 from toetra import verify
 
 session = verify(
-    "policy.forml",
+    "policy.toetra",
     model="model.joblib",
     dataset="reference.csv",
 )

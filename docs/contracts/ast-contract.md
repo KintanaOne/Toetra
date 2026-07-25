@@ -1,7 +1,7 @@
 # AST Contract
 
-> Status: P0 / Accepted target structure  
-> Scope: Raw typed FORML syntax before semantic validation  
+> Status: P0 / Accepted target structure
+> Scope: Raw typed Toetra syntax before semantic validation
 > Audience: AST maintainers, semantic validators and mutation authors
 
 ## Purpose

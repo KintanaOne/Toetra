@@ -8,7 +8,7 @@ from tempfile import TemporaryDirectory
 from demo.regression.affine_regression import build_demo_artifacts
 from toetra import VerificationConfigurationError, VerificationSession, verify
 
-DEMO_SPEC_PATH = Path(__file__).with_name("verification_policy.forml")
+DEMO_SPEC_PATH = Path(__file__).with_name("verification_policy.toetra")
 
 
 def run_verification(
@@ -18,7 +18,7 @@ def run_verification(
     dataset: str | Path | None = None,
     json_output: str | Path | None = None,
 ) -> VerificationSession:
-    """Run a FORML policy using only the public user-facing runtime API."""
+    """Run a Toetra policy using only the public user-facing runtime API."""
 
     session = verify(
         specification,
@@ -52,20 +52,20 @@ def run_self_contained_demo(
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Verify an ML model against a FORML specification.",
+        description="Verify an ML model against a Toetra specification.",
     )
     parser.add_argument(
         "specification",
         nargs="?",
         type=Path,
-        help="Path to the .forml file. Omit it when using --demo.",
+        help="Path to the .toetra file. Omit it when using --demo.",
     )
     parser.add_argument(
         "--demo",
         action="store_true",
         help=(
             "Run a self-contained example that trains a temporary affine model "
-            "and uses demo/quickstart/verification_policy.forml."
+            "and uses demo/quickstart/verification_policy.toetra."
         ),
     )
     parser.add_argument(
@@ -73,7 +73,7 @@ def _build_parser() -> argparse.ArgumentParser:
         type=Path,
         help=(
             "Serialized model path. When omitted, FORML resolves the model "
-            "declared in the specification header relative to the .forml file."
+            "declared in the specification header relative to the .toetra file."
         ),
     )
     parser.add_argument(

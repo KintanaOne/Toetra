@@ -6,7 +6,7 @@
 
 ## Purpose
 
-ModelBridge connects FORML specifications to real machine learning model artifacts.
+ModelBridge connects Toetra specifications to real machine learning model artifacts.
 
 Its first responsibility is to produce a normalized `ModelSchema`.
 
@@ -40,7 +40,7 @@ It contains:
 
 The DSL can express properties such as:
 
-```forml
+```toetra
 age >= 18
 score <= 0.9
 target[baseline].label == target[candidate].label

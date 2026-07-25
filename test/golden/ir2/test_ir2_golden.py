@@ -17,7 +17,7 @@ EXPECTED_DIR = Path(__file__).parent / "expected"
     ],
 )
 def test_ir2_pretty_output_matches_golden(case_name: str):
-    source = (CASES_DIR / f"{case_name}.forml").read_text(encoding="utf-8")
+    source = (CASES_DIR / f"{case_name}.toetra").read_text(encoding="utf-8")
     expected = (EXPECTED_DIR / f"{case_name}.ir2.txt").read_text(encoding="utf-8")
 
     tasks = run_ir2(source)

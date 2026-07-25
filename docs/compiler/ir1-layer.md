@@ -154,7 +154,7 @@ IR1 translation must use semantic information.
 
 Example:
 
-```forml
+```toetra
 [ROBUSTNESS]: at x in neighborhood(metric=L2, eps=0.1) => age <= 30
 ```
 
@@ -188,7 +188,7 @@ ComparisonIR(entity=None, feature="age", ...)
 
 For a validated scope such as:
 
-```forml
+```toetra
 forall applicant => target <= 7
 ```
 

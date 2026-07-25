@@ -126,7 +126,7 @@ NNF may move a negation onto this comparison or invert its comparison operator. 
 
 Therefore:
 
-```forml
+```toetra
 NOT (x0.a + 2 * x0.b <= target)
 ```
 
@@ -165,7 +165,7 @@ IR2 chooses the form needed by the verification strategy.
 
 Input DSL assertion:
 
-```forml
+```toetra
 NOT(age <= 30 AND score >= 0.8)
 ```
 

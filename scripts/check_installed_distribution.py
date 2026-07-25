@@ -37,8 +37,8 @@ assert "exists applicant" in policy_source
 spec = importlib.util.find_spec("dsl.language.grammar")
 assert spec is not None and spec.submodule_search_locations
 root = Path(next(iter(spec.submodule_search_locations)))
-assert (root / "forml_grammar.ebnf").is_file()
-assert (root / "forml_grammar.lark").is_file()
+assert (root / "toetra_grammar.ebnf").is_file()
+assert (root / "toetra_grammar.lark").is_file()
 with TemporaryDirectory(prefix="toetra-installed-classification-") as raw_directory:
     directory = Path(raw_directory)
     frame = pd.DataFrame(
@@ -52,7 +52,7 @@ with TemporaryDirectory(prefix="toetra-installed-classification-") as raw_direct
     )
     model_path = directory / "binary.joblib"
     dataset_path = directory / "binary.csv"
-    policy_path = directory / "policy.forml"
+    policy_path = directory / "policy.toetra"
     joblib.dump(model, model_path)
     frame.to_csv(dataset_path, index=False)
     policy_path.write_text(

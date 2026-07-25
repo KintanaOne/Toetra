@@ -17,7 +17,7 @@ from hypothesis import strategies as st
 
 from hypothesis.strategies import composite
 
-from dsl.parser.parser import parse_forml_code
+from dsl.parser.parser import parse_toetra_code
 from dsl.builder.program import parse_program
 
 from test.hypothesis.strategies.valid.valid_lexical import (
@@ -75,7 +75,7 @@ def invalid_program(
         )
 
     try:
-        cst = parse_forml_code(program)
+        cst = parse_toetra_code(program)
 
     except Exception:
 

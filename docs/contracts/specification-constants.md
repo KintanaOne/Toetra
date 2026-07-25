@@ -10,7 +10,7 @@ This contract defines how specification constants cross FORML compiler boundarie
 
 Canonical example:
 
-```forml
+```toetra
 model := "credit-risk.joblib"
 target := default_risk
 
@@ -161,7 +161,7 @@ Quoted strings remain string literals.
 
 A qualified reference always denotes a feature:
 
-```forml
+```toetra
 threshold := 7
 [LOGIC]: forall x0 => x0.threshold <= threshold
 ```
@@ -187,7 +187,7 @@ Every use is type checked in context. Declaration success does not imply every u
 
 Examples:
 
-```forml
+```toetra
 max_risk := "low"
 [LOGIC]: forall x0 => target <= max_risk
 ```

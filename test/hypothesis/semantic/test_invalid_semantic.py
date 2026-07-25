@@ -3,8 +3,8 @@ import pytest
 
 from dsl.builder.program import parse_program
 from dsl.parser.errors import ParserError
-from dsl.parser.parser import parse_forml_code
-from dsl.semantic.core.validator import FORMLValidator
+from dsl.parser.parser import parse_toetra_code
+from dsl.semantic.core.validator import ToetraValidator
 from dsl.semantic.runtime.tracer import ValidationTracer
 from test.hypothesis.mutations.ast.semantic import apply_semantic_mutations
 
@@ -18,7 +18,7 @@ def test_semantic_mutations_invalid(program):
 
     try:
         # Step 1: Parse source program into CST
-        cst = parse_forml_code(program)
+        cst = parse_toetra_code(program)
 
         # Step 2: Build AST from CST
         ast = parse_program(cst)
@@ -27,7 +27,7 @@ def test_semantic_mutations_invalid(program):
         mutated = apply_semantic_mutations(ast)
 
         # Step 4: Validate mutated AST must fail
-        validator = FORMLValidator()
+        validator = ToetraValidator()
         tracer = ValidationTracer(enabled=False)
 
         with pytest.raises(ParserError):

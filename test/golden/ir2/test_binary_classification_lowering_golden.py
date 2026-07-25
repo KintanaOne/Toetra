@@ -17,7 +17,7 @@ class _NoopEncoderFactory:
 
 
 def test_binary_label_lowering_golden() -> None:
-    source = (_ROOT / "cases" / "binary_label.forml").read_text(encoding="utf-8")
+    source = (_ROOT / "cases" / "binary_label.toetra").read_text(encoding="utf-8")
     task = run_ir2_with_model_schema(
         source,
         schema=make_binary_logistic_schema(),

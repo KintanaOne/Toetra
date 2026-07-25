@@ -1,6 +1,6 @@
 # test/fixtures/program_samples.py
 
-# This file contains sample FORML programs used in unit tests for parsing.
+# This file contains sample Toetra programs used in unit tests for parsing.
 
 # ----------------------------------------------------------------------------------------------------------------------#
 #                                             VALIDE

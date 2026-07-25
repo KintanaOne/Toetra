@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from dsl.parser.errors import ParserError
-from dsl.semantic.core.validator import FORMLValidator
+from dsl.semantic.core.validator import ToetraValidator
 from dsl.semantic.runtime.tracer import ValidationTracer
 from test.unit.semantic.anchor_helpers import (
     anchor_schema,
@@ -15,7 +15,7 @@ from test.unit.semantic.anchor_helpers import (
 def _assert_schema_rejected(source: str, message: str) -> None:
     program = build_program(source)
     with pytest.raises(ParserError, match=message):
-        FORMLValidator().validate(
+        ToetraValidator().validate(
             program,
             tracer=ValidationTracer(enabled=False),
             model_schema=anchor_schema(),

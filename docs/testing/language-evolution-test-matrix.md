@@ -18,7 +18,7 @@ It defines:
 
 ## Complete-Program Rule
 
-Every parser, builder-from-source, semantic-from-source and pipeline test must use a complete `.forml` program containing at least the required `model` and `target` declarations plus one property.
+Every parser, builder-from-source, semantic-from-source and pipeline test must use a complete `.toetra` program containing at least the required `model` and `target` declarations plus one property.
 
 The short expressions shown in matrix tables are case labels, not standalone parser inputs. Fragment tests are limited to lexer, generator and pure helper responsibilities.
 
@@ -217,7 +217,7 @@ Capability mismatch is reported before solver execution, and immutable specifica
 
 ## Mandatory Initial End-to-End Fixture with Constants
 
-```forml
+```toetra
 model := "linear.joblib"
 target := score
 
@@ -258,6 +258,6 @@ Patches 01 through 08 implement and test all gates in this matrix for the initia
 The mandatory affine fixture is frozen as a golden contract under:
 
 ```text
-test/fixtures/end_to_end/cases/affine_specification_constants.forml
+test/fixtures/end_to_end/cases/affine_specification_constants.toetra
 test/fixtures/end_to_end/expected/affine_specification_constants.json
 ```

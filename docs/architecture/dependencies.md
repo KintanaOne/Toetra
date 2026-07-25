@@ -41,7 +41,7 @@ The first functional FORML V1 should require only the components needed for a Z3
 | Dependency | Role | Status |
 |---|---|---|
 | Python | Main implementation language. | Core V1 |
-| Lark | Parses `.forml` source into a CST. | Core V1 |
+| Lark | Parses `.toetra` source into a CST. | Core V1 |
 | Z3 / z3-solver | Minimal verification backend for V1. | Core V1 |
 | dataclasses / typing | Core data structures for AST, IR, schemas, and contracts. | Core V1 |
 
@@ -54,7 +54,7 @@ The V1 dependency target is intentionally narrow. FORML should not require ERAN,
 The compiler pipeline depends on a strict chain of internal artifacts.
 
 ```text
-.forml source
+.toetra source
 → CST
 → AST
 → SemanticValidatedAST

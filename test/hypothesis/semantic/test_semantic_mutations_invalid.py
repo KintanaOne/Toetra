@@ -1,10 +1,10 @@
 import pytest
 from hypothesis import given, settings, HealthCheck
 
-from dsl.parser.parser import parse_forml_code
+from dsl.parser.parser import parse_toetra_code
 from dsl.builder.program import parse_program
 from dsl.semantic.runtime.tracer import ValidationTracer
-from dsl.semantic.core.validator import FORMLValidator
+from dsl.semantic.core.validator import ToetraValidator
 from dsl.parser.errors import ParserError
 
 from test.hypothesis.mutations.ast.semantic import apply_semantic_mutations
@@ -24,7 +24,7 @@ def test_semantic_mutations_must_fail_validation(program):
     # ---------------------------
     # Step 1: Parse to CST
     # ---------------------------
-    cst = parse_forml_code(program)
+    cst = parse_toetra_code(program)
 
     # ---------------------------
     # Step 2: Build AST
@@ -40,7 +40,7 @@ def test_semantic_mutations_must_fail_validation(program):
     # Step 4: Validate mutated AST
     # Must fail semantic validation
     # ---------------------------
-    validator = FORMLValidator()
+    validator = ToetraValidator()
     tracer = ValidationTracer(enabled=False)
 
     with pytest.raises(ParserError):

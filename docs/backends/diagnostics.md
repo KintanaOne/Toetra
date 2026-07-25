@@ -122,7 +122,7 @@ These cases must not be confused.
 
 | Case | Meaning |
 |---|---|
-| Invalid | The FORML specification breaks language or semantic rules. |
+| Invalid | The Toetra specification breaks language or semantic rules. |
 | Unsupported | The specification is valid, but the backend cannot handle it. |
 | Violated | The backend successfully checked the property and found a counterexample. |
 | Inconclusive | The backend ran but could not decide. |

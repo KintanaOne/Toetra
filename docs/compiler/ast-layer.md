@@ -7,12 +7,12 @@
 
 ## Purpose
 
-The AST layer represents a FORML program as structured domain objects.
+The AST layer represents a Toetra program as structured domain objects.
 
 It answers the question:
 
 ```text
-What is the syntactic structure of the FORML program, independent of parser details?
+What is the syntactic structure of the Toetra program, independent of parser details?
 ```
 
 The AST is not the semantic truth of the program. It is the typed syntactic representation consumed by semantic validation.

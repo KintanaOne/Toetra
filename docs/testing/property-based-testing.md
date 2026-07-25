@@ -2,7 +2,7 @@
 
 > Status: P0 — required testing layer  
 > Implementation: planned / partially started through Hypothesis-oriented design  
-> Scope: generated FORML specifications, compiler contracts, semantic invariants, IR normalization, and regression discovery
+> Scope: generated Toetra specifications, compiler contracts, semantic invariants, IR normalization, and regression discovery
 
 ## Purpose
 
@@ -13,14 +13,14 @@ FORML should not only be tested with hand-written examples. It must also be test
 The purpose of Property-Based Testing is to validate general properties of the compiler pipeline:
 
 ```text
-For many valid FORML programs:
+For many valid Toetra programs:
     parsing succeeds;
     AST construction succeeds;
     semantic validation is deterministic;
     IR generation preserves semantic bindings;
     normalization preserves logical meaning.
 
-For many invalid FORML programs:
+For many invalid Toetra programs:
     rejection happens at the expected boundary;
     the failure category is stable;
     no unrelated layer crashes unexpectedly.
@@ -48,7 +48,7 @@ Hypothesis is useful for FORML because the language has structured grammar, type
 
 Instead of writing only examples such as:
 
-```forml
+```toetra
 model := "model.joblib"
 target := label
 
@@ -75,7 +75,7 @@ Hypothesis strategies can target several layers.
 
 | Layer | Strategy target | Purpose |
 |---|---|---|
-| Source | `.forml` strings | Validate parser and grammar acceptance |
+| Source | `.toetra` strings | Validate parser and grammar acceptance |
 | CST | Lark trees | Validate builder assumptions |
 | AST | AST dataclasses | Validate semantic layer independently from parser |
 | Semantic AST | annotated AST | Validate IR lowering assumptions |
@@ -248,7 +248,7 @@ Hypothesis and Miova should not be confused.
 A strong FORML testing strategy can combine both:
 
 ```text
-Hypothesis generates valid FORML programs.
+Hypothesis generates valid Toetra programs.
 Miova mutates the resulting AST, Semantic AST, IR1, IR2, or ModelSchema.
 FORML checks whether each mutation is accepted, rejected, skipped, or fails unexpectedly.
 ```

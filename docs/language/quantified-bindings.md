@@ -5,7 +5,7 @@
 
 ## Syntax
 
-```forml
+```toetra
 forall x0
 exists candidate
 forall x0, x1
@@ -13,20 +13,20 @@ forall x0, x1
 
 Unicode aliases may normalize to the same internal quantifier kinds. A binder list expands left to right:
 
-```forml
+```toetra
 forall x0, x1
 ```
 
 is equivalent to:
 
-```forml
+```toetra
 forall x0
 forall x1
 ```
 
 Ordered clauses preserve lexical nesting:
 
-```forml
+```toetra
 forall original
 exists counterfactual
 => ...
@@ -48,7 +48,7 @@ Each binder introduces one exact `PointSymbol` and one lexical frame. FORML pres
 
 With one eligible point, shorthand is allowed:
 
-```forml
+```toetra
 forall x0
 => age >= 18 and target <= 0.8
 ```
@@ -57,7 +57,7 @@ This resolves to `x0.age` and `target[x0]`. With several eligible points, explic
 
 Domains always use explicit subjects:
 
-```forml
+```toetra
 forall x0, x1
 with domain(
     x0.age: [18, 90],
@@ -70,7 +70,7 @@ with domain(
 
 A single `where` clause restricts the innermost binder and may reference all points visible there:
 
-```forml
+```toetra
 forall x0
 exists x1
 where x1.a >= x0.a

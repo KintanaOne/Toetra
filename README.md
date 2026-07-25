@@ -36,7 +36,7 @@ make ci
 
 ## Regression property
 
-```forml
+```toetra
 model := "affine_score.joblib"
 target := score
 
@@ -48,7 +48,7 @@ with domain(x0.a: [0.0, 3.0])
 
 ## Binary-classification property
 
-```forml
+```toetra
 model := "binary_decision.joblib"
 target := decision
 
@@ -76,7 +76,7 @@ probability witness, and pairwise label equality.
 ```python
 from toetra import verify
 
-session = verify("policy.forml", model="model.joblib", dataset="reference.csv")
+session = verify("policy.toetra", model="model.joblib", dataset="reference.csv")
 session.print()
 session.write_artifacts("artifacts", formats={"json", "html"})
 raise SystemExit(session.exit_code)

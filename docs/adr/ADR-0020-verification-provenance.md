@@ -33,7 +33,7 @@ SHA-256 is the initial digest algorithm. The canonicalization method is explicit
 
 | Input | Canonicalization |
 |---|---|
-| FORML source | exact UTF-8 compiler source |
+| Toetra source | exact UTF-8 compiler source |
 | Serialized model or dataset | raw file bytes |
 | Normalized `ModelSchema` | deterministic canonical JSON |
 | In-memory pandas anchors | canonical JSON including columns, dtypes, index and records |

@@ -1,7 +1,7 @@
 from hypothesis import strategies as st
 from lark import ParseTree
 
-from dsl.parser.parser import parse_forml_code
+from dsl.parser.parser import parse_toetra_code
 from ..ast.header import header
 from ..ast.body import body
 
@@ -12,4 +12,4 @@ def valid_syntactic_program(draw) -> ParseTree:
     b = draw(body())
 
     program = f"{h}\n\n{b}"
-    return parse_forml_code(program)
+    return parse_toetra_code(program)

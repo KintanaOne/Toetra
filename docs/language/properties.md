@@ -20,7 +20,7 @@ property type
 
 Example:
 
-```forml
+```toetra
 [ROBUSTNESS]: at x in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUAL()
 ```
 
@@ -32,7 +32,7 @@ This expresses a robustness intent evaluated around an anchor point `x`.
 
 A property section has the following shape:
 
-```forml
+```toetra
 [PROPERTY_TYPE]: scope => assertion using backend
 ```
 
@@ -55,7 +55,7 @@ Robustness properties express that model behavior should remain stable under con
 
 Example:
 
-```forml
+```toetra
 [ROBUSTNESS]: at x in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUAL()
 ```
 
@@ -82,7 +82,7 @@ Stability properties express that model behavior should remain consistent under 
 
 Example:
 
-```forml
+```toetra
 [STABILITY]: at x in neighborhood(metric=L2, eps=0.05) => REGRESSION.BETWEEN()
 ```
 
@@ -103,7 +103,7 @@ Fairness properties express behavioral constraints between points, groups, or co
 
 Example:
 
-```forml
+```toetra
 [FAIRNESS]: x ~ x' in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUITY()
 ```
 
@@ -123,7 +123,7 @@ Monotonicity properties express that outputs should move in a consistent directi
 
 Example:
 
-```forml
+```toetra
 [MONOTONICITY]: x ~ x' in neighborhood(metric=L1, eps=1.0) => REGRESSION.INCREASING()
 ```
 
@@ -144,11 +144,11 @@ Bound properties express that a feature, score, probability, or output must rema
 
 Examples:
 
-```forml
+```toetra
 [BOUND]: check_at x => score >= 0
 ```
 
-```forml
+```toetra
 [BOUND]: check_at x => score >= 0 AND score <= 1
 ```
 
@@ -167,7 +167,7 @@ Logic properties express general logical assertions.
 
 Example:
 
-```forml
+```toetra
 [LOGIC]: check_at x => (age >= 18 AND score >= 0.5) -> approved == true
 ```
 
@@ -200,7 +200,7 @@ This compatibility is not a grammar concern. It is enforced by semantic validati
 
 Some properties use problem-level predicates:
 
-```forml
+```toetra
 [ROBUSTNESS]: forall baseline, candidate => CLASSIFICATION.EQUAL()
 REGRESSION.BETWEEN()
 ```

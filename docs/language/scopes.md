@@ -20,7 +20,7 @@ FORML no longer assigns a property to one mutually exclusive semantic scope. A p
 
 ### Inline anchor
 
-```forml
+```toetra
 anchor customer := {
     age: 42,
     income: 55000,
@@ -32,7 +32,7 @@ The anchor is concrete, immutable, and expressed in the feature space consumed b
 
 ### Referenced anchor
 
-```forml
+```toetra
 anchor customer := ref(
     key = "application_id",
     value = "APP-1842"
@@ -50,23 +50,23 @@ Lookup columns are metadata. They do not become model features unless the model 
 
 ### Symbolic point
 
-```forml
+```toetra
 forall applicant
 ```
 
-```forml
+```toetra
 exists candidate
 ```
 
 Several identifiers may be bound at once:
 
-```forml
+```toetra
 forall x0, x1
 ```
 
 This expands left to right to two nested universal binders. Ordered clauses preserve nesting:
 
-```forml
+```toetra
 forall original
 exists counterfactual
 => ...
@@ -78,7 +78,7 @@ Indentation is presentation only. Shadowing and collisions with global anchors a
 
 `with domain(...)` constrains individual point features:
 
-```forml
+```toetra
 forall applicant
 with domain(
     applicant.age: [18, 90],
@@ -89,7 +89,7 @@ with domain(
 
 `where` restricts admissible points or relates several points:
 
-```forml
+```toetra
 forall lower, higher
 where (
     higher.income >= lower.income
@@ -107,7 +107,7 @@ exists x where R => P  ≡  exists x: R and P
 
 The initial executable neighborhood is numeric `Linf`:
 
-```forml
+```toetra
 forall perturbed
 where perturbed in neighborhood(
     of = customer,
@@ -121,7 +121,7 @@ where perturbed in neighborhood(
 
 FORML V1 has one scalar target selected by the header. Brackets select the **input point**, not an output from a list:
 
-```forml
+```toetra
 target[x0]
 target[x1]
 ```
@@ -134,7 +134,7 @@ The short forms `target` and `age` are accepted only when exactly one eligible d
 
 An anchor can be used without an artificial left-hand scope:
 
-```forml
+```toetra
 anchor customer := { age: 42, income: 55000 }
 
 [BOUND]:
@@ -145,7 +145,7 @@ target[customer] <= 0.4 using Z3
 
 ### `check_at`
 
-```forml
+```toetra
 anchor customer := ref(key = "id", value = "R-42")
 
 [BOUND]:
@@ -157,7 +157,7 @@ check_at customer
 
 ### `at`
 
-```forml
+```toetra
 anchor customer := { age: 42, income: 55000 }
 
 [ROBUSTNESS]:

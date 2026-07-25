@@ -1,13 +1,13 @@
 # Source to CST Contract
 
-> Status: P0 / Accepted target syntax  
-> Scope: Raw FORML source to Concrete Syntax Tree  
-> Implementation: Lark parser  
+> Status: P0 / Accepted target syntax
+> Scope: Raw Toetra source to Concrete Syntax Tree
+> Implementation: Lark parser
 > Audience: grammar authors, parser maintainers and parser-test authors
 
 ## Purpose
 
-This boundary decides only whether source text conforms to FORML syntax.
+This boundary decides only whether source text conforms to Toetra syntax.
 
 It does not decide what the program means.
 
@@ -34,14 +34,14 @@ The identifier is mandatory.
 
 Valid:
 
-```forml
+```toetra
 forall x0 => target <= 7
 exists candidate => candidate.score > 0
 ```
 
 Invalid at this boundary:
 
-```forml
+```toetra
 forall => target <= 7
 exists with domain(...) => target <= 7
 ```

@@ -19,7 +19,7 @@ class LinearArtifacts:
 
 
 def source(name: str) -> str:
-    return (FIXTURE_DIR / f"{name}.forml").read_text(encoding="utf-8")
+    return (FIXTURE_DIR / f"{name}.toetra").read_text(encoding="utf-8")
 
 
 def build_linear_artifacts(
