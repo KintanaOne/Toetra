@@ -4,7 +4,7 @@ Structural duplication mutations
 GOAL:
     Introduce redundancy at AST level.
 
-ROLE IN FORML:
+ROLE IN Toetra:
     - stress deduplication logic
     - break uniqueness constraints
 """

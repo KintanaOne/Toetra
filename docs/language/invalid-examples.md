@@ -11,7 +11,7 @@ This document distinguishes invalid source, invalid semantics, unsupported backe
 invalid syntax ≠ invalid semantics ≠ unsupported capability ≠ violated property
 ```
 
-Every example has a stable identifier suitable for tests and diagnostics. Every `forml` block below is a complete program. Tests must send the complete program to the public parser/compiler entry point so that failures occur at the documented boundary.
+Every example has a stable identifier suitable for tests and diagnostics. Every `toetra` block below is a complete program. Tests must send the complete program to the public parser/compiler entry point so that failures occur at the documented boundary.
 
 ---
 
@@ -79,7 +79,7 @@ forall x0
 
 Expected boundary: parser.
 
-FORML uses bracket-only French interval notation:
+Toetra uses bracket-only French interval notation:
 
 ```text
 [a, b]   ]a, b]   [a, b[   ]a, b[
@@ -294,7 +294,7 @@ applicant := 7
 SEMANTIC_SPECIFICATION_CONSTANT_SCOPE_COLLISION
 ```
 
-FORML rejects this collision rather than silently shadowing either declaration.
+Toetra rejects this collision rather than silently shadowing either declaration.
 
 ### SEM-SPC-003 — Incompatible Constant Use
 
@@ -447,7 +447,7 @@ For universal refutation, `Γ ∧ ¬P = SAT` means `COUNTEREXAMPLE`.
 
 ### Empty Admissible Domain
 
-A universal property can appear proved because `Γdomain ∧ Γmodel` is unsatisfiable. FORML should emit:
+A universal property can appear proved because `Γdomain ∧ Γmodel` is unsatisfiable. Toetra should emit:
 
 ```text
 VERIFICATION_VACUOUS_EMPTY_DOMAIN

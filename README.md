@@ -101,7 +101,7 @@ outside the V1 profile.
 
 ## Reports
 
-Text, HTML, Jupyter, records/DataFrame, and JSON schema v5 are supported.
+Text, HTML, Jupyter, records/DataFrame, and JSON schema v6 are supported.
 Classification evidence is optional and additive.
 
 ## Documentation

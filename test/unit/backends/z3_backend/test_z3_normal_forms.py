@@ -93,7 +93,7 @@ def test_z3_runner_proves_unsat_cnf_contradiction() -> None:
     # CNF:
     #   (A) AND (NOT A)
     #
-    # This is UNSAT, therefore FORML status must be PROVED.
+    # This is UNSAT, therefore Toetra status must be PROVED.
     vc = CNFFormulaIR2(
         clauses=(
             ClauseIR2(literals=(_positive(atom),)),
@@ -120,7 +120,7 @@ def test_z3_runner_finds_counterexample_for_sat_cnf() -> None:
     # CNF:
     #   (A)
     #
-    # This is SAT as a verification condition, therefore FORML status
+    # This is SAT as a verification condition, therefore Toetra status
     # must be COUNTEREXAMPLE.
     vc = CNFFormulaIR2(clauses=(ClauseIR2(literals=(_positive(atom),)),))
 
@@ -144,7 +144,7 @@ def test_z3_runner_proves_unsat_dnf_contradiction() -> None:
     # DNF:
     #   (A AND NOT A)
     #
-    # This is UNSAT, therefore FORML status must be PROVED.
+    # This is UNSAT, therefore Toetra status must be PROVED.
     vc = DNFFormulaIR2(
         terms=(
             TermIR2(
@@ -175,7 +175,7 @@ def test_z3_runner_finds_counterexample_for_sat_dnf() -> None:
     # DNF:
     #   (A) OR (NOT A)
     #
-    # This is SAT as a verification condition, therefore FORML status
+    # This is SAT as a verification condition, therefore Toetra status
     # must be COUNTEREXAMPLE.
     vc = DNFFormulaIR2(
         terms=(

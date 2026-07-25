@@ -4,7 +4,7 @@ Structural mutations (AST LEVEL)
 GOAL:
     Modify the structure of the AST.
 
-ROLE IN FORML:
+ROLE IN Toetra:
     - test AST builder robustness
     - break structural invariants
     - simulate upstream corruption

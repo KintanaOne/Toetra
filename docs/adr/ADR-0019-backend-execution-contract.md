@@ -15,7 +15,7 @@ Those controls are not Z3 concepts. They are requirements of a verification
 platform and must remain valid for SMT, MILP, abstract interpretation, concrete
 search, remote services and future backend families.
 
-FORML also needs to distinguish two different outcomes:
+Toetra also needs to distinguish two different outcomes:
 
 1. the logical interpretation of a verification task (`PROVED`,
    `COUNTEREXAMPLE`, `WITNESS`, `NO_WITNESS`, `UNKNOWN`);
@@ -29,7 +29,7 @@ result.
 
 ## Decision
 
-FORML defines a backend-neutral execution contract composed of:
+Toetra defines a backend-neutral execution contract composed of:
 
 - `BackendExecutionPolicy`;
 - `BackendResourceLimits`;
@@ -74,7 +74,7 @@ budget; internal steps do not restart the timeout.
 | `CANCELLED` | Cooperative cancellation interrupted or prevented execution |
 | `ERROR` | A technical backend failure occurred |
 
-`TIMEOUT`, `RESOURCE_LIMIT`, `CANCELLED` and generic `UNKNOWN` produce the FORML
+`TIMEOUT`, `RESOURCE_LIMIT`, `CANCELLED` and generic `UNKNOWN` produce the Toetra
 logical status `UNKNOWN`, with structured diagnostics. `ERROR` raises
 `BackendExecutionError` and is not reported as a logical verification result.
 

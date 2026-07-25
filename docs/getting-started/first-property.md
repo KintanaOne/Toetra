@@ -1,4 +1,4 @@
-# First FORML property
+# First Toetra property
 
 Create `policy.toetra`:
 
@@ -56,5 +56,5 @@ with domain(applicant.income: [3.0, 6.0])
 => target[applicant].probability("yes") >= 0.80 using Z3
 ```
 
-The user never writes the logistic decision value. FORML records the lowering,
+The user never writes the logistic decision value. Toetra records the lowering,
 numeric policy, and concrete sklearn replay in the resulting evidence.

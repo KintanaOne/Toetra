@@ -18,7 +18,7 @@ For example:
 
 ## Decision
 
-FORML will introduce IR2 as the normal-form selection layer.
+Toetra will introduce IR2 as the normal-form selection layer.
 
 IR2 is responsible for producing clause-oriented or case-oriented representations such as:
 
@@ -69,8 +69,8 @@ Rejected because backend preparation and normal-form selection would pollute IR1
 
 ### Create backend-specific IR2 per backend
 
-Rejected for V1 because Z3 is the only minimal backend target and FORML should remain backend-agnostic before lowering.
+Rejected for V1 because Z3 is the only minimal backend target and Toetra should remain backend-agnostic before lowering.
 
-## Impact on FORML
+## Impact on Toetra
 
 IR2 is architecturally required for the full end-to-end pipeline, even if it is not part of the first implemented compiler slice yet.

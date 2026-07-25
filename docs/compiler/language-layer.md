@@ -7,7 +7,7 @@
 
 ## Purpose
 
-The language layer defines the expressive boundary of FORML.
+The language layer defines the expressive boundary of Toetra.
 
 It answers the question:
 
@@ -47,7 +47,7 @@ The language layer defines:
 
 ## Current Language Concepts
 
-FORML currently supports the following major language concepts.
+Toetra currently supports the following major language concepts.
 
 ### Header
 
@@ -93,7 +93,7 @@ Examples of property types include:
 
 Scopes define where or how a property is evaluated.
 
-FORML currently distinguishes:
+Toetra currently distinguishes:
 
 | Scope | Meaning |
 |---|---|

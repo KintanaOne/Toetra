@@ -3,7 +3,7 @@
 > Status: Stabilizing
 > Scope: User-facing Toetra syntax
 > Priority: P1
-> Audience: FORML users, test authors, documentation readers
+> Audience: Toetra users, test authors, documentation readers
 
 ## Purpose
 

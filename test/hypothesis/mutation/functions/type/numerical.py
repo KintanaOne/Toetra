@@ -4,7 +4,7 @@ Numerical mutations (VALUE LEVEL)
 GOAL:
     Corrupt numeric assumptions in the DSL.
 
-ROLE IN FORML:
+ROLE IN Toetra:
     - stress thresholds and constraints
     - break metric-based reasoning
     - test numerical stability of validation pipeline

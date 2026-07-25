@@ -1,5 +1,5 @@
 """
-Logical negation mutations (FORML CORE)
+Logical negation mutations (Toetra CORE)
 
 GOAL:
     Manipulate negation structure in logical AST.

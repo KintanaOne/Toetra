@@ -6,13 +6,13 @@
 
 ## Context
 
-FORML needs an initial classification route that is useful to users while
+Toetra needs an initial classification route that is useful to users while
 remaining small enough to specify, verify, report, replay, and stabilize before a
 new release candidate.
 
 `sklearn.linear_model.LogisticRegression` is a strong first concrete estimator
 because its binary decision semantics can be represented through an affine latent
-quantity. However, FORML must not define classification as "whatever sklearn
+quantity. However, Toetra must not define classification as "whatever sklearn
 returns" or expose sklearn method names in the DSL.
 
 The initial profile must also distinguish:
@@ -23,7 +23,7 @@ The initial profile must also distinguish:
 
 ## Decision
 
-FORML will define a framework-neutral **binary logistic affine classification
+Toetra will define a framework-neutral **binary logistic affine classification
 profile**. A direct fitted binary scikit-learn `LogisticRegression` will be the
 first concrete ModelBridge route implementing that profile.
 
@@ -75,7 +75,7 @@ The equality boundary therefore belongs to the negative label.
 
 The value `0.5` is not read from a learned `threshold_` attribute on a direct
 `LogisticRegression`. It is part of the recognized semantic profile of that
-estimator type. FORML records the policy used rather than pretending it was a
+estimator type. Toetra records the policy used rather than pretending it was a
 learned model parameter.
 
 ### Pairwise predicted-label relations
@@ -197,7 +197,7 @@ calibration meaning, wrapper behavior, or verification encodings.
 Rejected because threshold wrappers introduce a separate decision-policy
 contract. They should be added after the native route is stable.
 
-## Impact on FORML
+## Impact on Toetra
 
 This ADR defined the target scope for Patch 21. The complete route is now
 implemented and adopted by ADR-0026 in `1.0.0rc2`; ADR-0022 remains the historical

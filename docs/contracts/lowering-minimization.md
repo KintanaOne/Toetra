@@ -12,7 +12,7 @@ The Lowering and Minimization contract defines how a complete verification probl
 It answers the question:
 
 ```text
-How can FORML reduce the verification problem while preserving correctness?
+How can Toetra reduce the verification problem while preserving correctness?
 ```
 
 This layer is where logical simplification, redundancy elimination and backend-preparation occur.

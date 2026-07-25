@@ -45,7 +45,7 @@ def assert_header(
 
 def parse(code: str) -> Tree:
     """
-    Parse raw FORML code into a Lark parse tree.
+    Parse raw Toetra code into a Lark parse tree.
     """
 
     return parse_toetra_code(code)

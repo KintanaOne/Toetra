@@ -3,7 +3,7 @@
 > Status: Accepted language contract — implementation pending
 > Scope: User-declared immutable scalar values in a `.toetra` header
 > Priority: P0
-> Audience: FORML users, parser authors, semantic maintainers, IR authors, backend authors, test authors
+> Audience: Toetra users, parser authors, semantic maintainers, IR authors, backend authors, test authors
 
 ## Purpose
 
@@ -36,7 +36,7 @@ They are called **specification constants** because they parameterize the verifi
 
 ## Design Goals
 
-Specification constants are intended to make FORML:
+Specification constants are intended to make Toetra:
 
 - readable for domain experts;
 - friendly to users familiar with SQL-like declarative languages;
@@ -101,13 +101,13 @@ max_risk := 0.20
 max_risk := 0.30
 ```
 
-FORML has no assignment statement in property bodies. The `:=` token is declaration syntax only.
+Toetra has no assignment statement in property bodies. The `:=` token is declaration syntax only.
 
 ---
 
 ## Bare-Name Resolution
 
-FORML keeps bare names user-friendly. A scalar expression such as:
+Toetra keeps bare names user-friendly. A scalar expression such as:
 
 ```toetra
 target <= max_risk
@@ -212,7 +212,7 @@ Rules:
 - duplicate specification-constant names are rejected;
 - a specification constant may share a name with a model feature, because the feature can be explicitly qualified;
 - a specification constant must not share a name with a scope variable introduced by `forall`, `exists`, `at`, `check_at` or a pairwise scope;
-- FORML rejects such scope/constant collisions rather than applying silent shadowing.
+- Toetra rejects such scope/constant collisions rather than applying silent shadowing.
 
 Example of a rejected collision:
 

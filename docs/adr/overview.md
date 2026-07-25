@@ -5,9 +5,9 @@
 
 ## Purpose
 
-This section records the major architecture decisions behind FORML.
+This section records the major architecture decisions behind Toetra.
 
-FORML is not only a collection of Python modules. It is a layered system that transforms a user-defined ML behavioral specification into progressively more formal verification artifacts.
+Toetra is not only a collection of Python modules. It is a layered system that transforms a user-defined ML behavioral specification into progressively more formal verification artifacts.
 
 The goal of the ADR section is to make explicit:
 
@@ -44,7 +44,7 @@ Decision
 Rationale
 Consequences
 Alternatives considered
-Impact on FORML
+Impact on Toetra
 ```
 
 ## Current ADR list
@@ -58,7 +58,7 @@ Impact on FORML
 | ADR-0005 | Use semantic annotations as runtime semantic cache |
 | ADR-0006 | Define IR1 as NNF-oriented logical representation |
 | ADR-0007 | Define IR2 as CNF/DNF normal-form layer |
-| ADR-0008 | Use ModelSchema as the bridge between models and FORML |
+| ADR-0008 | Use ModelSchema as the bridge between models and Toetra |
 | ADR-0009 | Introduce assertion aggregation before backend lowering |
 | ADR-0010 | Use Z3 as the minimal V1 backend boundary |
 | ADR-0011 | Preserve error boundaries between layers |

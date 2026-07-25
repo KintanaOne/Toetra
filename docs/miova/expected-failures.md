@@ -6,7 +6,7 @@
 
 ## Purpose
 
-Expected failures define how FORML should fail when artifacts are invalid.
+Expected failures define how Toetra should fail when artifacts are invalid.
 
 Miova relies on expected failure classification to distinguish:
 
@@ -195,4 +195,4 @@ A failed mutation campaign is not necessarily bad.
 
 A silent invalid success is worse than a clear failure.
 
-FORML should prefer early, explicit, diagnosable rejection over late, ambiguous backend failure.
+Toetra should prefer early, explicit, diagnosable rejection over late, ambiguous backend failure.

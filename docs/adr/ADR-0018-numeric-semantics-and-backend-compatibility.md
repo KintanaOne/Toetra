@@ -6,13 +6,13 @@
 
 ## Context
 
-FORML translates behavioral properties and model constraints across several numeric systems:
+Toetra translates behavioral properties and model constraints across several numeric systems:
 
 ```text
 DSL literals and domains
 + runtime anchors/datasets
 + executable model artifacts
-→ FORML typed artifacts and IR
+→ Toetra typed artifacts and IR
 → model-family encoder
 → backend numeric representation and reasoning
 → verification conclusion
@@ -37,7 +37,7 @@ The compatibility problem is not owned by one model framework and is not owned b
 ```text
 framework adapter
 × model family and concrete execution profile
-× FORML model encoder
+× Toetra model encoder
 × backend kind and numeric profile
 × property operations and required conclusions
 ```
@@ -46,17 +46,17 @@ A framework name alone is insufficient. Two models from the same framework can u
 
 A replay can validate one concrete witness or counterexample. It cannot, by itself, validate a universal proof obtained from a different numeric semantics.
 
-FORML therefore needs an explicit, backend-neutral and framework-neutral contract that records the compatibility of the entire model-to-backend route.
+Toetra therefore needs an explicit, backend-neutral and framework-neutral contract that records the compatibility of the entire model-to-backend route.
 
 ## Decision
 
-FORML will treat numeric semantics and framework/model/backend compatibility as first-class verification contracts.
+Toetra will treat numeric semantics and framework/model/backend compatibility as first-class verification contracts.
 
-A verification task may be routed and executed only after FORML has:
+A verification task may be routed and executed only after Toetra has:
 
 1. identified the source framework adapter and its relevant version or opset;
 2. identified the model family and the concrete numeric execution profile;
-3. identified the model-family encoder used by FORML;
+3. identified the model-family encoder used by Toetra;
 4. identified the numeric semantics required by the compiled specification;
 5. identified the backend kind and the numeric profile offered by the selected adapter;
 6. matched the complete route against a documented compatibility rule;
@@ -66,7 +66,7 @@ Compatibility is assessed per verification task and backend profile. It is not i
 
 ## 1. Numeric semantic layers
 
-FORML distinguishes four semantic layers and two routing identities.
+Toetra distinguishes four semantic layers and two routing identities.
 
 ### 1.1 Source model semantics
 
@@ -86,7 +86,7 @@ The source model descriptor records the semantics of the executable artifact as 
 - preprocessing boundary and transformed feature space;
 - framework conversions performed before prediction.
 
-FORML must not infer a universal numeric semantics from a framework brand. Unknown or environment-dependent behavior must remain `UNKNOWN` until an adapter supplies evidence.
+Toetra must not infer a universal numeric semantics from a framework brand. Unknown or environment-dependent behavior must remain `UNKNOWN` until an adapter supplies evidence.
 
 ### 1.2 Specification and runtime-data semantics
 
@@ -104,9 +104,9 @@ The parser and builder must not silently erase information required to determine
 
 Runtime values must retain enough dtype information to distinguish materially different inputs such as exact integers, decimal values, binary floats of different widths, nullable values, and unknown/object values.
 
-### 1.3 FORML canonical numeric semantics
+### 1.3 Toetra canonical numeric semantics
 
-FORML IR must carry a backend-neutral numeric description sufficient for routing, diagnostics, and reporting.
+Toetra IR must carry a backend-neutral numeric description sufficient for routing, diagnostics, and reporting.
 
 The exact implementation type is deferred to Patch 16.2, but the description must be able to represent distinctions equivalent to:
 
@@ -123,7 +123,7 @@ IR normalization may simplify arithmetic, but it must not silently change the de
 
 ### 1.4 Model-family encoder identity
 
-The ModelBridge route must identify the encoder that translates a model family into FORML constraints.
+The ModelBridge route must identify the encoder that translates a model family into Toetra constraints.
 
 Examples of encoder families include:
 
@@ -140,7 +140,7 @@ Two encoders for the same source model can expose different semantic targets and
 
 ### 1.5 Backend numeric profile
 
-A backend profile declares the semantics implemented through one FORML adapter. It does not inherit every theory or option supported by the underlying engine.
+A backend profile declares the semantics implemented through one Toetra adapter. It does not inherit every theory or option supported by the underlying engine.
 
 Backend kinds may include:
 
@@ -171,7 +171,7 @@ An implementation such as Z3, cvc5, a MILP solver, an interval engine, or an abs
 
 ## 2. Framework × model family × backend compatibility matrix
 
-FORML will maintain a normalized compatibility-rule registry and derive a human-readable support matrix from it.
+Toetra will maintain a normalized compatibility-rule registry and derive a human-readable support matrix from it.
 
 A literal hard-coded Cartesian table would grow without bound as frameworks, versions, model families, dtypes, encoders, backends, and property requirements evolve. The registry is therefore normative; the rendered table is a generated view of the same rules used by routing and reporting.
 
@@ -194,7 +194,7 @@ FrameworkModelBackendCompatibilityKey
 └── property_numeric_requirements
 ```
 
-The model family is independent from the framework. For example, affine regression can originate from a native FORML artifact, an sklearn estimator, an ONNX graph, another ML framework, or a custom adapter.
+The model family is independent from the framework. For example, affine regression can originate from a native Toetra artifact, an sklearn estimator, an ONNX graph, another ML framework, or a custom adapter.
 
 The backend profile is independent from the backend implementation. For example, exact-real SMT and IEEE-754 SMT are different profiles even if both are implemented with the same solver.
 
@@ -218,7 +218,7 @@ FrameworkModelBackendCompatibilityRule
 
 `support_status` and `compatibility_classification` are distinct:
 
-- support status answers whether FORML currently implements and tests the route;
+- support status answers whether Toetra currently implements and tests the route;
 - compatibility classification answers the proven semantic relationship of that route.
 
 A route may be implemented but `LOSSY`, or planned but expected to become `EXACT` once its proof obligations are satisfied.
@@ -227,7 +227,7 @@ A route may be implemented but `LOSSY`, or planned but expected to become `EXACT
 
 The following rows illustrate the intended shape. They are not commitments that every route is implemented in V1.
 
-| Source framework/format | Model family | Source numeric semantics | FORML encoder | Backend kind/profile | Expected classification | Permitted use | Status |
+| Source framework/format | Model family | Source numeric semantics | Toetra encoder | Backend kind/profile | Expected classification | Permitted use | Status |
 |---|---|---|---|---|---|---|---|
 | Native or any adapter with exact coefficients | Affine regression/classification | Exact integer or rational arithmetic | Affine equation encoder | SMT exact integer/real or rational MILP | `EXACT` when operation semantics match | Universal and existential proof-grade conclusions | Generic rule to support |
 | Any IEEE-754 framework | Affine model | Binary32/binary64 concrete execution | Affine equation encoder using exact reals | SMT exact-real affine | `LOSSY` for the concrete executable; `EXACT` for the named extracted real-affine abstraction | Abstraction-level proofs; concrete examples require replay | First V1 instantiation uses this pattern |
@@ -246,7 +246,7 @@ framework/format
 framework version or opset
 model family
 source dtype/execution profile
-FORML encoder
+Toetra encoder
 backend kind
 backend numeric profile
 support status
@@ -257,7 +257,7 @@ compatibility classification
 
 Rules are matched from most specific to most general. A rule with an exact framework version, model subtype, dtype, encoder, and backend profile takes precedence over a wildcard rule.
 
-When two equally specific rules conflict, routing fails with a structured configuration error. FORML must not choose the most permissive classification.
+When two equally specific rules conflict, routing fails with a structured configuration error. Toetra must not choose the most permissive classification.
 
 When no rule matches, the compatibility result is `UNKNOWN`, not an inferred default.
 
@@ -276,7 +276,7 @@ Rules are versioned because framework kernels, opsets, adapters, and backend beh
 
 ## 3. Compatibility classification
 
-FORML uses the following classification for the relation between source behavior and encoded backend behavior.
+Toetra uses the following classification for the relation between source behavior and encoded backend behavior.
 
 Let:
 
@@ -290,7 +290,7 @@ Let:
 | `SOUND_UNDER_APPROXIMATION` | `B ⊆ S` | Every encoded behavior is a source behavior, but some source behaviors may be omitted. |
 | `LOSSY` | no proven inclusion relation | A deterministic conversion exists, but neither sound inclusion relation has been established. |
 | `INCOMPATIBLE` | no valid encoding | The task cannot be represented by the backend profile. |
-| `UNKNOWN` | insufficient evidence or no matching rule | FORML lacks metadata or a proven rule to classify the relationship. |
+| `UNKNOWN` | insufficient evidence or no matching rule | Toetra lacks metadata or a proven rule to classify the relationship. |
 
 Compatibility is evidence-based. An adapter must not claim `EXACT` or a sound approximation without a documented rule and tests supporting that claim.
 
@@ -321,7 +321,7 @@ The following matrix defines the minimum conclusion policy.
 | `INCOMPATIBLE` | execution rejected | execution rejected | execution rejected | execution rejected |
 | `UNKNOWN` | not proof-grade for the concrete source | only a concretely replayed example may be confirmed | only a concretely replayed example may be confirmed | not proof-grade for the concrete source |
 
-The table is intentionally expressed independently from `SAT` and `UNSAT`. A backend adapter maps its native status vocabulary to the common FORML execution contract introduced by Patch 17.
+The table is intentionally expressed independently from `SAT` and `UNSAT`. A backend adapter maps its native status vocabulary to the common Toetra execution contract introduced by Patch 17.
 
 Concrete replay validates one reconstructed execution. It does not upgrade a negative search result obtained under `LOSSY` or `UNKNOWN` compatibility into a concrete-model universal proof.
 
@@ -335,7 +335,7 @@ The first implemented V1 route is expected to instantiate the generic matrix wit
 framework adapter: sklearn
 model family: affine regression
 source profile: discovered floating-point execution profile
-FORML encoder: affine equation encoder
+Toetra encoder: affine equation encoder
 backend kind: SMT
 backend implementation: Z3
 backend profile: exact-real affine
@@ -345,12 +345,12 @@ This row does not define the architecture. It is only the first supported entry 
 
 ### 5.1 Real-affine abstraction target
 
-An exact-real backend can reason exactly about the affine equation constructed by FORML from its canonical exact constants.
+An exact-real backend can reason exactly about the affine equation constructed by Toetra from its canonical exact constants.
 
 A result may therefore be valid for the declared mathematical abstraction:
 
 ```text
-real-valued affine model extracted and encoded by FORML
+real-valued affine model extracted and encoded by Toetra
 ```
 
 The report must identify this target explicitly.
@@ -381,7 +381,7 @@ Patch 16.2 will choose the least disruptive public behavior among structured rej
 
 ## 6. Compatibility-check placement
 
-Compatibility is evaluated after FORML has enough task-specific evidence and before backend translation or execution.
+Compatibility is evaluated after Toetra has enough task-specific evidence and before backend translation or execution.
 
 The target flow is:
 
@@ -468,7 +468,7 @@ This ADR refines routing with three distinct questions:
 
 ```text
 1. Framework/model support:
-   Can FORML introspect and encode this model family from this framework/version?
+   Can Toetra introspect and encode this model family from this framework/version?
 
 2. Backend capability:
    Can this backend profile represent the requested operations and sorts?
@@ -496,7 +496,7 @@ The same compatibility rules can drive routing, generated support documentation,
 
 ### Incremental implementation
 
-FORML can retain one useful initial route while adding new framework/model/backend rows without redesigning the compiler.
+Toetra can retain one useful initial route while adding new framework/model/backend rows without redesigning the compiler.
 
 ### Auditable routing
 
@@ -504,13 +504,13 @@ A structured rule explains why a route was accepted, rejected, limited to abstra
 
 ### Future product foundations
 
-The registry can later support organizational policy, such as requiring proof-grade compatibility before deployment, without moving fundamental trust out of FORML Core.
+The registry can later support organizational policy, such as requiring proof-grade compatibility before deployment, without moving fundamental trust out of Toetra Core.
 
 ## Consequences
 
 ### Positive
 
-- FORML no longer equates numeric type compatibility with semantic equivalence.
+- Toetra no longer equates numeric type compatibility with semantic equivalence.
 - The architecture is neither framework-centric nor backend-centric.
 - Model family and model encoder are explicit compatibility dimensions.
 - Concrete-model and abstraction-level claims are distinguishable.
@@ -547,7 +547,7 @@ Rejected for concrete-model claims because framework execution may use finite-pr
 
 It remains valid as an explicitly named abstraction target.
 
-### Use Python `float` as FORML's universal numeric representation
+### Use Python `float` as Toetra's universal numeric representation
 
 Rejected because it erases source width and does not define backend or model execution semantics.
 
@@ -623,20 +623,20 @@ This decision is implemented only when:
 14. tests demonstrate at least one case where an exact-real abstraction and concrete floating-point execution differ;
 15. existing supported exact/integer behavior remains covered by regression tests.
 
-## Impact on FORML
+## Impact on Toetra
 
 This ADR extends compiler, ModelBridge, routing, backend, and reporting contracts without expanding the required V1 model-family scope.
 
 The initial release may still implement one narrow route. The architectural contract, however, is a generic framework/model/backend compatibility registry that can later include affine models, trees, neural networks, symbolic models, SMT profiles, MILP profiles, interval engines, abstract interpreters, and concrete-search backends.
 
-FORML will explicitly state whether it verified:
+Toetra will explicitly state whether it verified:
 
 - an exact source semantics;
 - a sound over-approximation;
 - a sound under-approximation;
 - or a named mathematical abstraction.
 
-Fundamental semantic transparency remains part of FORML Core. Future platform or premium features may build policy, history, governance, organization-wide enforcement, and fleet-level compatibility dashboards on top of this contract, but they must not be required to understand the trust level of a local verification result.
+Fundamental semantic transparency remains part of Toetra Core. Future platform or premium features may build policy, history, governance, organization-wide enforcement, and fleet-level compatibility dashboards on top of this contract, but they must not be required to understand the trust level of a local verification result.
 
 ## Patch 21 application
 
@@ -670,7 +670,7 @@ P21.8.1 implements that rule as follows:
 
 ### Certified logistic-threshold interval construction
 
-For a source decimal probability `p` strictly inside `(0, 1)`, FORML constructs
+For a source decimal probability `p` strictly inside `(0, 1)`, Toetra constructs
 a lower and upper threshold satisfying:
 
 ```text

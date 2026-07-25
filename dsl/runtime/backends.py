@@ -33,7 +33,7 @@ class BackendRunnerRegistry:
 
 
 def create_default_backend_runner_registry() -> BackendRunnerRegistry:
-    """Create the runner registry shipped with the current FORML runtime."""
+    """Create the runner registry shipped with the current Toetra runtime."""
 
     registry = BackendRunnerRegistry()
     registry.register(EnumBackend.Z3, Z3Runner())

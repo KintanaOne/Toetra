@@ -12,7 +12,7 @@ This document decomposes the Logical Verification Pipeline.
 It answers:
 
 ```text
-How does FORML turn validated user intent and model metadata into a solver-ready backend query?
+How does Toetra turn validated user intent and model metadata into a solver-ready backend query?
 ```
 
 The Logical Verification Pipeline is the bridge between semantic validation and backend execution.
@@ -182,7 +182,7 @@ For V1, the backend compiler targets Z3 only.
 
 Responsibilities:
 
-- map FORML logical atoms to Z3 variables and expressions;
+- map Toetra logical atoms to Z3 variables and expressions;
 - encode scope constraints;
 - encode model constraints;
 - encode final solver assertions;

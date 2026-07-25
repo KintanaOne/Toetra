@@ -6,7 +6,7 @@
 
 ## Purpose
 
-Golden samples are canonical FORML cases that freeze observable behavior across layers.
+Golden samples are canonical Toetra cases that freeze observable behavior across layers.
 
 They are the bridge between documentation and implementation.
 

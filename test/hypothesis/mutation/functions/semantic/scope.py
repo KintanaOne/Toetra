@@ -6,7 +6,7 @@ Semantic scope corruption mutations.
 GOAL:
     Break semantic scope consistency.
 
-ROLE IN FORML:
+ROLE IN Toetra:
     - stress neighborhood validation
     - corrupt semantic domains
     - test scope assumptions

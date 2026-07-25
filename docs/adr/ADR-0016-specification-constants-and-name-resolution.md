@@ -6,7 +6,7 @@
 
 ## Context
 
-FORML already allows header declarations using `identifier := value`, but those declarations had no stable architectural meaning across the compiler pipeline.
+Toetra already allows header declarations using `identifier := value`, but those declarations had no stable architectural meaning across the compiler pipeline.
 
 The language also allows bare identifiers inside scalar expressions:
 
@@ -19,7 +19,7 @@ A bare identifier may denote either:
 - a reusable value declared by the user;
 - or an implicit feature of the current scope entity.
 
-Requiring a sigil such as `$minimum_income` would remove the ambiguity, but would make the DSL less natural for domain experts. FORML aims for a declarative surface closer to SQL than to solver syntax.
+Requiring a sigil such as `$minimum_income` would remove the ambiguity, but would make the DSL less natural for domain experts. Toetra aims for a declarative surface closer to SQL than to solver syntax.
 
 A compiler decision is therefore required for:
 
@@ -32,7 +32,7 @@ A compiler decision is therefore required for:
 
 ## Decision
 
-FORML calls user-declared immutable scalar values **specification constants**.
+Toetra calls user-declared immutable scalar values **specification constants**.
 
 Initial syntax:
 
@@ -84,7 +84,7 @@ In finite-set value position:
 
 ### Collisions
 
-FORML rejects:
+Toetra rejects:
 
 - duplicate specification-constant declarations;
 - reserved words as declaration names;
@@ -166,7 +166,7 @@ Rejected because specification constants are immutable known values, not unknown
 
 Rejected because it makes properties difficult to audit and can silently change meaning.
 
-## Impact on FORML
+## Impact on Toetra
 
 This decision affects:
 

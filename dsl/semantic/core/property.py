@@ -25,7 +25,7 @@ class PropertyValidator:
 
     Responsibility:
     ----------------
-    Validate a complete FORML property.
+    Validate a complete Toetra property.
 
     Validation pipeline:
     --------------------

@@ -7,7 +7,7 @@
 
 ## Purpose
 
-The backend boundary defines where FORML stops being backend-independent and starts producing backend-specific artifacts.
+The backend boundary defines where Toetra stops being backend-independent and starts producing backend-specific artifacts.
 
 It answers the question:
 
@@ -35,7 +35,7 @@ Verification Backend
 
 ## Boundary Principle
 
-Before the backend boundary, FORML artifacts are backend-independent or backend-preparable.
+Before the backend boundary, Toetra artifacts are backend-independent or backend-preparable.
 
 After the backend boundary, artifacts may be backend-specific.
 
@@ -168,7 +168,7 @@ The backend boundary must guarantee:
 - backend capabilities are checked explicitly;
 - traceability is preserved into backend artifacts;
 - backend execution is separated from backend query construction;
-- backend results can be mapped back to FORML properties.
+- backend results can be mapped back to Toetra properties.
 
 ---
 

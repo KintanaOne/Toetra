@@ -21,7 +21,7 @@ DSL → semantic binding → IR1 → semantic lowering → IR2
 
 ## Decision
 
-FORML `1.0.0rc2` adds one public binary-classification route:
+Toetra `1.0.0rc2` adds one public binary-classification route:
 
 - direct fitted binary `sklearn.linear_model.LogisticRegression`;
 - finite transformed numeric features and one output;

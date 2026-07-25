@@ -3,7 +3,7 @@
 > Release candidate: `1.0.0rc2`  
 > Contract date: 2026-07-22
 
-This page is the public source of truth for executable FORML V1 support.
+This page is the public source of truth for executable Toetra V1 support.
 
 ## Supported end-to-end routes
 
@@ -17,7 +17,7 @@ This page is the public source of truth for executable FORML V1 support.
 | Public DSL | scalar `target[point]` | `target[point].label`, `target[point].probability(label)` |
 | Encoding | affine output equation | affine oriented-decision equation |
 | Backend | Z3 | Z3 |
-| Reports | text, HTML, Jupyter, records/DataFrame, JSON v5 | same plus additive model-evaluation evidence |
+| Reports | text, HTML, Jupyter, records/DataFrame, JSON v6 | same plus additive model-evaluation evidence |
 | Replay | concrete regression output | label, probabilities, decision value, original property |
 
 Both routes support homogeneous `forall` or `exists` bindings, points/anchors,

@@ -1,4 +1,4 @@
-# /forml/grammar/official_contents/protected_words.py
+# dsl/language/vocabulary/protected_words.py
 
 from enum import Enum
 from dsl.language.vocabulary.utils import EnumMixin

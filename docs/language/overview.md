@@ -3,11 +3,11 @@
 > Status: Stabilizing  
 > Scope: Public DSL surface  
 > Priority: P1  
-> Audience: FORML users, compiler contributors, test authors
+> Audience: Toetra users, compiler contributors, test authors
 
 ## Purpose
 
-The FORML language is a domain-specific language for expressing behavioral properties over machine learning systems.
+The Toetra language is a domain-specific language for expressing behavioral properties over machine learning systems.
 
 Its role is to let a user describe what a model should satisfy, without directly writing solver constraints, backend-specific queries, or framework-specific model encodings.
 
@@ -32,13 +32,13 @@ The language is intentionally designed to be compiled through a sequence of prog
 → BackendQuery
 ```
 
-The DSL is therefore not the verification backend. It is the human-facing entry point of the FORML verification pipeline.
+The DSL is therefore not the verification backend. It is the human-facing entry point of the Toetra verification pipeline.
 
 ---
 
 ## Design Goals
 
-The FORML language aims to provide:
+The Toetra language aims to provide:
 
 | Goal | Meaning |
 |---|---|
@@ -140,7 +140,7 @@ Domain subjects are always explicit (`x0.a`) so semantic validation can verify t
 
 ## Arithmetic Expressions
 
-FORML comparisons accept expressions on both sides:
+Toetra comparisons accept expressions on both sides:
 
 ```toetra
 2 * x0.a + x0.b <= target
@@ -160,7 +160,7 @@ Logical normal forms treat each comparison as an atom and do not rewrite inside 
 
 ## Language vs Semantics
 
-The FORML language defines syntax. The semantic layer defines meaning.
+The Toetra language defines syntax. The semantic layer defines meaning.
 
 For example:
 
@@ -210,7 +210,7 @@ This means the language is only one side of the end-to-end verification problem.
 
 ## Relationship with Miova and Hypothesis
 
-The FORML language should be testable through:
+The Toetra language should be testable through:
 
 - grammar-level samples,
 - parser tests,

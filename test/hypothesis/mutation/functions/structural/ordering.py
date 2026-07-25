@@ -4,7 +4,7 @@ Structural ordering mutations
 GOAL:
     Break ordering assumptions in AST traversal.
 
-ROLE IN FORML:
+ROLE IN Toetra:
     - test deterministic pipelines
     - break ordering invariants
     - stress semantic aggregation layers

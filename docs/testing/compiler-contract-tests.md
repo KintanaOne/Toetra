@@ -6,7 +6,7 @@
 
 ## Purpose
 
-Compiler contract tests validate the boundaries between FORML layers.
+Compiler contract tests validate the boundaries between Toetra layers.
 
 A contract test does not only ask whether a function returns something. It asks whether
 a layer accepts the right input, produces the right output, preserves the required
@@ -14,7 +14,7 @@ information, and rejects invalid artifacts at the expected boundary.
 
 ## Contract Testing Philosophy
 
-FORML is a progressive formalization pipeline. Each layer strengthens or transforms the
+Toetra is a progressive formalization pipeline. Each layer strengthens or transforms the
 artifact it receives.
 
 ```text
@@ -429,7 +429,7 @@ Miova should be used to mutate artifacts at each boundary and verify that:
 
 ## Success Criteria
 
-Compiler contract tests are sufficient when every FORML boundary has:
+Compiler contract tests are sufficient when every Toetra boundary has:
 
 - at least one valid path;
 - at least one invalid path;

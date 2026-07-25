@@ -6,7 +6,7 @@
 
 ## Purpose
 
-FORML separates four concerns:
+Toetra separates four concerns:
 
 ```text
 backend execution
@@ -16,7 +16,7 @@ backend execution
 ```
 
 A backend reports what happened during execution. The reporting layer combines
-that result with the FORML property, scope, route and assumptions. Renderers do
+that result with the Toetra property, scope, route and assumptions. Renderers do
 not import or inspect a concrete solver.
 
 The internal IR pretty-printers remain developer tools. User-facing output must
@@ -61,7 +61,7 @@ subtype of the backend-neutral result. Historical accessors `solver_status` and
 - normalized scope and variables;
 - concise specification text;
 - selected backend and route reason;
-- backend and FORML statuses;
+- backend and Toetra statuses;
 - normalized assignments;
 - diagnostics;
 - assumption count;
@@ -117,7 +117,7 @@ The complete contract is documented in [Numeric Compatibility Reporting](../cont
 
 ## Backend execution evidence
 
-The logical FORML status and the technical backend status are separate:
+The logical Toetra status and the technical backend status are separate:
 
 ```python
 report.status                       # VerificationStatus.UNKNOWN
@@ -162,7 +162,7 @@ print(render_verification_reports_text(reports))
 
 The renderer displays:
 
-- the normalized FORML status;
+- the normalized Toetra status;
 - the property and scope;
 - the concise specification;
 - backend and routing information;
@@ -254,7 +254,7 @@ session.write_html("verification-session.html")
 
 The generated document includes inline CSS, a status summary, one card per
 property, grouped inputs and model outputs, route information and diagnostics.
-It can therefore be attached to a model-review ticket without a running FORML
+It can therefore be attached to a model-review ticket without a running Toetra
 or Jupyter environment.
 
 ## Current Boundary
@@ -313,4 +313,4 @@ replay.relation_consistent
 replay.assertion_consistent
 ```
 
-A replay is consistent only when every formal/concrete output comparison is within tolerance and no supported concrete relation/assertion check contradicts the formal result. Numeric ordering atoms within the absolute replay tolerance of their boundary are indeterminate (`None`), not contradictory; use `relation_consistent` and `assertion_consistent` for the stable consistency decision. Missing model features produce a `REPLAY_POINT_MISSING` failure; FORML never reports a silently partial replay.
+A replay is consistent only when every formal/concrete output comparison is within tolerance and no supported concrete relation/assertion check contradicts the formal result. Numeric ordering atoms within the absolute replay tolerance of their boundary are indeterminate (`None`), not contradictory; use `relation_consistent` and `assertion_consistent` for the stable consistency decision. Missing model features produce a `REPLAY_POINT_MISSING` failure; Toetra never reports a silently partial replay.

@@ -2,14 +2,14 @@
 
 > Status: P0 — planned / critical  
 > Implementation: external integration planned  
-> Scope: mutation-driven validation of FORML artifacts
+> Scope: mutation-driven validation of Toetra artifacts
 
 ## Purpose
 
-Miova campaigns challenge FORML by mutating artifacts across the pipeline.
+Miova campaigns challenge Toetra by mutating artifacts across the pipeline.
 
 The purpose is not to replace unit tests or contract tests. Miova is used to explore
-whether FORML remains robust when artifacts are modified, corrupted, simplified, or
+whether Toetra remains robust when artifacts are modified, corrupted, simplified, or
 semantically challenged.
 
 ## Position in the Testing Strategy
@@ -48,7 +48,7 @@ Miova campaigns should answer questions such as:
 
 ## Artifact Kinds
 
-Recommended FORML artifact kinds for Miova:
+Recommended Toetra artifact kinds for Miova:
 
 | Artifact Kind | Layer |
 |---|---|
@@ -266,7 +266,7 @@ REJECTED
 FAILED
 ```
 
-In FORML context:
+In Toetra context:
 
 | Status | Meaning |
 |---|---|
@@ -313,7 +313,7 @@ Miova campaigns are useful when:
 - they do not produce noise by mutating impossible artifacts;
 - they can reproduce failures;
 - they improve confidence in compiler evolution;
-- they make FORML robust against future refactors.
+- they make Toetra robust against future refactors.
 
 ---
 

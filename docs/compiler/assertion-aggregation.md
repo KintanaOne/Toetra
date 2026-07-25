@@ -37,7 +37,7 @@ AggregatedAssertionSet
 
 ## Why Aggregation Exists
 
-A FORML property is not only its RHS assertion.
+A Toetra property is not only its RHS assertion.
 
 A complete verification query may involve:
 

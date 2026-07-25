@@ -27,7 +27,7 @@ Without an explicit lowering boundary, the implementation could accidentally:
 
 ## Decision
 
-FORML will introduce an explicit **model-semantic lowering** step between the
+Toetra will introduce an explicit **model-semantic lowering** step between the
 declarative observable representation and backend-oriented verification
 constraints.
 
@@ -108,7 +108,7 @@ oriented decision value. The exact threshold is `logit(p)` for the positive
 label and `-logit(p)` for the negative label.
 
 The native threshold `p = 0.5` lowers exactly to zero. For every other accepted
-threshold, FORML computes an outward decimal interval enclosing the exact logit
+threshold, Toetra computes an outward decimal interval enclosing the exact logit
 at a declared precision. The selected bound depends on:
 
 - the comparison direction;
@@ -160,7 +160,7 @@ The semantic model family is the narrowest layer that knows both:
 - what the user-visible observable means for that family; and
 - which mathematical representation can preserve it.
 
-This keeps FORML independent from frameworks and backends while making every
+This keeps Toetra independent from frameworks and backends while making every
 rewrite auditable.
 
 ## Consequences
@@ -201,7 +201,7 @@ backend from consuming the same canonical contract.
 Rejected because the parser has neither a model schema nor a model-family
 semantic profile.
 
-## Impact on FORML
+## Impact on Toetra
 
 This ADR extends ADR-0010, ADR-0018, and ADR-0020 with a model-semantic rewrite
 boundary. Existing affine regression properties are identity lowerings and remain

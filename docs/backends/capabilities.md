@@ -5,7 +5,7 @@
 
 ## Purpose
 
-Backend capability declarations allow FORML to reject incompatible verification requests before translation or execution.
+Backend capability declarations allow Toetra to reject incompatible verification requests before translation or execution.
 
 A capability model must describe what a backend profile actually supports, not merely identify the backend by name.
 

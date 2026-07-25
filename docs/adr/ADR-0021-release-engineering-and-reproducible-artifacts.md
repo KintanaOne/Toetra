@@ -2,11 +2,11 @@
 
 - **Status:** Accepted
 - **Date:** 2026-07-19
-- **Decision owners:** FORML maintainers
+- **Decision owners:** Toetra maintainers
 
 ## Context
 
-FORML can only claim a stable V1 if the source checkout, Python distributions and review bundle represent the same product. A green test suite inside a developer checkout is insufficient when:
+Toetra can only claim a stable V1 if the source checkout, Python distributions and review bundle represent the same product. A green test suite inside a developer checkout is insufficient when:
 
 - CI reformats or cleans files before checking them;
 - the wheel omits the public `toetra` package or grammar resources;
@@ -18,7 +18,7 @@ These failures do not change solver semantics, but they can make a correct engin
 
 ## Decision
 
-FORML adopts four independent release gates.
+Toetra adopts four independent release gates.
 
 ### 1. Non-mutating verification
 
@@ -79,12 +79,12 @@ Rejected because editable installs do not prove wheel contents.
 
 ### Trust setuptools defaults
 
-Rejected because package discovery and source-distribution inclusion rules can change independently of FORML's public contract.
+Rejected because package discovery and source-distribution inclusion rules can change independently of Toetra's public contract.
 
 ### Keep ad hoc review ZIP scripts
 
 Rejected because silent exclusions already produced an incomplete bundle that reported no missing critical paths.
 
-## Impact on FORML
+## Impact on Toetra
 
-This ADR does not extend the DSL or verification engine. It makes the delivered artifact itself a verified FORML boundary and provides the build identity required by verification provenance.
+This ADR does not extend the DSL or verification engine. It makes the delivered artifact itself a verified Toetra boundary and provides the build identity required by verification provenance.

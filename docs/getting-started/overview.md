@@ -1,6 +1,6 @@
 # Getting started
 
-FORML V1 verifies declared behavioral properties of a narrow numeric-affine ML
+Toetra V1 verifies declared behavioral properties of a narrow numeric-affine ML
 profile. Begin with the self-contained demo, then replace its temporary artifacts
 with your own fitted `LinearRegression`, reference dataset, and `.toetra` policy.
 
@@ -24,7 +24,7 @@ an existential result.
 ## Reading order
 
 1. [Installation](installation.md)
-2. [First FORML property](first-property.md)
+2. [First Toetra property](first-property.md)
 3. [End-to-end preview](end-to-end-preview.md)
 4. [Public V1 profile](../public-v1-profile.md)
 

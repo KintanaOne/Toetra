@@ -6,7 +6,7 @@
 
 ## Purpose
 
-FORML must not infer trust from a framework name or a backend name alone.
+Toetra must not infer trust from a framework name or a backend name alone.
 Numeric compatibility is a property of one complete verification route:
 
 ```text
@@ -43,7 +43,7 @@ Patch 16.2 introduces five backend-neutral artifact families.
 
 The descriptors use strings for extensible adapter, family, profile, and
 encoder identities. Backend families and numeric semantic categories use enums
-only where FORML needs a stable common vocabulary.
+only where Toetra needs a stable common vocabulary.
 
 ## Rule key
 
@@ -116,7 +116,7 @@ uses four logical conclusion kinds:
 | `WITNESS` | Existential witness candidate |
 | `NO_WITNESS` | Existential no-witness conclusion |
 
-If a backend produces a conclusion not permitted by the rule, FORML downgrades
+If a backend produces a conclusion not permitted by the rule, Toetra downgrades
 the result to `UNKNOWN` and records the backend-interpreted status in metadata.
 
 Patch 16.3 exposes the complete route in public reports and generates the public support and semantic-guarantee matrices from this registry.

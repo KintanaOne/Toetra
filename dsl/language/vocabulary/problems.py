@@ -1,4 +1,4 @@
-# /forml/grammar/official_contents/problems.py
+# dsl/language/vocabulary/problems.py
 
 from enum import Enum
 from dsl.language.vocabulary.utils import EnumMixin

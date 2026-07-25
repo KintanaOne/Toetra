@@ -1,4 +1,4 @@
-# FORML V1 implementation status
+# Toetra V1 implementation status
 
 > Status date: 2026-07-22  
 > Release candidate: `1.0.0rc2`
@@ -10,7 +10,7 @@
 | ModelBridge | implemented | `LinearRegression` and direct binary `LogisticRegression` |
 | Numeric compatibility | implemented | rule registry, directed logit intervals, conclusion policy |
 | Z3 | implemented | regression, label, probability-order, pairwise-label routes |
-| Runtime/reporting | implemented | public `verify`, JSON v5, text/HTML/Jupyter, records |
+| Runtime/reporting | implemented | public `verify`, JSON v6, text/HTML/Jupyter, records |
 | Provenance/replay | implemented | stable Decimal fingerprints and concrete model observation |
 | Release engineering | implemented | reproducible dist, clean-install route probe, review bundle |
 

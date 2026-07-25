@@ -6,7 +6,7 @@ Semantic redundancy mutations.
 GOAL:
     Inject semantically redundant logic.
 
-ROLE IN FORML:
+ROLE IN Toetra:
     - stress simplifiers
     - test redundancy handling
     - validate semantic normalization

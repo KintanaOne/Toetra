@@ -6,7 +6,7 @@
 
 ## Core rule
 
-FORML no longer assigns a property to one mutually exclusive semantic scope. A property is evaluated in a **composed point environment** containing:
+Toetra no longer assigns a property to one mutually exclusive semantic scope. A property is evaluated in a **composed point environment** containing:
 
 - zero or more global anchors;
 - an ordered chain of lexical quantifier binders;
@@ -119,7 +119,7 @@ where perturbed in neighborhood(
 
 ## Model outputs
 
-FORML V1 has one scalar target selected by the header. Brackets select the **input point**, not an output from a list:
+Toetra V1 has one scalar target selected by the header. Brackets select the **input point**, not an output from a list:
 
 ```toetra
 target[x0]
@@ -128,7 +128,7 @@ target[x1]
 
 Repeated references to `target[x0]` reuse one `(model, x0, target)` evaluation. Different points create different evaluations and different backend symbols.
 
-The short forms `target` and `age` are accepted only when exactly one eligible default point exists. FORML never silently picks the first or innermost point.
+The short forms `target` and `age` are accepted only when exactly one eligible default point exists. Toetra never silently picks the first or innermost point.
 
 ## Direct properties
 
@@ -172,7 +172,7 @@ This is deterministic sugar for a fresh universal candidate plus a natural neigh
 
 ## Legacy migration
 
-The provisional forms remain parseable only so FORML can emit stable migration diagnostics:
+The provisional forms remain parseable only so Toetra can emit stable migration diagnostics:
 
 | Legacy form | V1 action |
 |---|---|

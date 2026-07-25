@@ -1,12 +1,12 @@
 # Invariant Testing
 
 > Status: planned / critical  
-> Scope: invariant-driven validation of FORML artifacts and transitions  
+> Scope: invariant-driven validation of Toetra artifacts and transitions
 > Audience: maintainers, verification engineers, mutation authors
 
 ## Purpose
 
-Invariant testing checks whether FORML artifacts and transformations satisfy properties that must remain true.
+Invariant testing checks whether Toetra artifacts and transformations satisfy properties that must remain true.
 
 Miova uses invariants to verify both:
 
@@ -15,7 +15,7 @@ Miova uses invariants to verify both:
 
 ## Invariant Categories
 
-FORML should use two main invariant categories.
+Toetra should use two main invariant categories.
 
 ### State Invariant
 
@@ -137,7 +137,7 @@ Miova reports must distinguish these cases.
 
 ## P0 Requirement
 
-At P0, FORML should define invariants for:
+At P0, Toetra should define invariants for:
 
 1. AST structural validity;
 2. semantic binding resolution;

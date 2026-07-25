@@ -6,7 +6,7 @@
 
 ## Purpose
 
-The FORML runtime owns the user-facing execution path from a specification and
+The Toetra runtime owns the user-facing execution path from a specification and
 model artifacts to backend-neutral reports.
 
 ```text

@@ -6,7 +6,7 @@
 
 ## Context
 
-FORML uses vocabulary values such as:
+Toetra uses vocabulary values such as:
 
 - property types,
 - problem types,
@@ -32,7 +32,7 @@ Without explicit normalization, downstream layers may fail unpredictably.
 
 ## Decision
 
-FORML should normalize vocabulary values at explicit boundaries.
+Toetra should normalize vocabulary values at explicit boundaries.
 
 Recommended boundaries:
 
@@ -77,7 +77,7 @@ Rejected because it duplicates logic and creates inconsistent behavior.
 
 Rejected because the DSL should allow reasonable user-facing syntax, while internal layers should remain canonical.
 
-## Impact on FORML
+## Impact on Toetra
 
 Type normalization should become a documented P0 contract.
 

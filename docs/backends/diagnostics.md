@@ -18,11 +18,11 @@ They are essential because verification failures can come from very different ca
 - inconclusive backend result;
 - real property violation.
 
-FORML should distinguish these cases clearly.
+Toetra should distinguish these cases clearly.
 
 ## Diagnostic philosophy
 
-FORML diagnostics should be:
+Toetra diagnostics should be:
 
 | Principle | Meaning |
 |---|---|
@@ -30,7 +30,7 @@ FORML diagnostics should be:
 | Contract-aware | The violated precondition or invariant is named when possible. |
 | User-readable | The message explains what the user can change. |
 | Machine-readable | Diagnostics can be tested and processed. |
-| Non-silent | FORML should not silently fallback to another backend without reporting it. |
+| Non-silent | Toetra should not silently fallback to another backend without reporting it. |
 
 ## Backend diagnostic categories
 
@@ -39,7 +39,7 @@ FORML diagnostics should be:
 | Backend not found | Requested backend is unknown or not registered. |
 | Backend incompatible | Backend exists but cannot support the request. |
 | Capability mismatch | Property/model/query exceeds backend capability. |
-| Encoding failure | FORML cannot compile the lowered query to backend-native form. |
+| Encoding failure | Toetra cannot compile the lowered query to backend-native form. |
 | Execution failure | Backend crashed, timed out, or failed externally. |
 | Inconclusive result | Backend returned unknown or could not decide. |
 | Property violation | Backend found a counterexample or failing condition. |
@@ -143,7 +143,7 @@ Backend diagnostics are connected to several contract documents:
 
 ## CI behavior
 
-In CI, FORML should distinguish between:
+In CI, Toetra should distinguish between:
 
 | Result | CI meaning |
 |---|---|
@@ -174,7 +174,7 @@ This makes diagnostics part of the contract, not just user-facing text.
 
 ## Design invariant
 
-A backend failure without a diagnostic is itself a FORML failure.
+A backend failure without a diagnostic is itself a Toetra failure.
 
 ---
 

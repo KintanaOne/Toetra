@@ -6,7 +6,7 @@
 
 ## Purpose
 
-A failure is useful only when FORML reports the correct owning boundary and preserves the original cause.
+A failure is useful only when Toetra reports the correct owning boundary and preserves the original cause.
 
 ---
 
@@ -83,7 +83,7 @@ For:
 forall x0 => y.a <= 3
 ```
 
-FORML should report conceptually:
+Toetra should report conceptually:
 
 ```text
 Explicit entity `y` is not declared by quantified scope `forall x0`.

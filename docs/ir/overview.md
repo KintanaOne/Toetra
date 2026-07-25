@@ -6,11 +6,11 @@
 
 ## Purpose
 
-Intermediate Representations, or IRs, are the internal logical representations used by FORML after DSL parsing and semantic validation.
+Intermediate Representations, or IRs, are the internal logical representations used by Toetra after DSL parsing and semantic validation.
 
 Their purpose is to progressively transform user intent from a domain-specific property expression into a backend-preparable verification problem.
 
-FORML does not directly send DSL assertions to a solver or verification backend. Instead, it progressively formalizes them through several layers:
+Toetra does not directly send DSL assertions to a solver or verification backend. Instead, it progressively formalizes them through several layers:
 
 ```text
 SemanticValidatedAST
@@ -34,9 +34,9 @@ This layered approach keeps DSL syntax, semantic validation, logical normalizati
 
 The DSL captures what the user wants to verify.
 
-The IR pipeline defines how FORML turns that intent into a formal verification problem.
+The IR pipeline defines how Toetra turns that intent into a formal verification problem.
 
-IRs are necessary because FORML must support several concerns at once:
+IRs are necessary because Toetra must support several concerns at once:
 
 | Concern | Why it matters |
 |---|---|
@@ -173,7 +173,7 @@ What exactly is sent to the backend?
 
 ## Design Principle
 
-FORML treats IRs as architectural contracts.
+Toetra treats IRs as architectural contracts.
 
 Each IR layer must define:
 

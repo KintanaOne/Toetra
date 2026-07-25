@@ -30,6 +30,7 @@ def test_repository_has_no_historical_artifacts() -> None:
     assert not obsolete_code
     assert not (ROOT / ".docs").exists()
     assert not tuple(ROOT.glob("forml_review_bundle_*.zip"))
+    assert not tuple(ROOT.glob("P*_*.patch"))
 
 
 def test_completed_documentation_working_notes_are_absent() -> None:
@@ -64,7 +65,7 @@ def test_every_documentation_page_is_in_mkdocs_navigation() -> None:
 
 def test_repository_has_no_empty_python_modules() -> None:
     roots = tuple(
-        ROOT / name for name in ("forml", "dsl", "model", "scripts", "demo", "test")
+        ROOT / name for name in ("toetra", "dsl", "model", "scripts", "demo", "test")
     )
     empty_modules = {
         path.relative_to(ROOT).as_posix()

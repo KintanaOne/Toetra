@@ -8,7 +8,7 @@
 
 ## Context
 
-FORML currently represents evaluation context through mutually exclusive scope forms such as `check_at`, `at`, pairwise syntax, and a single-variable quantifier. That model is sufficient while a property refers to one implicit input and one implicit model output, but it becomes ambiguous as soon as a specification needs any combination of:
+Toetra currently represents evaluation context through mutually exclusive scope forms such as `check_at`, `at`, pairwise syntax, and a single-variable quantifier. That model is sufficient while a property refers to one implicit input and one implicit model output, but it becomes ambiguous as soon as a specification needs any combination of:
 
 - a concrete anchor and a symbolic perturbation;
 - two independently quantified points;
@@ -36,7 +36,7 @@ This decision must be made before extending `at`, `check_at`, pairwise propertie
 
 ## Decision
 
-FORML will treat points as first-class semantic symbols.
+Toetra will treat points as first-class semantic symbols.
 
 A property is evaluated in a composed lexical environment containing point bindings, domains, restrictions, relations, and model-output references. The environment replaces the assumption that a property belongs to one exclusive semantic scope kind.
 
@@ -125,7 +125,7 @@ Shadowing is forbidden in the V1 target language. A point identifier may not be 
 
 ### 4. Point-indexed target references
 
-FORML V1 keeps one scalar model output selected by the header declaration:
+Toetra V1 keeps one scalar model output selected by the header declaration:
 
 ```toetra
 target := RiskScore
@@ -412,7 +412,7 @@ Rejected because it would make the grammar indentation-sensitive and create unne
 
 ### Remove all user-facing sugar
 
-Rejected because FORML is intended to remain accessible to users expressing behavioral properties, not only to compiler contributors.
+Rejected because Toetra is intended to remain accessible to users expressing behavioral properties, not only to compiler contributors.
 
 ### Treat pairwise as nested `exists`
 
@@ -420,7 +420,7 @@ Rejected at the source-language level because most pairwise guarantees are unive
 
 ## Compatibility and migration
 
-FORML is pre-V1. This ADR defines the target language contract and does not require permanent backward compatibility with provisional scope syntax.
+Toetra is pre-V1. This ADR defines the target language contract and does not require permanent backward compatibility with provisional scope syntax.
 
 Migration should prefer deterministic desugaring where meaning is preserved. Provisional forms whose meaning is ambiguous or incompatible may be rejected with migration diagnostics.
 
@@ -433,7 +433,7 @@ This ADR supersedes the following target assumptions while preserving their impl
 - the mandatory `x ~ x'` pair naming convention;
 - `check_at` as an unresolved concrete point declaration.
 
-## Impact on FORML
+## Impact on Toetra
 
 ### Grammar
 

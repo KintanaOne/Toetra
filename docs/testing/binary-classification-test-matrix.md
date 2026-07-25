@@ -138,7 +138,7 @@ requires all release-gate groups through `REL-BC-*`.
 
 ## P21.9 — Reporting and replay
 
-> Implementation status: complete; covered by source-intent reporting, additive JSON v5, text/HTML rendering, sklearn observation, mismatch detection, concrete property reevaluation, and multi-point replay tests.
+> Implementation status: complete; covered by source-intent reporting, JSON v6, text/HTML rendering, sklearn observation, mismatch detection, concrete property reevaluation, and multi-point replay tests.
 
 | ID | Requirement |
 |---|---|

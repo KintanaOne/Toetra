@@ -59,7 +59,7 @@ AND NOT P(x0, target)
 
 Expected interpretation:
 
-| Solver outcome | FORML meaning |
+| Solver outcome | Toetra meaning |
 |---|---|
 | UNSAT | Universal property proved over the admissible domain. |
 | SAT | Counterexample found. |
@@ -85,7 +85,7 @@ AND P(x0, target)
 
 Expected interpretation:
 
-| Solver outcome | FORML meaning |
+| Solver outcome | Toetra meaning |
 |---|---|
 | SAT | Witness found; existential request satisfied. |
 | UNSAT | No admissible witness exists. |
@@ -123,7 +123,7 @@ from:
 verification condition unsatisfiable because the admissible set is empty
 ```
 
-At minimum, FORML should be able to emit a vacuity warning when emptiness is detected. The exact strategy may be a pre-check, diagnostic query or unsat-core analysis.
+At minimum, Toetra should be able to emit a vacuity warning when emptiness is detected. The exact strategy may be a pre-check, diagnostic query or unsat-core analysis.
 
 For existential semantics, an empty admissible set directly means no witness exists.
 

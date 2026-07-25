@@ -31,7 +31,7 @@ COUNTEREXAMPLE_SAMPLE = dedent("""
 
 def run_compiler_pipeline(source: str):
     """
-    Full minimal FORML → Z3 path.
+    Full minimal Toetra → Z3 path.
 
     Pipeline:
         DSL source
@@ -87,7 +87,7 @@ def print_case(title: str, source: str, expected: VerificationStatus) -> None:
         print(f"Route reason      : {route.reason}")
         print(f"Normal form       : {task.normal_form.value}")
         print(f"Solver status     : {result.solver_status}")
-        print(f"FORML status      : {result.status.value}")
+        print(f"Toetra status      : {result.status.value}")
 
         if result.model:
             print("Counterexample    :")

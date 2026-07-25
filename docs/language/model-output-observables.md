@@ -5,7 +5,7 @@
 
 ## Purpose
 
-FORML properties describe what must hold for a model output. They do not call
+Toetra properties describe what must hold for a model output. They do not call
 framework methods and do not expose backend variables.
 
 The `target` keyword names the output port declared by the specification header.
@@ -82,7 +82,7 @@ latent score
 Z3 symbol
 ```
 
-FORML may explain internal transformations involving such concepts in technical
+Toetra may explain internal transformations involving such concepts in technical
 evidence, but users specify labels and probabilities.
 
 ## Point rules

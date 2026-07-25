@@ -6,7 +6,7 @@
 
 ## Context
 
-FORML is designed to support multiple verification backends in the long term.
+Toetra is designed to support multiple verification backends in the long term.
 
 Potential future backends may include ERAN, abstract interpretation tools, model checkers, runtime monitors, or other solver systems.
 
@@ -14,7 +14,7 @@ However, supporting multiple backends too early would increase complexity before
 
 ## Decision
 
-Z3 is the minimal backend for FORML V1.
+Z3 is the minimal backend for Toetra V1.
 
 The V1 backend strategy is:
 
@@ -29,7 +29,7 @@ ERAN and other backends are post-V1 extensions.
 
 ## Rationale
 
-Z3 is sufficient to validate the first end-to-end FORML architecture:
+Z3 is sufficient to validate the first end-to-end Toetra architecture:
 
 ```text
 DSL
@@ -68,7 +68,7 @@ Rejected because it would delay a functional end-to-end system.
 
 Rejected because backend concerns must not leak into IR and aggregation layers.
 
-## Impact on FORML
+## Impact on Toetra
 
 All docs should treat Z3 as the only V1 backend.
 

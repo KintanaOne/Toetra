@@ -1,6 +1,6 @@
 # test/fixtures/properties_samples.py
 
-# This file contains sample FORML properties used in unit tests for parsing.
+# This file contains sample Toetra properties used in unit tests for parsing.
 
 # ----------------------------------------------------------------------------------------------------------------------#
 #                                             VALID

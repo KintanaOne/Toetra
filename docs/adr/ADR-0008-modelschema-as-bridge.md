@@ -1,4 +1,4 @@
-# ADR-0008 — Use ModelSchema as the Bridge Between Models and FORML
+# ADR-0008 — Use ModelSchema as the Bridge Between Models and Toetra
 
 > Status: Accepted  
 > Date: 2026-06  
@@ -8,7 +8,7 @@
 
 ## Context
 
-FORML properties refer to model-facing concepts such as features, targets, task types, and model behavior.
+Toetra properties refer to model-facing concepts such as features, targets, task types, and model behavior.
 
 The DSL alone cannot know whether:
 
@@ -20,7 +20,7 @@ The DSL alone cannot know whether:
 
 ## Decision
 
-FORML introduces ModelBridge and uses `ModelSchema` as the normalized bridge between ML models and the FORML compiler.
+Toetra introduces ModelBridge and uses `ModelSchema` as the normalized bridge between ML models and the Toetra compiler.
 
 The ModelBridge pipeline is:
 
@@ -64,7 +64,7 @@ Rejected because it duplicates model introspection and couples backends to ML fr
 
 Rejected because it would be error-prone and burdensome for users.
 
-## Impact on FORML
+## Impact on Toetra
 
 ModelSchema is a P0 architectural object.
 

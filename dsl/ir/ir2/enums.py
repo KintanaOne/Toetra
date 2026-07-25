@@ -19,7 +19,7 @@ class VerificationSemantics(str, Enum):
     """How a verification condition must be interpreted.
 
     REFUTATION
-        FORML searches for a violation of a property P by solving:
+        Toetra searches for a violation of a property P by solving:
 
             Gamma AND NOT P
 
@@ -29,7 +29,7 @@ class VerificationSemantics(str, Enum):
             UNKNOWN -> no conclusion can be drawn
 
     SATISFACTION
-        FORML searches for a value satisfying a property P by solving:
+        Toetra searches for a value satisfying a property P by solving:
 
             Gamma AND P
 
@@ -39,7 +39,7 @@ class VerificationSemantics(str, Enum):
             UNKNOWN -> no conclusion can be drawn
 
     These semantics describe the meaning of the backend query. They are
-    distinct from the source-level FORML quantifier and from the final
+    distinct from the source-level Toetra quantifier and from the final
     verification status.
     """
 

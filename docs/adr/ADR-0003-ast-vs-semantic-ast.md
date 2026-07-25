@@ -19,7 +19,7 @@ However, the AST alone does not prove that:
 
 ## Decision
 
-FORML separates:
+Toetra separates:
 
 ```text
 AST
@@ -48,7 +48,7 @@ What did the user write?
 The SemanticValidatedAST answers:
 
 ```text
-What does it mean in a FORML verification context?
+What does it mean in a Toetra verification context?
 ```
 
 ## Consequences
@@ -77,7 +77,7 @@ Rejected because parsing should not know semantic scope rules.
 
 Rejected because IR needs resolved semantic information, not only syntax.
 
-## Impact on FORML
+## Impact on Toetra
 
 IR generation should consume the SemanticValidatedAST, not the raw AST.
 

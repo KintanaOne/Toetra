@@ -10,7 +10,7 @@ mutations are selected dynamically from
 the MutationRegistry using descriptor metadata.
 
 This is the preferred entrypoint for mutation
-campaigns in FORML.
+campaigns in Toetra.
 """
 
 from __future__ import annotations

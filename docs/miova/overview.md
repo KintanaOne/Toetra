@@ -1,30 +1,30 @@
 # Miova Integration Overview
 
 > Status: planned / critical integration  
-> Scope: mutation-oriented validation of the FORML pipeline  
-> Audience: FORML maintainers, contributors, verification engineers
+> Scope: mutation-oriented validation of the Toetra pipeline
+> Audience: Toetra maintainers, contributors, verification engineers
 
 ## Purpose
 
-Miova is the mutation and exploration framework used to challenge FORML artifacts across compiler and verification boundaries.
+Miova is the mutation and exploration framework used to challenge Toetra artifacts across compiler and verification boundaries.
 
 Miova is not part of the normal verification runtime path.
 
-Its role is to test whether FORML remains correct, predictable, and diagnosable when artifacts are intentionally transformed, corrupted, weakened, strengthened, or structurally modified.
+Its role is to test whether Toetra remains correct, predictable, and diagnosable when artifacts are intentionally transformed, corrupted, weakened, strengthened, or structurally modified.
 
 ```text
-Normal FORML path:
+Normal Toetra path:
 .toetra → CST → AST → SemanticValidatedAST → IR1 → IR2 → Aggregation → Lowering → BackendQuery
 
 Miova path:
 Artifact → Mutation → Contract / Invariant Checks → Result Classification
 ```
 
-## Why Miova Exists in FORML
+## Why Miova Exists in Toetra
 
-FORML is designed as a layered verification system. Each layer introduces stronger guarantees than the previous one.
+Toetra is designed as a layered verification system. Each layer introduces stronger guarantees than the previous one.
 
-This makes FORML a natural target for mutation-oriented validation:
+This makes Toetra a natural target for mutation-oriented validation:
 
 - source mutations can test parser robustness;
 - CST mutations can test builder assumptions;
@@ -79,9 +79,9 @@ It validates the robustness of the pipeline that produces backend verification a
 
 | System | Role |
 |---|---|
-| FORML | Specifies, validates, normalizes, and lowers ML behavioral properties. |
+| Toetra | Specifies, validates, normalizes, and lowers ML behavioral properties. |
 | ModelBridge | Converts ML model artifacts into normalized schema and future model constraints. |
-| Miova | Challenges FORML artifacts through controlled mutation, contracts, invariants, and campaigns. |
+| Miova | Challenges Toetra artifacts through controlled mutation, contracts, invariants, and campaigns. |
 | Backend | Executes a lowered verification query. |
 
 ## What Miova Tests
@@ -108,13 +108,13 @@ A Miova mutation campaign should classify outcomes explicitly.
 | `SUCCESS` | Mutation was applied and the resulting artifact is valid under its expected contract. |
 | `SKIPPED` | Mutation was not applicable to the selected artifact. |
 | `REJECTED` | Mutation was applied or attempted, but the contract rejected the result as expected. |
-| `FAILED` | Unexpected failure occurred. This may reveal a FORML bug, an invalid mutation definition, or a missing contract. |
+| `FAILED` | Unexpected failure occurred. This may reveal a Toetra bug, an invalid mutation definition, or a missing contract. |
 
 ## Integration Principle
 
-Miova must never make FORML less deterministic.
+Miova must never make Toetra less deterministic.
 
-Miova campaigns are exploration tools. The FORML compiler and verification pipeline must remain deterministic for the same input artifacts and configuration.
+Miova campaigns are exploration tools. The Toetra compiler and verification pipeline must remain deterministic for the same input artifacts and configuration.
 
 ## Non-Goals
 
@@ -138,4 +138,4 @@ At P0, Miova integration must define:
 5. expected failure classification;
 6. campaign reporting.
 
-Implementation can evolve progressively, but these concepts must be stabilized early because they determine how FORML will be tested end-to-end.
+Implementation can evolve progressively, but these concepts must be stabilized early because they determine how Toetra will be tested end-to-end.

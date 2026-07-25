@@ -8,14 +8,14 @@
 
 ## Context
 
-FORML's compiler and runtime reached an executable numeric-affine path, while
+Toetra's compiler and runtime reached an executable numeric-affine path, while
 older public documentation still mixed implemented behavior, target architecture,
 and research directions. A V1 cannot be trustworthy if users cannot distinguish
 built-in support from extension vocabulary.
 
 ## Decision
 
-FORML `1.0.0rc1` freezes a deliberately narrow public profile:
+Toetra `1.0.0rc1` freezes a deliberately narrow public profile:
 
 - Python 3.11–3.12;
 - single-output scikit-learn `LinearRegression` over transformed numeric inputs;

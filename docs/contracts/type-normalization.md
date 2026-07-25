@@ -116,7 +116,7 @@ Until resolved, it may carry an explicit model-dependent type marker, but backen
 
 ## Prohibited Normalizations
 
-FORML must not:
+Toetra must not:
 
 - normalize an unknown explicit entity to the only variable in scope;
 - normalize `{0, 7}` to `[0, 7]`;
@@ -150,4 +150,4 @@ quoted string   → STRING
 
 A use may still be rejected when its type is incompatible with the surrounding arithmetic, comparison, feature schema or backend capabilities.
 
-FORML must not coerce a specification constant merely because a backend only supports a narrower sort family.
+Toetra must not coerce a specification constant merely because a backend only supports a narrower sort family.

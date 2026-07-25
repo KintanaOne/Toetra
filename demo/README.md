@@ -1,4 +1,4 @@
-# FORML demos
+# Toetra demos
 
 The `demo/` directory contains executable examples grouped by audience and
 verification profile:

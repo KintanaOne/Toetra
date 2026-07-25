@@ -109,7 +109,7 @@ def run_toetra_z3_linear_bound_with_domains(
     bounds: tuple[NumericFeatureBounds, ...],
 ):
     """
-    FORML + ModelEncoder + DomainAssumptionEncoder + Z3 path.
+    Toetra + ModelEncoder + DomainAssumptionEncoder + Z3 path.
 
     Pipeline:
         DSL source
@@ -126,7 +126,7 @@ def run_toetra_z3_linear_bound_with_domains(
     nnf_tasks = NNFNormalizer().normalize_tasks(ir1_tasks)
 
     if len(nnf_tasks) != 1:
-        raise ValueError("This demo expects exactly one FORML task.")
+        raise ValueError("This demo expects exactly one Toetra task.")
 
     requested_evaluations = PointAwareIR2Analyzer().model_evaluations(
         spec_formula=NNFFormulaIR2(expression=nnf_tasks[0].query.expression),
@@ -207,7 +207,7 @@ def print_case(
         print(f"Requires domains  : {task.requirements.requires_domains}")
         print(f"Normal form       : {task.normal_form.value}")
         print(f"Solver status     : {result.solver_status}")
-        print(f"FORML status      : {result.status.value}")
+        print(f"Toetra status      : {result.status.value}")
 
         if result.model:
             print("Counterexample    :")

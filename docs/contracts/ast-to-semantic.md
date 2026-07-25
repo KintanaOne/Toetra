@@ -9,7 +9,7 @@
 This boundary answers:
 
 ```text
-What does the typed syntax mean in this FORML scope and model context?
+What does the typed syntax mean in this Toetra scope and model context?
 ```
 
 ---

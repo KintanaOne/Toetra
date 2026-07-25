@@ -21,7 +21,7 @@ class BackendCapabilities:
     Quantifier distinction
     ----------------------
     ``supports_native_quantifiers`` means that the backend adapter can receive
-    native quantified expressions. A quantified FORML scope can still be
+    native quantified expressions. A quantified Toetra scope can still be
     lowered to a quantifier-free refutation or witness condition, in which case
     this capability is not required.
     """

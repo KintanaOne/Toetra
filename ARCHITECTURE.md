@@ -1,6 +1,6 @@
-# FORML architecture
+# Toetra architecture
 
-FORML is a staged compiler and verification runtime for declarative behavioral
+Toetra is a staged compiler and verification runtime for declarative behavioral
 properties of machine-learning models.
 
 ```text

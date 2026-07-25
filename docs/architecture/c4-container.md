@@ -1,18 +1,18 @@
 # C4 Container View
 
 > Status: Stabilizing  
-> Scope: Major FORML containers  
+> Scope: Major Toetra containers
 > Implementation: Current + target  
 > V1 backend scope: Z3 only
 
 ## Purpose
 
-This document describes the major containers that compose FORML.
+This document describes the major containers that compose Toetra.
 
 It answers:
 
 ```text
-What are the main executable or logical subsystems inside FORML?
+What are the main executable or logical subsystems inside Toetra?
 ```
 
 In this documentation, “container” means a major runtime or architectural unit, not necessarily a Docker container.
@@ -157,7 +157,7 @@ Responsibilities:
 
 ### Backend Boundary
 
-The Backend Boundary isolates the rest of FORML from backend-specific details.
+The Backend Boundary isolates the rest of Toetra from backend-specific details.
 
 V1 target:
 
@@ -193,7 +193,7 @@ Miova is not part of the normal runtime verification path.
 
 It is used to:
 
-- mutate FORML artifacts;
+- mutate Toetra artifacts;
 - validate layer contracts;
 - test expected failures;
 - run invariant checks;

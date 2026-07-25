@@ -1,4 +1,4 @@
-# forml/semantic/compatibility.py
+# dsl/semantic/rules/compatibility.py
 
 from dsl.language.vocabulary.functions import EnumFunction
 from dsl.language.vocabulary.problems import EnumProblem

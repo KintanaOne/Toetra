@@ -1,27 +1,27 @@
 # Mutation Boundaries Contract
 
 > Status: P0 / Planned / Critical  
-> Scope: How Miova challenges FORML artifacts  
-> Implementation: external Miova integration planned for FORML  
-> Audience: Miova authors, FORML maintainers, test authors
+> Scope: How Miova challenges Toetra artifacts
+> Implementation: external Miova integration planned for Toetra
+> Audience: Miova authors, Toetra maintainers, test authors
 
 ## Purpose
 
-The Mutation Boundaries contract defines where and how FORML artifacts may be mutated for validation campaigns.
+The Mutation Boundaries contract defines where and how Toetra artifacts may be mutated for validation campaigns.
 
 It answers the question:
 
 ```text
-What does it mean to challenge FORML safely and meaningfully?
+What does it mean to challenge Toetra safely and meaningfully?
 ```
 
-Miova is not part of the normal FORML verification path. It is a testing and exploration layer used to validate compiler robustness.
+Miova is not part of the normal Toetra verification path. It is a testing and exploration layer used to validate compiler robustness.
 
 ---
 
 ## Mutation Philosophy
 
-FORML should be tested as a sequence of artifacts.
+Toetra should be tested as a sequence of artifacts.
 
 Each artifact has:
 
@@ -111,7 +111,7 @@ Miova integration must not:
 
 ---
 
-## Relationship with FORML End-to-End Testing
+## Relationship with Toetra End-to-End Testing
 
 Miova complements traditional test.
 
@@ -126,7 +126,7 @@ Miova complements traditional test.
 
 ## Target Campaigns
 
-Initial FORML Miova campaigns should include:
+Initial Toetra Miova campaigns should include:
 
 1. Source syntax mutation campaign.
 2. AST structural mutation campaign.

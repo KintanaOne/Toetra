@@ -113,7 +113,7 @@ def run_toetra_z3_with_assumption(
     assumption: AssumptionIR2,
 ):
     """
-    Minimal FORML + manual model assumption + Z3 path.
+    Minimal Toetra + manual model assumption + Z3 path.
 
     Pipeline:
         DSL source
@@ -219,7 +219,7 @@ def print_case(
         print(f"Route reason      : {route.reason}")
         print(f"Normal form       : {task.normal_form.value}")
         print(f"Solver status     : {result.solver_status}")
-        print(f"FORML status      : {result.status.value}")
+        print(f"Toetra status      : {result.status.value}")
 
         if result.model:
             print("Counterexample    :")

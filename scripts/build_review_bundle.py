@@ -1,4 +1,4 @@
-"""CLI for complete and reproducible FORML review bundles."""
+"""CLI for complete and reproducible Toetra review bundles."""
 
 from __future__ import annotations
 

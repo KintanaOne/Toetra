@@ -7,12 +7,12 @@
 
 ## Purpose
 
-The Model to Schema contract defines how FORML converts a model artifact into a normalized representation usable by the compiler.
+The Model to Schema contract defines how Toetra converts a model artifact into a normalized representation usable by the compiler.
 
 It answers the question:
 
 ```text
-What does FORML know about the model it is verifying?
+What does Toetra know about the model it is verifying?
 ```
 
 ModelBridge is the subsystem responsible for this contract.
@@ -106,7 +106,7 @@ The Model to Schema contract does not:
 - prove model correctness;
 - encode the model into a solver;
 - execute predictions;
-- verify FORML properties;
+- verify Toetra properties;
 - choose the verification backend.
 
 ---

@@ -6,9 +6,9 @@
 
 ## Purpose
 
-Intelligent fuzzing is the targeted exploration of FORML inputs and artifacts in order to discover weaknesses that random generation or static golden samples may miss.
+Intelligent fuzzing is the targeted exploration of Toetra inputs and artifacts in order to discover weaknesses that random generation or static golden samples may miss.
 
-In FORML, fuzzing should not be limited to malformed source strings. The system is layered, so fuzzing can target multiple representations:
+In Toetra, fuzzing should not be limited to malformed source strings. The system is layered, so fuzzing can target multiple representations:
 
 ```text
 source string
@@ -30,18 +30,18 @@ The objective is to find boundary failures, ambiguous semantics, unexpected cras
 
 Property-Based Testing and fuzzing overlap, but they are not the same.
 
-| Approach | Main idea | FORML use |
+| Approach | Main idea | Toetra use |
 |---|---|---|
 | Property-Based Testing | generate many structured examples from explicit strategies | validate general properties of the compiler |
 | Random fuzzing | generate noisy or malformed inputs | test parser and error robustness |
 | Intelligent fuzzing | generate targeted perturbations guided by structure, coverage, contracts, or failures | discover high-value boundary bugs |
 | Miova campaigns | mutate typed artifacts with contracts and invariants | validate artifact transitions and expected failures |
 
-FORML should use intelligent fuzzing as a targeted search process, not as blind random noise.
+Toetra should use intelligent fuzzing as a targeted search process, not as blind random noise.
 
-## Why FORML Needs Intelligent Fuzzing
+## Why Toetra Needs Intelligent Fuzzing
 
-FORML has several risk zones:
+Toetra has several risk zones:
 
 - grammar ambiguity;
 - casing and vocabulary normalization;
@@ -109,7 +109,7 @@ Examples:
 
 Then perturbations are applied while preserving partial grammar structure.
 
-This is more useful than pure random string fuzzing because FORML is a structured DSL.
+This is more useful than pure random string fuzzing because Toetra is a structured DSL.
 
 ### 3. AST-Level Fuzzing
 
@@ -246,7 +246,7 @@ The most valuable fuzzing cases are not necessarily the most corrupted. They are
 
 ## Intelligent Fuzzing and Miova
 
-Miova is the natural execution layer for structured FORML fuzzing.
+Miova is the natural execution layer for structured Toetra fuzzing.
 
 Miova can represent fuzzing operations as controlled mutations:
 
@@ -307,5 +307,5 @@ Intelligent fuzzing is effective when:
 - it produces minimal reproducible cases;
 - it classifies expected and unexpected failures cleanly;
 - it explores valid-looking boundary cases;
-- it strengthens FORML contracts over time;
+- it strengthens Toetra contracts over time;
 - it can be integrated into CI without excessive noise.

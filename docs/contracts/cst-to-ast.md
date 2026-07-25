@@ -1,7 +1,7 @@
 # CST to AST Contract
 
 > Status: P0 / Accepted target contract  
-> Scope: Concrete Syntax Tree to typed FORML AST  
+> Scope: Concrete Syntax Tree to typed Toetra AST
 > Audience: builder maintainers, AST maintainers and mutation authors
 
 ## Purpose
@@ -13,7 +13,7 @@ The builder removes parser-specific structure while preserving every semanticall
 ## Input and Output
 
 ```text
-Input:  official FORML CST
+Input:  official Toetra CST
 Output: ProgramNode AST
 ```
 

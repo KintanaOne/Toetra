@@ -6,7 +6,7 @@
 
 ## Context
 
-A FORML domain restricts the admissible valuations of input variables introduced by a property scope.
+A Toetra domain restricts the admissible valuations of input variables introduced by a property scope.
 
 The earlier domain representation is effectively opaque:
 
@@ -27,7 +27,7 @@ A domain is also not merely parser metadata. It contributes logical assumptions 
 
 ## Decision
 
-FORML represents domains as typed structured constraints and lowers them into explicit assumptions with domain provenance before backend execution.
+Toetra represents domains as typed structured constraints and lowers them into explicit assumptions with domain provenance before backend execution.
 
 ### Surface syntax
 
@@ -236,7 +236,7 @@ The semantic layer rejects statically detectable malformed domains, including:
 - target references in subjects or bounds;
 - literal division by zero in arithmetic bounds.
 
-A symbolic domain may still be unsatisfiable even when no local semantic rule can prove it. FORML should expose domain-satisfiability or vacuity diagnostics when the verification pipeline can determine that the admissible set is empty.
+A symbolic domain may still be unsatisfiable even when no local semantic rule can prove it. Toetra should expose domain-satisfiability or vacuity diagnostics when the verification pipeline can determine that the admissible set is empty.
 
 ## Rationale
 
@@ -301,7 +301,7 @@ Rejected because domain sets need concise categorical literals such as `{EU, US}
 
 Deferred. The initial structured entry form provides common interval and membership constraints with clearer typing and diagnostics. Arbitrary relational domain predicates may be introduced later as a separate language decision.
 
-## Impact on FORML
+## Impact on Toetra
 
 ### Grammar
 

@@ -1,4 +1,4 @@
-"""Errors raised by the high-level FORML verification runtime."""
+"""Errors raised by the high-level Toetra verification runtime."""
 
 
 class VerificationRuntimeError(RuntimeError):

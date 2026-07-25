@@ -1,11 +1,11 @@
 # Implementation Roadmap
 
 > Status: Active
-> Scope: FORML implementation planning
+> Scope: Toetra implementation planning
 
 ## Purpose
 
-This roadmap describes the intended implementation progression toward a functional FORML V1.
+This roadmap describes the intended implementation progression toward a functional Toetra V1.
 
 The goal is to avoid premature multi-backend complexity while preserving the architecture required for future extension.
 
@@ -184,7 +184,7 @@ Post-V1 extensions include:
 
 - ERAN backend,
 - multi-backend orchestration,
-- AutoFORML,
+- AutoToetra,
 - runtime monitoring,
 - richer model encodings,
 - advanced optimization passes,

@@ -1,12 +1,12 @@
 # Contract Testing
 
 > Status: planned / critical  
-> Scope: using Miova to validate FORML layer contracts  
+> Scope: using Miova to validate Toetra layer contracts
 > Audience: maintainers, test engineers, compiler contributors
 
 ## Purpose
 
-Contract testing verifies that each FORML layer respects its declared input and output obligations.
+Contract testing verifies that each Toetra layer respects its declared input and output obligations.
 
 Miova uses mutations to actively challenge those obligations.
 
@@ -24,7 +24,7 @@ Does this layer behave correctly when its assumptions are challenged?
 
 ## Contract Structure
 
-Each FORML boundary contract should define:
+Each Toetra boundary contract should define:
 
 - accepted input artifact kind;
 - produced output artifact kind;
@@ -184,7 +184,7 @@ The most dangerous outcome is not failure.
 
 The most dangerous outcome is silent acceptance of an invalid artifact.
 
-FORML contract testing must reject:
+Toetra contract testing must reject:
 
 - unresolved attributes accepted as valid;
 - invalid model features accepted silently;

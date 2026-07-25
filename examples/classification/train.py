@@ -63,7 +63,7 @@ data = data.replace("?", pd.NA)
 # Explicit numeric conversion
 # ==========================================================
 #
-# FORML relies heavily on semantic typing.
+# Toetra relies heavily on semantic typing.
 #
 # We therefore avoid:
 # - implicit conversions
@@ -102,7 +102,7 @@ for column in NUMERIC_COLUMNS:
 #
 # Rows containing unresolved values are removed.
 #
-# A future version of FORML may support:
+# A future version of Toetra may support:
 # - advanced imputation
 # - uncertainty modeling
 # - missing value constraints
@@ -127,7 +127,7 @@ y = data[TARGET_COLUMN]
 # Save cleaned dataset
 # ==========================================================
 #
-# FORML may later reuse this dataset for:
+# Toetra may later reuse this dataset for:
 # - schema inference
 # - semantic validation
 # - domain extraction

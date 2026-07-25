@@ -1,8 +1,8 @@
 """
-Multi-layer invalid FORML generation.
+Multi-layer invalid Toetra generation.
 
 This module orchestrates corruption across
-the FORML compilation pipeline.
+the Toetra compilation pipeline.
 
 It does NOT contain mutation logic.
 

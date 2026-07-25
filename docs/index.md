@@ -1,6 +1,6 @@
-# FORML
+# Toetra
 
-FORML is a declarative behavioral specification and verification framework for
+Toetra is a declarative behavioral specification and verification framework for
 machine-learning models.
 
 The `1.0.0rc2` profile provides complete sklearn `LinearRegression` and direct
@@ -12,7 +12,7 @@ concrete replay.
 1. [Public V1 profile](public-v1-profile.md)
 2. [1.0.0rc2 release notes](releases/1.0.0rc2.md)
 3. [Installation](getting-started/installation.md)
-4. [First FORML property](getting-started/first-property.md)
+4. [First Toetra property](getting-started/first-property.md)
 5. [Model output observables](language/model-output-observables.md)
 6. [Compatibility matrices](generated/numeric-compatibility-matrices.md)
 

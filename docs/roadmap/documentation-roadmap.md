@@ -5,9 +5,9 @@
 
 ## Purpose
 
-This roadmap tracks the FORML documentation structure and rewrite strategy.
+This roadmap tracks the Toetra documentation structure and rewrite strategy.
 
-FORML documentation is organized around:
+Toetra documentation is organized around:
 
 - architecture,
 - compiler layers,

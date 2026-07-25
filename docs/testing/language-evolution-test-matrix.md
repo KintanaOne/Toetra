@@ -203,7 +203,7 @@ Capability mismatch is reported before solver execution, and immutable specifica
 
 ## Gate G7 — End-to-End Solver Semantics
 
-| ID | Semantics | Solver result | Expected FORML result |
+| ID | Semantics | Solver result | Expected Toetra result |
 |---|---|---|---|
 | E2E-FORALL-001 | universal refutation | UNSAT | PROVED |
 | E2E-FORALL-002 | universal refutation | SAT | COUNTEREXAMPLE with valuation |

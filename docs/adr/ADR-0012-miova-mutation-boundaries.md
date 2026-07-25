@@ -6,11 +6,11 @@
 
 ## Context
 
-FORML is a layered compiler and verification pipeline.
+Toetra is a layered compiler and verification pipeline.
 
 Testing only hand-written examples is not enough to validate the robustness of such a system.
 
-FORML needs to know how each layer behaves when artifacts are mutated:
+Toetra needs to know how each layer behaves when artifacts are mutated:
 
 - source text mutations,
 - CST mutations,
@@ -23,15 +23,15 @@ FORML needs to know how each layer behaves when artifacts are mutated:
 
 ## Decision
 
-FORML uses Miova as an external mutation and contract validation framework.
+Toetra uses Miova as an external mutation and contract validation framework.
 
 Miova is not part of the normal verification runtime path.
 
-Miova is used to challenge FORML artifacts, validate contracts, test invariants, and classify expected failures.
+Miova is used to challenge Toetra artifacts, validate contracts, test invariants, and classify expected failures.
 
 ## Rationale
 
-Miova provides a structured way to test FORML as a system of artifacts and transformations.
+Miova provides a structured way to test Toetra as a system of artifacts and transformations.
 
 It complements:
 
@@ -45,7 +45,7 @@ It complements:
 
 ### Positive
 
-- FORML can be tested beyond happy paths.
+- Toetra can be tested beyond happy paths.
 - Mutation boundaries are explicit.
 - Contract violations can be discovered earlier.
 - Expected failures become part of the test model.
@@ -67,8 +67,8 @@ Rejected because Hypothesis generates examples well, but Miova adds artifact-lev
 
 Rejected because many bugs appear only after CST, AST, semantic, or IR transformations.
 
-## Impact on FORML
+## Impact on Toetra
 
-Miova is a strategic testing and robustness layer for FORML.
+Miova is a strategic testing and robustness layer for Toetra.
 
 Every major artifact boundary should eventually have Miova mutations, invariants, and expected-failure rules.

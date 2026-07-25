@@ -137,10 +137,10 @@ celerybeat.pid
 # Environments
 .env
 .envrc
-.forml_env
+.toetra_env
 .venv
 env/
-forml_env/
+toetra_env/
 venv/
 ENV/
 env.bak/
@@ -208,6 +208,6 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
-# FORML local review artifacts
+# Toetra local review artifacts
 /.docs/
 /forml_review_bundle_*.zip

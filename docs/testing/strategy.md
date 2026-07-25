@@ -2,22 +2,22 @@
 
 > Status: P0 — target testing strategy  
 > Implementation: partially implemented  
-> Scope: FORML compiler, ModelBridge, IR pipeline, backend boundary, and Miova campaigns
+> Scope: Toetra compiler, ModelBridge, IR pipeline, backend boundary, and Miova campaigns
 
 ## Purpose
 
-This document defines the testing strategy for FORML.
+This document defines the testing strategy for Toetra.
 
-FORML is not tested as a single parser or as a set of isolated functions. It is tested as
+Toetra is not tested as a single parser or as a set of isolated functions. It is tested as
 a layered verification pipeline where each transformation introduces stronger guarantees
 than the previous one.
 
-The objective is to validate that FORML can safely transform a user specification and a
+The objective is to validate that Toetra can safely transform a user specification and a
 model representation into a backend-ready verification problem.
 
 ## Testing Philosophy
 
-FORML testing is based on five principles:
+Toetra testing is based on five principles:
 
 1. **Layer isolation**
 2. **Contract validation**
@@ -25,7 +25,7 @@ FORML testing is based on five principles:
 4. **Expected failure classification**
 5. **Mutation-driven robustness**
 
-The purpose is not only to verify that the happy path works. FORML must also reject
+The purpose is not only to verify that the happy path works. Toetra must also reject
 invalid artifacts at the correct boundary, with the correct error category.
 
 ## Target End-to-End Path
@@ -67,7 +67,7 @@ Testing must progressively cover every boundary in this path.
 
 ## Current Testing Focus
 
-At the current stage, FORML should prioritize:
+At the current stage, Toetra should prioritize:
 
 1. Source-to-CST stability
 2. CST-to-AST correctness
@@ -85,7 +85,7 @@ At the current stage, FORML should prioritize:
 
 ## Property-Based Testing and Fuzzing
 
-FORML should explicitly distinguish three related exploration layers:
+Toetra should explicitly distinguish three related exploration layers:
 
 | Layer | Tooling / method | Role |
 |---|---|---|
@@ -126,7 +126,7 @@ Every test suite should be documented with one of the following statuses:
 
 ## Expected Failure Policy
 
-FORML should distinguish:
+Toetra should distinguish:
 
 | Failure Type | Meaning |
 |---|---|
@@ -167,7 +167,7 @@ The testing strategy is considered effective when:
 
 ## Language Evolution Freeze
 
-Before changing implementation, FORML freezes the expected behavior of explicit quantifiers, typed domains, scalar arithmetic and specification constants through stable example and test identifiers.
+Before changing implementation, Toetra freezes the expected behavior of explicit quantifiers, typed domains, scalar arithmetic and specification constants through stable example and test identifiers.
 
 The mandatory gate sequence is:
 

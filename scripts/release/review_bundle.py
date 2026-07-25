@@ -1,4 +1,4 @@
-"""Create deterministic, complete FORML review bundles."""
+"""Create deterministic, complete Toetra review bundles."""
 
 from __future__ import annotations
 
