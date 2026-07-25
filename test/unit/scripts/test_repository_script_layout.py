@@ -10,6 +10,7 @@ EXPECTED_ROOT_SCRIPTS = {
     "check_distribution.py",
     "check_installed_distribution.py",
     "check_public_contract.py",
+    "check_identity_contract.py",
     "clean_notebooks.py",
     "generate_numeric_compatibility_matrices.py",
 }

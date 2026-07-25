@@ -46,12 +46,12 @@ def test_initial_route_and_rejections_are_explicit() -> None:
         assert marker in profile
 
 
-def test_rc2_public_profile_adopts_regression_and_binary_classification() -> None:
+def test_rc3_public_profile_preserves_regression_and_binary_classification() -> None:
     public_profile = (ROOT / "docs" / "public-v1-profile.md").read_text(
         encoding="utf-8"
     )
-    assert EXPECTED_VERSION == "1.0.0rc2"
-    assert "Release candidate: `1.0.0rc2`" in public_profile
+    assert EXPECTED_VERSION == "1.0.0rc3"
+    assert "Release candidate: `1.0.0rc3`" in public_profile
     assert "fitted single-output `LinearRegression`" in public_profile
     assert "direct fitted binary `LogisticRegression`" in public_profile
     assert "target[point].probability(label)" in public_profile

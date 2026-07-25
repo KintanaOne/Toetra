@@ -36,7 +36,7 @@ selects `target[point].label` or `target[point].probability(label)`. Internal
 quantities such as the logistic decision value appear only after IR1 and remain
 outside the DSL.
 
-Built-in `1.0.0rc2` routes are single-output sklearn `LinearRegression` and
+Built-in `1.0.0rc3` routes are single-output sklearn `LinearRegression` and
 direct fitted binary `LogisticRegression`, both through Z3 with explicit numeric
 compatibility and provenance.
 

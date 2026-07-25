@@ -1,6 +1,6 @@
 # Installation
 
-Toetra `1.0.0rc2` supports Python 3.11 and 3.12.
+Toetra `1.0.0rc3` supports Python 3.11 and 3.12.
 
 ```bash
 python -m pip install .

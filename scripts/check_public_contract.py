@@ -17,7 +17,7 @@ from dsl.builder.program import parse_program  # noqa: E402
 from dsl.parser.parser import parse_toetra_code  # noqa: E402
 
 EXPECTED_PROJECT_NAME = "toetra"
-EXPECTED_VERSION = "1.0.0rc2"
+EXPECTED_VERSION = "1.0.0rc3"
 EXPECTED_LICENSE = "Apache-2.0"
 
 CLASSIFICATION_TARGET_DOCUMENTS = (
@@ -235,7 +235,7 @@ def _validate_classification_target_contract() -> None:
         encoding="utf-8"
     )
     current_markers = (
-        "Release candidate: `1.0.0rc2`",
+        "Release candidate: `1.0.0rc3`",
         "fitted single-output `LinearRegression`",
         "direct fitted binary `LogisticRegression`",
         "target[point].label",
@@ -248,18 +248,19 @@ def _validate_classification_target_contract() -> None:
     )
     if missing_current:
         raise PublicContractError(
-            "Patch 21 public rc2 profile is missing markers: "
+            "Current public rc3 profile is missing markers: "
             + ", ".join(missing_current)
         )
 
     release_documents = (
         ROOT / "docs" / "adr" / "ADR-0026-public-v1-binary-classification-extension.md",
         ROOT / "docs" / "releases" / "1.0.0rc2.md",
+        ROOT / "docs" / "releases" / "1.0.0rc3.md",
     )
     for document in release_documents:
         if not document.is_file():
             raise PublicContractError(
-                f"Missing rc2 release document: {document.relative_to(ROOT)}"
+                f"Missing release document: {document.relative_to(ROOT)}"
             )
         _validate_local_links(document)
 

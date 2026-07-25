@@ -223,7 +223,7 @@ def build_review_bundle(
     epoch = _repository_epoch(repository)
     manifest: dict[str, object] = {
         "schema_version": 2,
-        "bundle_kind": "forml_review_source_snapshot",
+        "bundle_kind": "toetra_review_source_snapshot",
         "source_date_epoch": epoch,
         "created_at_utc": datetime.fromtimestamp(epoch, tz=timezone.utc).isoformat(),
         "repository_root_name": repository.name,
@@ -252,7 +252,7 @@ def build_review_bundle(
 def check_review_bundle_reproducibility(repository: Path) -> str:
     """Build the same review bundle twice and compare byte hashes."""
 
-    with tempfile.TemporaryDirectory(prefix="forml-bundle-repro-") as raw_directory:
+    with tempfile.TemporaryDirectory(prefix="toetra-bundle-repro-") as raw_directory:
         directory = Path(raw_directory)
         first = build_review_bundle(repository, directory / "first.zip")
         second = build_review_bundle(repository, directory / "second.zip")
