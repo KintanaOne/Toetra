@@ -63,7 +63,7 @@ open semantic questions:
 
 ### Public error taxonomy
 
-Which parser, semantic, model, routing, backend, and runtime exceptions should cross the public `forml.verify` boundary unchanged, and which should be wrapped in stable user-facing errors?
+Which parser, semantic, model, routing, backend, and runtime exceptions should cross the public `toetra.verify` boundary unchanged, and which should be wrapped in stable user-facing errors?
 
 ### Solver resource policy
 

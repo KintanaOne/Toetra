@@ -13,10 +13,10 @@ A release candidate must satisfy all of the following:
 3. Python 3.11 and Python 3.12 pass the same quality gate;
 4. two distribution builds made with the same source epoch have identical SHA-256 hashes;
 5. the wheel and sdist identify the same project and version;
-6. the wheel contains `forml`, `dsl`, `model`, both generated/source grammar files and the packaged public example policy;
+6. the wheel contains `toetra`, `dsl`, `model`, both generated/source grammar files and the packaged public example policy;
 7. the wheel contains no repository-only `test`, `docs`, `demo` or workflow trees;
 8. the wheel installs in a clean virtual environment outside the checkout;
-9. `from forml import verify, VerificationSession` succeeds from that environment;
+9. `from toetra import verify, VerificationSession` succeeds from that environment;
 10. the review bundle contains every critical V1 artifact;
 11. two review-bundle builds produce identical bytes.
 
@@ -50,7 +50,7 @@ Package inventory is checked structurally rather than inferred from a successful
 
 Critical paths include:
 
-- the public `forml` package and packaged example policy;
+- the public `toetra` package and packaged example policy;
 - the CI workflow and packaging metadata;
 - the EBNF source and generated Lark grammar;
 - the canonical notebook;

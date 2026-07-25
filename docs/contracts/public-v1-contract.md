@@ -4,7 +4,7 @@
 
 ## Stable public surfaces
 
-The supported Python entry point is `forml`. Normal user surfaces include
+The supported Python entry point is `toetra`. Normal user surfaces include
 `verify`, sessions/findings/reports, statuses, artifacts, and replay errors.
 Internal `dsl.*`, `model.*`, IR, semantic-profile, and backend modules may evolve
 unless another contract explicitly marks them public.

@@ -23,7 +23,7 @@ FORML `1.0.0rc1` freezes a deliberately narrow public profile:
 - homogeneous universal or existential bindings, points/anchors, numeric domains,
   scalar assertions, and implemented numeric-affine restrictions;
 - Z3 execution;
-- public `forml.verify` API;
+- public `toetra.verify` API;
 - JSON report schema v5.
 
 The built-in numeric route remains explicitly `LOSSY` and scoped to
@@ -38,6 +38,6 @@ and release artifacts must agree.
 - Public onboarding can be executable and precise.
 - New model families and backends can be added without redefining the V1 route.
 - Incompatible JSON changes require a new schema version.
-- Internal modules remain evolvable; the `forml` facade is the normal user API.
+- Internal modules remain evolvable; the `toetra` facade is the normal user API.
 - The release candidate must pass non-mutating CI, reproducible distribution,
   clean-install, and review-bundle gates.

@@ -18,7 +18,7 @@ python -m pip install -r requirements-dev.txt
 make demo-quickstart
 ```
 
-The demo exercises the public `forml.verify` API and prints a universal result and
+The demo exercises the public `toetra.verify` API and prints a universal result and
 an existential result.
 
 ## Reading order

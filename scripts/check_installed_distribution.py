@@ -21,11 +21,12 @@ import joblib
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
 
-import forml
-from forml import VerificationSession, VerificationStatus, verify
-from forml.examples import credit_risk_policy
+import toetra
+from toetra import VerificationSession, VerificationStatus, verify
+from toetra.examples import credit_risk_policy
 
-module_path = Path(forml.__file__).resolve()
+module_path = Path(toetra.__file__).resolve()
+assert importlib.util.find_spec("forml") is None
 assert "site-packages" in module_path.parts, module_path
 assert callable(verify)
 assert VerificationSession is not None
@@ -38,7 +39,7 @@ assert spec is not None and spec.submodule_search_locations
 root = Path(next(iter(spec.submodule_search_locations)))
 assert (root / "forml_grammar.ebnf").is_file()
 assert (root / "forml_grammar.lark").is_file()
-with TemporaryDirectory(prefix="forml-installed-classification-") as raw_directory:
+with TemporaryDirectory(prefix="toetra-installed-classification-") as raw_directory:
     directory = Path(raw_directory)
     frame = pd.DataFrame(
         {
@@ -78,7 +79,7 @@ with domain(applicant.income: [3.0, 6.0])
     witness = session.first_witness
     assert witness is not None and witness.replay().is_consistent
 
-print(f"Installed FORML regression/classification probe passed from {module_path}")
+print(f"Installed Toetra regression/classification probe passed from {module_path}")
 """
 
 
@@ -99,7 +100,7 @@ def main() -> int:
     arguments = parser.parse_args()
     artifacts = check_distribution_directory(arguments.directory.resolve())
 
-    with tempfile.TemporaryDirectory(prefix="forml-install-check-") as raw_directory:
+    with tempfile.TemporaryDirectory(prefix="toetra-install-check-") as raw_directory:
         root = Path(raw_directory)
         environment = root / "venv"
         venv.EnvBuilder(with_pip=True, clear=True).create(environment)

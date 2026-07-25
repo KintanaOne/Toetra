@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- Renamed the Python distribution and sole public import namespace to `toetra`.
+- Moved packaged examples to `toetra.examples`; no `forml` import alias is retained.
 ## [1.0.0rc2] - 2026-07-22
 
 ### Added
@@ -20,9 +26,9 @@
 - JSON report schema v5 remains additive and the `LinearRegression` route is
   unchanged.
 
-All notable user-visible changes to FORML are recorded here.
+All notable user-visible changes to Toetra are recorded here.
 
-The format follows Keep a Changelog principles. FORML uses semantic versioning
+The format follows Keep a Changelog principles. Toetra uses semantic versioning
 for its public Python API, report schemas, and documented V1 behavior.
 
 ## [1.0.0rc1] - 2026-07-19

@@ -1,6 +1,6 @@
-# FORML
+# Toetra
 
-FORML is a Python framework and declarative language for specifying and verifying
+Toetra is a Python framework and declarative language for specifying and verifying
 behavioral properties of machine-learning models.
 
 **Release status:** `1.0.0rc2` — V1 release candidate with regression and direct
@@ -18,7 +18,7 @@ finite transformed numeric features
 → PROVED / COUNTEREXAMPLE / WITNESS / NO_WITNESS / UNKNOWN
 ```
 
-FORML remains framework-neutral and backend-neutral at its architectural
+Toetra remains framework-neutral and backend-neutral at its architectural
 boundaries. Scikit-learn and Z3 are the first complete built-in routes.
 
 ## Installation
@@ -74,7 +74,7 @@ probability witness, and pairwise label equality.
 ## Python API
 
 ```python
-from forml import verify
+from toetra import verify
 
 session = verify("policy.forml", model="model.joblib", dataset="reference.csv")
 session.print()
@@ -86,7 +86,7 @@ raise SystemExit(session.exit_code)
 
 The built-in encoders construct exact-real affine abstractions from framework
 floating-point state. Reports identify numeric compatibility, semantic target,
-lowering evidence, provenance, and concrete replay. FORML does not silently
+lowering evidence, provenance, and concrete replay. Toetra does not silently
 claim bit-exact IEEE-754 equivalence.
 
 Non-exact probability thresholds use certified directed `logit(p)` intervals and
@@ -127,4 +127,4 @@ These release gates are non-mutating.
 
 ## License
 
-FORML is licensed under the [Apache License 2.0](LICENSE).
+Toetra is licensed under the [Apache License 2.0](LICENSE).

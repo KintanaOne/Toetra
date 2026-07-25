@@ -1,4 +1,4 @@
-"""Validate the public FORML V1 documentation and metadata contract."""
+"""Validate the public Toetra V1 documentation and metadata contract."""
 
 from __future__ import annotations
 
@@ -16,6 +16,7 @@ if str(ROOT) not in sys.path:
 from dsl.builder.program import parse_program  # noqa: E402
 from dsl.parser.parser import parse_forml_code  # noqa: E402
 
+EXPECTED_PROJECT_NAME = "toetra"
 EXPECTED_VERSION = "1.0.0rc2"
 EXPECTED_LICENSE = "Apache-2.0"
 
@@ -268,7 +269,7 @@ def _validate_sdist_manifest() -> None:
         "include CHANGELOG.md",
         "include pyproject.toml",
         "recursive-include dsl/language/grammar *.ebnf *.lark",
-        "recursive-include forml/examples *.forml",
+        "recursive-include toetra/examples *.forml",
     }
     missing = sorted(required - directives)
     if missing:
@@ -279,6 +280,11 @@ def _validate_sdist_manifest() -> None:
 
 def check_public_contract() -> None:
     project = _project()
+    if project.get("name") != EXPECTED_PROJECT_NAME:
+        raise PublicContractError(
+            f"Expected project name {EXPECTED_PROJECT_NAME!r}, "
+            f"got {project.get('name')!r}"
+        )
     if project.get("version") != EXPECTED_VERSION:
         raise PublicContractError(
             f"Expected project version {EXPECTED_VERSION}, got {project.get('version')!r}"
@@ -289,7 +295,7 @@ def check_public_contract() -> None:
         )
     if report_schema_version() != 5:
         raise PublicContractError(
-            "JSON report schema v5 is frozen for FORML 1.x; use a new schema "
+            "JSON report schema v5 is frozen for Toetra 1.x; use a new schema "
             "version for incompatible changes."
         )
 

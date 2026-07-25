@@ -21,18 +21,18 @@ ROOT = Path(__file__).parents[3]
 PROJECT_VERSION = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))[
     "project"
 ]["version"]
-DIST_INFO = f"forml-{PROJECT_VERSION}.dist-info"
-SDIST_ROOT = f"forml-{PROJECT_VERSION}"
+DIST_INFO = f"toetra-{PROJECT_VERSION}.dist-info"
+SDIST_ROOT = f"toetra-{PROJECT_VERSION}"
 
 WHEEL_MEMBERS = {
-    "forml/__init__.py": b"from dsl.runtime import verify\n",
+    "toetra/__init__.py": b"from dsl.runtime import verify\n",
     "dsl/__init__.py": b"",
     "model/__init__.py": b"",
     "dsl/language/grammar/forml_grammar.ebnf": b"start = program\n",
     "dsl/language/grammar/forml_grammar.lark": b"start: program\n",
-    "forml/examples/credit_risk_policy.forml": b"target := risk_score\n",
+    "toetra/examples/credit_risk_policy.forml": b"target := risk_score\n",
     f"{DIST_INFO}/METADATA": (
-        f"Metadata-Version: 2.1\nName: forml\nVersion: {PROJECT_VERSION}\n\n".encode()
+        f"Metadata-Version: 2.1\nName: toetra\nVersion: {PROJECT_VERSION}\n\n".encode()
     ),
     f"{DIST_INFO}/WHEEL": b"Wheel-Version: 1.0\nTag: py3-none-any\n",
     f"{DIST_INFO}/RECORD": b"",
@@ -44,17 +44,20 @@ def _write_wheel(
     *,
     leak_tests: bool = False,
     include_public_example: bool = True,
+    include_legacy_facade: bool = False,
 ) -> None:
     with zipfile.ZipFile(path, mode="w") as archive:
         for name, payload in WHEEL_MEMBERS.items():
             if (
                 not include_public_example
-                and name == "forml/examples/credit_risk_policy.forml"
+                and name == "toetra/examples/credit_risk_policy.forml"
             ):
                 continue
             archive.writestr(name, payload)
         if leak_tests:
             archive.writestr("test/test_leak.py", b"")
+        if include_legacy_facade:
+            archive.writestr("forml/__init__.py", b"")
 
 
 def _write_sdist(path: Path, *, mtime: int) -> None:
@@ -63,14 +66,14 @@ def _write_sdist(path: Path, *, mtime: int) -> None:
         f"{SDIST_ROOT}/README.md": b"readme\n",
         f"{SDIST_ROOT}/CHANGELOG.md": b"changelog\n",
         f"{SDIST_ROOT}/pyproject.toml": (
-            f"[project]\nname='forml'\nversion='{PROJECT_VERSION}'\n".encode()
+            f"[project]\nname='toetra'\nversion='{PROJECT_VERSION}'\n".encode()
         ),
-        f"{SDIST_ROOT}/forml/__init__.py": b"",
+        f"{SDIST_ROOT}/toetra/__init__.py": b"",
         f"{SDIST_ROOT}/dsl/__init__.py": b"",
         f"{SDIST_ROOT}/model/__init__.py": b"",
         f"{SDIST_ROOT}/dsl/language/grammar/forml_grammar.ebnf": b"start=program\n",
         f"{SDIST_ROOT}/dsl/language/grammar/forml_grammar.lark": b"start: program\n",
-        f"{SDIST_ROOT}/forml/examples/credit_risk_policy.forml": (
+        f"{SDIST_ROOT}/toetra/examples/credit_risk_policy.forml": (
             b"target := risk_score\n"
         ),
     }
@@ -87,8 +90,8 @@ def _write_sdist(path: Path, *, mtime: int) -> None:
 def test_distribution_contract_accepts_complete_wheel_and_sdist(
     tmp_path: Path,
 ) -> None:
-    _write_wheel(tmp_path / f"forml-{PROJECT_VERSION}-py3-none-any.whl")
-    _write_sdist(tmp_path / f"forml-{PROJECT_VERSION}.tar.gz", mtime=100)
+    _write_wheel(tmp_path / f"toetra-{PROJECT_VERSION}-py3-none-any.whl")
+    _write_sdist(tmp_path / f"toetra-{PROJECT_VERSION}.tar.gz", mtime=100)
 
     artifacts = check_distribution_directory(tmp_path)
 
@@ -96,14 +99,27 @@ def test_distribution_contract_accepts_complete_wheel_and_sdist(
     assert artifacts.sdist.name.endswith(".tar.gz")
 
 
+def test_distribution_contract_rejects_legacy_public_facade(
+    tmp_path: Path,
+) -> None:
+    _write_wheel(
+        tmp_path / f"toetra-{PROJECT_VERSION}-py3-none-any.whl",
+        include_legacy_facade=True,
+    )
+    _write_sdist(tmp_path / f"toetra-{PROJECT_VERSION}.tar.gz", mtime=100)
+
+    with pytest.raises(DistributionContractError, match="forbidden legacy package"):
+        check_distribution_directory(tmp_path)
+
+
 def test_distribution_contract_rejects_repository_paths_in_wheel(
     tmp_path: Path,
 ) -> None:
     _write_wheel(
-        tmp_path / f"forml-{PROJECT_VERSION}-py3-none-any.whl",
+        tmp_path / f"toetra-{PROJECT_VERSION}-py3-none-any.whl",
         leak_tests=True,
     )
-    _write_sdist(tmp_path / f"forml-{PROJECT_VERSION}.tar.gz", mtime=100)
+    _write_sdist(tmp_path / f"toetra-{PROJECT_VERSION}.tar.gz", mtime=100)
 
     with pytest.raises(DistributionContractError, match="repository-only"):
         check_distribution_directory(tmp_path)
@@ -123,10 +139,10 @@ def test_sdist_normalization_removes_timestamp_differences(tmp_path: Path) -> No
 
 def test_distribution_contract_rejects_missing_public_example(tmp_path: Path) -> None:
     _write_wheel(
-        tmp_path / f"forml-{PROJECT_VERSION}-py3-none-any.whl",
+        tmp_path / f"toetra-{PROJECT_VERSION}-py3-none-any.whl",
         include_public_example=False,
     )
-    _write_sdist(tmp_path / f"forml-{PROJECT_VERSION}.tar.gz", mtime=100)
+    _write_sdist(tmp_path / f"toetra-{PROJECT_VERSION}.tar.gz", mtime=100)
 
     with pytest.raises(DistributionContractError, match="credit_risk_policy"):
         check_distribution_directory(tmp_path)

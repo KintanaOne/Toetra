@@ -37,7 +37,7 @@ def test_review_bundle_is_byte_reproducible_and_manifested(tmp_path: Path) -> No
         manifest = json.loads(archive.read("_meta/manifest.json"))
         assert manifest["schema_version"] == 2
         assert manifest["missing_critical_paths"] == []
-        assert "forml/__init__.py" in archive.namelist()
+        assert "toetra/__init__.py" in archive.namelist()
         assert not any("__pycache__" in name for name in archive.namelist())
 
 

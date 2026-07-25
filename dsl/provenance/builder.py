@@ -397,7 +397,7 @@ def _software_provenance() -> SoftwareProvenance:
         except importlib.metadata.PackageNotFoundError:
             continue
     return SoftwareProvenance(
-        forml_version=_distribution_version("forml"),
+        forml_version=_distribution_version("toetra"),
         forml_build_id=_forml_build_id(),
         python_version=platform.python_version(),
         python_implementation=platform.python_implementation(),
@@ -447,7 +447,7 @@ def _distribution_version(name: str) -> str:
     try:
         return importlib.metadata.version(name)
     except importlib.metadata.PackageNotFoundError:
-        if name == "forml":
+        if name == "toetra":
             return "source-checkout"
         return "unknown"
 

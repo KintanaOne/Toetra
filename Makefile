@@ -64,7 +64,7 @@ dist:
 dist-check:
 	python scripts/check_distribution.py dist
 
-# Install the wheel in a fresh venv and import FORML outside the checkout.
+# Install the wheel in a fresh venv and import Toetra outside the checkout.
 install-check:
 	python scripts/check_installed_distribution.py dist
 

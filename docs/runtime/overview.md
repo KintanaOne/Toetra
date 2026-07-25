@@ -1,7 +1,7 @@
 # Runtime Overview
 
 > Status: High-level Z3 runtime implemented  
-> Public facade: `forml`  
+> Public facade: `toetra`
 > Internal implementation: `dsl.runtime`, backend routing, execution and reporting
 
 ## Purpose
@@ -26,7 +26,7 @@ Low-level compiler functions remain available, but a normal user should start
 with:
 
 ```python
-from forml import verify
+from toetra import verify
 ```
 
 ## High-Level API

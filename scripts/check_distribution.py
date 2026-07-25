@@ -1,4 +1,4 @@
-"""CLI for validating FORML wheel and sdist contents."""
+"""CLI for validating Toetra wheel and sdist contents."""
 
 from __future__ import annotations
 

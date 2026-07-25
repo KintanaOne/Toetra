@@ -1,6 +1,6 @@
 """High-level API for compiling, routing and executing FORML properties.
 
-Application code should normally import the public facade from :mod:`forml`.
+Application code should normally import the public facade from :mod:`toetra`.
 This module remains available for advanced integrations and compatibility.
 """
 

@@ -71,7 +71,7 @@ This self-contained example:
 5. compiles `demo/regression/affine_regression_policy.forml`;
 6. injects the affine model equation and typed DSL domains into IR2;
 7. routes each task according to backend capabilities;
-8. invokes the public `forml.verify(...)` API;
+8. invokes the public `toetra.verify(...)` API;
 9. builds backend-neutral `VerificationReport` objects;
 10. renders a proof, a counterexample and an existential witness;
 11. deletes the generated model and dataset automatically.

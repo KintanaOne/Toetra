@@ -6,7 +6,7 @@ import joblib
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 
-from forml import ReplayUnavailableError, verify
+from toetra import ReplayUnavailableError, verify
 from dsl.semantic.types.enums import EnumDataType
 from model.detector.model_framework import EnumModelFramework
 from model.schema.feature_schema import FeatureSchema

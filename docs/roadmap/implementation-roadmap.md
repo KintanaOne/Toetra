@@ -235,7 +235,7 @@ Patch 11  — shared text rendering and versioned JSON
 Patch 12  — public verify(...) API and VerificationSession
 Patch 12.1 — self-contained user-script demonstration
 Patch 13  — HTML/Jupyter rendering and credit-risk notebook
-Patch 14  — public `forml` facade, normalized values and automatic replay
+Patch 14  — public facade, normalized values and automatic replay
 ```
 
 The public path is now:

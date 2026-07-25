@@ -3,6 +3,6 @@ include README.md
 include CHANGELOG.md
 include pyproject.toml
 recursive-include dsl/language/grammar *.ebnf *.lark
-recursive-include forml/examples *.forml
+recursive-include toetra/examples *.forml
 global-exclude *.py[cod]
 global-exclude __pycache__

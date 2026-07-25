@@ -1,4 +1,4 @@
-"""CLI for deterministic FORML wheel and sdist builds."""
+"""CLI for deterministic Toetra wheel and sdist builds."""
 
 from __future__ import annotations
 

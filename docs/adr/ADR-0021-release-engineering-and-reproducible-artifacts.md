@@ -9,7 +9,7 @@
 FORML can only claim a stable V1 if the source checkout, Python distributions and review bundle represent the same product. A green test suite inside a developer checkout is insufficient when:
 
 - CI reformats or cleans files before checking them;
-- the wheel omits the public `forml` package or grammar resources;
+- the wheel omits the public `toetra` package or grammar resources;
 - an editable install hides missing distribution files;
 - source bundles silently exclude notebooks, datasets or public modules;
 - repeated builds produce unexplained artifact differences.
@@ -37,7 +37,7 @@ The wheel and sdist are then checked for project identity, safe paths, public pa
 
 ### 3. Clean-install contract
 
-The built wheel is installed in a fresh virtual environment outside the repository. The probe imports the public `forml` API, the packaged example policy and grammar resources with checkout paths removed from Python resolution.
+The built wheel is installed in a fresh virtual environment outside the repository. The probe imports the public `toetra` API, the packaged example policy and grammar resources with checkout paths removed from Python resolution.
 
 An editable installation is not release evidence.
 

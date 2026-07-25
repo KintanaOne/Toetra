@@ -21,7 +21,7 @@ every value of feature `a` in the closed interval `[0.0, 3.0]`.
 Run it from Python:
 
 ```python
-from forml import verify
+from toetra import verify
 
 session = verify(
     "policy.forml",

@@ -4,9 +4,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from dsl.ir.ir2.context import IR2BuildContext
 from dsl.ir.ir2.enums import NormalFormKind
+from dsl.provenance import builder as provenance_builder
 from dsl.provenance.builder import build_provenance_context
 from dsl.provenance.model import FingerprintStatus, ProvenanceCompleteness
 from dsl.semantic.types.enums import EnumDataType
@@ -57,6 +59,28 @@ def _context(**overrides: object):
     }
     arguments.update(overrides)
     return build_provenance_context(**arguments)  # type: ignore[arg-type]
+
+
+def test_software_provenance_uses_toetra_distribution_identity(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    requested: list[str] = []
+
+    def version(name: str) -> str:
+        requested.append(name)
+        return f"version:{name}"
+
+    monkeypatch.setattr(
+        provenance_builder.importlib.metadata,
+        "version",
+        version,
+    )
+
+    context = _context()
+
+    assert context.software.forml_version == "version:toetra"
+    assert "toetra" in requested
+    assert "forml" not in requested
 
 
 def test_schema_only_provenance_is_complete() -> None:

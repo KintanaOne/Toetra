@@ -29,7 +29,7 @@ properties of machine-learning models.
 | `model/schema`, `model/introspector`, `model/encoder` | ModelBridge |
 | `dsl/compatibility`, `dsl/backends` | route qualification and execution |
 | `dsl/reporting`, `dsl/provenance`, `dsl/runtime` | reports and replay |
-| `forml` | stable public Python facade |
+| `toetra` | stable public Python facade |
 
 A `target` is an output port. Regression uses `target[point]`; classification
 selects `target[point].label` or `target[point].probability(label)`. Internal
