@@ -17,7 +17,7 @@ concrete replay.
 6. [Compatibility matrices](generated/numeric-compatibility-matrices.md)
 
 ```text
-.forml + model/schema
+.toetra + model/schema
 → parse and bind
 → semantic validation
 → IR1

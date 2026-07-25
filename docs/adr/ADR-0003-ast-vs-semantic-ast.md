@@ -6,7 +6,7 @@
 
 ## Context
 
-The AST represents the structured syntax of a `.forml` specification.
+The AST represents the structured syntax of a `.toetra` specification.
 
 However, the AST alone does not prove that:
 

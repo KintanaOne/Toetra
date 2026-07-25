@@ -13,7 +13,7 @@ The backend syntax is part of the language surface, but backend execution is not
 
 The DSL may express:
 
-```forml
+```toetra
 using z3
 ```
 
@@ -25,13 +25,13 @@ but the backend boundary later decides whether the query can actually be lowered
 
 Backend syntax appears after a property:
 
-```forml
+```toetra
 [BOUND]: check_at x => score >= 0 using z3
 ```
 
 With arguments:
 
-```forml
+```toetra
 [ROBUSTNESS]: forall baseline, candidate => CLASSIFICATION.EQUAL() using z3(timeout=30)
 ```
 
@@ -65,7 +65,7 @@ BOX
 
 Backends may accept optional arguments:
 
-```forml
+```toetra
 using z3(timeout=30)
 # post-V1 example only:
 # using eran(domain="zonotope")
@@ -176,7 +176,7 @@ The backend syntax therefore does not fully determine the lowering strategy. It 
 
 ### Unknown backend
 
-```forml
+```toetra
 [BOUND]: check_at x => score >= 0 using unknown_backend
 ```
 
@@ -188,7 +188,7 @@ Parser or builder rejects the backend if not in grammar.
 
 ### Unsupported backend-property pair
 
-```forml
+```toetra
 [FAIRNESS]: x ~ x' in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUITY() using box
 ```
 
@@ -200,7 +200,7 @@ Backend capability validation rejects the request if unsupported.
 
 ### Unsupported backend argument
 
-```forml
+```toetra
 [BOUND]: check_at x => score >= 0 using z3(non_existing_option=true)
 ```
 

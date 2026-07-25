@@ -4,6 +4,15 @@
 
 ### Changed
 
+- Renamed the canonical specification extension from `.forml` to `.toetra`.
+- Renamed grammar artifacts and parser entry points to the Toetra Specification
+  Language identity.
+- Removed runtime acceptance of the legacy `.forml` extension.
+
+## [Unreleased]
+
+### Changed
+
 - Renamed the Python distribution and sole public import namespace to `toetra`.
 - Moved packaged examples to `toetra.examples`; no `forml` import alias is retained.
 ## [1.0.0rc2] - 2026-07-22
@@ -35,7 +44,7 @@ for its public Python API, report schemas, and documented V1 behavior.
 
 ### Added
 
-- End-to-end `.forml` verification through the public `forml.verify` API.
+- End-to-end `.toetra` verification through the public `toetra.verify` API.
 - First-class points, anchors, homogeneous quantifiers, indexed model evaluations,
   numeric domains, specification constants, and scalar arithmetic.
 - Single-output scikit-learn `LinearRegression` ModelBridge encoding.

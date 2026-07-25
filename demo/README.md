@@ -27,19 +27,19 @@ python -m demo.quickstart.verify_model --demo \
 ```
 
 The demo trains a temporary affine model and executes
-`demo/quickstart/verification_policy.forml`. Generated model and dataset files are
+`demo/quickstart/verification_policy.toetra`. Generated model and dataset files are
 deleted automatically.
 
 For an existing project, provide paths from your repository:
 
 ```bash
-python -m demo.quickstart.verify_model path/to/policy.forml \
+python -m demo.quickstart.verify_model path/to/policy.toetra \
     --model path/to/model.joblib \
     --dataset path/to/reference.csv \
     --json-output artifacts/forml-report.json
 ```
 
-When `--model` is omitted, the model reference from the FORML header is resolved
+When `--model` is omitted, the model reference from the Toetra header is resolved
 relative to the specification file. Missing paths are reported as concise CLI
 errors rather than Python tracebacks. The process exits with the session's
 CI-friendly status code.
@@ -68,7 +68,7 @@ This self-contained example:
 2. trains a real scikit-learn `LinearRegression` model;
 3. serializes the model with Joblib;
 4. reconstructs a normalized `ModelSchema` through `ModelManager`;
-5. compiles `demo/regression/affine_regression_policy.forml`;
+5. compiles `demo/regression/affine_regression_policy.toetra`;
 6. injects the affine model equation and typed DSL domains into IR2;
 7. routes each task according to backend capabilities;
 8. invokes the public `toetra.verify(...)` API;
@@ -82,7 +82,7 @@ The trained equation is:
 score = 2 * a + 1
 ```
 
-The FORML source uses global specification constants and a typed input domain.
+The Toetra source uses global specification constants and a typed input domain.
 It executes three properties:
 
 | Property | Expected result | Explanation |
@@ -94,7 +94,7 @@ It executes three properties:
 The complete runtime path is:
 
 ```text
-.forml source
+.toetra source
 → parser and AST builder
 → semantic binding and scalar typing
 → symmetric scalar IR1

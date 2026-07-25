@@ -6,8 +6,8 @@ from dsl.ast.nodes.outputs import (
     PredictedLabelObservableNode,
 )
 from dsl.builder.program import parse_program
-from dsl.parser.parser import parse_forml_code
-from dsl.semantic.core.validator import FORMLValidator
+from dsl.parser.parser import parse_toetra_code
+from dsl.semantic.core.validator import ToetraValidator
 from dsl.semantic.runtime.tracer import ValidationTracer
 from dsl.semantic.types.enums import EnumDataType
 from model.detector.model_framework import EnumModelFramework
@@ -32,14 +32,14 @@ def _schema() -> ModelSchema:
 
 
 def _validate(assertion: str):
-    program = parse_program(parse_forml_code(f"""
+    program = parse_program(parse_toetra_code(f"""
         model := "model.pkl"
         target := MyTarget
 
         [LOGIC]:
         forall x0 => {assertion}
         """))
-    FORMLValidator().validate(
+    ToetraValidator().validate(
         program,
         tracer=ValidationTracer(enabled=False),
         model_schema=_schema(),

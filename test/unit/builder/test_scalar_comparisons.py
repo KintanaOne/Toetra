@@ -8,11 +8,11 @@ from dsl.ast.nodes.primitives import (
 )
 from dsl.builder.program import parse_program
 from dsl.language.vocabulary.operators import EnumArithmeticOperator
-from dsl.parser.parser import parse_forml_code
+from dsl.parser.parser import parse_toetra_code
 
 
 def _build(source: str):
-    return parse_program(parse_forml_code(source))
+    return parse_program(parse_toetra_code(source))
 
 
 def _build_comparison(source: str) -> ComparisonNode:

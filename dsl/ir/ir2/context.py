@@ -10,7 +10,7 @@ from dsl.language.vocabulary.backends import EnumBackend
 class IR2BuildContext:
     """Internal construction options for IR2.
 
-    These options are compiler concerns. They must not leak into the FORML DSL.
+    These options are compiler concerns. They must not leak into the Toetra Specification Language.
     """
 
     preferred_normal_form: NormalFormKind | None = None

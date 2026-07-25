@@ -1,4 +1,4 @@
-from dsl.parser.parser import parse_forml_code
+from dsl.parser.parser import parse_toetra_code
 
 
 def test_footer_empty():
@@ -16,7 +16,7 @@ def test_footer_empty():
     forall x0 => CLASSIFICATION.EQUAL()
     """
 
-    result = parse_forml_code(code)
+    result = parse_toetra_code(code)
 
     assert not hasattr(result, "footer")
 
@@ -38,6 +38,6 @@ def test_footer_with_simple_comment():
     # This is a simple footer comment
     """
 
-    result = parse_forml_code(code)
+    result = parse_toetra_code(code)
 
     assert not hasattr(result, "footer")

@@ -47,7 +47,7 @@ A concrete implementation may merge passes, but diagnostic ownership and postcon
 
 For:
 
-```forml
+```toetra
 forall x0
 ```
 
@@ -68,7 +68,7 @@ The same rules apply to `exists x0`, with quantifier kind `EXISTS` preserved for
 
 An assertion is not required to mention the quantified identifier textually:
 
-```forml
+```toetra
 forall x0 => target <= 7
 ```
 

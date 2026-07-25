@@ -14,7 +14,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from dsl.builder.program import parse_program  # noqa: E402
-from dsl.parser.parser import parse_forml_code  # noqa: E402
+from dsl.parser.parser import parse_toetra_code  # noqa: E402
 
 EXPECTED_PROJECT_NAME = "toetra"
 EXPECTED_VERSION = "1.0.0rc2"
@@ -75,23 +75,23 @@ def _validate_local_links(path: Path) -> None:
             )
 
 
-def _forml_blocks(path: Path) -> tuple[str, ...]:
+def _toetra_blocks(path: Path) -> tuple[str, ...]:
     source = path.read_text(encoding="utf-8")
     return tuple(
         match.strip()
-        for match in re.findall(r"```forml\s*\n(.*?)```", source, re.DOTALL)
+        for match in re.findall(r"```toetra\s*\n(.*?)```", source, re.DOTALL)
     )
 
 
-def _validate_forml_examples(path: Path) -> None:
-    blocks = _forml_blocks(path)
+def _validate_toetra_examples(path: Path) -> None:
+    blocks = _toetra_blocks(path)
     if not blocks:
         raise PublicContractError(
             f"No executable FORML example found in {path.relative_to(ROOT)}"
         )
     for index, source in enumerate(blocks, start=1):
         try:
-            parse_program(parse_forml_code(source))
+            parse_program(parse_toetra_code(source))
         except Exception as error:  # pragma: no cover - diagnostic boundary
             raise PublicContractError(
                 f"Invalid FORML block {index} in {path.relative_to(ROOT)}: {error}"
@@ -242,11 +242,11 @@ def _validate_classification_target_contract() -> None:
             )
         _validate_local_links(document)
 
-    demo = ROOT / "demo" / "classification" / "binary_classification_policy.forml"
+    demo = ROOT / "demo" / "classification" / "binary_classification_policy.toetra"
     if not demo.is_file():
         raise PublicContractError("Missing binary-classification release demo")
     try:
-        parse_program(parse_forml_code(demo.read_text(encoding="utf-8")))
+        parse_program(parse_toetra_code(demo.read_text(encoding="utf-8")))
     except Exception as error:
         raise PublicContractError(
             f"Invalid binary-classification release demo: {error}"
@@ -269,7 +269,7 @@ def _validate_sdist_manifest() -> None:
         "include CHANGELOG.md",
         "include pyproject.toml",
         "recursive-include dsl/language/grammar *.ebnf *.lark",
-        "recursive-include toetra/examples *.forml",
+        "recursive-include toetra/examples *.toetra",
     }
     missing = sorted(required - directives)
     if missing:
@@ -325,7 +325,7 @@ def check_public_contract() -> None:
         ROOT / "README.md",
         ROOT / "docs" / "getting-started" / "first-property.md",
     ):
-        _validate_forml_examples(document)
+        _validate_toetra_examples(document)
 
     _validate_mkdocs_navigation()
     _validate_classification_target_contract()

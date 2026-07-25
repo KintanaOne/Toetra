@@ -25,7 +25,7 @@ Contracts prevent the compiler from becoming a chain of ad-hoc conversions and m
 ## Contracted Pipeline
 
 ```text
-.forml source
+.toetra source
 → CST
 → AST
 → SemanticValidatedAST

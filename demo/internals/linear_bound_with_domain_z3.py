@@ -103,7 +103,7 @@ def weak_domain_bounds() -> tuple[NumericFeatureBounds, ...]:
     )
 
 
-def run_forml_z3_linear_bound_with_domains(
+def run_toetra_z3_linear_bound_with_domains(
     source: str,
     schema: ModelSchema,
     bounds: tuple[NumericFeatureBounds, ...],
@@ -190,7 +190,7 @@ def print_case(
 
     print()
 
-    results = run_forml_z3_linear_bound_with_domains(
+    results = run_toetra_z3_linear_bound_with_domains(
         source=source,
         schema=schema,
         bounds=bounds,

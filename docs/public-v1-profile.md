@@ -26,7 +26,7 @@ numeric domains, affine arithmetic, Boolean logic, and `PROVED`,
 
 ## Binary-classification semantics
 
-```forml
+```toetra
 model := "binary.joblib"
 target := decision
 

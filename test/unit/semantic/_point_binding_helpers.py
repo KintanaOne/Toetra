@@ -9,14 +9,14 @@ from dsl.ast.nodes.assertion import (
 )
 from dsl.ast.nodes.primitives import AttributeNode, TargetRefNode
 from dsl.builder.program import parse_program
-from dsl.parser.parser import parse_forml_code
-from dsl.semantic.core.validator import FORMLValidator
+from dsl.parser.parser import parse_toetra_code
+from dsl.semantic.core.validator import ToetraValidator
 from dsl.semantic.runtime.tracer import ValidationTracer
 
 
 def build_and_validate(source: str):
-    program = parse_program(parse_forml_code(source))
-    FORMLValidator().validate(
+    program = parse_program(parse_toetra_code(source))
+    ToetraValidator().validate(
         program,
         tracer=ValidationTracer(enabled=False),
     )

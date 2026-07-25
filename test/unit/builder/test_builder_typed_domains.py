@@ -16,12 +16,12 @@ from dsl.ast.nodes.primitives import (
 from dsl.builder.program import parse_program
 from dsl.language.vocabulary.domains import EnumBoundaryKind
 from dsl.language.vocabulary.operators import EnumArithmeticOperator
-from dsl.parser.parser import parse_forml_code
+from dsl.parser.parser import parse_toetra_code
 from dsl.semantic.types.enums import EnumDataType
 
 
 def build(source: str):
-    return parse_program(parse_forml_code(source))
+    return parse_program(parse_toetra_code(source))
 
 
 def program_with_domain(entries: str, *, scope: str = "forall x0") -> str:

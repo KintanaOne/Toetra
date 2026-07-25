@@ -1,5 +1,5 @@
 from dsl.builder.program import parse_program
-from dsl.parser.parser import parse_forml_code
+from dsl.parser.parser import parse_toetra_code
 
 if __name__ == "__main__":
     """This script is for quick testing of the builder. It parses a sample property and prints the resulting AST"""
@@ -13,7 +13,7 @@ if __name__ == "__main__":
     """
 
     # LARK
-    CST = parse_forml_code(sample)
+    CST = parse_toetra_code(sample)
     print(CST.pretty())
 
     # BUILDER

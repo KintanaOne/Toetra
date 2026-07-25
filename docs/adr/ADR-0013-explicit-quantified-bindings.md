@@ -22,13 +22,13 @@ The language must distinguish clearly between:
 
 The target quantified syntax is:
 
-```forml
+```toetra
 forall x0 => target <= 7
 ```
 
 and:
 
-```forml
+```toetra
 exists candidate => candidate.score > 0
 ```
 
@@ -56,13 +56,13 @@ For a quantified scope `Q x0`, the compiler must:
 
 Therefore:
 
-```forml
+```toetra
 forall x0 => age >= 18
 ```
 
 is valid and resolves `age` to `x0.age`, while:
 
-```forml
+```toetra
 forall x0 => y.age >= 18
 ```
 
@@ -70,7 +70,7 @@ is invalid and must not be reinterpreted as `x0.age`.
 
 A quantified variable does not need to appear textually in the assertion. This remains valid:
 
-```forml
+```toetra
 forall x0 => target <= 7
 ```
 
@@ -80,7 +80,7 @@ because model assumptions connect the symbolic input `x0` to the model output.
 
 The language-level meaning of:
 
-```forml
+```toetra
 forall x0 with domain(...) => P
 ```
 
@@ -92,7 +92,7 @@ For every admissible valuation of x0, P holds.
 
 The language-level meaning of:
 
-```forml
+```toetra
 exists x0 with domain(...) => P
 ```
 

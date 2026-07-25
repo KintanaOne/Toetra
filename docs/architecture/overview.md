@@ -6,7 +6,7 @@
 
 FORML is designed as an end-to-end behavioral verification architecture for machine learning systems.
 
-It starts from a user-defined `.forml` specification and a model artifact, then progressively transforms them into a backend-specific verification query.
+It starts from a user-defined `.toetra` specification and a model artifact, then progressively transforms them into a backend-specific verification query.
 
 The architecture is intentionally layered so that each stage has a clear responsibility, artifact boundary, validation rule, and future mutation-testing surface.
 
@@ -41,7 +41,7 @@ Instead, FORML introduces explicit intermediate artifacts that make the transfor
 ```mermaid
 flowchart TD
     U[User]
-        --> S[.forml Specification]
+        --> S[.toetra Specification]
 
     M[Serialized ML Model]
         --> MB[ModelBridge]
@@ -103,10 +103,10 @@ FORML has two primary input pipelines that converge before backend lowering.
 
 ### 1. DSL Compiler Pipeline
 
-The DSL compiler pipeline transforms a `.forml` source file into semantically validated logical artifacts.
+The DSL compiler pipeline transforms a `.toetra` source file into semantically validated logical artifacts.
 
 ```text
-.forml source
+.toetra source
     ↓
 CST
     ↓
@@ -181,7 +181,7 @@ Aggregated Assertion Set
 
 This convergence is one of the most important parts of the architecture.
 
-FORML should not merely check whether a `.forml` property is syntactically valid. It should eventually check whether that property is meaningful for the actual target model.
+FORML should not merely check whether a `.toetra` property is syntactically valid. It should eventually check whether that property is meaningful for the actual target model.
 
 Examples:
 
@@ -296,9 +296,9 @@ The semantic layer is also where future ModelSchema-aware validation will be int
 
 ## Specification Constants and Name Resolution
 
-Specification constants are program-level immutable values declared in the `.forml` header.
+Specification constants are program-level immutable values declared in the `.toetra` header.
 
-```forml
+```toetra
 max_risk := 0.20
 minimum_income := 25000.0
 ```

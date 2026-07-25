@@ -61,7 +61,7 @@ Assertion aggregation may consume:
 
 | Input | Origin | Example |
 |---|---|---|
-| User assertions | FORML DSL / IR2 | `x'.age <= 30` |
+| User assertions | Toetra Specification Language / IR2 | `x'.age <= 30` |
 | Scope constraints | Semantic layer | `x'` is perturbation of `x` |
 | Neighborhood constraints | LHS / semantic context | `distance(x, x') <= eps` |
 | Domain constraints | LHS / domain | `x.category in {A, B}` |
@@ -114,7 +114,7 @@ Common composition rules:
 
 A user property:
 
-```forml
+```toetra
 [ROBUSTNESS]: forall baseline, candidate => CLASSIFICATION.EQUAL()
 ```
 

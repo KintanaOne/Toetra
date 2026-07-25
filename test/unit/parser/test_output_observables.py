@@ -4,12 +4,12 @@ import pytest
 from lark import Tree
 from lark.exceptions import UnexpectedInput
 
-from dsl.parser.parser import parse_forml_code
+from dsl.parser.parser import parse_toetra_code
 from test.unit.parser._point_binding_helpers import program, single_tree, token_text
 
 
 def _single_observable(source: str) -> Tree:
-    tree = parse_forml_code(program(body=source))
+    tree = parse_toetra_code(program(body=source))
     return single_tree(tree, "output_observable")
 
 
@@ -75,7 +75,7 @@ def test_par_obs_003_parses_unindexed_observables(
 )
 def test_par_obs_004_rejects_invalid_probability_arguments(surface: str) -> None:
     with pytest.raises(UnexpectedInput):
-        parse_forml_code(program(body=f"forall x0 => {surface} >= 0.8"))
+        parse_toetra_code(program(body=f"forall x0 => {surface} >= 0.8"))
 
 
 @pytest.mark.parametrize(
@@ -96,4 +96,4 @@ def test_par_obs_004_rejects_invalid_probability_arguments(surface: str) -> None
 )
 def test_par_obs_005_rejects_internal_model_surfaces(surface: str) -> None:
     with pytest.raises(UnexpectedInput):
-        parse_forml_code(program(body=f"forall x0 => {surface} == 0"))
+        parse_toetra_code(program(body=f"forall x0 => {surface} == 0"))

@@ -12,7 +12,7 @@ It defines the target end-to-end flow even though some subsystems are still plan
 
 A FORML request is not only a DSL compilation request. It is a verification request that combines:
 
-- a `.forml` property specification;
+- a `.toetra` property specification;
 - a model artifact or model schema;
 - semantic validation;
 - logical normalization;
@@ -25,7 +25,7 @@ A FORML request is not only a DSL compilation request. It is a verification requ
 ## End-to-end flow summary
 
 ```text
-.forml source
+.toetra source
     ↓
 CST
     ↓
@@ -58,7 +58,7 @@ FORML Result / Diagnostics
 
 ```mermaid
 flowchart TD
-    S[.forml Source]
+    S[.toetra Source]
         --> P[Parser]
 
     P
@@ -125,7 +125,7 @@ flowchart TD
 
 ### Input
 
-A raw `.forml` specification.
+A raw `.toetra` specification.
 
 ### Output
 
@@ -649,7 +649,7 @@ The backend receives a composed verification problem, not isolated DSL fragments
 
 ### 6. Lowering must be traceable
 
-Any simplification or minimization must preserve traceability from backend expressions to FORML source intent.
+Any simplification or minimization must preserve traceability from backend expressions to Toetra source intent.
 
 ### 7. Miova validates boundaries, not normal execution
 

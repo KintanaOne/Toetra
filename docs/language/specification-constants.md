@@ -1,15 +1,15 @@
 # Specification Constants
 
-> Status: Accepted language contract — implementation pending  
-> Scope: User-declared immutable scalar values in a `.forml` header  
-> Priority: P0  
+> Status: Accepted language contract — implementation pending
+> Scope: User-declared immutable scalar values in a `.toetra` header
+> Priority: P0
 > Audience: FORML users, parser authors, semantic maintainers, IR authors, backend authors, test authors
 
 ## Purpose
 
 Specification constants let users name reusable business thresholds and scalar values once, then reference them throughout domains and assertions.
 
-```forml
+```toetra
 model := "credit-risk.joblib"
 target := default_risk
 
@@ -50,13 +50,13 @@ Specification constants are intended to make FORML:
 
 A specification constant is declared in the program header:
 
-```forml
+```toetra
 identifier := scalar_literal
 ```
 
 Canonical formatting uses one declaration per line:
 
-```forml
+```toetra
 max_risk := 0.20
 minimum_income := 25000.0
 strict_mode := true
@@ -76,7 +76,7 @@ The initial declaration profile accepts scalar literals only:
 
 The initial profile does not accept derived declarations:
 
-```forml
+```toetra
 annual_limit := monthly_limit * 12
 ```
 
@@ -89,14 +89,14 @@ Supporting declaration expressions later would require dependency ordering, unkn
 A specification constant:
 
 - is immutable;
-- is visible to every property in the same `.forml` program;
+- is visible to every property in the same `.toetra` program;
 - cannot be redeclared;
 - cannot be assigned inside a property or domain;
 - is evaluated from its declared literal before backend lowering.
 
 This is invalid:
 
-```forml
+```toetra
 max_risk := 0.20
 max_risk := 0.30
 ```
@@ -109,7 +109,7 @@ FORML has no assignment statement in property bodies. The `:=` token is declarat
 
 FORML keeps bare names user-friendly. A scalar expression such as:
 
-```forml
+```toetra
 target <= max_risk
 ```
 
@@ -125,7 +125,7 @@ In an assertion, a bare identifier is resolved in this order:
 
 For:
 
-```forml
+```toetra
 max_risk := 0.20
 
 [LOGIC]: forall applicant => target <= max_risk
@@ -135,7 +135,7 @@ max_risk := 0.20
 
 For:
 
-```forml
+```toetra
 [LOGIC]: forall applicant => income >= 25000
 ```
 
@@ -143,7 +143,7 @@ when no `income` specification constant exists, `income` denotes the implicit fe
 
 An explicitly qualified reference always denotes a feature:
 
-```forml
+```toetra
 max_risk := 0.20
 
 [LOGIC]:
@@ -157,19 +157,19 @@ The left operand is the model feature `applicant.max_risk`; the right operand is
 
 Domain subjects remain explicitly qualified:
 
-```forml
+```toetra
 applicant.income: [minimum_income, 200000]
 ```
 
 Bare specification constants are allowed in interval bounds. Bare input-feature fallback is not allowed inside domain bounds; feature references there remain explicit:
 
-```forml
+```toetra
 applicant.a: [minimum_value, applicant.b + tolerance]
 ```
 
 This is rejected when `b` is not a specification constant:
 
-```forml
+```toetra
 applicant.a: [b - 1, b + 1]
 ```
 
@@ -182,7 +182,7 @@ In finite-set value position, a bare identifier is resolved in this order:
 
 Example:
 
-```forml
+```toetra
 preferred_level := 7
 
 with domain(
@@ -216,7 +216,7 @@ Rules:
 
 Example of a rejected collision:
 
-```forml
+```toetra
 applicant := 7
 
 [LOGIC]: forall applicant => target <= 1
@@ -239,14 +239,14 @@ Type compatibility is checked wherever the constant is used.
 
 Valid:
 
-```forml
+```toetra
 max_risk := 0.20
 [LOGIC]: forall x0 => target <= max_risk
 ```
 
 Invalid when `target` is numeric:
 
-```forml
+```toetra
 max_risk := "low"
 [LOGIC]: forall x0 => target <= max_risk
 ```

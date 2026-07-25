@@ -7,12 +7,12 @@
 
 ## Purpose
 
-The grammar defines the accepted surface syntax of FORML programs.
+The grammar defines the accepted surface syntax of Toetra programs.
 
 It is the first formal boundary of the compiler pipeline:
 
 ```text
-.forml source
+.toetra source
 → parser
 → CST
 ```
@@ -25,7 +25,7 @@ The grammar is responsible for syntax only. It must not perform semantic interpr
 
 ## Program Structure
 
-A FORML program contains:
+A Toetra program contains:
 
 ```text
 header body
@@ -33,14 +33,14 @@ header body
 
 The header declares the model and target:
 
-```forml
+```toetra
 model := "model.joblib"
 target := prediction
 ```
 
 The body contains one or more property sections:
 
-```forml
+```toetra
 [ROBUSTNESS]: forall baseline, candidate => CLASSIFICATION.EQUAL()
 ```
 
@@ -104,7 +104,7 @@ property_imply = "=>" ;
 
 Example:
 
-```forml
+```toetra
 [BOUND]: check_at x => score >= 0
 ```
 

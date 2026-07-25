@@ -9,14 +9,14 @@
 
 This document is the normative cross-layer contract for the language evolution introducing:
 
-```forml
+```toetra
 forall x0
 exists candidate
 ```
 
 structured domains:
 
-```forml
+```toetra
 with domain(
     x0.a: ]0.0, 3.0],
     x0.region: {EU, US}
@@ -25,7 +25,7 @@ with domain(
 
 and scalar arithmetic comparisons:
 
-```forml
+```toetra
 2 * x0.a + x0.b <= target
 ```
 
@@ -39,7 +39,7 @@ What information must each compiler artifact preserve, validate, and expose?
 
 ## Normative Example
 
-```forml
+```toetra
 model := "demo.onnx"
 target := MyTarget
 
@@ -78,7 +78,7 @@ forall x0
 
 Given:
 
-```forml
+```toetra
 forall x0
 ```
 
@@ -102,13 +102,13 @@ An implementation may sanitize the concrete solver symbol, but it must retain a 
 
 Every explicitly qualified input reference must resolve to a variable declared by the enclosing scope.
 
-```forml
+```toetra
 forall x0 => x0.a <= 3
 ```
 
 is valid.
 
-```forml
+```toetra
 forall x0 => y.a <= 3
 ```
 
@@ -120,13 +120,13 @@ The semantic validator must not use a single-variable alias fallback for an expl
 
 In assertions, an unqualified feature may resolve through the scope's default entity:
 
-```forml
+```toetra
 forall x0 => a <= 3
 ```
 
 becomes semantically equivalent to:
 
-```forml
+```toetra
 forall x0 => x0.a <= 3
 ```
 
@@ -163,13 +163,13 @@ FiniteSetDomain
 
 Domain subjects are always explicit:
 
-```forml
+```toetra
 x0.a: [0, 3]
 ```
 
 The following are invalid:
 
-```forml
+```toetra
 a: [0, 3]
 y.a: [0, 3]
 target: [0, 3]
@@ -190,7 +190,7 @@ Boundary kinds are enum-like values, never positional booleans.
 
 ### Finite-set preservation
 
-```forml
+```toetra
 x0.d: {0.0, 7.0}
 ```
 
@@ -202,7 +202,7 @@ Unquoted identifiers such as `EU` or `obj1` inside finite sets are symbolic cate
 
 Bounds may contain scalar arithmetic expressions that reference explicitly qualified input features from the enclosing scope.
 
-```forml
+```toetra
 x0.a: [x0.b - 1, x0.b + 1]
 ```
 
@@ -250,7 +250,7 @@ NNF, CNF and DNF treat a complete comparison as one logical atom.
 
 For:
 
-```forml
+```toetra
 x0.a + 2 * x0.b <= target
 ```
 
@@ -300,7 +300,7 @@ Generated assumptions retain provenance to:
 
 For:
 
-```forml
+```toetra
 forall x0 with domain(...) => P
 ```
 
@@ -320,7 +320,7 @@ AND NOT P(x0, target)
 
 For:
 
-```forml
+```toetra
 exists x0 with domain(...) => P
 ```
 

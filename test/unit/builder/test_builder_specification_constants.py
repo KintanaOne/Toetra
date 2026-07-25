@@ -5,12 +5,12 @@ from dsl.ast.nodes.domain import FiniteSetDomainNode
 from dsl.ast.nodes.expressions import QuantifierExprNode
 from dsl.ast.nodes.primitives import AttributeNode, NameRefNode, TargetRefNode
 from dsl.builder.program import parse_program
-from dsl.parser.parser import parse_forml_code
+from dsl.parser.parser import parse_toetra_code
 from dsl.semantic.types.enums import EnumDataType
 
 
 def _build(source: str):
-    return parse_program(parse_forml_code(source))
+    return parse_program(parse_toetra_code(source))
 
 
 def test_builder_preserves_typed_declarations_in_source_order() -> None:

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 from lark.exceptions import UnexpectedInput
-from dsl.parser.parser import parse_forml_code
+from dsl.parser.parser import parse_toetra_code
 from test.unit.parser._point_binding_helpers import (
     direct_trees,
     program,
@@ -16,7 +16,7 @@ from test.unit.parser._point_binding_helpers import (
 
 
 def test_par_anchor_001_inline_anchor_parses_in_completeprogram() -> None:
-    tree = parse_forml_code(
+    tree = parse_toetra_code(
         program(
             declarations="anchor x0 := { age: 42 }",
             body="target[x0] <= 7",
@@ -29,7 +29,7 @@ def test_par_anchor_001_inline_anchor_parses_in_completeprogram() -> None:
 
 
 def test_par_anchor_002_feature_and_literal_order_is_preserved() -> None:
-    tree = parse_forml_code(
+    tree = parse_toetra_code(
         program(
             declarations="""
             anchor x0 := {
@@ -59,7 +59,7 @@ def test_par_anchor_002_feature_and_literal_order_is_preserved() -> None:
 
 
 def test_par_anchor_003_trailing_comma_is_accepted() -> None:
-    parse_forml_code(
+    parse_toetra_code(
         program(
             declarations="anchor x0 := { age: 42, }",
             body="target[x0] <= 7",
@@ -84,11 +84,11 @@ def test_par_anchor_003_trailing_comma_is_accepted() -> None:
 )
 def test_invalid_inline_anchor_surface_is_rejected(declaration: str) -> None:
     with pytest.raises(UnexpectedInput):
-        parse_forml_code(program(declarations=declaration, body="target <= 7"))
+        parse_toetra_code(program(declarations=declaration, body="target <= 7"))
 
 
 def test_par_anchor_008_duplicate_feature_spelling_is_preserved_for_semantics() -> None:
-    tree = parse_forml_code(
+    tree = parse_toetra_code(
         program(
             declarations="anchor x0 := { age: 42, age: 45 }",
             body="target[x0] <= 7",
@@ -114,4 +114,4 @@ def test_par_anchor_009_anchor_after_first_property_is_rejected() -> None:
     """
 
     with pytest.raises(UnexpectedInput):
-        parse_forml_code(source)
+        parse_toetra_code(source)

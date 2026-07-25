@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from dsl.builder.program import parse_program
-from dsl.parser.parser import parse_forml_code
-from dsl.semantic.core.validator import FORMLValidator
+from dsl.parser.parser import parse_toetra_code
+from dsl.semantic.core.validator import ToetraValidator
 from dsl.semantic.runtime.tracer import ValidationTracer
 from dsl.semantic.types.enums import EnumDataType
 from model.detector.model_framework import EnumModelFramework
@@ -26,12 +26,12 @@ def anchor_schema() -> ModelSchema:
 
 
 def build_program(source: str):
-    return parse_program(parse_forml_code(source))
+    return parse_program(parse_toetra_code(source))
 
 
 def validate_program(source: str, *, with_schema: bool = True):
     program = build_program(source)
-    FORMLValidator().validate(
+    ToetraValidator().validate(
         program,
         tracer=ValidationTracer(enabled=False),
         model_schema=anchor_schema() if with_schema else None,

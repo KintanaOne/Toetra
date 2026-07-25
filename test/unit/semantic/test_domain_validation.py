@@ -4,8 +4,8 @@ import pytest
 
 from dsl.builder.program import parse_program
 from dsl.parser.errors import ParserError
-from dsl.parser.parser import parse_forml_code
-from dsl.semantic.core.validator import FORMLValidator
+from dsl.parser.parser import parse_toetra_code
+from dsl.semantic.core.validator import ToetraValidator
 from dsl.semantic.runtime.tracer import ValidationTracer
 from dsl.semantic.types.enums import EnumDataType
 from model.detector.model_framework import EnumModelFramework
@@ -30,9 +30,9 @@ def _schema() -> ModelSchema:
 
 
 def _assert_rejected(source: str, message: str) -> None:
-    program = parse_program(parse_forml_code(source))
+    program = parse_program(parse_toetra_code(source))
     with pytest.raises(ParserError, match=message):
-        FORMLValidator().validate(
+        ToetraValidator().validate(
             program,
             tracer=ValidationTracer(enabled=False),
             model_schema=_schema(),
@@ -99,7 +99,7 @@ def test_open_equal_constant_interval_is_rejected(interval: str) -> None:
 
 
 def test_closed_singleton_interval_is_valid() -> None:
-    program = parse_program(parse_forml_code("""
+    program = parse_program(parse_toetra_code("""
         model := "model.onnx"
         target := MyTarget
 
@@ -107,7 +107,7 @@ def test_closed_singleton_interval_is_valid() -> None:
         forall x0 with domain(x0.age: [3, 3]) => target <= 1
         """))
 
-    assert FORMLValidator().validate(
+    assert ToetraValidator().validate(
         program,
         tracer=ValidationTracer(enabled=False),
         model_schema=_schema(),
@@ -156,7 +156,7 @@ def test_numeric_subject_rejects_symbolic_finite_set_members() -> None:
 
 
 def test_string_subject_accepts_symbolic_and_string_members() -> None:
-    program = parse_program(parse_forml_code("""
+    program = parse_program(parse_toetra_code("""
         model := "model.onnx"
         target := MyTarget
 
@@ -166,7 +166,7 @@ def test_string_subject_accepts_symbolic_and_string_members() -> None:
         forall x0 with domain(x0.region: {preferred, US}) => target <= 1
         """))
 
-    assert FORMLValidator().validate(
+    assert ToetraValidator().validate(
         program,
         tracer=ValidationTracer(enabled=False),
         model_schema=_schema(),

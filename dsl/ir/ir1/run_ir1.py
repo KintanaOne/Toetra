@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING
 from dsl.builder.program import parse_program
 from dsl.ir.ir1.pretty import pretty_print_tasks
 from dsl.ir.ir1.translator import IRTranslator
-from dsl.parser.parser import parse_forml_code
-from dsl.semantic.core.validator import FORMLValidator
+from dsl.parser.parser import parse_toetra_code
+from dsl.semantic.core.validator import ToetraValidator
 from dsl.semantic.runtime.tracer import ValidationTracer
 
 if TYPE_CHECKING:
@@ -37,10 +37,10 @@ def run_ir(
     behavior.
     """
 
-    cst = parse_forml_code(source)
+    cst = parse_toetra_code(source)
     ast = parse_program(cst)
 
-    FORMLValidator().validate(
+    ToetraValidator().validate(
         ast,
         tracer=ValidationTracer(enabled=False),
         model_schema=model_schema,

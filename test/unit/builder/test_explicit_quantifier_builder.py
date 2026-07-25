@@ -2,7 +2,7 @@ import pytest
 
 from dsl.ast.nodes.expressions import QuantifierExprNode
 from dsl.builder.program import parse_program
-from dsl.parser.parser import parse_forml_code
+from dsl.parser.parser import parse_toetra_code
 
 
 @pytest.mark.parametrize(
@@ -26,7 +26,7 @@ def test_builder_preserves_explicit_quantified_identifier(
     {quantifier} {identifier} => score >= 0
     """
 
-    program = parse_program(parse_forml_code(source))
+    program = parse_program(parse_toetra_code(source))
     scope = program.body[0].rule.scope
 
     assert isinstance(scope, QuantifierExprNode)

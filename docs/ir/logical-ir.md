@@ -43,7 +43,7 @@ Logical IR is composed of:
 
 Example:
 
-```forml
+```toetra
 age <= 30
 ```
 
@@ -61,7 +61,7 @@ A comparison must use semantically resolved entity information whenever possible
 
 The raw parsed entity is not always sufficient because DSL syntax may allow implicit access:
 
-```forml
+```toetra
 age <= 30
 ```
 
@@ -119,7 +119,7 @@ Implications should be eliminated or normalized during IR1 normalization when pr
 
 Examples:
 
-```forml
+```toetra
 CLASSIFICATION.EQUAL()
 REGRESSION.BETWEEN()
 ```
@@ -222,7 +222,7 @@ Specification constants do not introduce logical atoms by themselves.
 
 After semantic resolution they appear inside scalar expressions as known typed values with provenance. For example:
 
-```forml
+```toetra
 max_risk := 0.20
 [LOGIC]: forall x0 => target <= max_risk
 ```

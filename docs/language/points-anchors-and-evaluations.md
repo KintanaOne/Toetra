@@ -41,7 +41,7 @@ The keywords **MUST**, **MUST NOT**, **SHOULD**, **SHOULD NOT**, and **MAY** are
 
 Anchor declarations appear after the required header declarations and specification constants, and before property sections.
 
-```forml
+```toetra
 model := "credit_risk.joblib"
 target := risk_score
 
@@ -63,7 +63,7 @@ An anchor declaration is global to the specification. A property may use any glo
 
 ### Syntax
 
-```forml
+```toetra
 anchor <identifier> := {
     <feature>: <literal>,
     ...
@@ -72,7 +72,7 @@ anchor <identifier> := {
 
 Example:
 
-```forml
+```toetra
 anchor x0 := {
     age: 42,
     income: 55000,
@@ -105,7 +105,7 @@ The compiler must nevertheless preserve the anchor as a structured point binding
 
 ### Invalid forms
 
-```forml
+```toetra
 anchor x0 := {
     x0.age = 42
 }
@@ -113,7 +113,7 @@ anchor x0 := {
 
 The anchor block is a structured value, not an assertion block.
 
-```forml
+```toetra
 anchor x0 := {
     age: 42,
     age: 45
@@ -126,7 +126,7 @@ Duplicate features are invalid.
 
 ### Initial single-source syntax
 
-```forml
+```toetra
 anchor x0 := ref(
     key = "customer_id",
     value = "C-1842"
@@ -137,7 +137,7 @@ The initial runtime profile receives at most one reference source. Therefore the
 
 A future extension may add:
 
-```forml
+```toetra
 source = "validation"
 ```
 
@@ -189,40 +189,40 @@ A runtime binding MUST match a declared anchor identifier unless a later API con
 
 ### Single binding
 
-```forml
+```toetra
 forall x0
 ```
 
-```forml
+```toetra
 exists candidate
 ```
 
 ### Multiple bindings
 
-```forml
+```toetra
 forall x0, x1
 ```
 
-```forml
+```toetra
 exists candidate, reference
 ```
 
 A binder list is left-to-right syntactic sugar.
 
-```forml
+```toetra
 forall x0, x1
 ```
 
 means:
 
-```forml
+```toetra
 forall x0
 forall x1
 ```
 
 ### Ordered nesting
 
-```forml
+```toetra
 forall x0
 exists x1
 with domain(
@@ -237,13 +237,13 @@ The binder order is semantically significant. Indentation is ignored by the pars
 
 These layouts are equivalent:
 
-```forml
+```toetra
 forall x0
 exists x1
 => P
 ```
 
-```forml
+```toetra
 forall x0
     exists x1
         => P
@@ -253,7 +253,7 @@ forall x0
 
 For:
 
-```forml
+```toetra
 forall x0
 exists x1
 => P
@@ -265,7 +265,7 @@ exists x1
 
 Shadowing is invalid in the V1 target language:
 
-```forml
+```toetra
 forall x0
 exists x0
 => P
@@ -277,7 +277,7 @@ The compiler MUST reject the second `x0` declaration.
 
 The canonical form uses one domain block after the binder chain:
 
-```forml
+```toetra
 forall x0, x1
 with domain(
     x0.age: [18, 90],
@@ -292,7 +292,7 @@ Every domain subject MUST be explicitly qualified. Domain entries attach to the 
 
 The initial profile keeps domain constraints unary. Relations between points belong in `where` or the assertion:
 
-```forml
+```toetra
 where x1.income >= x0.income
 ```
 
@@ -302,7 +302,7 @@ where x1.income >= x0.income
 
 FORML V1 declares one scalar model output:
 
-```forml
+```toetra
 target := risk_score
 ```
 
@@ -310,14 +310,14 @@ The target name is not a collection and `target[x0]` does not select an output b
 
 The brackets select the point of evaluation:
 
-```forml
+```toetra
 target[x0]
 target[x1]
 ```
 
 Example:
 
-```forml
+```toetra
 target[x1] - target[x0] <= max_delta
 ```
 
@@ -341,21 +341,21 @@ evaluation(model, x0) == evaluation(model, x0)
 
 The short form remains valid when one default point can be identified:
 
-```forml
+```toetra
 forall x0
 => target <= 0.8
 ```
 
 Equivalent explicit form:
 
-```forml
+```toetra
 forall x0
 => target[x0] <= 0.8
 ```
 
 With two visible eligible points, the short form is invalid:
 
-```forml
+```toetra
 forall x0, x1
 => target <= 0.8
 ```
@@ -368,21 +368,21 @@ The same uniqueness rule applies to unqualified features.
 
 Valid:
 
-```forml
+```toetra
 forall x0
 => age >= 18 -> target <= 0.8
 ```
 
 Equivalent to:
 
-```forml
+```toetra
 forall x0
 => x0.age >= 18 -> target[x0] <= 0.8
 ```
 
 Invalid:
 
-```forml
+```toetra
 forall x0, x1
 => age >= 18
 ```
@@ -395,7 +395,7 @@ Specification-constant lookup keeps its existing precedence over implicit featur
 
 A property may omit a scope prelude and `=>` when the assertion is self-contained through declared anchors or explicit point references.
 
-```forml
+```toetra
 anchor x0 := {
     age: 42,
     income: 55000
@@ -407,7 +407,7 @@ target[x0] <= 0.4 using Z3
 
 With exactly one globally visible anchor, this short form may also be resolved:
 
-```forml
+```toetra
 [BOUND]:
 target <= 0.4 using Z3
 ```
@@ -418,14 +418,14 @@ With several global anchors, implicit references are ambiguous unless the proper
 
 ### Syntax
 
-```forml
+```toetra
 check_at <anchor_identifier>
 => <assertion>
 ```
 
 Example:
 
-```forml
+```toetra
 anchor baseline := { ... }
 anchor candidate := { ... }
 
@@ -446,7 +446,7 @@ check_at candidate
 
 The assertion is equivalent to:
 
-```forml
+```toetra
 target[candidate] <= 0.4
 ```
 
@@ -454,7 +454,7 @@ target[candidate] <= 0.4
 
 ### General syntax
 
-```forml
+```toetra
 <quantifier_chain>
 [ with domain(...) ]
 [ where <restriction> ]
@@ -463,7 +463,7 @@ target[candidate] <= 0.4
 
 Example:
 
-```forml
+```toetra
 forall x0, x1
 where (
     x1.income >= x0.income
@@ -474,7 +474,7 @@ where (
 
 ### Universal meaning
 
-```forml
+```toetra
 forall x1
 where R(x1)
 => P(x1)
@@ -488,7 +488,7 @@ forall x1: R(x1) -> P(x1)
 
 ### Existential meaning
 
-```forml
+```toetra
 exists x1
 where R(x1)
 => P(x1)
@@ -504,7 +504,7 @@ The user does not need to rewrite a restriction manually when changing quantifie
 
 For an ordered chain, the single `where` clause restricts the innermost binder while remaining allowed to reference every point visible at that position. Therefore:
 
-```forml
+```toetra
 forall x0
 exists x1
 where R(x0, x1)
@@ -519,7 +519,7 @@ forall x0: exists x1: R(x0, x1) and P(x0, x1)
 
 while:
 
-```forml
+```toetra
 exists x0
 forall x1
 where R(x0, x1)
@@ -538,7 +538,7 @@ These alternating forms remain capability-gated in the initial executable profil
 
 ### Canonical syntax
 
-```forml
+```toetra
 where x1 in neighborhood(
     of = x0,
     metric = Linf,
@@ -571,7 +571,7 @@ The relation lowers to backend-compatible arithmetic constraints according to th
 
 ### Canonical syntax
 
-```forml
+```toetra
 at <anchor> with <candidate> in neighborhood(
     metric = <metric>,
     eps = <scalar>
@@ -581,7 +581,7 @@ at <anchor> with <candidate> in neighborhood(
 
 Example:
 
-```forml
+```toetra
 anchor x0 := {
     age: 42,
     income: 55000
@@ -600,7 +600,7 @@ at x0 with x1 in neighborhood(
 
 The form above MUST lower to:
 
-```forml
+```toetra
 forall x1
 where x1 in neighborhood(
     of = x0,
@@ -626,7 +626,7 @@ The initial target contract therefore recommends explicit `target[x0]` and `targ
 
 `at` expresses a universal local guarantee. A search for an admissible violating point uses explicit existential syntax:
 
-```forml
+```toetra
 anchor x0 := { ... }
 
 [ROBUSTNESS]:
@@ -648,7 +648,7 @@ A property is pairwise when its assertion or restrictions relate two points.
 
 ### Universal pairwise guarantee
 
-```forml
+```toetra
 [MONOTONICITY]:
 forall x0, x1
 with domain(
@@ -665,7 +665,7 @@ where (
 
 ### Existential pair search
 
-```forml
+```toetra
 [LOGIC]:
 exists x0, x1
 with domain(
@@ -686,11 +686,11 @@ The provisional `x ~ x'` syntax is not the target core form.
 
 Homogeneous chains:
 
-```forml
+```toetra
 forall x0, x1
 ```
 
-```forml
+```toetra
 exists x0, x1
 ```
 
@@ -698,13 +698,13 @@ The backend may lower universal verification through existential refutation and 
 
 ### Representable but capability-gated forms
 
-```forml
+```toetra
 forall x0
 exists x1
 => P(x0, x1)
 ```
 
-```forml
+```toetra
 exists x0
 forall x1
 => P(x0, x1)
@@ -718,7 +718,7 @@ The compiler MUST NOT reinterpret alternating binders as independent free variab
 
 ### Concrete point check
 
-```forml
+```toetra
 model := "credit_risk.joblib"
 target := risk_score
 
@@ -734,7 +734,7 @@ target[x0] <= 0.4 using Z3
 
 ### Referenced observation with `check_at`
 
-```forml
+```toetra
 model := "credit_risk.joblib"
 target := risk_score
 
@@ -750,7 +750,7 @@ check_at applicant
 
 ### Global one-point guarantee
 
-```forml
+```toetra
 model := "credit_risk.joblib"
 target := risk_score
 
@@ -766,7 +766,7 @@ with domain(
 
 ### User-friendly local robustness
 
-```forml
+```toetra
 model := "credit_risk.joblib"
 target := risk_score
 
@@ -786,7 +786,7 @@ at x0 with x1 in neighborhood(
 
 ### Explicit pairwise monotonicity
 
-```forml
+```toetra
 model := "credit_risk.joblib"
 target := risk_score
 
@@ -804,7 +804,7 @@ where x1.income >= x0.income
 
 ### Undeclared anchor selection
 
-```forml
+```toetra
 [BOUND]:
 check_at x0
 => target <= 0.4
@@ -814,7 +814,7 @@ Invalid because `x0` is not a declared anchor.
 
 ### Ambiguous target
 
-```forml
+```toetra
 forall x0, x1
 => target <= 0.4
 ```
@@ -823,7 +823,7 @@ Invalid because two points are eligible.
 
 ### Ambiguous feature
 
-```forml
+```toetra
 forall x0, x1
 => age >= 18
 ```
@@ -832,7 +832,7 @@ Invalid because the point owning `age` is not identified.
 
 ### Rebinding
 
-```forml
+```toetra
 forall x0
 exists x0
 => target[x0] >= 0
@@ -842,7 +842,7 @@ Invalid because shadowing is forbidden.
 
 ### Anchor used as symbolic binder
 
-```forml
+```toetra
 anchor x0 := { age: 42 }
 
 [LOGIC]:
@@ -854,7 +854,7 @@ Invalid because `x0` is already bound globally as an anchor.
 
 ### Unknown target point
 
-```forml
+```toetra
 forall x0
 => target[x1] >= 0
 ```
@@ -863,7 +863,7 @@ Invalid because `x1` is not visible.
 
 ### Provisional pair syntax as target core
 
-```forml
+```toetra
 x ~ x'
 => ...
 ```

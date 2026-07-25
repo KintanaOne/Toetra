@@ -5,17 +5,17 @@ from pathlib import Path
 DEMO_ROOT = Path(__file__).parents[3] / "demo"
 EXPECTED_CATEGORIES = {"classification", "internals", "quickstart", "regression"}
 EXPECTED_ENTRYPOINTS = {
-    "classification/binary_classification_policy.forml",
+    "classification/binary_classification_policy.toetra",
     "classification/binary_classification_policy.ipynb",
     "classification/binary_classification_policy.py",
     "internals/affine_model_assumption_z3.py",
     "internals/compiler_pipeline_z3.py",
     "internals/linear_bound_with_domain_z3.py",
     "internals/linear_regression_encoder_z3.py",
-    "quickstart/verification_policy.forml",
+    "quickstart/verification_policy.toetra",
     "quickstart/verify_model.py",
     "regression/affine_regression.py",
-    "regression/affine_regression_policy.forml",
+    "regression/affine_regression_policy.toetra",
     "regression/credit_risk_validation.ipynb",
 }
 IGNORED_LOCAL_DIRECTORIES = {"__pycache__", ".ipynb_checkpoints"}
@@ -34,7 +34,7 @@ def test_demo_root_is_grouped_by_intent() -> None:
 
     assert categories == EXPECTED_CATEGORIES
     assert not tuple(DEMO_ROOT.glob("*.py"))
-    assert not tuple(DEMO_ROOT.glob("*.forml"))
+    assert not tuple(DEMO_ROOT.glob("*.toetra"))
 
     legacy_notebook_root = DEMO_ROOT / "notebooks"
     if legacy_notebook_root.exists():

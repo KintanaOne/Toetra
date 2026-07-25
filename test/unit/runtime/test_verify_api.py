@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from dsl.runtime import (
@@ -54,7 +56,7 @@ def test_verify_rejects_header_and_schema_target_mismatch() -> None:
 
 
 def test_verify_rejects_explicit_target_different_from_header() -> None:
-    with pytest.raises(VerificationConfigurationError, match="FORML header target"):
+    with pytest.raises(VerificationConfigurationError, match="Toetra header target"):
         verify(_SOURCE, model="model.joblib", target="other_score")
 
 
@@ -67,6 +69,14 @@ def test_verify_requires_runner_for_selected_backend() -> None:
         )
 
 
-def test_verify_treats_missing_forml_string_as_a_file_path() -> None:
-    with pytest.raises(FileNotFoundError, match="FORML specification"):
-        verify("missing.forml", schema=_schema())
+def test_verify_treats_missing_toetra_string_as_a_file_path() -> None:
+    with pytest.raises(FileNotFoundError, match="Toetra specification"):
+        verify("missing.toetra", schema=_schema())
+
+
+@pytest.mark.parametrize("specification", ["legacy.forml", Path("legacy.forml")])
+def test_verify_rejects_legacy_forml_extension(
+    specification: str | Path,
+) -> None:
+    with pytest.raises(VerificationConfigurationError, match=r"\.toetra"):
+        verify(specification, schema=_schema())

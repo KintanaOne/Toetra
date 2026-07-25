@@ -32,7 +32,7 @@ DSL syntax, semantic validation, IR normalization, model constraints, and assert
 ## Pipeline Position
 
 ```text
-.forml
+.toetra
     ↓
 SemanticValidatedAST
     ↓

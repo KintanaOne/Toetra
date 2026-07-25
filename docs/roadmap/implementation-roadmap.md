@@ -14,7 +14,7 @@ The goal is to avoid premature multi-backend complexity while preserving the arc
 The first functional V1 should prove the full Z3-based end-to-end path.
 
 ```text
-.forml + model
+.toetra + model
 → semantic validation
 → IR1
 → IR2
@@ -241,7 +241,7 @@ Patch 14  — public facade, normalized values and automatic replay
 The public path is now:
 
 ```text
-.forml + serialized model + optional reference dataset
+.toetra + serialized model + optional reference dataset
 → verify(...)
 → VerificationSession
 → text / JSON / HTML / Jupyter / counterexample replay

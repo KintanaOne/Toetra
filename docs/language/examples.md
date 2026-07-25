@@ -11,7 +11,7 @@ The examples in this document are normative.
 
 Each example has a stable identifier and defines observable expectations across the compiler pipeline. Formatting may evolve, but the represented meaning must remain stable unless a later ADR supersedes it.
 
-Every normative source block is a complete `.forml` program. Test suites must pass that complete program through the public compiler entry point. Grammar fragments may appear only in explanatory tables and must not replace program-level fixtures.
+Every normative source block is a complete `.toetra` program. Test suites must pass that complete program through the public compiler entry point. Grammar fragments may appear only in explanatory tables and must not replace program-level fixtures.
 
 ```text
 source
@@ -28,7 +28,7 @@ source
 
 ## QV-001 — Universal Target Bound
 
-```forml
+```toetra
 model := "demo.onnx"
 target := MyTarget
 
@@ -92,7 +92,7 @@ A backend without categorical-domain capability must reject the request as unsup
 
 ## QV-002 — Explicit Quantified Feature
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -109,7 +109,7 @@ applicant.age → declared symbolic entity `applicant`, feature `age`
 
 ## QV-003 — Implicit Quantified Feature
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -128,7 +128,7 @@ An unqualified feature is allowed in an assertion when the scope defines one una
 
 ## QE-001 — Existential Witness
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -168,7 +168,7 @@ SAT is not a counterexample under existential witness semantics.
 
 ## DOM-001 — Boundary Matrix
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -198,7 +198,7 @@ Boundary kinds remain explicit in typed domain artifacts before expansion.
 
 ## DOM-002 — Numeric Finite Set
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -222,7 +222,7 @@ x0.level == 0.0 OR x0.level == 7.0
 
 ## DOM-003 — Symbolic Finite Set
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -247,7 +247,7 @@ requires_finite_set_membership = true
 
 ## ARI-001 — Precedence
 
-```forml
+```toetra
 model := "finance.joblib"
 target := risk
 
@@ -277,7 +277,7 @@ Multiplication binds more tightly than addition and subtraction. Additive operat
 
 ## ARI-002 — Unary Arithmetic
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -298,7 +298,7 @@ ADD(
 
 ## ARI-003 — Arithmetic Domain Bounds
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -327,7 +327,7 @@ Domain entries are simultaneous constraints. Their textual order does not imply 
 
 ## ARI-004 — Initial Affine Profile
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -348,7 +348,7 @@ symbolic_division = false
 
 ## ARI-005 — Valid Language, Nonlinear Requirement
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -369,7 +369,7 @@ A backend supporting only affine arithmetic must reject it at capability matchin
 
 ## PW-001 — Pointwise Scope Remains Distinct
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -382,7 +382,7 @@ target := score
 
 ## SPC-001 — Reusable Business Thresholds
 
-```forml
+```toetra
 model := "credit-risk.joblib"
 target := default_risk
 
@@ -413,7 +413,7 @@ applicant.debt   → explicit feature
 
 ## SPC-002 — Constant Name and Feature Name
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -433,7 +433,7 @@ Explicit qualification always selects the feature.
 
 ## SPC-003 — Bare Feature Fallback
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -451,7 +451,7 @@ age        → implicit feature applicant.age
 
 ## SPC-004 — Constant in a Finite Set
 
-```forml
+```toetra
 model := "demo.joblib"
 target := score
 
@@ -469,7 +469,7 @@ forall x0
 
 ## SPC-005 — Constant Reused Across Properties
 
-```forml
+```toetra
 model := "credit-risk.joblib"
 target := default_risk
 
@@ -497,7 +497,7 @@ Both properties resolve `max_risk` and `minimum_income` from the same program-le
 
 ## SPC-006 — String Constant in Finite-Set Value Position
 
-```forml
+```toetra
 model := "regional-risk.joblib"
 target := score
 
@@ -525,7 +525,7 @@ The source is language-valid. Backend acceptance still depends on categorical en
 Each normative example should eventually provide normalized snapshots for all layers it reaches:
 
 ```text
-source.forml
+source.toetra
 cst.json
 ast.json
 semantic.json

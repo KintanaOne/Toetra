@@ -64,8 +64,8 @@ flowchart TD
 
 | Container | Responsibility | Status |
 |---|---|---|
-| CLI / API Layer | Entry point for compiling or verifying FORML specifications. | Planned / stabilizing |
-| DSL Compiler | Parses, builds, validates and translates `.forml` source. | Implemented until IR1 / stabilizing |
+| CLI / API Layer | Entry point for compiling or verifying Toetra specifications. | Planned / stabilizing |
+| DSL Compiler | Parses, builds, validates and translates `.toetra` source. | Implemented until IR1 / stabilizing |
 | ModelBridge | Loads and introspects ML models into `ModelSchema`. | Partially implemented |
 | Logical Verification Pipeline | IR1, IR2, aggregation, lowering and backend query preparation. | Partially implemented / planned |
 | Backend Boundary | Converts lowered queries into backend-specific artifacts. | Planned / critical |
@@ -83,7 +83,7 @@ The CLI/API layer should orchestrate the end-to-end path.
 
 Responsibilities:
 
-- accept `.forml` files;
+- accept `.toetra` files;
 - accept model and dataset/schema inputs;
 - trigger compiler pipeline;
 - trigger ModelBridge;
@@ -99,7 +99,7 @@ The CLI/API layer should not contain semantic logic. It should orchestrate exist
 The DSL Compiler transforms a user specification into semantically validated logical representations.
 
 ```text
-.forml → CST → AST → SemanticValidatedAST → IR1
+.toetra → CST → AST → SemanticValidatedAST → IR1
 ```
 
 Responsibilities:

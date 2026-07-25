@@ -102,7 +102,7 @@ Monitoring should remain explicitly post-V1.
 The V1 priority is:
 
 ```text
-.forml + model
+.toetra + model
 → semantic validation
 → IR1
 → IR2

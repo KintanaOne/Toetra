@@ -9,7 +9,7 @@ from dsl.semantic.runtime.annotations import SemanticAnnotations
 @dataclass
 class ASTNode:
     """
-    Root class for all AST nodes in FORML DSL.
+    Root class for all AST nodes in Toetra Specification Language.
 
     Semantic annotations are attached AFTER parsing
     during semantic validation phases.

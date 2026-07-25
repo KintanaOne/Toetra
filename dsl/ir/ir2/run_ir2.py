@@ -23,7 +23,7 @@ def run_ir2(
     assumptions: tuple[AssumptionIR2, ...] | list[AssumptionIR2] | None = None,
     context: IR2BuildContext | None = None,
 ) -> list[VerificationTaskIR2]:
-    """Compile FORML source to IR2.
+    """Compile Toetra source to IR2.
 
     ``assumptions`` are applied to every generated task. This is useful for
     global assumptions. For model assumptions, prefer
@@ -51,7 +51,7 @@ def run_ir2_with_model_schema(
     encoder_factory: ModelEncoderFactory | None = None,
     resolved_anchors: Mapping[str, ResolvedAnchorBinding] | None = None,
 ) -> list[VerificationTaskIR2]:
-    """Compile FORML source to IR2 and inject per-evaluation model equations.
+    """Compile Toetra source to IR2 and inject per-evaluation model equations.
 
     The compiler first discovers the exact structured model evaluations
     referenced by each task. ModelBridge then emits one equation for each

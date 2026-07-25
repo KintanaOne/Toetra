@@ -140,7 +140,7 @@ Z3 solver assertions
 Z3 check command
 ```
 
-The Z3 backend should not need to know how `.forml` syntax was parsed. It should receive a lowered, explicit, backend-ready problem.
+The Z3 backend should not need to know how `.toetra` syntax was parsed. It should receive a lowered, explicit, backend-ready problem.
 
 ---
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 from lark import Tree
 import pytest
 from lark.exceptions import UnexpectedInput
-from dsl.parser.parser import parse_forml_code
+from dsl.parser.parser import parse_toetra_code
 from test.unit.parser._point_binding_helpers import (
     program,
     single_tree,
@@ -15,7 +15,7 @@ from test.unit.parser._point_binding_helpers import (
 
 
 def test_par_ref_001_named_key_and_value_arguments_parse() -> None:
-    tree = parse_forml_code(
+    tree = parse_toetra_code(
         program(
             declarations='anchor x0 := ref(key = "id", value = "42")',
             body="target[x0] <= 7",
@@ -32,7 +32,7 @@ def test_par_ref_001_named_key_and_value_arguments_parse() -> None:
 
 
 def test_par_ref_002_multiline_reference_parses() -> None:
-    parse_forml_code(
+    parse_toetra_code(
         program(
             declarations="""
             anchor x0 := ref(
@@ -46,7 +46,7 @@ def test_par_ref_002_multiline_reference_parses() -> None:
 
 
 def test_par_ref_003_missing_key_is_preserved_for_semantic_rejection() -> None:
-    tree = parse_forml_code(
+    tree = parse_toetra_code(
         program(
             declarations='anchor x0 := ref(value = "42")',
             body="target[x0] <= 7",
@@ -58,7 +58,7 @@ def test_par_ref_003_missing_key_is_preserved_for_semantic_rejection() -> None:
 
 
 def test_par_ref_004_duplicate_key_is_preserved_for_semantic_rejection() -> None:
-    tree = parse_forml_code(
+    tree = parse_toetra_code(
         program(
             declarations='anchor x0 := ref(key = "id", key = "other")',
             body="target[x0] <= 7",
@@ -80,7 +80,7 @@ def test_par_ref_004_duplicate_key_is_preserved_for_semantic_rejection() -> None
 )
 def test_unsupported_reference_argument_surface_is_rejected(binding: str) -> None:
     with pytest.raises(UnexpectedInput):
-        parse_forml_code(
+        parse_toetra_code(
             program(
                 declarations=f"anchor x0 := {binding}",
                 body="target[x0] <= 7",

@@ -6,8 +6,8 @@ from dsl.ast.nodes.assertion import ComparisonNode
 from dsl.ast.nodes.primitives import BinaryArithmeticNode, TargetRefNode
 from dsl.builder.program import parse_program
 from dsl.parser.errors import ParserError
-from dsl.parser.parser import parse_forml_code
-from dsl.semantic.core.validator import FORMLValidator
+from dsl.parser.parser import parse_toetra_code
+from dsl.semantic.core.validator import ToetraValidator
 from dsl.semantic.runtime.tracer import ValidationTracer
 from dsl.semantic.types.enums import EnumArithmeticClass, EnumDataType
 from model.detector.model_framework import EnumModelFramework
@@ -32,8 +32,8 @@ def _schema() -> ModelSchema:
 
 
 def _validate(source: str):
-    program = parse_program(parse_forml_code(source))
-    FORMLValidator().validate(
+    program = parse_program(parse_toetra_code(source))
+    ToetraValidator().validate(
         program,
         tracer=ValidationTracer(enabled=False),
         model_schema=_schema(),
@@ -98,7 +98,7 @@ def test_symbolic_denominator_is_classified_symbolic_division() -> None:
 
 
 def test_literal_division_by_zero_is_rejected() -> None:
-    program = parse_program(parse_forml_code("""
+    program = parse_program(parse_toetra_code("""
         model := "model.onnx"
         target := MyTarget
 
@@ -107,7 +107,7 @@ def test_literal_division_by_zero_is_rejected() -> None:
         """))
 
     with pytest.raises(ParserError, match="Literal division by zero"):
-        FORMLValidator().validate(
+        ToetraValidator().validate(
             program,
             tracer=ValidationTracer(enabled=False),
             model_schema=_schema(),
@@ -115,7 +115,7 @@ def test_literal_division_by_zero_is_rejected() -> None:
 
 
 def test_non_numeric_arithmetic_is_rejected() -> None:
-    program = parse_program(parse_forml_code("""
+    program = parse_program(parse_toetra_code("""
         model := "model.onnx"
         target := MyTarget
 
@@ -124,7 +124,7 @@ def test_non_numeric_arithmetic_is_rejected() -> None:
         """))
 
     with pytest.raises(ParserError, match="must be numeric, got string"):
-        FORMLValidator().validate(
+        ToetraValidator().validate(
             program,
             tracer=ValidationTracer(enabled=False),
             model_schema=_schema(),
@@ -132,7 +132,7 @@ def test_non_numeric_arithmetic_is_rejected() -> None:
 
 
 def test_incompatible_equality_types_are_rejected() -> None:
-    program = parse_program(parse_forml_code("""
+    program = parse_program(parse_toetra_code("""
         model := "model.onnx"
         target := MyTarget
 
@@ -141,7 +141,7 @@ def test_incompatible_equality_types_are_rejected() -> None:
         """))
 
     with pytest.raises(ParserError, match="compatible operands"):
-        FORMLValidator().validate(
+        ToetraValidator().validate(
             program,
             tracer=ValidationTracer(enabled=False),
             model_schema=_schema(),
@@ -149,7 +149,7 @@ def test_incompatible_equality_types_are_rejected() -> None:
 
 
 def test_type_validation_remains_permissive_without_model_schema() -> None:
-    program = parse_program(parse_forml_code("""
+    program = parse_program(parse_toetra_code("""
         model := "model.onnx"
         target := MyTarget
 
@@ -157,7 +157,7 @@ def test_type_validation_remains_permissive_without_model_schema() -> None:
         forall x0 => x0.unknown + 1 <= target
         """))
 
-    assert FORMLValidator().validate(
+    assert ToetraValidator().validate(
         program,
         tracer=ValidationTracer(enabled=False),
     )

@@ -29,7 +29,7 @@ EXPECTED_DIR = Path(__file__).parent / "expected"
     ],
 )
 def test_nnf_golden_outputs(case_name: str):
-    source = (CASES_DIR / f"{case_name}.forml").read_text(encoding="utf-8")
+    source = (CASES_DIR / f"{case_name}.toetra").read_text(encoding="utf-8")
     expected = (EXPECTED_DIR / f"{case_name}.nnf.txt").read_text(encoding="utf-8")
 
     run_nnf = import_run_nnf()

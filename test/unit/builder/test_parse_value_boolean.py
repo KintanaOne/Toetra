@@ -1,11 +1,11 @@
 from dsl.builder.core.ast_utils import parse_value
 from dsl.builder.core.utils import find_node
-from dsl.parser.parser import parse_forml_code
+from dsl.parser.parser import parse_toetra_code
 from dsl.semantic.types.enums import EnumDataType
 
 
 def _first_value_node(source: str):
-    cst = parse_forml_code(source)
+    cst = parse_toetra_code(source)
     value_node = find_node(cst, "value")
 
     assert value_node is not None

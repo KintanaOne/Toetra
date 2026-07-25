@@ -2,7 +2,7 @@
 
 ## Scope
 
-This contract defines how a FORML source state becomes a reviewable and installable V1 artifact.
+This contract defines how a Toetra source state becomes a reviewable and installable V1 artifact.
 
 ## Required gates
 

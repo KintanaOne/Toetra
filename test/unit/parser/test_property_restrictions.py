@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dsl.parser.parser import parse_forml_code
+from dsl.parser.parser import parse_toetra_code
 from test.unit.parser._point_binding_helpers import (
     program,
     single_tree,
@@ -12,7 +12,7 @@ from test.unit.parser._point_binding_helpers import (
 
 
 def test_par_where_001_simple_restriction_parses() -> None:
-    tree = parse_forml_code(
+    tree = parse_toetra_code(
         program(body="forall x0, x1 where x1.age >= x0.age => target[x1] >= target[x0]")
     )
 
@@ -21,7 +21,7 @@ def test_par_where_001_simple_restriction_parses() -> None:
 
 
 def test_par_where_002_parenthesized_compound_restriction_parses() -> None:
-    tree = parse_forml_code(program(body="""
+    tree = parse_toetra_code(program(body="""
             forall x0, x1
             where (
                 x1.income >= x0.income

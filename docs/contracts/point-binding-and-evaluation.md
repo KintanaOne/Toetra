@@ -279,7 +279,7 @@ No positional fallback is allowed.
 
 ### Target resolution
 
-```forml
+```toetra
 target[x0]
 ```
 
@@ -303,7 +303,7 @@ Sugar lowering SHOULD occur after binding validation has enough information to r
 
 Source:
 
-```forml
+```toetra
 check_at x0
 => P
 ```
@@ -325,7 +325,7 @@ No quantifier is introduced.
 
 Source:
 
-```forml
+```toetra
 at x0 with x1 in neighborhood(metric = M, eps = E)
 => P
 ```
@@ -338,7 +338,7 @@ Preconditions:
 
 Canonical semantic form:
 
-```forml
+```toetra
 forall x1
 where x1 in neighborhood(of = x0, metric = M, eps = E)
 => P

@@ -19,7 +19,7 @@ from dsl.builder.program import parse_program
 from dsl.ir.ir2.context import IR2BuildContext
 from dsl.ir.ir2.enums import NormalFormKind
 from dsl.ir.ir2.run_ir2 import run_ir2_with_model_schema
-from dsl.parser.parser import parse_forml_code
+from dsl.parser.parser import parse_toetra_code
 from dsl.provenance.builder import build_provenance_context
 from dsl.reporting import build_verification_report
 from dsl.runtime.anchors import (
@@ -83,11 +83,11 @@ def verify(
     anchor_source: AnchorSource | None = None,
     anchor_resolver: AnchorResolver | None = None,
 ) -> VerificationSession:
-    """Verify every property from a FORML source or ``.forml`` file.
+    """Verify every property from a Toetra source or ``.toetra`` file.
 
     A caller may provide an already normalized ``ModelSchema`` or let FORML
     build one from a serialized model. When ``model`` is omitted for a file
-    specification, the model reference from the FORML header is resolved
+    specification, the model reference from the Toetra header is resolved
     relative to the specification file. Referenced anchors require either a
     dedicated ``anchor_source`` (pandas DataFrame or CSV path) or a custom
     ``anchor_resolver``. When neither is provided, a compatible ``dataset``
@@ -203,7 +203,7 @@ def _load_specification(specification: str | Path) -> _LoadedSpecification:
     path = _specification_path(specification)
     if path is not None:
         if not path.is_file():
-            raise FileNotFoundError(f"FORML specification not found: {path}")
+            raise FileNotFoundError(f"Toetra specification not found: {path}")
         resolved_path = path.resolve()
         source = resolved_path.read_text(encoding="utf-8")
         base_directory = resolved_path.parent
@@ -212,7 +212,7 @@ def _load_specification(specification: str | Path) -> _LoadedSpecification:
         resolved_path = None
         base_directory = Path.cwd()
 
-    program = parse_program(parse_forml_code(source))
+    program = parse_program(parse_toetra_code(source))
     return _LoadedSpecification(
         source=source,
         program=program,
@@ -225,13 +225,21 @@ def _load_specification(specification: str | Path) -> _LoadedSpecification:
 
 def _specification_path(specification: str | Path) -> Path | None:
     if isinstance(specification, Path):
-        return specification
+        candidate = specification
+    else:
+        if "\n" in specification or "\r" in specification:
+            return None
+        candidate = Path(specification)
 
-    if "\n" in specification or "\r" in specification:
-        return None
+    if candidate.suffix.lower() == ".forml":
+        raise VerificationConfigurationError(
+            "Legacy '.forml' specifications are not supported; "
+            "rename the file with the canonical '.toetra' extension."
+        )
 
-    candidate = Path(specification)
-    if candidate.exists() or candidate.suffix.lower() == ".forml":
+    if isinstance(specification, Path):
+        return candidate
+    if candidate.exists() or candidate.suffix.lower() == ".toetra":
         return candidate
     return None
 
@@ -264,7 +272,7 @@ def _resolve_model(
     resolved_target = target or loaded.target
     if resolved_target != loaded.target:
         raise VerificationConfigurationError(
-            f"Explicit target '{resolved_target}' does not match FORML header "
+            f"Explicit target '{resolved_target}' does not match Toetra header "
             f"target '{loaded.target}'"
         )
 
@@ -308,7 +316,7 @@ def _resolve_explicit_path(value: str | Path) -> Path:
 def _validate_target_contract(header_target: str, schema_target: str) -> None:
     if header_target != schema_target:
         raise VerificationConfigurationError(
-            f"FORML header target '{header_target}' does not match model schema "
+            f"Toetra header target '{header_target}' does not match model schema "
             f"target '{schema_target}'. The property and model assumptions would "
             "otherwise refer to different outputs."
         )

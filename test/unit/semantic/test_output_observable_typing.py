@@ -9,8 +9,8 @@ from dsl.ast.nodes.outputs import (
 )
 from dsl.builder.program import parse_program
 from dsl.parser.errors import ParserError
-from dsl.parser.parser import parse_forml_code
-from dsl.semantic.core.validator import FORMLValidator
+from dsl.parser.parser import parse_toetra_code
+from dsl.semantic.core.validator import ToetraValidator
 from dsl.semantic.runtime.tracer import ValidationTracer
 from dsl.semantic.types.enums import EnumDataType
 from model.detector.model_framework import EnumModelFramework
@@ -35,7 +35,7 @@ def _schema(label_dtype: EnumDataType, labels) -> ModelSchema:
 
 
 def _program(assertion: str):
-    return parse_program(parse_forml_code(f"""
+    return parse_program(parse_toetra_code(f"""
         model := "model.pkl"
         target := MyTarget
 
@@ -59,7 +59,7 @@ def test_sem_obs_001_label_observable_uses_schema_label_dtype(
     literal: str,
 ) -> None:
     program = _program(f"target[x0].label == {literal}")
-    FORMLValidator().validate(
+    ToetraValidator().validate(
         program,
         tracer=ValidationTracer(enabled=False),
         model_schema=_schema(label_dtype, labels),
@@ -75,7 +75,7 @@ def test_sem_obs_001_label_observable_uses_schema_label_dtype(
 
 def test_sem_obs_002_probability_is_float_typed() -> None:
     program = _program('target[x0].probability("yes") >= 0.8')
-    FORMLValidator().validate(
+    ToetraValidator().validate(
         program,
         tracer=ValidationTracer(enabled=False),
         model_schema=_schema(EnumDataType.STRING, ("no", "yes")),
@@ -118,7 +118,7 @@ def test_sem_obs_006_rejects_arithmetic_and_ordering_on_labels(
     schema: ModelSchema,
 ) -> None:
     with pytest.raises(ParserError, match=message):
-        FORMLValidator().validate(
+        ToetraValidator().validate(
             _program(assertion),
             tracer=ValidationTracer(enabled=False),
             model_schema=schema,

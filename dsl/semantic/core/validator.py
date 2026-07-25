@@ -3,7 +3,7 @@ from __future__ import annotations
 from dsl.ast.nodes.program import ProgramNode
 from dsl.builder.program import parse_program
 from dsl.parser.errors import ParserError
-from dsl.parser.parser import parse_forml_code
+from dsl.parser.parser import parse_toetra_code
 from dsl.semantic.runtime.tracer import ValidationTracer
 
 from dsl.semantic.core.anchors import AnchorValidator
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from dsl.semantic.symbols.point import ResolvedAnchorBinding
 
 
-class FORMLValidator:
+class ToetraValidator:
 
     def __init__(self):
         self.tracer = ValidationTracer(enabled=True)
@@ -31,14 +31,14 @@ class FORMLValidator:
         if tracer:
             self.tracer = tracer
 
-        self.tracer.log(f"Validating FORMLValidator: {program}")
+        self.tracer.log(f"Validating ToetraValidator: {program}")
 
         try:
             model_target = program.header.target
             model_identity = program.header.model
             if not model_identity:
                 raise ParserError(
-                    "Cannot validate a FORML program without a declared model identity"
+                    "Cannot validate a Toetra program without a declared model identity"
                 )
             specification_constants = collect_specification_constants(program.header)
             global_points = AnchorValidator(
@@ -76,12 +76,12 @@ if __name__ == "__main__":
     at x0 => CLASSIFICATION.EQUAL()
     """
 
-    CST = parse_forml_code(sample)
+    CST = parse_toetra_code(sample)
     print(CST.pretty())
 
     AST = parse_program(CST)
     print(AST)
 
     tracer = ValidationTracer(enabled=True)
-    validator = FORMLValidator()
+    validator = ToetraValidator()
     validator.validate(AST, tracer=tracer)

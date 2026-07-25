@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dsl.parser.parser import parse_forml_code
+from dsl.parser.parser import parse_toetra_code
 
 
 def test_named_argument_words_remain_identifiers_outside_argument_positions() -> None:
@@ -22,4 +22,4 @@ def test_named_argument_words_remain_identifiers_outside_argument_positions() ->
     x0.key + x0.value + x0.of + x0.metric + x0.eps >= eps
     """
 
-    parse_forml_code(source)
+    parse_toetra_code(source)

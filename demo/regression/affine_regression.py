@@ -11,7 +11,7 @@ from toetra import VerificationSession, VerificationStatus, verify
 from model.runtime.manager import ModelManager
 from model.schema.model_schema import ModelSchema
 
-SPEC_PATH = Path(__file__).with_name("affine_regression_policy.forml")
+SPEC_PATH = Path(__file__).with_name("affine_regression_policy.toetra")
 EXPECTED_STATUSES = (
     VerificationStatus.PROVED,
     VerificationStatus.COUNTEREXAMPLE,

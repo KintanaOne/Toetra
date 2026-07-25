@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from dsl.parser.parser import parse_forml_code
+from dsl.parser.parser import parse_toetra_code
 
 
 @pytest.mark.parametrize(
@@ -47,4 +47,4 @@ from dsl.parser.parser import parse_forml_code
     ],
 )
 def test_existing_non_quantified_scopes_still_parse(source: str) -> None:
-    parse_forml_code(source)
+    parse_toetra_code(source)

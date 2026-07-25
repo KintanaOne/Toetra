@@ -1,8 +1,8 @@
 from dsl.ast.nodes.assertion import ComparisonNode
 from dsl.ast.nodes.primitives import TargetRefNode
 from dsl.builder.program import parse_program
-from dsl.parser.parser import parse_forml_code
-from dsl.semantic.core.validator import FORMLValidator
+from dsl.parser.parser import parse_toetra_code
+from dsl.semantic.core.validator import ToetraValidator
 
 
 def test_target_ref_resolves_to_model_target():
@@ -14,9 +14,9 @@ def test_target_ref_resolves_to_model_target():
     forall x0 => target <= 10
     """
 
-    program = parse_program(parse_forml_code(code))
+    program = parse_program(parse_toetra_code(code))
 
-    FORMLValidator().validate(program)
+    ToetraValidator().validate(program)
 
     comparison = program.body[0].rule.assertion.root
 

@@ -9,7 +9,7 @@
 
 Assertions define what must hold within a property scope:
 
-```forml
+```toetra
 [PROPERTY]: scope => assertion
 ```
 
@@ -41,7 +41,7 @@ scalar_expression comparison_operator scalar_expression
 
 Examples:
 
-```forml
+```toetra
 target >= 0
 x0.age == 42
 x0.segment != "A"
@@ -85,19 +85,19 @@ Arithmetic typing and profile restrictions are defined in [Arithmetic Expression
 
 Input features can be explicit:
 
-```forml
+```toetra
 x0.age >= 18
 ```
 
 or implicit:
 
-```forml
+```toetra
 age >= 18
 ```
 
 Example:
 
-```forml
+```toetra
 [LOGIC]: forall x0 => age + 1 <= target
 ```
 
@@ -115,7 +115,7 @@ x0.age + 1 <= _model.<declared-target>
 
 Specification constants may appear anywhere a compatible scalar literal could appear:
 
-```forml
+```toetra
 max_risk := 0.20
 max_ratio := 0.35
 
@@ -133,7 +133,7 @@ Bare-name resolution in assertions is:
 
 Explicit qualification bypasses this ambiguity:
 
-```forml
+```toetra
 threshold := 7
 
 [LOGIC]: forall x0 => x0.threshold <= threshold
@@ -150,7 +150,7 @@ The left side denotes a feature; the right side denotes the specification consta
 
 Valid:
 
-```forml
+```toetra
 x0.a + 1 <= target
 x0.segment == "A"
 x0.enabled != false
@@ -158,7 +158,7 @@ x0.enabled != false
 
 Invalid:
 
-```forml
+```toetra
 x0.segment + 1 <= 2
 x0.enabled < true
 ```
@@ -169,7 +169,7 @@ x0.enabled < true
 
 Boolean operators compose complete predicates.
 
-```forml
+```toetra
 x0.a >= 0 AND x0.b <= 1
 x0.segment == "A" OR x0.segment == "B"
 NOT target < 0
@@ -178,7 +178,7 @@ x0.age >= 18 -> target >= 0.5
 
 A scalar expression is not a predicate by itself:
 
-```forml
+```toetra
 x0.a + x0.b AND target <= 7
 ```
 
@@ -210,7 +210,7 @@ Logical implication is right-associative. Comparisons are non-associative, so ch
 
 Problem predicates remain boolean leaves:
 
-```forml
+```toetra
 [ROBUSTNESS]: forall baseline, candidate => CLASSIFICATION.EQUAL()
 REGRESSION.BETWEEN()
 ```
@@ -225,7 +225,7 @@ A comparison containing arithmetic remains one atomic predicate. NNF, CNF, and D
 
 Example:
 
-```forml
+```toetra
 NOT (x0.a + x0.b <= target OR target < 0)
 ```
 

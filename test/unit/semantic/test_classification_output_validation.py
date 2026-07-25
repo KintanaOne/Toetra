@@ -6,8 +6,8 @@ from dsl.ast.nodes.assertion import ComparisonNode
 from dsl.ast.nodes.primitives import TargetRefNode
 from dsl.builder.program import parse_program
 from dsl.parser.errors import ParserError
-from dsl.parser.parser import parse_forml_code
-from dsl.semantic.core.validator import FORMLValidator
+from dsl.parser.parser import parse_toetra_code
+from dsl.semantic.core.validator import ToetraValidator
 from dsl.semantic.runtime.tracer import ValidationTracer
 from dsl.semantic.types.enums import EnumDataType
 from model.detector.model_framework import EnumModelFramework
@@ -46,7 +46,7 @@ def _regression_schema() -> ModelSchema:
 
 
 def _program(assertion: str, *, target: str = "MyTarget"):
-    return parse_program(parse_forml_code(f"""
+    return parse_program(parse_toetra_code(f"""
         model := "model.pkl"
         target := {target}
 
@@ -57,7 +57,7 @@ def _program(assertion: str, *, target: str = "MyTarget"):
 
 def test_sem_obs_003_rejects_unknown_probability_label() -> None:
     with pytest.raises(ParserError, match="Unknown classification label 'unknown'"):
-        FORMLValidator().validate(
+        ToetraValidator().validate(
             _program('target[x0].probability("unknown") >= 0.8'),
             tracer=ValidationTracer(enabled=False),
             model_schema=_classification_schema(),
@@ -69,7 +69,7 @@ def test_sem_obs_003_rejects_wrong_typed_probability_label() -> None:
         ParserError,
         match="Probability label has incompatible type: expected string, got int",
     ):
-        FORMLValidator().validate(
+        ToetraValidator().validate(
             _program("target[x0].probability(1) >= 0.8"),
             tracer=ValidationTracer(enabled=False),
             model_schema=_classification_schema(),
@@ -90,7 +90,7 @@ def test_sem_obs_003_uses_type_safe_label_identity() -> None:
         ),
     )
     with pytest.raises(ParserError, match="expected bool, got int"):
-        FORMLValidator().validate(
+        ToetraValidator().validate(
             _program("target[x0].probability(1) >= 0.8"),
             tracer=ValidationTracer(enabled=False),
             model_schema=schema,
@@ -102,7 +102,7 @@ def test_sem_obs_004_rejects_bare_classification_target_as_ambiguous() -> None:
         ParserError,
         match="classification output requires an explicit observable",
     ):
-        FORMLValidator().validate(
+        ToetraValidator().validate(
             _program("target[x0] == 1"),
             tracer=ValidationTracer(enabled=False),
             model_schema=_classification_schema(),
@@ -111,7 +111,7 @@ def test_sem_obs_004_rejects_bare_classification_target_as_ambiguous() -> None:
 
 def test_sem_obs_005_retains_bare_scalar_regression_target() -> None:
     program = _program("target[x0] <= 1.0")
-    assert FORMLValidator().validate(
+    assert ToetraValidator().validate(
         program,
         tracer=ValidationTracer(enabled=False),
         model_schema=_regression_schema(),
@@ -146,7 +146,7 @@ def test_sem_obs_007_rejects_classification_observables_on_regression(
         ParserError,
         match=rf"Cannot access {requested} on a regression model output",
     ):
-        FORMLValidator().validate(
+        ToetraValidator().validate(
             _program(assertion),
             tracer=ValidationTracer(enabled=False),
             model_schema=_regression_schema(),
@@ -155,7 +155,7 @@ def test_sem_obs_007_rejects_classification_observables_on_regression(
 
 def test_probability_observable_requires_model_probability_capability() -> None:
     with pytest.raises(ParserError, match="does not expose class probabilities"):
-        FORMLValidator().validate(
+        ToetraValidator().validate(
             _program('target[x0].probability("approved") >= 0.8'),
             tracer=ValidationTracer(enabled=False),
             model_schema=_classification_schema(probability_available=False),
@@ -167,7 +167,7 @@ def test_output_reference_rejects_header_schema_name_mismatch() -> None:
         ParserError,
         match="Declared target does not match the selected model output",
     ):
-        FORMLValidator().validate(
+        ToetraValidator().validate(
             _program('target[x0].label == "approved"', target="OtherTarget"),
             tracer=ValidationTracer(enabled=False),
             model_schema=_classification_schema(),

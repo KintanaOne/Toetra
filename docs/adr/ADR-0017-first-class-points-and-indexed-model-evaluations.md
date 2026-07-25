@@ -62,7 +62,7 @@ Anchors are declared in the program body before properties.
 
 Inline form:
 
-```forml
+```toetra
 anchor x0 := {
     age: 42,
     income: 55000,
@@ -72,7 +72,7 @@ anchor x0 := {
 
 Referenced form for the initial single-source profile:
 
-```forml
+```toetra
 anchor x0 := ref(
     key = "customer_id",
     value = "C-1842"
@@ -98,20 +98,20 @@ Anchor values are expressed in the feature space consumed by the encoded model. 
 
 A quantifier may bind several identifiers:
 
-```forml
+```toetra
 forall x0, x1
 ```
 
 This is syntactic sugar for left-to-right nesting:
 
-```forml
+```toetra
 forall x0
 forall x1
 ```
 
 Quantifier clauses may be nested by sequence:
 
-```forml
+```toetra
 forall x0
 exists x1
 with domain(...)
@@ -127,7 +127,7 @@ Shadowing is forbidden in the V1 target language. A point identifier may not be 
 
 FORML V1 keeps one scalar model output selected by the header declaration:
 
-```forml
+```toetra
 target := RiskScore
 ```
 
@@ -135,7 +135,7 @@ The language does not introduce a list of outputs.
 
 Instead, brackets on `target` select the input point at which that unique output is evaluated:
 
-```forml
+```toetra
 target[x0]
 target[x1]
 ```
@@ -153,7 +153,7 @@ The compiler must create distinct evaluation identities for distinct points and 
 
 The short forms remain user-friendly when they are unambiguous:
 
-```forml
+```toetra
 target
 age
 ```
@@ -170,7 +170,7 @@ The compiler must never choose the innermost point or the first declared point s
 
 Domain subjects remain explicitly qualified:
 
-```forml
+```toetra
 x0.age: [18, 90]
 ```
 
@@ -178,7 +178,7 @@ x0.age: [18, 90]
 
 A property may contain a direct assertion without an artificial scope prelude when all referenced points are already declared:
 
-```forml
+```toetra
 anchor x0 := { age: 42, income: 55000 }
 
 [BOUND]:
@@ -193,7 +193,7 @@ The legacy `scope => assertion` shape therefore becomes one property form rather
 
 Natural neighborhood syntax is normative:
 
-```forml
+```toetra
 forall x1
 where x1 in neighborhood(
     of = x0,
@@ -219,7 +219,7 @@ A neighborhood is a structured relation that lowers into ordinary logical and ar
 
 `check_at` is retained for user-facing readability:
 
-```forml
+```toetra
 anchor baseline := { ... }
 
 [BOUND]:
@@ -233,7 +233,7 @@ It selects an already declared concrete anchor as the default point for the prop
 
 `at` is retained as a user-friendly local verification form:
 
-```forml
+```toetra
 anchor x0 := { ... }
 
 [ROBUSTNESS]:
@@ -247,7 +247,7 @@ at x0 with x1 in neighborhood(
 
 It desugars to:
 
-```forml
+```toetra
 forall x1
 where x1 in neighborhood(
     of = x0,
@@ -273,7 +273,7 @@ Pairwise is treated as a derived classification of a property that uses two rela
 
 Universal pairwise property:
 
-```forml
+```toetra
 forall x0, x1
 where R(x0, x1)
 => P(x0, x1)
@@ -287,7 +287,7 @@ exists x0, x1: R(x0, x1) and not P(x0, x1)
 
 Existential pair search remains expressible directly:
 
-```forml
+```toetra
 exists x0, x1
 where R(x0, x1)
 => P(x0, x1)
@@ -320,14 +320,14 @@ The language and IR must represent ordered nested binders, including alternation
 
 The initial executable V1 profile is required to support homogeneous chains that can be lowered to the current quantifier-free verification strategy:
 
-```forml
+```toetra
 forall x0, x1
 exists x0, x1
 ```
 
 Alternating chains such as:
 
-```forml
+```toetra
 forall x0
 exists x1
 ```

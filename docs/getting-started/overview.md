@@ -2,7 +2,7 @@
 
 FORML V1 verifies declared behavioral properties of a narrow numeric-affine ML
 profile. Begin with the self-contained demo, then replace its temporary artifacts
-with your own fitted `LinearRegression`, reference dataset, and `.forml` policy.
+with your own fitted `LinearRegression`, reference dataset, and `.toetra` policy.
 
 ## Requirements
 

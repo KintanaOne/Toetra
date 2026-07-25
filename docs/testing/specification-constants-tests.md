@@ -8,13 +8,13 @@
 
 This document defines how tests for specification constants are split by compiler responsibility.
 
-The feature must not be implemented through one monolithic test file. Each layer owns a distinct contract and receives complete `.forml` programs through its public entry point whenever the layer starts from source.
+The feature must not be implemented through one monolithic test file. Each layer owns a distinct contract and receives complete `.toetra` programs through its public entry point whenever the layer starts from source.
 
 ## Primary Test Rule
 
 A parser or pipeline test must use a complete program:
 
-```forml
+```toetra
 model := "credit-risk.joblib"
 target := default_risk
 
@@ -186,14 +186,14 @@ Complete source programs should be reusable through named fixtures or source con
 
 ```text
 test/fixtures/forml/specification_constants/
-├── valid_numeric_threshold.forml
-├── valid_feature_name_collision.forml
-├── valid_domain_bound.forml
-├── valid_finite_set.forml
-├── invalid_duplicate.forml
-├── invalid_scope_collision.forml
-├── invalid_non_literal_rhs.forml
-└── unsupported_categorical_backend.forml
+├── valid_numeric_threshold.toetra
+├── valid_feature_name_collision.toetra
+├── valid_domain_bound.toetra
+├── valid_finite_set.toetra
+├── invalid_duplicate.toetra
+├── invalid_scope_collision.toetra
+├── invalid_non_literal_rhs.toetra
+└── unsupported_categorical_backend.toetra
 ```
 
 Small inline triple-quoted programs are also acceptable when they remain readable and are used by only one test.

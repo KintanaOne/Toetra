@@ -26,7 +26,7 @@ It should receive a complete verification problem composed from:
 
 A user writes a property such as:
 
-```forml
+```toetra
 [ROBUSTNESS]: forall baseline, candidate => CLASSIFICATION.EQUAL()
 ```
 

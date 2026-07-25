@@ -108,7 +108,7 @@ def linear_output_assumption() -> AssumptionIR2:
     )
 
 
-def run_forml_z3_with_assumption(
+def run_toetra_z3_with_assumption(
     source: str,
     assumption: AssumptionIR2,
 ):
@@ -209,7 +209,7 @@ def print_case(
     print(f"Equation          : {assumption.metadata.get('equation')}")
     print()
 
-    results = run_forml_z3_with_assumption(source, assumption)
+    results = run_toetra_z3_with_assumption(source, assumption)
 
     for index, task_route_result in enumerate(results):
         task, route, result = task_route_result

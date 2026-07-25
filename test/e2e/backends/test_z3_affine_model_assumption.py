@@ -4,14 +4,14 @@ from demo.internals.affine_model_assumption_z3 import (
     BOUND_SAMPLE,
     constant_output_assumption,
     linear_output_assumption,
-    run_forml_z3_with_assumption,
+    run_toetra_z3_with_assumption,
 )
 from dsl.backends.z3_backend.runner import VerificationStatus
 from dsl.language.vocabulary.backends import EnumBackend
 
 
 def test_z3_e2e_proves_bound_with_constant_affine_model_assumption() -> None:
-    results = run_forml_z3_with_assumption(
+    results = run_toetra_z3_with_assumption(
         BOUND_SAMPLE,
         constant_output_assumption(),
     )
@@ -29,7 +29,7 @@ def test_z3_e2e_proves_bound_with_constant_affine_model_assumption() -> None:
 
 
 def test_z3_e2e_finds_counterexample_for_unbounded_linear_model_assumption() -> None:
-    results = run_forml_z3_with_assumption(
+    results = run_toetra_z3_with_assumption(
         BOUND_SAMPLE,
         linear_output_assumption(),
     )

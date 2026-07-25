@@ -7,7 +7,7 @@ IMPORTANT:
 This is an MVP serializer.
 
 It should later become:
-    AST -> canonical FORML DSL serializer
+    AST -> canonical Toetra Specification Language serializer
 
 The goal for now is:
     - support AST mutation testing

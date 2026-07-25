@@ -65,13 +65,13 @@ Parser or IR acceptance does not imply backend support. Unsupported intermediate
 
 The old forms:
 
-```forml
+```toetra
 at x in neighborhood(...)
 ```
 
 and:
 
-```forml
+```toetra
 x ~ x'
 ```
 
@@ -148,7 +148,7 @@ Extend the generated grammar and parser so every accepted source form reaches a 
 - add inline anchor blocks and named-argument `ref(...)` bindings;
 - add comma-separated quantifier identifiers such as:
 
-```forml
+```toetra
 forall x0, x1
 ```
 
@@ -159,7 +159,7 @@ forall x0, x1
 - add one optional `where` restriction after the domain;
 - add natural neighborhood membership:
 
-```forml
+```toetra
 where x1 in neighborhood(
     of = x0,
     metric = Linf,
@@ -169,11 +169,11 @@ where x1 in neighborhood(
 
 - add the selected sugar forms:
 
-```forml
+```toetra
 check_at x0 => ...
 ```
 
-```forml
+```toetra
 at x0 with x1 in neighborhood(
     metric = Linf,
     eps = 0.05
@@ -378,12 +378,12 @@ Lower user-friendly scope syntax into one explicit semantic core before IR1.
 
 The following two sources must become canonically equivalent except for provenance:
 
-```forml
+```toetra
 at x0 with x1 in neighborhood(metric = Linf, eps = 0.1)
 => P
 ```
 
-```forml
+```toetra
 forall x1
 where x1 in neighborhood(of = x0, metric = Linf, eps = 0.1)
 => P
@@ -702,7 +702,7 @@ notebook hygiene checks
 
 In addition:
 
-- grammar patches regenerate and diff-check `forml_grammar.lark`;
+- grammar patches regenerate and diff-check `toetra_grammar.lark`;
 - AST/IR patches update pretty/golden fixtures intentionally;
 - semantic patches add positive and negative complete-program tests;
 - backend patches assert capability rejection before solver execution;

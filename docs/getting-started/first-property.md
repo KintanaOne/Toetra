@@ -1,8 +1,8 @@
 # First FORML property
 
-Create `policy.forml`:
+Create `policy.toetra`:
 
-```forml
+```toetra
 model := "affine_score.joblib"
 target := score
 
@@ -24,7 +24,7 @@ Run it from Python:
 from toetra import verify
 
 session = verify(
-    "policy.forml",
+    "policy.toetra",
     model="affine_score.joblib",
     dataset="reference.csv",
 )
@@ -41,7 +41,7 @@ numeric scope explicitly.
 
 ## First binary-classification property
 
-```forml
+```toetra
 model := "binary_decision.joblib"
 target := decision
 

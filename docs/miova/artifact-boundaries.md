@@ -41,7 +41,7 @@ It should mutate artifacts at explicit boundaries.
 
 | Boundary | Input | Output | Main Contract |
 |---|---|---|---|
-| Source → CST | `.forml` string | CST | Syntax must be accepted or rejected deterministically. |
+| Source → CST | `.toetra` string | CST | Syntax must be accepted or rejected deterministically. |
 | CST → AST | CST | AST | Syntax tree must become a strict typed AST. |
 | AST → Semantic | AST | SemanticValidatedAST | Variables, scopes, bindings, and property compatibility must be resolved. |
 | Semantic → IR1 | SemanticValidatedAST | IR1 | Semantic meaning must be preserved in logical form. |
@@ -59,7 +59,7 @@ Miova should use stable artifact kinds to identify mutation targets.
 
 | Kind | Meaning |
 |---|---|
-| `forml.source` | Raw FORML source text. |
+| `forml.source` | Raw Toetra source text. |
 | `forml.cst` | Parser-produced CST. |
 | `forml.ast` | Builder-produced AST. |
 | `forml.semantic_ast` | AST enriched by semantic validation. |

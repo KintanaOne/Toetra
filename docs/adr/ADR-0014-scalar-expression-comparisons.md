@@ -16,13 +16,13 @@ attribute comparison_operator constant
 
 This representation is sufficient for simple predicates such as:
 
-```forml
+```toetra
 x0.age >= 18
 ```
 
 but it cannot express important behavioral relations such as:
 
-```forml
+```toetra
 x0.revenue - x0.cost >= 0
 x0.a <= x0.b
 2 * x0.a + x0.b <= target
@@ -107,13 +107,13 @@ Arithmetic operators are structurally represented even when a selected backend c
 
 Comparisons are non-associative. Chained comparisons such as:
 
-```forml
+```toetra
 0 <= x0.a <= 3
 ```
 
 are rejected. They must be expressed with boolean conjunction:
 
-```forml
+```toetra
 0 <= x0.a AND x0.a <= 3
 ```
 
@@ -132,7 +132,7 @@ Initially supported arithmetic is:
 
 Examples inside the initial profile:
 
-```forml
+```toetra
 x0.a + x0.b <= 7
 2 * x0.a - x0.b >= target
 x0.a / 2 <= 3
@@ -140,7 +140,7 @@ x0.a / 2 <= 3
 
 Expressions such as:
 
-```forml
+```toetra
 x0.a * x0.b
 x0.a / x0.b
 ```

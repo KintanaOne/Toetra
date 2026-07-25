@@ -69,7 +69,7 @@ A property can be syntactically and semantically valid without being valid for a
 
 Example:
 
-```forml
+```toetra
 [BOUND]: check_at x => unknown_feature <= 10
 ```
 

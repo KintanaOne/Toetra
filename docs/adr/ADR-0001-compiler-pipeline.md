@@ -6,7 +6,7 @@
 
 ## Context
 
-FORML must transform a `.forml` specification into a verification artifact that can eventually be executed by a backend such as Z3.
+FORML must transform a `.toetra` specification into a verification artifact that can eventually be executed by a backend such as Z3.
 
 A direct translation from raw source code to backend queries would be fragile. It would mix parsing, syntax construction, semantic validation, logical normalization, model awareness, backend concerns, and diagnostics in a single layer.
 
@@ -17,7 +17,7 @@ FORML uses a staged compiler pipeline.
 The target pipeline is:
 
 ```text
-.forml source
+.toetra source
 → CST
 → AST
 → SemanticValidatedAST

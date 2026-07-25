@@ -22,15 +22,15 @@ from dsl.ir.ir1.nodes import (
 from dsl.ir.ir1.outputs import OutputObservableExpressionIR
 from dsl.ir.ir1.scalar import iter_scalar_expressions
 from dsl.ir.ir1.translator import IRTranslator
-from dsl.parser.parser import parse_forml_code
-from dsl.semantic.core.validator import FORMLValidator
+from dsl.parser.parser import parse_toetra_code
+from dsl.semantic.core.validator import ToetraValidator
 from dsl.semantic.runtime.tracer import ValidationTracer
 
 
 def translate_source(source: str, model_schema=None) -> list[VerificationTask]:
-    ast = parse_program(parse_forml_code(source))
+    ast = parse_program(parse_toetra_code(source))
 
-    FORMLValidator().validate(
+    ToetraValidator().validate(
         ast,
         tracer=ValidationTracer(enabled=False),
         model_schema=model_schema,

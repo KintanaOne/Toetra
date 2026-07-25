@@ -44,7 +44,7 @@ property replay use this original formula.
 
 For example, the report must state:
 
-```forml
+```toetra
 target[applicant].probability("approved") >= 0.80
 ```
 

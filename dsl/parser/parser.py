@@ -3,12 +3,12 @@ from pathlib import Path
 from lark import Lark, Tree
 
 GRAMMAR_PATH = (
-    Path(__file__).resolve().parents[1] / "language" / "grammar" / "forml_grammar.lark"
+    Path(__file__).resolve().parents[1] / "language" / "grammar" / "toetra_grammar.lark"
 )
 
 grammar = GRAMMAR_PATH.read_text(encoding="utf-8")
 
-forml_parser = Lark(
+toetra_parser = Lark(
     grammar,
     start="program",
     parser="lalr",
@@ -19,9 +19,9 @@ forml_parser = Lark(
 )
 
 
-def parse_forml_code(code: str) -> Tree:
-    """Parse raw FORML DSL code into a Lark CST."""
-    return forml_parser.parse(code)
+def parse_toetra_code(code: str) -> Tree:
+    """Parse raw Toetra Specification Language code into a Lark CST."""
+    return toetra_parser.parse(code)
 
 
 if __name__ == "__main__":
@@ -33,5 +33,5 @@ if __name__ == "__main__":
     at x0 in neighborhood(L2, eps=0.01) => CLASSIFICATION.EQUAL() using Z3
     """
 
-    tree = parse_forml_code(sample)
+    tree = parse_toetra_code(sample)
     print(tree.pretty())

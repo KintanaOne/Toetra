@@ -33,7 +33,7 @@ invalid artifacts at the correct boundary, with the correct error category.
 The complete target pipeline is:
 
 ```text
-.forml source
+.toetra source
 → CST
 → AST
 → SemanticValidatedAST

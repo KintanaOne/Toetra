@@ -12,7 +12,7 @@ from dsl.ast.nodes.assertion import (
 )
 from dsl.builder.program import parse_program
 from dsl.language.vocabulary.problems import EnumProblem
-from dsl.parser.parser import parse_forml_code
+from dsl.parser.parser import parse_toetra_code
 
 from test.fixtures.logic_samples import (
     INVALID_LOGIC_SYNTAX,
@@ -32,7 +32,7 @@ from test.fixtures.logic_samples import (
 
 
 def parse(code: str) -> Tree:
-    return parse_forml_code(code)
+    return parse_toetra_code(code)
 
 
 def build(code: str):

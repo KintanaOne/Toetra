@@ -2,7 +2,7 @@
 
 > Status: P0 — planned / critical  
 > Implementation: planned, complementary to Hypothesis and Miova  
-> Scope: adversarial exploration of FORML source, compiler artifacts, semantic boundaries, IR normal forms, model schemas, and backend queries
+> Scope: adversarial exploration of Toetra source, compiler artifacts, semantic boundaries, IR normal forms, model schemas, and backend queries
 
 ## Purpose
 
@@ -75,7 +75,7 @@ lowering that simplifies away a required assertion.
 Target:
 
 ```text
-.forml source
+.toetra source
 ```
 
 Examples:

@@ -470,7 +470,7 @@ class ImplyIR(LogicalIR):
 @dataclass
 class ProblemIR(AtomicIR):
     """
-    High-level semantic operator coming from FORML DSL.
+    High-level semantic operator coming from Toetra Specification Language.
 
     Example:
         CLASSIFICATION.EQUAL()

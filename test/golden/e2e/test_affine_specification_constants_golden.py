@@ -17,7 +17,7 @@ from model.schema.model_schema import ModelSchema
 from test.fixtures.ir_schema_aware.ir_helpers import serialize_logical
 
 FIXTURE_ROOT = Path("test/fixtures/end_to_end")
-CASE_PATH = FIXTURE_ROOT / "cases/affine_specification_constants.forml"
+CASE_PATH = FIXTURE_ROOT / "cases/affine_specification_constants.toetra"
 EXPECTED_PATH = FIXTURE_ROOT / "expected/affine_specification_constants.json"
 
 

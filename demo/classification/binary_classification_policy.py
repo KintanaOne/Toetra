@@ -9,7 +9,7 @@ from sklearn.linear_model import LogisticRegression
 
 from toetra import VerificationSession, VerificationStatus, verify
 
-DEMO_SPEC_PATH = Path(__file__).with_name("binary_classification_policy.forml")
+DEMO_SPEC_PATH = Path(__file__).with_name("binary_classification_policy.toetra")
 EXPECTED_STATUSES = (
     VerificationStatus.PROVED,
     VerificationStatus.COUNTEREXAMPLE,

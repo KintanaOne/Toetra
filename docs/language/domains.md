@@ -11,7 +11,7 @@ A domain restricts the admissible valuations of input features introduced by a p
 
 The target syntax is:
 
-```forml
+```toetra
 with domain(
     x0.a: [0.0, 3.0],
     x0.b: {obj1, obj2},
@@ -47,7 +47,7 @@ The initial typed-domain language follows these rules:
 
 A domain appears after the scope declaration and before the property implication token:
 
-```forml
+```toetra
 [BOUND]:
 forall x0
     with domain(
@@ -66,7 +66,7 @@ The typed domain representation is designed so that it can later be attached to 
 
 A domain contains one or more comma-separated entries:
 
-```forml
+```toetra
 with domain(
     x0.age: [18, 65],
     x0.region: {EU, US},
@@ -76,7 +76,7 @@ with domain(
 
 A trailing comma is allowed:
 
-```forml
+```toetra
 with domain(
     x0.age: [18, 65],
     x0.region: {EU, US},
@@ -85,7 +85,7 @@ with domain(
 
 An empty domain is invalid:
 
-```forml
+```toetra
 with domain()
 ```
 
@@ -97,13 +97,13 @@ Each entry is interpreted as a constraint over one input feature.
 
 Domain subjects must use an explicit entity-qualified attribute:
 
-```forml
+```toetra
 x0.age: [18, 65]
 ```
 
 The shorthand below is intentionally not accepted inside a domain:
 
-```forml
+```toetra
 age: [18, 65]
 ```
 
@@ -111,19 +111,19 @@ Assertions may still use implicit feature references because the semantic contex
 
 For:
 
-```forml
+```toetra
 forall x0
 ```
 
 this domain entry is valid:
 
-```forml
+```toetra
 x0.age: [18, 65]
 ```
 
 and this one is invalid:
 
-```forml
+```toetra
 x1.age: [18, 65]
 ```
 
@@ -137,7 +137,7 @@ Intervals restrict a numeric feature between a lower and an upper bound.
 
 ### Closed interval
 
-```forml
+```toetra
 x0.a: [0.0, 3.0]
 ```
 
@@ -149,7 +149,7 @@ x0.a >= 0.0 AND x0.a <= 3.0
 
 ### Open lower bound, closed upper bound
 
-```forml
+```toetra
 x0.a: ]0.0, 3.0]
 ```
 
@@ -161,7 +161,7 @@ x0.a > 0.0 AND x0.a <= 3.0
 
 ### Closed lower bound, open upper bound
 
-```forml
+```toetra
 x0.a: [0.0, 3.0[
 ```
 
@@ -173,7 +173,7 @@ x0.a >= 0.0 AND x0.a < 3.0
 
 ### Open interval
 
-```forml
+```toetra
 x0.a: ]0.0, 3.0[
 ```
 
@@ -215,7 +215,7 @@ For symbolic bounds, the semantic layer does not invent an ordering assumption. 
 
 Example:
 
-```forml
+```toetra
 x0.a: [x0.b - 1, x0.b + 1]
 ```
 
@@ -230,19 +230,19 @@ If a symbolic domain is unsatisfiable, a universal property may otherwise be pro
 
 Valid constant singleton:
 
-```forml
+```toetra
 x0.a: [3.0, 3.0]
 ```
 
 Invalid constant empty interval:
 
-```forml
+```toetra
 x0.a: ]3.0, 3.0]
 ```
 
 Invalid constant reversed interval:
 
-```forml
+```toetra
 x0.a: [5.0, 3.0]
 ```
 
@@ -252,7 +252,7 @@ x0.a: [5.0, 3.0]
 
 Interval bounds may be numeric arithmetic expressions:
 
-```forml
+```toetra
 with domain(
     x0.a: [x0.b - 1.0, x0.b + 1.0],
     x0.b: [0.0, 10.0]
@@ -285,7 +285,7 @@ Arithmetic expressions are not introduced as finite-set members in this patch. S
 
 Curly braces denote a finite discrete set:
 
-```forml
+```toetra
 x0.b: {obj1, obj2}
 ```
 
@@ -297,7 +297,7 @@ x0.b == obj1 OR x0.b == obj2
 
 Numeric values inside braces remain discrete values:
 
-```forml
+```toetra
 x0.d: {0.0, 7.0}
 ```
 
@@ -317,7 +317,7 @@ A finite set must contain at least one value.
 
 Invalid:
 
-```forml
+```toetra
 x0.d: {}
 ```
 
@@ -339,7 +339,7 @@ The initial finite-set syntax supports:
 
 Unquoted identifiers inside a finite set are never input-variable references. A matching specification constant is resolved first; otherwise the identifier is a symbolic categorical literal.
 
-```forml
+```toetra
 x0.region: {EU, US}
 ```
 
@@ -353,7 +353,7 @@ The AST should distinguish symbolic category literals from quoted strings until 
 
 Specification constants may be used in interval bounds:
 
-```forml
+```toetra
 minimum_age := 18
 maximum_age := 65
 
@@ -364,7 +364,7 @@ with domain(
 
 They may also be finite-set members:
 
-```forml
+```toetra
 preferred_level := 7
 
 with domain(
@@ -389,13 +389,13 @@ Examples:
 
 Examples that should fail during schema-aware semantic validation:
 
-```forml
+```toetra
 x0.age: {adult, senior}
 ```
 
 when `age` is numeric.
 
-```forml
+```toetra
 x0.region: [0, 10]
 ```
 
@@ -409,7 +409,7 @@ The parser and builder preserve syntax. They do not decide model-schema compatib
 
 Entries in a domain are conjunctive:
 
-```forml
+```toetra
 with domain(
     x0.a: [0.0, 3.0],
     x0.b: {obj1, obj2}
@@ -456,7 +456,7 @@ One feature may appear only once in the initial structured domain block.
 
 Invalid:
 
-```forml
+```toetra
 with domain(
     x0.age: [18, 65],
     x0.age: {21, 42}
@@ -473,7 +473,7 @@ Relational and compound domain predicates are deferred to a future language exte
 
 The structured domain syntax cannot constrain the model output:
 
-```forml
+```toetra
 with domain(
     target: [0, 1]
 )
@@ -483,13 +483,13 @@ is invalid. Output restrictions belong in the property assertion.
 
 Cross-feature references are permitted inside interval-bound expressions:
 
-```forml
+```toetra
 x0.a: [x0.b - 1, x0.b + 1]
 ```
 
 However, the domain block does not yet accept arbitrary standalone relational entries such as:
 
-```forml
+```toetra
 x0.a + x0.b <= 10
 ```
 
@@ -674,7 +674,7 @@ Every emitted assumption must retain traceability to the original domain entry.
 
 ## Valid Complete Example
 
-```forml
+```toetra
 model := "demo.onnx"
 target := MyTarget
 

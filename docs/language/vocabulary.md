@@ -40,7 +40,7 @@ Property types are later checked against scope compatibility rules.
 
 Example:
 
-```forml
+```toetra
 [ROBUSTNESS]: at x in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUAL()
 ```
 
@@ -61,7 +61,7 @@ Problem types describe the ML task or semantic problem being referenced by a pro
 
 Problem types appear in problem-level predicates:
 
-```forml
+```toetra
 [ROBUSTNESS]: forall baseline, candidate => CLASSIFICATION.EQUAL()
 REGRESSION.BETWEEN()
 ```
@@ -130,7 +130,7 @@ The tokens normalize to `forall` or `exists`, while the declared identifier rema
 
 A header declaration such as:
 
-```forml
+```toetra
 max_risk := 0.20
 ```
 
@@ -223,7 +223,7 @@ Metrics define perturbation neighborhoods.
 
 Example:
 
-```forml
+```toetra
 at x in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUAL()
 ```
 
@@ -261,7 +261,7 @@ Comparison operators define atomic predicates.
 
 Example:
 
-```forml
+```toetra
 age >= 18
 score <= 1.0
 ```

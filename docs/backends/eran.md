@@ -24,7 +24,7 @@ The ERAN backend should be considered when FORML needs to verify properties such
 The intended flow is:
 
 ```text
-.forml property
+.toetra property
 → SemanticValidatedAST
 → IR1 / NNF
 → IR2 if required
