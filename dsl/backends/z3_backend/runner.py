@@ -107,7 +107,7 @@ class _CancellationMonitor:
         if self._token is not None:
             self._thread = threading.Thread(
                 target=self._watch,
-                name="forml-backend-cancellation",
+                name="toetra-backend-cancellation",
                 daemon=True,
             )
             self._thread.start()

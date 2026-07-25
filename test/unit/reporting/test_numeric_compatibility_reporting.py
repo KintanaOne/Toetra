@@ -32,7 +32,7 @@ def _assessment() -> NumericCompatibilityAssessment:
             framework_version="2",
             model_family="affine_regression",
             source_execution_profile_id="binary64",
-            model_encoder_id="forml.affine-equation",
+            model_encoder_id="toetra.affine-equation",
             model_encoder_version="1",
             backend_kind="smt",
             backend_adapter_id="solver",
@@ -44,7 +44,7 @@ def _assessment() -> NumericCompatibilityAssessment:
         ),
         support_status=SupportStatus.SUPPORTED,
         classification=CompatibilityClassification.LOSSY,
-        semantic_target="forml.real_affine_extracted_model",
+        semantic_target="toetra.real_affine_extracted_model",
         permitted_conclusions=frozenset(ConclusionKind),
         conclusion_scope=ConclusionScope.SEMANTIC_TARGET_ONLY,
         matched_rule_id="framework-affine-to-exact-real",
@@ -117,7 +117,7 @@ def test_builder_preserves_the_complete_numeric_route() -> None:
     assert compatibility is not None
     assert compatibility.matched_rule_id == "framework-affine-to-exact-real"
     assert compatibility.classification == "lossy"
-    assert compatibility.semantic_target == "forml.real_affine_extracted_model"
+    assert compatibility.semantic_target == "toetra.real_affine_extracted_model"
     assert compatibility.conclusion_scope == "semantic_target_only"
     assert compatibility.source_route == "framework@2 / affine_regression / binary64"
     assert compatibility.backend_route == "smt / solver@4 / exact-real"
@@ -134,7 +134,7 @@ def test_json_report_exposes_numeric_compatibility_without_backend_specific_fiel
     payload = _report().to_dict()["numeric_compatibility"]
 
     assert payload["classification"] == "lossy"
-    assert payload["semantic_target"] == "forml.real_affine_extracted_model"
+    assert payload["semantic_target"] == "toetra.real_affine_extracted_model"
     assert payload["source"]["framework_adapter_id"] == "framework"
     assert payload["backend"] == {
         "kind": "smt",
@@ -152,8 +152,8 @@ def test_text_and_html_reports_make_the_semantic_boundary_visible() -> None:
     html = report.to_html()
 
     assert "Numeric route : lossy (supported)" in text
-    assert "Semantic target: forml.real_affine_extracted_model" in text
+    assert "Semantic target: toetra.real_affine_extracted_model" in text
     assert "Claim scope   : semantic_target_only" in text
     assert "Numeric compatibility" in html
-    assert "forml.real_affine_extracted_model" in html
+    assert "toetra.real_affine_extracted_model" in html
     assert "semantic_target_only" in html

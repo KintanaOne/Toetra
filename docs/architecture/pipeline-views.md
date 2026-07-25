@@ -411,7 +411,7 @@ flowchart TD
         --> E[Result Normalization]
 
     E
-        --> F[FORML Verification Result]
+        --> F[Toetra Verification Result]
 
     F
         --> G[Diagnostics / Trace]

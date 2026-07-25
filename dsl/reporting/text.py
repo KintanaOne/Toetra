@@ -37,7 +37,7 @@ def render_verification_report_text(
     separator = "━" if resolved.use_unicode else "="
     lines = [
         separator * resolved.width,
-        f"FORML Verification Report · Property {report.property_index + 1}",
+        f"Toetra Verification Report · Property {report.property_index + 1}",
         separator * resolved.width,
         "",
         _field("Status", _status_label(report.status, resolved.use_unicode)),
@@ -198,10 +198,10 @@ def render_verification_report_text(
         )
         lines.extend(
             _indented_wrapped(
-                f"FORML: {provenance.software.forml_version}"
+                f"Toetra: {provenance.software.toetra_version}"
                 + (
-                    f" ({provenance.software.forml_build_id})"
-                    if provenance.software.forml_build_id is not None
+                    f" ({provenance.software.toetra_build_id})"
+                    if provenance.software.toetra_build_id is not None
                     else ""
                 ),
                 resolved,

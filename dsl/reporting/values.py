@@ -57,7 +57,7 @@ def python_report_value(value: Any) -> Any:
 
 
 def json_safe_report_value(value: Any) -> Any:
-    """Convert a backend value to the stable FORML JSON representation."""
+    """Convert a backend value to the stable Toetra JSON representation."""
 
     exact = exact_report_value(value)
     if exact is None or isinstance(exact, (bool, int, float, str)):

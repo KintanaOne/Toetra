@@ -23,7 +23,7 @@ Equivalent direct command:
 
 ```bash
 python -m demo.quickstart.verify_model --demo \
-    --json-output artifacts/forml-report.json
+    --json-output artifacts/toetra-report.json
 ```
 
 The demo trains a temporary affine model and executes
@@ -36,7 +36,7 @@ For an existing project, provide paths from your repository:
 python -m demo.quickstart.verify_model path/to/policy.toetra \
     --model path/to/model.joblib \
     --dataset path/to/reference.csv \
-    --json-output artifacts/forml-report.json
+    --json-output artifacts/toetra-report.json
 ```
 
 When `--model` is omitted, the model reference from the Toetra header is resolved
@@ -44,7 +44,7 @@ relative to the specification file. Missing paths are reported as concise CLI
 errors rather than Python tracebacks. The process exits with the session's
 CI-friendly status code.
 
-The generated JSON uses the versioned `forml.verification-report-collection`
+The generated JSON uses the versioned `toetra.verification-report-collection`
 schema. Exact backend rationals are retained as numerator/denominator pairs
 instead of being rounded.
 
@@ -116,7 +116,7 @@ from demo.regression.affine_regression import run_demo
 
 _schema, session = run_demo()
 session.print()
-session.write_json("forml-verification-report.json")
+session.write_json("toetra-verification-report.json")
 ```
 
 ### Credit-risk notebook

@@ -73,19 +73,20 @@ Any backend conclusion outside the rule's permitted set is downgraded to
 
 ## JSON contract
 
-Patch 16.3 introduces report schema version 3. The report contains a top-level
+Patch 16.3 introduced the `numeric_compatibility` field in schema version 3.
+The current Toetra report schema is version 6 and contains a top-level
 `numeric_compatibility` object, or `null` only for legacy/manual executions that
 do not use compatibility-aware routing.
 
 ```json
 {
-  "schema": "forml.verification-report",
-  "schema_version": 5,
+  "schema": "toetra.verification-report",
+  "schema_version": 6,
   "numeric_compatibility": {
     "rule_id": "...",
     "support_status": "supported",
     "classification": "lossy",
-    "semantic_target": "forml.real_affine_extracted_model",
+    "semantic_target": "toetra.real_affine_extracted_model",
     "conclusion_scope": "semantic_target_only",
     "source": {},
     "model_encoder": {},

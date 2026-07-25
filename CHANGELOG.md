@@ -4,6 +4,13 @@
 
 ### Changed
 
+- Advanced JSON reporting to schema v6 under the canonical
+  `toetra.verification-report` and
+  `toetra.verification-report-collection` identities.
+- Renamed software provenance fields and build override to `toetra_version`,
+  `toetra_build_id`, and `TOETRA_BUILD_ID`.
+- Migrated numeric-compatibility, encoder, semantic-target, Miova artifact,
+  HTML, text, and default report identifiers to `toetra.*`.
 - Renamed the canonical specification extension from `.forml` to `.toetra`.
 - Renamed grammar artifacts and parser entry points to the Toetra Specification
   Language identity.

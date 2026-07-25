@@ -24,7 +24,7 @@ def test_public_version_license_and_json_contract_are_frozen() -> None:
 
     assert project["version"] == EXPECTED_VERSION
     assert project["license"] == EXPECTED_LICENSE
-    assert report_schema_version() == 5
+    assert report_schema_version() == 6
 
 
 def test_readme_points_to_the_authoritative_v1_profile() -> None:

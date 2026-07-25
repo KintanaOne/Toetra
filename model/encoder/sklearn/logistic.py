@@ -42,9 +42,9 @@ class SklearnLogisticRegressionEncoder:
 
     supported_model_types = frozenset({"LogisticRegression"})
     compatibility = ModelEncoderDescriptor(
-        encoder_id="forml.binary-logistic-affine-equation",
+        encoder_id="toetra.binary-logistic-affine-equation",
         version="1",
-        semantic_target="forml.oriented-decision-value",
+        semantic_target="toetra.oriented-decision-value",
     )
 
     def encode(

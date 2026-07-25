@@ -35,9 +35,9 @@ class SklearnLinearRegressorEncoder:
 
     supported_model_types = frozenset({"LinearRegression"})
     compatibility = ModelEncoderDescriptor(
-        encoder_id="forml.affine-equation",
+        encoder_id="toetra.affine-equation",
         version="1",
-        semantic_target="forml.real_affine_extracted_model",
+        semantic_target="toetra.real_affine_extracted_model",
     )
 
     def encode(

@@ -67,7 +67,7 @@ def test_generated_source_survives_expected_mutations(source):
     semantic_ast = validate(ast)
     ir1 = lower_to_ir1(semantic_ast)
 
-    artifact = Artifact(kind="forml.ir1", payload=ir1)
+    artifact = Artifact(kind="toetra.ir1", payload=ir1)
     result = miova.apply(artifact, mutation="flip_comparison_operator")
 
     assert result.status in {SUCCESS, REJECTED, SKIPPED}

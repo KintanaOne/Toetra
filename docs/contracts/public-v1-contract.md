@@ -23,8 +23,8 @@ Both use finite transformed numeric inputs, affine equations, and Z3.
 ## Compatibility policy
 
 - incompatible public Python changes require a major version;
-- incompatible JSON changes require a schema version greater than 5;
-- JSON v5 additions are optional and never reinterpret existing fields;
+- incompatible JSON changes require a schema version greater than 6;
+- JSON v6 additions are optional and never reinterpret existing fields;
 - read-only scalar-target projections remain available through 1.x;
 - no route may claim a stronger numeric or semantic conclusion than its policies
   permit.
@@ -38,8 +38,8 @@ cannot be presented as stronger logical conclusions.
 ## JSON report contract
 
 ```text
-forml.verification-report / schema_version 5
-forml.verification-report-collection / schema_version 5
+toetra.verification-report / schema_version 6
+toetra.verification-report-collection / schema_version 6
 ```
 
 Classification adds optional model-evaluation and lowering evidence only.

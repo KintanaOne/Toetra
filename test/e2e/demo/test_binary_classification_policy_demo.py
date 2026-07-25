@@ -21,8 +21,8 @@ def test_binary_classification_demo_runs_reports_and_replay(tmp_path: Path) -> N
     assert replay.is_consistent is True
     assert replay.assertion_satisfied is False
     reports_directory = tmp_path / "reports"
-    assert (reports_directory / "forml-verification-report.json").is_file()
-    assert (reports_directory / "forml-verification-report.html").is_file()
+    assert (reports_directory / "toetra-verification-report.json").is_file()
+    assert (reports_directory / "toetra-verification-report.html").is_file()
 
 
 NOTEBOOK_PATH = (

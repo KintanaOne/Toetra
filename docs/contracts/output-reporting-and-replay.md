@@ -102,21 +102,22 @@ value of the public output port.
 For classification, the public label and probabilities live under
 `model_evaluations`, not under the legacy scalar-output assignment list.
 
-## JSON v5 additive evolution
+## JSON v6 identity contract
 
-P21.9 keeps the frozen report envelope:
+The current report envelope is:
 
 ```text
-forml.verification-report / schema_version 5
+toetra.verification-report / schema_version 6
 ```
 
-It adds the optional top-level `model_evaluations` field. Existing v5 fields are
-not reinterpreted, and reports without classification evidence remain byte-for-
-structure compatible with the existing v5 golden contract.
+P21.9 introduced the optional top-level `model_evaluations` field in schema
+version 5 without reinterpreting the historical assignment fields. Schema v6
+preserves that evidence and verification meaning while changing the canonical
+schema identity and software provenance keys to the Toetra namespace.
 
-Historical v1-v5 fixtures remain in the repository. A future breaking change to
-an existing field would require a new schema version; this additive field does
-not.
+Historical v1-v5 fixtures remain in the repository under the former schema
+identifier. `verification_report_v6.json` protects the current Toetra contract.
+A future incompatible field change requires a schema version greater than 6.
 
 ## Runtime observer protocol
 

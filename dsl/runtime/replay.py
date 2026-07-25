@@ -232,7 +232,7 @@ class CounterexampleReplay:
             if len(self.points) > 1:
                 record["point"] = name
             for target, value in point.backend_outputs.items():
-                record[f"forml_{target}"] = value
+                record[f"toetra_{target}"] = value
             for target, value in point.model_outputs.items():
                 record[f"model_{target}"] = value
             for target, value in point.absolute_errors.items():
@@ -258,7 +258,7 @@ class CounterexampleReplay:
 
     def to_text(self) -> str:
         lines = [
-            "FORML Counterexample Replay",
+            "Toetra Counterexample Replay",
             f"Property      : {self.property_index + 1}",
             f"Consistent    : {'yes' if self.is_consistent else 'no'}",
             f"Tolerance     : {self.tolerance:g}",
@@ -269,26 +269,26 @@ class CounterexampleReplay:
                 f"  {field} = {value}" for field, value in point.inputs.items()
             )
             for target in point.backend_outputs:
-                lines.append(f"  {target} (FORML) = {point.backend_outputs[target]}")
+                lines.append(f"  {target} (Toetra) = {point.backend_outputs[target]}")
                 lines.append(f"  {target} (model) = {point.model_outputs.get(target)}")
                 lines.append(f"  absolute error = {point.absolute_errors.get(target)}")
             for evaluation in point.evaluations:
                 lines.append(f"  Evaluation {evaluation.output_name}")
                 if evaluation.formal_label is not None:
                     lines.append(
-                        f"    label: FORML={evaluation.formal_label}, "
+                        f"    label: Toetra={evaluation.formal_label}, "
                         f"model={evaluation.model_label}, "
                         f"match={evaluation.label_matches}"
                     )
                 for label, formal in evaluation.formal_probabilities.items():
                     lines.append(
-                        f"    probability({label!r}): FORML={formal}, "
+                        f"    probability({label!r}): Toetra={formal}, "
                         f"model={evaluation.model_probabilities.get(label)}, "
                         f"error={evaluation.probability_errors.get(label)}"
                     )
                 for quantity, formal in evaluation.formal_quantities.items():
                     lines.append(
-                        f"    {quantity}: FORML={formal}, "
+                        f"    {quantity}: Toetra={formal}, "
                         f"model={evaluation.model_quantities.get(quantity)}, "
                         f"error={evaluation.quantity_errors.get(quantity)}"
                     )
@@ -300,7 +300,7 @@ class CounterexampleReplay:
         status = "consistent" if self.is_consistent else "mismatch"
         sections = "".join(_point_html(point) for point in self.points.values())
         return (
-            '<div class="forml-replay" style="font-family:system-ui;'
+            '<div class="toetra-replay" style="font-family:system-ui;'
             'border:1px solid #dbe3ee;border-radius:12px;padding:1rem">'
             f'<h3 style="margin-top:0">Counterexample replay · {status}</h3>'
             f"<p>Tolerance: <code>{self.tolerance:g}</code></p>"
@@ -762,7 +762,7 @@ def _point_html(point: PointReplay) -> str:
     return (
         f"<h4>Point {escape(point.name)}</h4><ul>{inputs}</ul>"
         '<table style="border-collapse:collapse;width:100%">'
-        "<thead><tr><th>Output</th><th>FORML</th><th>Model</th>"
+        "<thead><tr><th>Output</th><th>Toetra</th><th>Model</th>"
         f"<th>Absolute error</th></tr></thead><tbody>{rows}</tbody></table>"
         f"{evaluation_html}"
     )
@@ -794,7 +794,7 @@ def _evaluation_html(evaluation: EvaluationReplay) -> str:
     return (
         f"<h5>Evaluation {escape(evaluation.output_name)}</h5>"
         '<table style="border-collapse:collapse;width:100%">'
-        "<thead><tr><th>View</th><th>FORML</th><th>Model</th><th>Match/error</th>"
+        "<thead><tr><th>View</th><th>Toetra</th><th>Model</th><th>Match/error</th>"
         f"</tr></thead><tbody>{''.join(rows)}</tbody></table>"
     )
 

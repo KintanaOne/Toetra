@@ -13,7 +13,7 @@ from dsl.provenance.model import ContentFingerprint
 
 
 class CanonicalizationError(TypeError):
-    """Raised when a value has no stable FORML canonical representation."""
+    """Raised when a value has no stable Toetra canonical representation."""
 
 
 def canonicalize(value: Any) -> Any:

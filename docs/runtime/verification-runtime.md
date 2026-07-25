@@ -35,7 +35,7 @@ finding.output_values_by_point
 
 Every point contains its binding kind, inputs, outputs, and provenance. Flat `input_values` and `output_values` remain available only for unambiguous one-point results.
 
-JSON reporting uses the frozen `forml.verification-report` schema version 5. Points remain explicit, and P21.9 adds an optional `model_evaluations` section for classification observables, internal technical quantities, and lowering traces. Text, HTML, and Jupyter renderers group these values by point and output port.
+JSON reporting uses the frozen `toetra.verification-report` schema version 6. Points remain explicit, and P21.9 adds an optional `model_evaluations` section for classification observables, internal technical quantities, and lowering traces. Text, HTML, and Jupyter renderers group these values by point and output port.
 
 ## Replay
 

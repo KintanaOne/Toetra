@@ -1,4 +1,4 @@
-"""Portable provenance models used by FORML reports."""
+"""Portable provenance models used by Toetra reports."""
 
 from dsl.provenance.model import (
     ArtifactProvenance,

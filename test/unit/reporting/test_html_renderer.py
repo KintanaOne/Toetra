@@ -69,9 +69,9 @@ def _report(
 def test_html_renderer_builds_accessible_counterexample_card() -> None:
     rendered = _report().to_html()
 
-    assert 'class="forml-report-root"' in rendered
-    assert 'aria-label="FORML property 1"' in rendered
-    assert 'class="forml-badge failure">Counterexample</span>' in rendered
+    assert 'class="toetra-report-root"' in rendered
+    assert 'aria-label="Toetra property 1"' in rendered
+    assert 'class="toetra-badge failure">Counterexample</span>' in rendered
     assert "Counterexample" in rendered
     assert "Inputs" in rendered
     assert "applicant.ratio" in rendered
@@ -114,5 +114,5 @@ def test_html_writer_creates_standalone_document(tmp_path: Path) -> None:
 
     assert written.startswith("<!doctype html>")
     assert '<meta charset="utf-8">' in written
-    assert "FORML Verification Report" in written
+    assert "Toetra Verification Report" in written
     assert written.endswith("</html>\n")
