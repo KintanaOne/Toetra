@@ -6,7 +6,7 @@ import joblib
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 
-from forml import VerificationStatus, verify
+from toetra import VerificationStatus, verify
 
 _SOURCE = """
 model := "model.joblib"

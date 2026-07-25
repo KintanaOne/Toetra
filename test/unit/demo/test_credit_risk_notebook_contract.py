@@ -17,10 +17,10 @@ def test_credit_risk_notebook_uses_public_api() -> None:
     )
 
     assert notebook["nbformat"] == 4
-    assert "from forml import verify" in source
+    assert "from toetra import verify" in source
     assert "sys.path.insert(0, _repository_root_text)" in source
     assert source.index("sys.path.insert(0, _repository_root_text)") < source.index(
-        "from forml import verify"
+        "from toetra import verify"
     )
     assert "session = verify(" in source
     assert "session.write_artifacts" in source

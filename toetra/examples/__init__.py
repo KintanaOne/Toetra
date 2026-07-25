@@ -4,9 +4,9 @@ from importlib.resources import files
 
 
 def credit_risk_policy() -> str:
-    """Return the packaged affine credit-risk policy as FORML source text."""
+    """Return the packaged affine credit-risk policy as specification source text."""
 
-    resource = files("forml.examples").joinpath("credit_risk_policy.forml")
+    resource = files("toetra.examples").joinpath("credit_risk_policy.forml")
     return resource.read_text(encoding="utf-8")
 
 

@@ -6,7 +6,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from demo.regression.affine_regression import build_demo_artifacts
-from forml import VerificationConfigurationError, VerificationSession, verify
+from toetra import VerificationConfigurationError, VerificationSession, verify
 
 DEMO_SPEC_PATH = Path(__file__).with_name("verification_policy.forml")
 

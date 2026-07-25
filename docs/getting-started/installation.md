@@ -1,6 +1,6 @@
 # Installation
 
-FORML `1.0.0rc2` supports Python 3.11 and 3.12.
+Toetra `1.0.0rc2` supports Python 3.11 and 3.12.
 
 ```bash
 python -m pip install .
@@ -26,8 +26,8 @@ the checkout, and executes both import and binary-classification public-API
 probes.
 
 ```python
-from forml import verify, VerificationSession, VerificationStatus
+from toetra import verify, VerificationSession, VerificationStatus
 ```
 
-Normal user code imports from `forml`; `dsl` and `model` are internal/extension
+Normal user code imports from `toetra`; `dsl` and `model` are internal/extension
 surfaces.

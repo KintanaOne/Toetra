@@ -7,7 +7,7 @@ import joblib
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
 
-from forml import VerificationSession, VerificationStatus, verify
+from toetra import VerificationSession, VerificationStatus, verify
 
 DEMO_SPEC_PATH = Path(__file__).with_name("binary_classification_policy.forml")
 EXPECTED_STATUSES = (

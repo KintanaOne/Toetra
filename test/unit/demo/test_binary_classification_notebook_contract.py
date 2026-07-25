@@ -19,7 +19,11 @@ def test_binary_classification_notebook_uses_only_public_api() -> None:
         if cell.get("cell_type") == "code"
     )
     assert notebook["nbformat"] == 4
-    assert "from forml import verify" in source
+    assert "from toetra import verify" in source
+    assert "sys.path.insert(0, _repository_root_text)" in source
+    assert source.index("sys.path.insert(0, _repository_root_text)") < source.index(
+        "from toetra import verify"
+    )
     assert "target[applicant].probability" not in source  # policy remains in .forml
     assert "session = verify(" in source
     assert "counterexample.replay" in source

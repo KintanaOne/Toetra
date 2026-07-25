@@ -3,7 +3,7 @@ requires = ["setuptools==82.0.1", "wheel==0.47.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "forml"
+name = "toetra"
 version = "1.0.0rc2"
 description = "Declarative behavioral specification and formal verification for machine-learning models"
 authors = [{ name = "KintanaOne", email = "KintanaOne@proton.me" }]
@@ -32,11 +32,11 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/KintanaOne/FORML"
-Documentation = "https://kintanaone.github.io/FORML/"
-Repository = "https://github.com/KintanaOne/FORML"
-Issues = "https://github.com/KintanaOne/FORML/issues"
-Changelog = "https://github.com/KintanaOne/FORML/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/KintanaOne/Toetra"
+Documentation = "https://kintanaone.github.io/Toetra/"
+Repository = "https://github.com/KintanaOne/Toetra"
+Issues = "https://github.com/KintanaOne/Toetra/issues"
+Changelog = "https://github.com/KintanaOne/Toetra/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [
@@ -55,12 +55,12 @@ docs = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["forml*", "dsl*", "model*"]
+include = ["toetra*", "dsl*", "model*"]
 exclude = ["test*", "tests*", "docs*"]
 
 [tool.setuptools.package-data]
 "dsl.language.grammar" = ["*.lark", "*.ebnf"]
-"forml.examples" = ["*.forml"]
+"toetra.examples" = ["*.forml"]
 
 [tool.black]
 line-length = 88
@@ -95,7 +95,7 @@ norecursedirs = [
 [tool.pyright]
 pythonVersion = "3.11"
 include = [
-    "forml",
+    "toetra",
     "dsl",
     "model",
     "scripts",

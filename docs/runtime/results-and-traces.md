@@ -273,7 +273,7 @@ Z3 native status
 High-level runtime integration:
 
 ```text
-forml.verify(...)
+toetra.verify(...)
 → VerificationSession
 → filtered findings and reports
 → text / JSON / HTML / data-frame helpers

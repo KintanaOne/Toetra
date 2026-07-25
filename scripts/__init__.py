@@ -1,4 +1,4 @@
 """Repository automation helpers.
 
-This package is intentionally excluded from the distributed FORML wheel.
+This package is intentionally excluded from the distributed Toetra wheel.
 """

@@ -8,8 +8,8 @@ import joblib
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 
-from forml import VerificationStatus, verify
-from forml.examples import credit_risk_policy
+from toetra import VerificationStatus, verify
+from toetra.examples import credit_risk_policy
 
 
 def test_credit_risk_notebook_workflow_runs_and_replays_counterexample(

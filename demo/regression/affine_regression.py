@@ -7,7 +7,7 @@ import joblib
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 
-from forml import VerificationSession, VerificationStatus, verify
+from toetra import VerificationSession, VerificationStatus, verify
 from model.runtime.manager import ModelManager
 from model.schema.model_schema import ModelSchema
 

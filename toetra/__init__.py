@@ -1,4 +1,4 @@
-"""Public Python facade for FORML model verification.
+"""Public Python facade for Toetra model verification.
 
 The compiler, IR and backend packages remain available for advanced use, but
 normal application code should start here.

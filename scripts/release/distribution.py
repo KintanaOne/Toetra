@@ -19,11 +19,13 @@ from typing import BinaryIO, Iterable
 from packaging.utils import parse_sdist_filename, parse_wheel_filename
 
 DEFAULT_SOURCE_DATE_EPOCH = 1_700_000_000
-EXPECTED_TOP_LEVEL_PACKAGES = ("forml", "dsl", "model")
+EXPECTED_DISTRIBUTION_NAME = "toetra"
+EXPECTED_TOP_LEVEL_PACKAGES = ("toetra", "dsl", "model")
+FORBIDDEN_TOP_LEVEL_PACKAGES = ("forml",)
 EXPECTED_PACKAGE_DATA = (
     "dsl/language/grammar/forml_grammar.ebnf",
     "dsl/language/grammar/forml_grammar.lark",
-    "forml/examples/credit_risk_policy.forml",
+    "toetra/examples/credit_risk_policy.forml",
 )
 
 
@@ -167,7 +169,7 @@ def _run_build(repository: Path, output: Path, *, epoch: int) -> None:
     environment = os.environ.copy()
     environment["SOURCE_DATE_EPOCH"] = str(epoch)
     environment["PYTHONHASHSEED"] = "0"
-    with tempfile.TemporaryDirectory(prefix="forml-build-source-") as raw_directory:
+    with tempfile.TemporaryDirectory(prefix="toetra-build-source-") as raw_directory:
         staged = Path(raw_directory) / "source"
         shutil.copytree(repository, staged, ignore=_staging_ignore)
         subprocess.run(
@@ -246,7 +248,7 @@ def build_distributions(
         _write_checksums(artifacts)
         return artifacts
 
-    with tempfile.TemporaryDirectory(prefix="forml-dist-repro-") as raw_directory:
+    with tempfile.TemporaryDirectory(prefix="toetra-dist-repro-") as raw_directory:
         second_output = Path(raw_directory)
         _run_build(repository, second_output, epoch=epoch)
         second = _discover_artifacts(second_output)
@@ -280,6 +282,13 @@ def _metadata_from_wheel(archive: zipfile.ZipFile) -> dict[str, str]:
 
 def _check_required_members(members: Iterable[str], *, archive_kind: str) -> None:
     normalized = tuple(str(_safe_archive_path(name)) for name in members)
+    for package in FORBIDDEN_TOP_LEVEL_PACKAGES:
+        leaked = [name for name in normalized if package in PurePosixPath(name).parts]
+        if leaked:
+            raise DistributionContractError(
+                f"{archive_kind} contains forbidden legacy package {package!r}: "
+                f"{leaked[:5]}"
+            )
     for package in EXPECTED_TOP_LEVEL_PACKAGES:
         marker = f"{package}/"
         if not any(
@@ -342,5 +351,10 @@ def check_distribution_directory(directory: Path) -> DistributionArtifacts:
         raise DistributionContractError(
             "Wheel and source distribution identify different projects: "
             f"wheel={wheel_identity}, sdist={sdist_identity}."
+        )
+    if wheel_identity[0] != EXPECTED_DISTRIBUTION_NAME:
+        raise DistributionContractError(
+            "Distribution project name must be "
+            f"{EXPECTED_DISTRIBUTION_NAME!r}, got {wheel_identity[0]!r}."
         )
     return artifacts

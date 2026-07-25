@@ -243,10 +243,12 @@ nav:
       - ADR-0024 Model Semantic Lowering: adr/ADR-0024-model-semantic-lowering.md
       - ADR-0025 Initial Binary Classification Profile: adr/ADR-0025-binary-classification-profile.md
       - ADR-0026 Public V1 Binary Classification Extension: adr/ADR-0026-public-v1-binary-classification-extension.md
+      - ADR-0027 Toetra Canonical Identity: adr/ADR-0027-adopt-toetra-as-canonical-identity.md
 
   - Roadmap:
       - Implementation Roadmap: roadmap/implementation-roadmap.md
       - Point Binding and Evaluation Roadmap: roadmap/point-binding-evaluation-implementation-roadmap.md
       - Binary Classification Roadmap: roadmap/binary-classification-implementation-roadmap.md
       - Documentation Roadmap: roadmap/documentation-roadmap.md
+      - Toetra Identity Migration: roadmap/toetra-identity-migration-roadmap.md
       - Open Questions: roadmap/open-questions.md

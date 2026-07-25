@@ -1,7 +1,7 @@
 # Notebook Model-Review Workflow
 
 > Status: Implemented  
-> Scope: Public `forml.verify(...)` API, rich reports and automatic replay
+> Scope: Public `toetra.verify(...)` API, rich reports and automatic replay
 
 ## Purpose
 
@@ -26,7 +26,7 @@ demo/regression/credit_risk_validation.ipynb
 ## Minimal notebook usage
 
 ```python
-from forml import verify
+from toetra import verify
 
 session = verify(
     "policy.forml",

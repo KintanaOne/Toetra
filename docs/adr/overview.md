@@ -1,7 +1,7 @@
 # Architecture Decision Records
 
 > Status: Active  
-> Scope: FORML architecture, compiler pipeline, verification pipeline, ModelBridge, and Miova integration
+> Scope: Toetra architecture, compiler pipeline, verification pipeline, ModelBridge, Miova integration, and product identity
 
 ## Purpose
 
@@ -30,7 +30,8 @@ The goal of the ADR section is to make explicit:
 - why the public V1 profile is narrow, executable and explicitly frozen,
 - why model outputs are typed ports with declarative observables,
 - why model-family semantic lowering is explicit and auditable,
-- and why the first binary-classification profile is deliberately constrained.
+- why the first binary-classification profile is deliberately constrained,
+- and why Toetra is the single canonical product, package and language identity.
 
 ## ADR format
 
@@ -76,6 +77,7 @@ Impact on FORML
 | ADR-0024 | Lower observables through explicit model-family semantics |
 | ADR-0025 | Define the initial binary logistic classification profile |
 | ADR-0026 | Extend the public V1 profile with binary classification |
+| ADR-0027 | Adopt Toetra as the canonical product identity |
 
 ## Decision status vocabulary
 
