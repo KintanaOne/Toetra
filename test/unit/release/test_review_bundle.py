@@ -15,7 +15,7 @@ from scripts.release.review_bundle import (
 
 
 def _complete_repository(root: Path) -> Path:
-    repository = root / "FORML"
+    repository = root / "Toetra"
     repository.mkdir()
     for raw_path in CRITICAL_PATHS:
         path = repository / raw_path
@@ -74,9 +74,9 @@ def test_review_bundle_excludes_sensitive_files_without_dropping_review_assets(
 
 
 def test_review_bundle_refuses_missing_critical_paths(tmp_path: Path) -> None:
-    repository = tmp_path / "FORML"
+    repository = tmp_path / "Toetra"
     repository.mkdir()
-    (repository / "README.md").write_text("FORML\n", encoding="utf-8")
+    (repository / "README.md").write_text("Toetra\n", encoding="utf-8")
 
     with pytest.raises(ReviewBundleError, match="missing critical paths"):
         build_review_bundle(repository, tmp_path / "bundle.zip")

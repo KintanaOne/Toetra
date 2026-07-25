@@ -7,15 +7,15 @@
 
 ## Purpose
 
-This document describes FORML at the highest architectural level.
+This document describes Toetra at the highest architectural level.
 
 It answers:
 
 ```text
-Who uses FORML, what does FORML interact with, and what problem does it solve?
+Who uses Toetra, what does Toetra interact with, and what problem does it solve?
 ```
 
-FORML is a behavioral specification and verification platform for machine learning systems. It allows a user to express behavioral properties in a `.toetra` DSL, validate those properties, connect them to model metadata through ModelBridge, and prepare backend-specific verification queries.
+Toetra is a behavioral specification and verification platform for machine learning systems. It allows a user to express behavioral properties in a `.toetra` DSL, validate those properties, connect them to model metadata through ModelBridge, and prepare backend-specific verification queries.
 
 ---
 
@@ -33,25 +33,25 @@ flowchart LR
         -->|optionally provides| Dataset[Dataset or External Schema]
 
     Spec
-        --> FORML[FORML]
+        --> Toetra[Toetra]
 
     Model
-        --> FORML
+        --> Toetra
 
     Dataset
-        --> FORML
+        --> Toetra
 
-    FORML
+    Toetra
         -->|produces| Result[Verification Result / Diagnostics]
 
-    FORML
+    Toetra
         -->|minimal V1 backend| Z3[Z3 Solver]
 
     Miova[Miova]
-        -. challenges artifacts .-> FORML
+        -. challenges artifacts .-> Toetra
 
     CI[CI/CD System]
-        -. future execution environment .-> FORML
+        -. future execution environment .-> Toetra
 ```
 
 ---
@@ -60,9 +60,9 @@ flowchart LR
 
 | Actor | Role |
 |---|---|
-| ML Engineer | Writes FORML properties and provides model artifacts. |
-| AI Systems Engineer | Integrates FORML into model validation workflows. |
-| Researcher | Uses FORML to explore formal specification and ML verification ideas. |
+| ML Engineer | Writes Toetra properties and provides model artifacts. |
+| AI Systems Engineer | Integrates Toetra into model validation workflows. |
+| Researcher | Uses Toetra to explore formal specification and ML verification ideas. |
 | CI/CD System | Future execution environment for automated verification. |
 
 ---
@@ -74,14 +74,14 @@ flowchart LR
 | Serialized ML model | Input artifact consumed by ModelBridge. |
 | Dataset / schema | Optional source of feature metadata. |
 | Z3 | Minimal backend solver for the first V1. |
-| Miova | External mutation framework used to challenge FORML artifacts. |
+| Miova | External mutation framework used to challenge Toetra artifacts. |
 | CI/CD | Future orchestration environment for automated checks. |
 
 ---
 
-## FORML responsibilities
+## Toetra responsibilities
 
-At the context level, FORML is responsible for:
+At the context level, Toetra is responsible for:
 
 - parsing user-defined `.toetra` specifications;
 - validating syntax, structure, semantics, and property compatibility;
@@ -94,9 +94,9 @@ At the context level, FORML is responsible for:
 
 ---
 
-## FORML non-responsibilities
+## Toetra non-responsibilities
 
-FORML should not be responsible for:
+Toetra should not be responsible for:
 
 - training ML models;
 - replacing ML frameworks;
@@ -119,7 +119,7 @@ User inputs:
     - serialized sklearn/XGBoost-compatible model or external schema
     - optional dataset
 
-FORML processing:
+Toetra processing:
     - compile DSL
     - build ModelSchema
     - validate semantics

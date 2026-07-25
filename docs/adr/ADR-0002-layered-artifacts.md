@@ -6,7 +6,7 @@
 
 ## Context
 
-FORML manipulates different representations of the same user intent:
+Toetra manipulates different representations of the same user intent:
 
 - source text,
 - CST,
@@ -44,7 +44,7 @@ toetra.backend_query
 
 Layered artifacts make it possible to define clear boundaries.
 
-They also make FORML compatible with Miova's mutation model, where each artifact kind can be mutated, validated, accepted, rejected, or classified as an expected failure.
+They also make Toetra compatible with Miova's mutation model, where each artifact kind can be mutated, validated, accepted, rejected, or classified as an expected failure.
 
 ## Consequences
 
@@ -72,6 +72,6 @@ Rejected because it makes validation, mutation, diagnostics, and traceability ha
 
 Rejected because backend-specific concerns should not pollute early compiler layers.
 
-## Impact on FORML
+## Impact on Toetra
 
 The artifact model is foundational for compiler contracts, testing strategy, and Miova integration.

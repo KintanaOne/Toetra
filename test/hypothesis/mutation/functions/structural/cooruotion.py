@@ -4,7 +4,7 @@ Structural corruption mutations
 GOAL:
     Introduce invalid AST fields or broken nodes.
 
-ROLE IN FORML:
+ROLE IN Toetra:
     - test defensive parsing
     - simulate malformed serialization
 """

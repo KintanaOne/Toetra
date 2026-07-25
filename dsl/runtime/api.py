@@ -85,7 +85,7 @@ def verify(
 ) -> VerificationSession:
     """Verify every property from a Toetra source or ``.toetra`` file.
 
-    A caller may provide an already normalized ``ModelSchema`` or let FORML
+    A caller may provide an already normalized ``ModelSchema`` or let Toetra
     build one from a serialized model. When ``model`` is omitted for a file
     specification, the model reference from the Toetra header is resolved
     relative to the specification file. Referenced anchors require either a

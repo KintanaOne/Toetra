@@ -6,7 +6,7 @@
 
 ## Purpose
 
-`ModelSchema` is the normalized FORML representation of a machine learning model interface.
+`ModelSchema` is the normalized Toetra representation of a machine learning model interface.
 
 It acts as the bridge between:
 
@@ -19,7 +19,7 @@ It acts as the bridge between:
 
 A machine learning framework object is not a stable compiler artifact.
 
-FORML needs a representation that is:
+Toetra needs a representation that is:
 
 - normalized;
 - framework-independent;
@@ -70,12 +70,12 @@ FeatureSchema
 | Field | Meaning |
 |---|---|
 | `name` | Feature name as used by the model or dataset. |
-| `dtype` | FORML semantic data type. |
+| `dtype` | Toetra semantic data type. |
 | `nullable` | Whether missing values are present or allowed. |
 
 ## Semantic Type Vocabulary
 
-Feature dtypes should use FORML semantic data types.
+Feature dtypes should use Toetra semantic data types.
 
 Current vocabulary:
 
@@ -89,11 +89,11 @@ Current vocabulary:
 
 ## Role in Semantic Validation
 
-`ModelSchema` allows FORML to move from internal DSL validation to model-aware validation.
+`ModelSchema` allows Toetra to move from internal DSL validation to model-aware validation.
 
-Without `ModelSchema`, FORML can resolve that a feature reference belongs to a semantic entity such as `x'`.
+Without `ModelSchema`, Toetra can resolve that a feature reference belongs to a semantic entity such as `x'`.
 
-With `ModelSchema`, FORML can additionally check whether the feature exists and whether its type is compatible with the logical assertion.
+With `ModelSchema`, Toetra can additionally check whether the feature exists and whether its type is compatible with the logical assertion.
 
 Example:
 
@@ -144,7 +144,7 @@ This keeps the compiler pipeline independent from framework APIs.
 1. `ModelSchema` must be backend-independent.
 2. `ModelSchema` must be framework-normalized.
 3. Feature names must be stable string keys.
-4. Feature dtypes must use FORML semantic vocabulary.
+4. Feature dtypes must use Toetra semantic vocabulary.
 5. Framework-specific metadata must remain optional.
 6. Absence of optional metadata must not break generic validation.
 7. The schema must be safe to pass across compiler stages.
@@ -167,4 +167,4 @@ Target guarantees for the stabilized ModelSchema boundary:
 - Should categorical domains be represented in `FeatureSchema`?
 - Should feature bounds be represented directly in the schema?
 - Should metadata be split into `runtime_metadata` and `verification_metadata`?
-- Should the schema become serializable as a standalone FORML artifact?
+- Should the schema become serializable as a standalone Toetra artifact?

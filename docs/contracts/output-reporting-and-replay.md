@@ -2,7 +2,7 @@
 
 > Status: Implemented by P21.9 for scalar regression and the initial binary-classification profile  
 > Scope: IR2 traceability, backend assignments, reports, JSON, text/HTML/Jupyter renderers, concrete replay  
-> Public release status: additive JSON v5 evidence public in `1.0.0rc2`
+> Public release status: JSON v6 identity contract current after P23.3
 
 ## Purpose
 
@@ -54,7 +54,7 @@ specification with an expression over `oriented_decision_value`.
 ## Formal reconstruction
 
 When a backend returns an assignment for the internal oriented decision value
-`z`, FORML may derive report views for the initial binary-logistic profile:
+`z`, Toetra may derive report views for the initial binary-logistic profile:
 
 ```text
 predicted label:

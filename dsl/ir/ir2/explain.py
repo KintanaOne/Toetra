@@ -24,7 +24,7 @@ def explain_ir2_task(
     """Return a developer-friendly explanation of an IR2 verification task.
 
     The regular pretty-printer focuses on the final IR2 object. This explainer
-    focuses on the mental model used while debugging the FORML pipeline:
+    focuses on the mental model used while debugging the Toetra pipeline:
 
         DSL specification P
         + assumptions Gamma
@@ -102,7 +102,7 @@ def _semantics(task: VerificationTaskIR2) -> list[str]:
     if task.semantics is VerificationSemantics.REFUTATION:
         return [
             "🧭 Semantics",
-            "  FORML searches for a violation of the user property P:",
+            "  Toetra searches for a violation of the user property P:",
             "  VC = Γ ∧ ¬P",
             "  - UNSAT means no counterexample exists under Γ, so P is proved.",
             "  - SAT means the backend found a candidate counterexample.",
@@ -112,7 +112,7 @@ def _semantics(task: VerificationTaskIR2) -> list[str]:
     if task.semantics is VerificationSemantics.SATISFACTION:
         return [
             "🧭 Semantics",
-            "  FORML searches for a value satisfying the user property P:",
+            "  Toetra searches for a value satisfying the user property P:",
             "  VC = Γ ∧ P",
             "  - SAT means the backend found a witness.",
             "  - UNSAT means no witness exists under Γ.",

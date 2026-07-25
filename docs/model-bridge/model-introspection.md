@@ -18,7 +18,7 @@ The output of introspection is a backend-independent `ModelSchema`.
 
 ## Why Introspection Exists
 
-FORML cannot validate properties against a model without a normalized representation of the model interface.
+Toetra cannot validate properties against a model without a normalized representation of the model interface.
 
 For example, a property may refer to:
 
@@ -26,7 +26,7 @@ For example, a property may refer to:
 x'.age <= 30
 ```
 
-To validate this properly, FORML must eventually know whether:
+To validate this properly, Toetra must eventually know whether:
 
 - `age` exists;
 - `age` is numeric;
@@ -120,7 +120,7 @@ This distinction matters when one CSV is reused for anchor lookup. Lookup keys a
 
 The current sklearn introspector detects:
 
-| Model kind | FORML task |
+| Model kind | Toetra task |
 |---|---|
 | `ClassifierMixin` | `classification` |
 | `RegressorMixin` | `regression` |
@@ -167,7 +167,7 @@ Framework-specific metadata must remain optional and isolated.
 4. `ModelSchema` must not expose framework-specific APIs directly.
 5. Optional metadata must not be required by generic downstream stages.
 6. Feature names should be represented as strings.
-7. Feature dtypes should use FORML semantic type vocabulary.
+7. Feature dtypes should use Toetra semantic type vocabulary.
 8. Introspection should not mutate the model.
 
 ## Current Limitations

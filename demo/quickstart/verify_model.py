@@ -72,7 +72,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "--model",
         type=Path,
         help=(
-            "Serialized model path. When omitted, FORML resolves the model "
+            "Serialized model path. When omitted, Toetra resolves the model "
             "declared in the specification header relative to the .toetra file."
         ),
     )

@@ -102,7 +102,7 @@ def run_linear_regression_encoder(
     schema: ModelSchema,
 ):
     """
-    Minimal FORML + ModelEncoder + Z3 path.
+    Minimal Toetra + ModelEncoder + Z3 path.
 
     Pipeline:
         DSL source
@@ -118,7 +118,7 @@ def run_linear_regression_encoder(
     nnf_tasks = NNFNormalizer().normalize_tasks(ir1_tasks)
 
     if len(nnf_tasks) != 1:
-        raise ValueError("This demo expects exactly one FORML task.")
+        raise ValueError("This demo expects exactly one Toetra task.")
 
     requested_evaluations = PointAwareIR2Analyzer().model_evaluations(
         spec_formula=NNFFormulaIR2(expression=nnf_tasks[0].query.expression),
@@ -180,7 +180,7 @@ def print_case(
         print(f"Assumptions       : {len(task.assumptions)}")
         print(f"Normal form       : {task.normal_form.value}")
         print(f"Solver status     : {result.solver_status}")
-        print(f"FORML status      : {result.status.value}")
+        print(f"Toetra status      : {result.status.value}")
 
         if result.model:
             print("Counterexample    :")

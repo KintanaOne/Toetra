@@ -7,7 +7,7 @@
 
 ## Purpose
 
-The Schema to Semantic contract defines how ModelSchema participates in FORML semantic validation.
+The Schema to Semantic contract defines how ModelSchema participates in Toetra semantic validation.
 
 It answers the question:
 
@@ -15,7 +15,7 @@ It answers the question:
 Do the DSL properties refer to things that exist in the model context?
 ```
 
-This contract is required for true end-to-end FORML verification.
+This contract is required for true end-to-end Toetra verification.
 
 ---
 
@@ -29,7 +29,7 @@ ModelSchema
 
 The semantic layer receives:
 
-- FORML properties;
+- Toetra properties;
 - resolved variables and attributes;
 - model features;
 - target information;

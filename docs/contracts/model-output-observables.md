@@ -6,7 +6,7 @@
 
 ## Purpose
 
-This contract defines how FORML represents a model output without assuming that
+This contract defines how Toetra represents a model output without assuming that
 every output is one directly addressable numeric scalar.
 
 It separates:

@@ -25,7 +25,7 @@ A `.pkl` file can contain:
 - a custom Python object;
 - an unsupported object.
 
-Therefore, FORML separates:
+Therefore, Toetra separates:
 
 ```text
 model loading     = how the artifact is deserialized
@@ -116,7 +116,7 @@ Only part of this vocabulary is currently implemented. The enum intentionally ex
 1. A loaded model must map to zero or one framework.
 2. Detection must be deterministic for the same runtime object.
 3. Unsupported models must fail before introspection.
-4. Optional dependencies must not break FORML import when missing.
+4. Optional dependencies must not break Toetra import when missing.
 5. Detection must not mutate the model object.
 6. Detection must not assume that file extension equals framework identity.
 
@@ -138,7 +138,7 @@ Future detection may support:
 - TensorFlow/Keras models;
 - ONNX graph artifacts;
 - MLflow model wrappers;
-- custom FORML normalized model artifacts;
+- custom Toetra normalized model artifacts;
 - model metadata files that explicitly declare framework identity.
 
 ## Relationship with Introspection

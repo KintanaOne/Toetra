@@ -8,7 +8,7 @@
 
 ## Context
 
-The initial comparison shape in FORML is asymmetric:
+The initial comparison shape in Toetra is asymmetric:
 
 ```text
 attribute comparison_operator constant
@@ -30,7 +30,7 @@ x0.a <= x0.b
 
 Special-casing `target` on the left-hand side also duplicates grammar and builder logic while preventing target arithmetic or expression-to-expression comparisons.
 
-FORML needs a language-level expression model that remains independent from a concrete solver and allows semantic and backend capability checks to occur at explicit boundaries.
+Toetra needs a language-level expression model that remains independent from a concrete solver and allows semantic and backend capability checks to occur at explicit boundaries.
 
 ## Decision
 
@@ -145,7 +145,7 @@ x0.a * x0.b
 x0.a / x0.b
 ```
 
-remain structurally representable by the language model but require explicit nonlinear or symbolic-division capabilities. They must be rejected at a capability or lowering boundary when unsupported. FORML must never replace them with a silent approximation.
+remain structurally representable by the language model but require explicit nonlinear or symbolic-division capabilities. They must be rejected at a capability or lowering boundary when unsupported. Toetra must never replace them with a silent approximation.
 
 ### Logical normalization
 
@@ -211,7 +211,7 @@ Rejected because the language representation and backend execution profile are d
 
 Rejected because it violates the staged compiler pipeline and creates backend leakage before semantic validation and IR construction.
 
-## Impact on FORML
+## Impact on Toetra
 
 ### Grammar
 

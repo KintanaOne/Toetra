@@ -6,7 +6,7 @@
 
 ## Purpose
 
-This contract freezes the first classification behavior FORML will implement. It
+This contract freezes the first classification behavior Toetra will implement. It
 is intentionally narrower than the general classification vocabulary.
 
 ## Framework-neutral profile

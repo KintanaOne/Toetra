@@ -10,7 +10,7 @@ from dsl.language.vocabulary.backends import EnumBackend
 
 
 class VerificationStatus(str, Enum):
-    """Backend-neutral interpretation of a FORML verification result."""
+    """Backend-neutral interpretation of a Toetra verification result."""
 
     PROVED = "proved"
     COUNTEREXAMPLE = "counterexample"
@@ -21,7 +21,7 @@ class VerificationStatus(str, Enum):
 
 @dataclass(frozen=True)
 class VerificationResult:
-    """Normalized result returned by any FORML backend.
+    """Normalized result returned by any Toetra backend.
 
     Concrete backends keep their native status in ``backend_status`` and expose
     assignments through a backend-neutral mapping. Compatibility properties

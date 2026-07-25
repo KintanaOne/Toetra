@@ -6,7 +6,7 @@
 
 ## Purpose
 
-This contract defines the official progression of FORML artifacts and prohibits cross-layer shortcuts.
+This contract defines the official progression of Toetra artifacts and prohibits cross-layer shortcuts.
 
 ---
 

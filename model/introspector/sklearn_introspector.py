@@ -134,12 +134,12 @@ class SklearnIntrospector(BaseIntrospector):
         return tuple(str(name) for name in normalized)
 
     # ======================================================
-    # Pandas → FORML type mapping
+    # Pandas → Toetra type mapping
     # ======================================================
 
     def _map_dtype(self, dtype) -> EnumDataType:
         """
-        Map pandas dtypes to FORML semantic types.
+        Map pandas dtypes to Toetra semantic types.
         """
 
         dtype_str = str(dtype)
@@ -182,7 +182,7 @@ class SklearnIntrospector(BaseIntrospector):
 
         Priority:
             1. external schema target
-            2. explicit FORML target_name
+            2. explicit Toetra target_name
             3. conventional default: "target"
         """
 

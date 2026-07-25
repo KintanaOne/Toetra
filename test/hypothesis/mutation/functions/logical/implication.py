@@ -1,5 +1,5 @@
 """
-Logical contradiction & tautology mutations (FORML CORE)
+Logical contradiction & tautology mutations (Toetra CORE)
 
 GOAL:
     Inject semantic impossibilities into AST structures.

@@ -89,7 +89,7 @@ class Z3Translation:
     symbol_identities: dict[str, Z3SymbolIdentity]
 
     def identity_for(self, solver_name: str) -> Z3SymbolIdentity:
-        """Restore the structured FORML identity for one solver symbol."""
+        """Restore the structured Toetra identity for one solver symbol."""
 
         return self.symbol_identities[solver_name]
 
@@ -103,7 +103,7 @@ class Z3Translation:
 
 
 class Z3Translator:
-    """Translate the sound numeric affine FORML profile to Z3."""
+    """Translate the sound numeric affine Toetra profile to Z3."""
 
     backend: EnumBackend = EnumBackend.Z3
     capabilities: BackendCapabilities = Z3_CAPABILITIES
@@ -611,7 +611,7 @@ class Z3Translator:
             existing_identity = self._symbol_identities.get(name)
             if existing_identity is not None and existing_identity != identity:
                 raise BackendSymbolCollisionError(
-                    "Distinct FORML identities project to the same Z3 symbol "
+                    "Distinct Toetra identities project to the same Z3 symbol "
                     f"{name!r}: {existing_identity!r} != {identity!r}."
                 )
 

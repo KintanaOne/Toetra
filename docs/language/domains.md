@@ -1,7 +1,7 @@
 # Domains
 
 > Status: Target language contract — implementation pending  
-> Scope: Typed input-domain restrictions attached to FORML scopes  
+> Scope: Typed input-domain restrictions attached to Toetra scopes
 > Priority: P0  
 > Audience: DSL users, parser authors, semantic maintainers, IR authors, backend authors, test authors
 
@@ -127,7 +127,7 @@ and this one is invalid:
 x1.age: [18, 65]
 ```
 
-The mismatch must fail at semantic binding or domain validation. FORML must not silently alias `x1` to `x0`.
+The mismatch must fail at semantic binding or domain validation. Toetra must not silently alias `x1` to `x0`.
 
 ---
 
@@ -226,7 +226,7 @@ x0.a >= x0.b - 1
 AND x0.a <= x0.b + 1
 ```
 
-If a symbolic domain is unsatisfiable, a universal property may otherwise be proved vacuously. FORML should therefore expose domain-satisfiability diagnostics when the verification pipeline can determine that the admissible set is empty.
+If a symbolic domain is unsatisfiable, a universal property may otherwise be proved vacuously. Toetra should therefore expose domain-satisfiability diagnostics when the verification pipeline can determine that the admissible set is empty.
 
 Valid constant singleton:
 

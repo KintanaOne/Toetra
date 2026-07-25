@@ -1,4 +1,4 @@
-# FORML Pipeline Views
+# Toetra Pipeline Views
 
 > Status: **P0 — target architecture, partially implemented**  
 > Scope: **architecture views**  
@@ -6,11 +6,11 @@
 
 ## Purpose
 
-This document presents FORML through multiple complementary architectural views.
+This document presents Toetra through multiple complementary architectural views.
 
 Its purpose is not to describe every implementation detail. Its purpose is to make the end-to-end architecture understandable before all implementation layers are complete.
 
-FORML is designed as an end-to-end behavioral specification and verification platform for machine learning systems. A complete FORML request is expected to combine:
+Toetra is designed as an end-to-end behavioral specification and verification platform for machine learning systems. A complete Toetra request is expected to combine:
 
 - a `.toetra` specification expressing behavioral properties;
 - a model artifact or model schema handled through ModelBridge;
@@ -38,7 +38,7 @@ This document separates those concerns into views so that each subsystem can evo
 
 ### Question answered
 
-What is FORML globally?
+What is Toetra globally?
 
 ### View
 
@@ -86,11 +86,11 @@ flowchart LR
 | Logical Verification Pipeline | Normalize and prepare logical assertions. | Structural IR1 implemented; NNF and later stages planned |
 | Backend Orchestration | Select backend strategies and route queries. | Planned |
 | Verification Runtime | Execute backend-specific verification workflows. | Planned |
-| Miova | Challenge FORML artifacts through mutation campaigns. | External integration planned |
+| Miova | Challenge Toetra artifacts through mutation campaigns. | External integration planned |
 
 ### Architectural position
 
-FORML should not be understood as a parser only. It is a layered verification architecture where user intent, model metadata, logical constraints, and backend capabilities are progressively aligned.
+Toetra should not be understood as a parser only. It is a layered verification architecture where user intent, model metadata, logical constraints, and backend capabilities are progressively aligned.
 
 ---
 
@@ -98,7 +98,7 @@ FORML should not be understood as a parser only. It is a layered verification ar
 
 ### Question answered
 
-How does FORML transform a `.toetra` specification into a validated logical representation?
+How does Toetra transform a `.toetra` specification into a validated logical representation?
 
 ### View
 
@@ -136,7 +136,7 @@ flowchart TD
 The compiler pipeline progressively increases guarantees:
 
 1. **Parser boundary**: the source conforms to grammar-level syntax.
-2. **Builder boundary**: the CST is converted into typed FORML nodes.
+2. **Builder boundary**: the CST is converted into typed Toetra nodes.
 3. **Semantic boundary**: scopes, variables, implicit entities, and compatibility rules are resolved.
 4. **IR1 boundary**: the logical assertion is detached from DSL syntax and represented as backend-independent logical structure.
 5. **IR1-NNF boundary**: planned boundary where negations are pushed to leaves and boolean structure is normalized for later transformation.
@@ -151,7 +151,7 @@ This view does not describe CNF/DNF, assertion aggregation, model constraints, b
 
 ### Question answered
 
-How does FORML prepare semantic logical intent for backend verification?
+How does Toetra prepare semantic logical intent for backend verification?
 
 ### View
 
@@ -228,7 +228,7 @@ This aggregation layer is the bridge between “what the user asked” and “wh
 
 ### Question answered
 
-How does FORML understand the target ML model?
+How does Toetra understand the target ML model?
 
 ### View
 
@@ -274,7 +274,7 @@ ModelBridge is not only a metadata extraction subsystem.
 It is the bridge between:
 
 - ML framework-specific objects;
-- FORML semantic validation;
+- Toetra semantic validation;
 - future model constraint generation;
 - backend lowering.
 
@@ -286,7 +286,7 @@ A `.toetra` specification says what should be verified. ModelBridge determines w
 
 ### Question answered
 
-How does FORML select and prepare verification backends?
+How does Toetra select and prepare verification backends?
 
 ### View
 
@@ -420,7 +420,7 @@ flowchart TD
 ### Responsibilities
 
 - Execute backend-specific verification queries.
-- Normalize backend results into FORML-level results.
+- Normalize backend results into Toetra-level results.
 - Preserve diagnostics and traces.
 - Explain unsupported cases and failure modes.
 - Prepare future monitoring or runtime observation flows.
@@ -435,7 +435,7 @@ The verification runtime is planned. Runtime monitoring remains a research direc
 
 ### Question answered
 
-How does FORML challenge its own compiler and verification pipeline?
+How does Toetra challenge its own compiler and verification pipeline?
 
 ### View
 
@@ -469,24 +469,24 @@ flowchart TD
 
 ### Role of Miova
 
-Miova is not part of the normal FORML verification path.
+Miova is not part of the normal Toetra verification path.
 
 Miova is used to:
 
-- mutate FORML artifacts;
+- mutate Toetra artifacts;
 - challenge layer boundaries;
 - validate expected failures;
 - detect compiler fragility;
 - verify contract and invariant behavior;
-- explore the robustness limits of FORML properties and transformations.
+- explore the robustness limits of Toetra properties and transformations.
 
 ### Boundary rule
 
-FORML owns the verification pipeline.
+Toetra owns the verification pipeline.
 
 Miova owns mutation campaigns and artifact challenge strategies.
 
-This separation is important: FORML should remain a verification platform, while Miova remains a domain-agnostic mutation and exploration framework.
+This separation is important: Toetra should remain a verification platform, while Miova remains a domain-agnostic mutation and exploration framework.
 
 ---
 
@@ -494,7 +494,7 @@ This separation is important: FORML should remain a verification platform, while
 
 ### Question answered
 
-How does FORML progressively increase confidence across the platform?
+How does Toetra progressively increase confidence across the platform?
 
 ### View
 
@@ -540,13 +540,13 @@ Each layer introduces stronger guarantees than the previous layer:
 | IR1 → IR2 | Logical forms are normalized for verification needs. |
 | IR2 → AggregatedAssertionSet | User assertions and model constraints are composed. |
 | AggregatedAssertionSet → BackendQuery | Logical problem is lowered and prepared for execution. |
-| BackendQuery → Result | Verification outcome is normalized into FORML diagnostics. |
+| BackendQuery → Result | Verification outcome is normalized into Toetra diagnostics. |
 
 ---
 
 ## View separation rationale
 
-FORML separates architectural views because the system is not a simple linear compiler.
+Toetra separates architectural views because the system is not a simple linear compiler.
 
 It is at once:
 
@@ -567,7 +567,7 @@ Keeping those concerns separate prevents the documentation from collapsing into 
 | Document | Purpose |
 |---|---|
 | `architecture/overview.md` | High-level architecture and subsystem status. |
-| `architecture/runtime-flow.md` | End-to-end flow of one FORML request. |
+| `architecture/runtime-flow.md` | End-to-end flow of one Toetra request. |
 | `architecture/status-matrix.md` | Current implementation status of each subsystem. |
 | `compiler/pipeline.md` | Technical compiler pipeline. |
 | `contracts/compiler-pipeline.md` | Artifact contracts between compiler layers. |

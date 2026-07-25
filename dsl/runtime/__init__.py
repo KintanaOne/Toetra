@@ -1,4 +1,4 @@
-"""High-level API for compiling, routing and executing FORML properties.
+"""High-level API for compiling, routing and executing Toetra properties.
 
 Application code should normally import the public facade from :mod:`toetra`.
 This module remains available for advanced integrations and compatibility.

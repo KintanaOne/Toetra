@@ -7,7 +7,7 @@
 
 ## Purpose
 
-A FORML property expresses a behavioral guarantee that a model should satisfy.
+A Toetra property expresses a behavioral guarantee that a model should satisfy.
 
 Every property combines:
 

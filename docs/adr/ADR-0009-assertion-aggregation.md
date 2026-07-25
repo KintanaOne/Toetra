@@ -6,7 +6,7 @@
 
 ## Context
 
-FORML verification is not only the direct translation of user assertions.
+Toetra verification is not only the direct translation of user assertions.
 
 A complete verification problem may include:
 
@@ -22,7 +22,7 @@ These pieces must be combined before backend lowering.
 
 ## Decision
 
-FORML introduces an Assertion Aggregation layer.
+Toetra introduces an Assertion Aggregation layer.
 
 The output of this layer is an `AggregatedAssertionSet`.
 
@@ -57,6 +57,6 @@ Rejected because verification may require global composition.
 
 Rejected because aggregation should remain backend-independent.
 
-## Impact on FORML
+## Impact on Toetra
 
 Assertion aggregation is a critical planned P0 layer for end-to-end verification.

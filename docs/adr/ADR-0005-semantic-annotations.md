@@ -20,7 +20,7 @@ This information is not part of the raw user syntax, but it is essential for IR 
 
 ## Decision
 
-FORML uses semantic annotations as a runtime semantic cache attached to semantic-capable nodes.
+Toetra uses semantic annotations as a runtime semantic cache attached to semantic-capable nodes.
 
 Semantic annotations are not an IR layer and not the source of truth for syntax.
 
@@ -67,7 +67,7 @@ Deferred. It may become useful later, but semantic annotations are simpler for t
 
 Rejected because downstream layers need access to resolution results.
 
-## Impact on FORML
+## Impact on Toetra
 
 Semantic annotations are part of the SemanticValidatedAST contract.
 

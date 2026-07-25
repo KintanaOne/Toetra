@@ -19,7 +19,7 @@ from model.schema.output_schema import (
 
 @dataclass(init=False)
 class ModelSchema:
-    """Normalized FORML model representation.
+    """Normalized Toetra model representation.
 
     ``output_name`` and ``output_schema`` are the source of truth for the
     selected output port. ``target`` and the ``target_*`` attributes remain

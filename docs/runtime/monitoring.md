@@ -6,7 +6,7 @@
 
 ## Purpose
 
-Monitoring is a future FORML runtime capability.
+Monitoring is a future Toetra runtime capability.
 
 It is intended to observe verification execution, collect runtime diagnostics, and eventually support behavioral monitoring of deployed ML systems.
 
@@ -32,7 +32,7 @@ Monitoring should be built after the core runtime is stable.
 | Monitoring | Observes execution or behavior over time |
 | Behavioral monitoring | Tracks model/system behavior after deployment |
 
-FORML V1 should focus on verification, not long-term monitoring.
+Toetra V1 should focus on verification, not long-term monitoring.
 
 ## Possible Future Monitoring Targets
 
@@ -68,20 +68,20 @@ This information can support:
 - performance analysis,
 - backend comparison,
 - CI reporting,
-- future AutoFORML decisions.
+- future AutoToetra decisions.
 
-## Monitoring and AutoFORML
+## Monitoring and AutoToetra
 
 Monitoring may eventually feed backend selection.
 
-For example, FORML may learn that:
+For example, Toetra may learn that:
 
 - one backend frequently times out on robustness properties,
 - another backend is better for monotonicity checks,
 - some query forms should be simplified before solving,
 - certain model families require specialized lowering.
 
-This belongs to the future AutoFORML direction, not the V1 scope.
+This belongs to the future AutoToetra direction, not the V1 scope.
 
 ## Monitoring and Miova
 

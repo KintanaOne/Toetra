@@ -4,7 +4,7 @@ Structural deletion mutations (AST integrity breaking)
 GOAL:
     Remove mandatory or structural components of the AST.
 
-ROLE IN FORML:
+ROLE IN Toetra:
     - test AST robustness
     - break required schema contracts
     - simulate partial compilation / truncation

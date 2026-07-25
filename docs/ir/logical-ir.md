@@ -6,7 +6,7 @@
 
 ## Purpose
 
-Logical IR represents the right-hand side of a FORML property as a structured logical tree.
+Logical IR represents the right-hand side of a Toetra property as a structured logical tree.
 
 It removes DSL syntax while preserving logical meaning.
 
@@ -206,13 +206,13 @@ Miova can mutate:
 - comparison values,
 - problem/function pairs.
 
-This helps test whether FORML detects invalid logic, preserves valid semantics, and rejects unsupported transformations.
+This helps test whether Toetra detects invalid logic, preserves valid semantics, and rejects unsupported transformations.
 
 ---
 
 ## Summary
 
-Logical IR is the formal logical core of FORML.
+Logical IR is the formal logical core of Toetra.
 
 It is where user assertions stop being DSL text and become structured reasoning artifacts.
 

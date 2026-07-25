@@ -6,7 +6,7 @@ Semantic causality mutations.
 GOAL:
     Break semantic causal relationships.
 
-ROLE IN FORML:
+ROLE IN Toetra:
     - stress implication semantics
     - reverse semantic directionality
     - validate causal consistency

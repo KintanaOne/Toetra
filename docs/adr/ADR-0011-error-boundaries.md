@@ -6,7 +6,7 @@
 
 ## Context
 
-FORML has many possible failure points:
+Toetra has many possible failure points:
 
 - syntax errors,
 - builder errors,
@@ -24,7 +24,7 @@ If all errors are wrapped into a generic error type, diagnostics become unclear 
 
 ## Decision
 
-FORML preserves error boundaries between layers.
+Toetra preserves error boundaries between layers.
 
 Each layer should expose its own error category:
 
@@ -43,7 +43,7 @@ RuntimeError
 
 ## Rationale
 
-Precise error boundaries make FORML easier to debug and easier to test.
+Precise error boundaries make Toetra easier to debug and easier to test.
 
 They are also necessary for Miova expected-failure classification.
 
@@ -70,9 +70,9 @@ Rejected because it destroys semantic and backend error information.
 
 ### Use only Python built-in exceptions
 
-Rejected because FORML needs domain-specific diagnostics.
+Rejected because Toetra needs domain-specific diagnostics.
 
-## Impact on FORML
+## Impact on Toetra
 
 Error boundaries are part of the compiler contract.
 

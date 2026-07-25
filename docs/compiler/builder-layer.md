@@ -7,7 +7,7 @@
 
 ## Purpose
 
-The builder layer converts the Concrete Syntax Tree into FORML AST nodes.
+The builder layer converts the Concrete Syntax Tree into Toetra AST nodes.
 
 It answers the question:
 
@@ -48,7 +48,7 @@ The builder layer is responsible for:
 
 ## Main Builder Products
 
-The builder produces a tree of FORML AST nodes, including:
+The builder produces a tree of Toetra AST nodes, including:
 
 | AST Node | Meaning |
 |---|---|

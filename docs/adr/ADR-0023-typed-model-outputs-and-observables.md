@@ -9,7 +9,7 @@
 Patch 21 implements this ADR across schema, AST, semantic binding, IR1,
 reporting, and replay. `output_name` and `output_schema` are the normalized source
 of truth. Legacy `target`, `target_dtype`, `target_source_dtype`, and `target_name`
-accessors remain read-only compatibility projections for the FORML 1.x line;
+accessors remain read-only compatibility projections for the Toetra 1.x line;
 new code uses output-oriented names. Their removal requires a later major version.
 
 ## Context
@@ -35,7 +35,7 @@ families define incompatible meanings for the same syntax.
 
 ## Decision
 
-FORML will distinguish an **output port**, a **model evaluation**, a **public
+Toetra will distinguish an **output port**, a **model evaluation**, a **public
 output observable**, and an **internal model quantity**.
 
 ### Output port
@@ -179,7 +179,7 @@ Rejected because `score` may mean a decision value, business score, probability,
 margin, ranking score, or estimator evaluation metric. The term is too ambiguous
 to freeze as a public observable.
 
-## Impact on FORML
+## Impact on Toetra
 
 This ADR amends the scalar-output assumptions described by ADR-0008, ADR-0014,
 and ADR-0017 for the Patch 21 target architecture. It does not retroactively

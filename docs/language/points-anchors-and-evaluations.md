@@ -7,7 +7,7 @@
 
 ## Purpose
 
-This document defines the target FORML language for properties that use one or more input points and one or more evaluations of the same model.
+This document defines the target Toetra language for properties that use one or more input points and one or more evaluations of the same model.
 
 The core model is:
 
@@ -300,7 +300,7 @@ where x1.income >= x0.income
 
 ### One model output, several evaluations
 
-FORML V1 declares one scalar model output:
+Toetra V1 declares one scalar model output:
 
 ```toetra
 target := risk_score

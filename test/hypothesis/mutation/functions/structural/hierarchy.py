@@ -4,7 +4,7 @@ Structural hierarchy mutations
 GOAL:
     Break AST tree hierarchy integrity.
 
-ROLE IN FORML:
+ROLE IN Toetra:
     - test tree traversal robustness
     - break parent/child assumptions
     - simulate malformed AST builders

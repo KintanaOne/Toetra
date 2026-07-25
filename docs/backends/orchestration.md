@@ -1,22 +1,22 @@
 # Backend Orchestration
 
 > Status: Post-V1 / target architecture  
-> Scope: Backend selection, routing, strategy selection, AutoFORML foundation  
+> Scope: Backend selection, routing, strategy selection, AutoToetra foundation
 > Priority: P1
 
 ## Purpose
 
-Backend orchestration is the subsystem responsible for choosing how a FORML verification problem should be executed.
+Backend orchestration is the subsystem responsible for choosing how a Toetra verification problem should be executed.
 
 It answers:
 
 ```text
-Given a normalized verification problem, which backend and strategy should FORML use?
+Given a normalized verification problem, which backend and strategy should Toetra use?
 ```
 
 ## V1 boundary
 
-Backend orchestration is not required before the Z3 end-to-end path works. V1 should implement a direct and explicit `LoweredQuery → Z3 BackendQuery → Z3 result` path first. Automatic backend selection and AutoFORML belong after that baseline is functional.
+Backend orchestration is not required before the Z3 end-to-end path works. V1 should implement a direct and explicit `LoweredQuery → Z3 BackendQuery → Z3 result` path first. Automatic backend selection and AutoToetra belong after that baseline is functional.
 
 ## Position in the pipeline
 
@@ -66,7 +66,7 @@ When a user explicitly selects a backend:
 [ROBUSTNESS]: forall baseline, candidate => CLASSIFICATION.EQUAL() using z3
 ```
 
-FORML should treat the backend as a user constraint, not as an unconditional instruction.
+Toetra should treat the backend as a user constraint, not as an unconditional instruction.
 
 The backend must still be checked against:
 
@@ -76,11 +76,11 @@ The backend must still be checked against:
 - required constraint encodings;
 - backend capabilities.
 
-If incompatible, FORML should reject the request early with a diagnostic.
+If incompatible, Toetra should reject the request early with a diagnostic.
 
 ## Automatic backend selection
 
-When no backend is specified, a future FORML orchestrator may select a backend automatically.
+When no backend is specified, a future Toetra orchestrator may select a backend automatically.
 
 Selection criteria may include:
 
@@ -93,7 +93,7 @@ Selection criteria may include:
 | Runtime cost | Choose cheaper backend when proof power is sufficient. |
 | Observability | Prefer backend with richer diagnostics. |
 
-This is the basis for a future AutoFORML system.
+This is the basis for a future AutoToetra system.
 
 ## Strategy selection
 

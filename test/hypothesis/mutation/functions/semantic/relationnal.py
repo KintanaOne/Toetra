@@ -6,7 +6,7 @@ Semantic relational inconsistency mutations.
 GOAL:
     Break semantic relationships between properties.
 
-ROLE IN FORML:
+ROLE IN Toetra:
     - stress semantic ordering
     - validate dependency assumptions
     - test relational robustness

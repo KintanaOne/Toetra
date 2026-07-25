@@ -1,13 +1,13 @@
 # Vocabulary
 
 > Status: Implemented / needs normalization  
-> Scope: Official FORML language vocabulary  
+> Scope: Official Toetra language vocabulary
 > Priority: P1  
 > Audience: DSL users, compiler contributors, semantic layer maintainers
 
 ## Purpose
 
-The vocabulary defines the official words, categories, enums, and symbolic values accepted by the FORML language.
+The vocabulary defines the official words, categories, enums, and symbolic values accepted by the Toetra language.
 
 It acts as a bridge between:
 
@@ -94,7 +94,7 @@ For example:
 
 ## Scopes and Quantifiers
 
-FORML supports multiple ways to define where a property is evaluated.
+Toetra supports multiple ways to define where a property is evaluated.
 
 | Vocabulary | Example | Semantic Scope |
 |---|---|---|

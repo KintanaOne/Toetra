@@ -6,7 +6,7 @@
 
 ## Purpose
 
-This contract defines how specification constants cross FORML compiler boundaries without being confused with scope variables, model features or backend solver variables.
+This contract defines how specification constants cross Toetra compiler boundaries without being confused with scope variables, model features or backend solver variables.
 
 Canonical example:
 

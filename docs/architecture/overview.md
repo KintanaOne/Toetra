@@ -1,10 +1,10 @@
 # Architecture Overview
 
 > Status: P0 documentation baseline  
-> Scope: Current and target FORML architecture  
+> Scope: Current and target Toetra architecture
 > Implementation state: Partially implemented, with planned end-to-end logical verification pipeline
 
-FORML is designed as an end-to-end behavioral verification architecture for machine learning systems.
+Toetra is designed as an end-to-end behavioral verification architecture for machine learning systems.
 
 It starts from a user-defined `.toetra` specification and a model artifact, then progressively transforms them into a backend-specific verification query.
 
@@ -12,7 +12,7 @@ The architecture is intentionally layered so that each stage has a clear respons
 
 ## Architectural intent
 
-FORML exists to bridge the gap between human-expressed ML behavioral requirements and formal or semi-formal verification backends.
+Toetra exists to bridge the gap between human-expressed ML behavioral requirements and formal or semi-formal verification backends.
 
 It does this through a progressive pipeline:
 
@@ -34,7 +34,7 @@ Backend-specific verification
 
 The key architectural principle is that user intent should not be lowered directly to a solver.
 
-Instead, FORML introduces explicit intermediate artifacts that make the transformation inspectable, testable, and extensible.
+Instead, Toetra introduces explicit intermediate artifacts that make the transformation inspectable, testable, and extensible.
 
 ## High-level architecture
 
@@ -99,7 +99,7 @@ flowchart TD
 
 ## Primary pipelines
 
-FORML has two primary input pipelines that converge before backend lowering.
+Toetra has two primary input pipelines that converge before backend lowering.
 
 ### 1. DSL Compiler Pipeline
 
@@ -181,7 +181,7 @@ Aggregated Assertion Set
 
 This convergence is one of the most important parts of the architecture.
 
-FORML should not merely check whether a `.toetra` property is syntactically valid. It should eventually check whether that property is meaningful for the actual target model.
+Toetra should not merely check whether a `.toetra` property is syntactically valid. It should eventually check whether that property is meaningful for the actual target model.
 
 Examples:
 
@@ -193,7 +193,7 @@ Examples:
 
 ## Logical verification pipeline
 
-After semantic validation, FORML enters the logical verification pipeline.
+After semantic validation, Toetra enters the logical verification pipeline.
 
 ```text
 SemanticValidatedAST
@@ -275,7 +275,7 @@ Responsibilities include:
 
 The backend query is the first artifact that belongs to a specific backend.
 
-Before this boundary, FORML should remain as backend-agnostic as possible.
+Before this boundary, Toetra should remain as backend-agnostic as possible.
 
 ## Semantic layer
 
@@ -325,7 +325,7 @@ This design keeps the DSL concise while preserving deterministic compiler semant
 
 ## Backend-agnostic design
 
-FORML separates:
+Toetra separates:
 
 - DSL syntax,
 - user intent,
@@ -335,13 +335,13 @@ FORML separates:
 - backend preparation,
 - backend-specific encoding.
 
-This separation allows FORML to support multiple backends over time without tying the DSL or semantic layer to one solver.
+This separation allows Toetra to support multiple backends over time without tying the DSL or semantic layer to one solver.
 
 ## Miova as external validation layer
 
 Miova is external to the normal verification runtime.
 
-It is used to challenge FORML itself.
+It is used to challenge Toetra itself.
 
 Miova can mutate artifacts at several boundaries:
 
@@ -366,11 +366,11 @@ Its role is to test:
 - rejection of invalid artifacts,
 - preservation of valid semantics when expected.
 
-Miova therefore supports FORML's engineering quality, but does not replace FORML's verification backends.
+Miova therefore supports Toetra's engineering quality, but does not replace Toetra's verification backends.
 
 ## Current architecture vs target architecture
 
-FORML documentation must always distinguish current implementation from target architecture.
+Toetra documentation must always distinguish current implementation from target architecture.
 
 | Area | Current | Target |
 |---|---|---|
@@ -385,7 +385,7 @@ FORML documentation must always distinguish current implementation from target a
 | Backend query | Planned | Backend-specific executable query. |
 | Runtime | Planned | Execute and report verification results. |
 | Monitoring | Research direction | Runtime behavioral observation. |
-| Miova | External / planned integration | Mutation campaigns over FORML artifacts. |
+| Miova | External / planned integration | Mutation campaigns over Toetra artifacts. |
 
 ## Architectural risks
 
@@ -411,7 +411,7 @@ The main risks to control are:
 
 ## Documentation policy
 
-Every FORML architecture document should include:
+Every Toetra architecture document should include:
 
 - current implementation state,
 - target architecture,

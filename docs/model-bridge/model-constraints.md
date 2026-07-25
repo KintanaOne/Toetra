@@ -104,7 +104,7 @@ len(input_vector) = n_features_in
 
 ### Task Compatibility Constraints
 
-Ensure that the declared FORML problem is compatible with the model task.
+Ensure that the declared Toetra problem is compatible with the model task.
 
 Example:
 
@@ -115,7 +115,7 @@ REGRESSION.BETWEEN requires task = regression
 
 ### Target Constraints
 
-Ensure that the target referenced by FORML is coherent with the schema.
+Ensure that the target referenced by Toetra is coherent with the schema.
 
 Example:
 
@@ -175,7 +175,7 @@ It must not invent unsupported facts.
 
 For example:
 
-- if feature bounds are unknown, FORML should not silently assume them;
+- if feature bounds are unknown, Toetra should not silently assume them;
 - if task type is unknown, task compatibility should fail or remain unresolved;
 - if feature names are unavailable, the system should require an external schema or produce diagnostics.
 

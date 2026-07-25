@@ -358,7 +358,7 @@ class DomainIR:
 @dataclass
 class QueryIR:
     """
-    Represents the entire RHS of a FORML property.
+    Represents the entire RHS of a Toetra property.
 
     This can be:
         - a logical expression (AND/OR/NOT/IMPLY)

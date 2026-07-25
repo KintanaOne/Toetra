@@ -7,7 +7,7 @@
 
 ## Purpose
 
-IR1 is the first backend-independent logical representation of a validated FORML property.
+IR1 is the first backend-independent logical representation of a validated Toetra property.
 
 It answers the question:
 

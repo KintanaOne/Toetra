@@ -7,22 +7,22 @@
 
 ## Purpose
 
-This document maps the conceptual and technical dependencies of FORML.
+This document maps the conceptual and technical dependencies of Toetra.
 
 It answers four questions:
 
 1. Which dependencies are required for the first functional V1?
 2. Which dependencies are optional development tools?
 3. Which dependencies belong to future or post-V1 extensions?
-4. Which dependencies are external systems rather than part of FORML itself?
+4. Which dependencies are external systems rather than part of Toetra itself?
 
-Dependency classification matters because FORML is intended to remain modular. The first end-to-end path should be achievable without requiring every future backend, runtime, or orchestration capability to exist.
+Dependency classification matters because Toetra is intended to remain modular. The first end-to-end path should be achievable without requiring every future backend, runtime, or orchestration capability to exist.
 
 ---
 
 ## Dependency categories
 
-FORML dependencies are classified into five categories.
+Toetra dependencies are classified into five categories.
 
 | Category | Meaning |
 |---|---|
@@ -36,7 +36,7 @@ FORML dependencies are classified into five categories.
 
 ## Core V1 dependencies
 
-The first functional FORML V1 should require only the components needed for a Z3-backed end-to-end verification path.
+The first functional Toetra V1 should require only the components needed for a Z3-backed end-to-end verification path.
 
 | Dependency | Role | Status |
 |---|---|---|
@@ -45,7 +45,7 @@ The first functional FORML V1 should require only the components needed for a Z3
 | Z3 / z3-solver | Minimal verification backend for V1. | Core V1 |
 | dataclasses / typing | Core data structures for AST, IR, schemas, and contracts. | Core V1 |
 
-The V1 dependency target is intentionally narrow. FORML should not require ERAN, PyTorch, TensorFlow, or advanced verification engines to prove the first end-to-end path.
+The V1 dependency target is intentionally narrow. Toetra should not require ERAN, PyTorch, TensorFlow, or advanced verification engines to prove the first end-to-end path.
 
 ---
 
@@ -127,14 +127,14 @@ Hypothesis and Miova serve different purposes. Hypothesis generates structured e
 
 ## External systems
 
-These are not FORML internals.
+These are not Toetra internals.
 
-| External system | Relationship to FORML |
+| External system | Relationship to Toetra |
 |---|---|
 | User ML model | Input artifact consumed through ModelBridge. |
 | Dataset / schema | Source of feature metadata and type information. |
 | Z3 solver | First backend execution engine. |
-| CI system | Future execution environment for FORML checks. |
+| CI system | Future execution environment for Toetra checks. |
 | Miova package | External mutation framework integrated for robustness testing. |
 
 ---
@@ -144,7 +144,7 @@ These are not FORML internals.
 The first V1 should remain minimal:
 
 ```text
-FORML V1 = DSL compiler + ModelBridge schema + IR pipeline + Z3 backend query + verification result
+Toetra V1 = DSL compiler + ModelBridge schema + IR pipeline + Z3 backend query + verification result
 ```
 
 Everything else should be documented as extension, not as a prerequisite.
@@ -153,7 +153,7 @@ Everything else should be documented as extension, not as a prerequisite.
 
 ## Design implications
 
-FORML dependency design should follow these rules:
+Toetra dependency design should follow these rules:
 
 1. Keep the compiler independent from optional ML frameworks.
 2. Keep ModelBridge framework support optional when possible.

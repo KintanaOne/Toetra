@@ -12,7 +12,7 @@ This document decomposes the Toetra Specification Language Compiler into interna
 It answers:
 
 ```text
-How does FORML transform `.toetra` source into semantically valid IR?
+How does Toetra transform `.toetra` source into semantically valid IR?
 ```
 
 ---

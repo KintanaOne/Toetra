@@ -16,7 +16,7 @@ model path → loader selection → loaded model object
 
 ## Why This Layer Exists
 
-FORML should not couple model loading logic to framework detection or introspection.
+Toetra should not couple model loading logic to framework detection or introspection.
 
 Loading is its own boundary because serialization format and model framework are different concerns.
 
@@ -26,7 +26,7 @@ For example:
 - a JSON artifact may represent structured model data but not necessarily a live framework object;
 - future ONNX, PyTorch, TensorFlow, or custom artifacts may require different loading behavior.
 
-Separating loading allows FORML to evolve support for formats without changing semantic validation or IR lowering.
+Separating loading allows Toetra to evolve support for formats without changing semantic validation or IR lowering.
 
 ## Current Pipeline
 
@@ -131,7 +131,7 @@ Future loading formats may include:
 | `.pt` / `.pth` | PyTorch serialized models | planned |
 | TensorFlow SavedModel | TensorFlow/Keras models | planned |
 | MLflow model directory | MLflow-packaged models | planned |
-| Custom FORML model artifact | Internal normalized representation | future |
+| Custom Toetra model artifact | Internal normalized representation | future |
 
 ## Invariants
 

@@ -12,7 +12,7 @@ This document decomposes ModelBridge into internal components.
 It answers:
 
 ```text
-How does FORML understand an ML model before verifying properties against it?
+How does Toetra understand an ML model before verifying properties against it?
 ```
 
 ModelBridge provides the normalized model representation required by semantic validation, model-aware constraints, and backend lowering.
@@ -163,7 +163,7 @@ Introspectors are framework-specific, but their output must be framework-normali
 
 ## ModelSchema
 
-`ModelSchema` is the key bridge artifact between the ML model and FORML semantics.
+`ModelSchema` is the key bridge artifact between the ML model and Toetra semantics.
 
 It contains:
 

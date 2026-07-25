@@ -23,7 +23,7 @@ model artifact
 
 ## What is a ModelSchema?
 
-A `ModelSchema` is the normalized representation used by FORML to reason about a model.
+A `ModelSchema` is the normalized representation used by Toetra to reason about a model.
 
 It contains:
 
@@ -36,7 +36,7 @@ It contains:
 | `task` | ML task type |
 | `metadata` | Framework-specific metadata |
 
-## Why does FORML need it?
+## Why does Toetra need it?
 
 The DSL can express properties such as:
 
@@ -46,7 +46,7 @@ score <= 0.9
 target[baseline].label == target[candidate].label
 ```
 
-But FORML must know whether:
+But Toetra must know whether:
 
 - `age` exists,
 - `score` is a valid feature or output,

@@ -15,7 +15,7 @@ It answers the question:
 How can the complete verification problem be simplified and shaped before backend encoding?
 ```
 
-This layer is where FORML can reduce logical complexity, remove redundancies, and prepare solver-friendly expressions.
+This layer is where Toetra can reduce logical complexity, remove redundancies, and prepare solver-friendly expressions.
 
 ---
 

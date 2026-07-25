@@ -6,7 +6,7 @@
 
 ## Purpose
 
-This document defines how Hypothesis and Miova should work together in FORML.
+This document defines how Hypothesis and Miova should work together in Toetra.
 
 Hypothesis is responsible for generating structured examples. Miova is responsible for mutating artifacts, applying contracts, checking invariants, and classifying mutation outcomes.
 
@@ -19,7 +19,7 @@ Miova explores the transformation and mutation space.
 
 ## Why Combine Them
 
-FORML needs both approaches.
+Toetra needs both approaches.
 
 Hypothesis can generate many valid or invalid examples:
 
@@ -46,7 +46,7 @@ Hypothesis strategy
     ↓
 generated Toetra source or artifact
     ↓
-normal FORML pipeline
+normal Toetra pipeline
     ↓
 Miova artifact wrapping
     ↓
@@ -128,7 +128,7 @@ Hypothesis remains a generation and shrinking tool. Miova remains a mutation, co
 
 The integration is successful when:
 
-- Hypothesis can generate meaningful FORML seeds;
+- Hypothesis can generate meaningful Toetra seeds;
 - Miova can mutate those seeds at several layers;
 - expected failures are classified precisely;
 - unexpected failures shrink to readable examples;

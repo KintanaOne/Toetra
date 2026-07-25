@@ -110,7 +110,7 @@ This distinction matters when transformations introduce helper variables or auxi
 | Semantic equivalence | The transformed expression has the same truth value in all contexts. |
 | Equisatisfiability | The transformed expression is satisfiable exactly when the original is satisfiable, but may not be truth-equivalent under all assignments. |
 
-For FORML, this guarantee should be stored or documented as part of the IR2 transformation contract.
+For Toetra, this guarantee should be stored or documented as part of the IR2 transformation contract.
 
 ---
 
@@ -217,6 +217,6 @@ Miova can challenge:
 
 ## Summary
 
-IR2 is the layer where FORML chooses the logical shape needed for verification.
+IR2 is the layer where Toetra chooses the logical shape needed for verification.
 
-It is not yet implemented, but it is architecturally required for the end-to-end FORML pipeline.
+It is not yet implemented, but it is architecturally required for the end-to-end Toetra pipeline.

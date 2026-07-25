@@ -6,7 +6,7 @@ Semantic typing mismatch mutations.
 GOAL:
     Corrupt semantic typing assumptions.
 
-ROLE IN FORML:
+ROLE IN Toetra:
     - stress type analyzers
     - validate semantic typing
     - test incompatible property semantics

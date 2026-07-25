@@ -1,12 +1,12 @@
 # Artifact Boundaries
 
 > Status: planned / critical  
-> Scope: FORML artifacts exposed to Miova  
+> Scope: Toetra artifacts exposed to Miova
 > Audience: compiler maintainers, mutation authors, testing engineers
 
 ## Purpose
 
-This document defines the artifact boundaries where Miova may interact with FORML.
+This document defines the artifact boundaries where Miova may interact with Toetra.
 
 A boundary is a stable transformation point between two layers. Each boundary has:
 
@@ -19,7 +19,7 @@ A boundary is a stable transformation point between two layers. Each boundary ha
 
 ## Why Boundaries Matter
 
-FORML is not a single transformation. It is a sequence of progressively stronger representations.
+Toetra is not a single transformation. It is a sequence of progressively stronger representations.
 
 ```text
 Source

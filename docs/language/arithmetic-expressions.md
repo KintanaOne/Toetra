@@ -7,7 +7,7 @@
 
 ## Purpose
 
-FORML arithmetic expressions allow users to express relations between model inputs, model outputs, and numeric constants without embedding backend-specific syntax.
+Toetra arithmetic expressions allow users to express relations between model inputs, model outputs, and numeric constants without embedding backend-specific syntax.
 
 Examples:
 

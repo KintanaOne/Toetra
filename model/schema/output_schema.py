@@ -171,7 +171,7 @@ class ClassificationOutputSchema(ModelOutputSchema):
 
 @dataclass(frozen=True)
 class UnknownOutputSchema(ModelOutputSchema):
-    """Compatibility schema for tasks not yet normalized by FORML."""
+    """Compatibility schema for tasks not yet normalized by Toetra."""
 
     value_dtype: EnumDataType | None = None
     value_source_dtype: str | None = None

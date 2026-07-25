@@ -1,4 +1,4 @@
-# FORML Runtime Flow
+# Toetra Runtime Flow
 
 > Status: **P0 — end-to-end target flow, partially implemented**  
 > Scope: **runtime architecture / request lifecycle**  
@@ -6,11 +6,11 @@
 
 ## Purpose
 
-This document describes the lifecycle of a single FORML request from user input to verification result.
+This document describes the lifecycle of a single Toetra request from user input to verification result.
 
 It defines the target end-to-end flow even though some subsystems are still planned. The goal is to make the execution model explicit early, so that compiler contracts, ModelBridge contracts, IR contracts, backend contracts, and Miova campaigns can be designed consistently.
 
-A FORML request is not only a DSL compilation request. It is a verification request that combines:
+A Toetra request is not only a DSL compilation request. It is a verification request that combines:
 
 - a `.toetra` property specification;
 - a model artifact or model schema;
@@ -49,7 +49,7 @@ BackendQuery
     ↓
 Verification Runtime
     ↓
-FORML Result / Diagnostics
+Toetra Result / Diagnostics
 ```
 
 ---
@@ -116,7 +116,7 @@ flowchart TD
         --> BE[Backend Execution]
 
     BE
-        --> RES[FORML Result / Diagnostics]
+        --> RES[Toetra Result / Diagnostics]
 ```
 
 ---
@@ -155,7 +155,7 @@ Concrete syntax tree.
 
 ### Output
 
-Typed FORML AST.
+Typed Toetra AST.
 
 ### Responsibilities
 
@@ -168,7 +168,7 @@ Typed FORML AST.
 
 The AST is not yet semantically valid.
 
-At this phase, FORML knows that the source has structure, but not necessarily that variables, scopes, features, model references, or property compatibility are valid.
+At this phase, Toetra knows that the source has structure, but not necessarily that variables, scopes, features, model references, or property compatibility are valid.
 
 ### Failure class
 
@@ -360,7 +360,7 @@ A normalized `ModelSchema`.
 | Loaded model | Runtime model object. |
 | Framework | Detected ML framework, such as sklearn or XGBoost. |
 | Introspector | Framework-specific metadata extraction component. |
-| `ModelSchema` | Normalized FORML representation of model metadata. |
+| `ModelSchema` | Normalized Toetra representation of model metadata. |
 
 ### Status
 
@@ -514,7 +514,7 @@ Backend-specific query artifact.
 ### Responsibilities
 
 - Encode the logical problem into a backend-specific representation.
-- Preserve mapping between backend expressions and FORML artifacts.
+- Preserve mapping between backend expressions and Toetra artifacts.
 - Emit diagnostics when a backend cannot support the query.
 - Respect backend capabilities and limitations.
 
@@ -540,7 +540,7 @@ Backend query.
 
 ### Output
 
-FORML verification result.
+Toetra verification result.
 
 ### Responsibilities
 
@@ -559,7 +559,7 @@ Planned.
 
 ### Input
 
-FORML artifacts at different layers.
+Toetra artifacts at different layers.
 
 ### Output
 
@@ -577,7 +577,7 @@ Mutation campaign results.
 
 Miova is not part of the normal verification runtime.
 
-Miova is a validation and exploration layer used to harden FORML.
+Miova is a validation and exploration layer used to harden Toetra.
 
 ---
 
@@ -601,7 +601,7 @@ Each phase must own its own failure boundary.
 | Verification runtime | Backend execution or result normalization error |
 | Miova campaign | Mutation, invariant, or expected-failure mismatch |
 
-Clear failure boundaries are critical because they allow FORML to explain not only that a request failed, but where and why it failed.
+Clear failure boundaries are critical because they allow Toetra to explain not only that a request failed, but where and why it failed.
 
 ---
 
@@ -621,7 +621,7 @@ Clear failure boundaries are critical because they allow FORML to explain not on
 | 10 | AggregatedAssertionSet | Assertion Aggregator | Lowering / minimization | Planned |
 | 11 | LoweredQuery | Lowering / minimization | Backend query generator | Planned |
 | 12 | BackendQuery | Backend adapter/compiler | Verification runtime | Planned |
-| 13 | FORML Result | Runtime | User / diagnostics | Planned |
+| 13 | Toetra Result | Runtime | User / diagnostics | Planned |
 
 ---
 
@@ -653,7 +653,7 @@ Any simplification or minimization must preserve traceability from backend expre
 
 ### 7. Miova validates boundaries, not normal execution
 
-Miova challenges FORML artifacts and verifies expected behavior under mutation. It does not replace FORML verification.
+Miova challenges Toetra artifacts and verifies expected behavior under mutation. It does not replace Toetra verification.
 
 ---
 

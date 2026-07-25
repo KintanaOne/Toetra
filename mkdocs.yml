@@ -1,10 +1,10 @@
-site_name: FORML
-site_description: Formalized ML behavioral specification and verification platform
+site_name: Toetra
+site_description: Declarative behavioral specification and formal verification for machine-learning models
 site_author: KintanaOne
-site_url: https://kintanaone.github.io/FORML/
+site_url: https://kintanaone.github.io/Toetra/
 
-repo_name: KintanaOne/FORML
-repo_url: https://github.com/KintanaOne/FORML
+repo_name: KintanaOne/Toetra
+repo_url: https://github.com/KintanaOne/Toetra
 edit_uri: edit/main/docs/
 
 docs_dir: docs
@@ -78,7 +78,7 @@ nav:
   - Getting Started:
       - Overview: getting-started/overview.md
       - Installation: getting-started/installation.md
-      - First FORML Property: getting-started/first-property.md
+      - First Toetra Property: getting-started/first-property.md
       - First Model Schema: getting-started/first-model-schema.md
       - End-to-End Preview: getting-started/end-to-end-preview.md
       - Notebook Workflow: getting-started/notebook-workflow.md

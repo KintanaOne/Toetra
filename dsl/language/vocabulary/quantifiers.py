@@ -1,4 +1,4 @@
-# /forml/grammar/official_contents/quantifiers.py
+# dsl/language/vocabulary/quantifiers.py
 
 from enum import Enum
 from dsl.language.vocabulary.utils import EnumMixin

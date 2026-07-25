@@ -87,14 +87,14 @@ def _validate_toetra_examples(path: Path) -> None:
     blocks = _toetra_blocks(path)
     if not blocks:
         raise PublicContractError(
-            f"No executable FORML example found in {path.relative_to(ROOT)}"
+            f"No executable Toetra example found in {path.relative_to(ROOT)}"
         )
     for index, source in enumerate(blocks, start=1):
         try:
             parse_program(parse_toetra_code(source))
         except Exception as error:  # pragma: no cover - diagnostic boundary
             raise PublicContractError(
-                f"Invalid FORML block {index} in {path.relative_to(ROOT)}: {error}"
+                f"Invalid Toetra block {index} in {path.relative_to(ROOT)}: {error}"
             ) from error
 
 

@@ -8,7 +8,7 @@ from typing import TypeAlias
 from typing import Any
 
 """
-Base mutation abstractions for FORML robustness testing.
+Base mutation abstractions for Toetra robustness testing.
 
 This module defines:
 - mutation classification
@@ -114,7 +114,7 @@ class MutationImpact(Enum):
 
 class PipelineStage(Enum):
     """
-    FORML pipeline execution stages.
+    Toetra pipeline execution stages.
     """
 
     LEXING = auto()

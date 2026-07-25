@@ -1,5 +1,5 @@
 # =========================
-# FORML - developer commands
+# Toetra - developer commands
 # =========================
 
 .PHONY: install test test-wip test-all lint format format-check type \

@@ -8,7 +8,7 @@
 
 The `AggregatedAssertionSet` is the planned representation that combines all constraints required for verification.
 
-A FORML backend should not receive isolated DSL assertions only.
+A Toetra backend should not receive isolated DSL assertions only.
 
 It should receive a complete verification problem composed from:
 
@@ -257,6 +257,6 @@ This makes aggregation one of the most important future test surfaces.
 
 ## Summary
 
-`AggregatedAssertionSet` is where FORML stops treating the DSL and model separately.
+`AggregatedAssertionSet` is where Toetra stops treating the DSL and model separately.
 
 It is the point where user intent, semantic context, and model reality become one verification problem.

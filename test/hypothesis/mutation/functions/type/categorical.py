@@ -5,7 +5,7 @@ GOAL:
     Corrupt discrete decision spaces such as enums,
     operators, and symbolic categories.
 
-ROLE IN FORML:
+ROLE IN Toetra:
     - test enum robustness
     - break symbolic reasoning
     - stress DSL categorical integrity

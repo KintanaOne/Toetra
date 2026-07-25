@@ -1,6 +1,6 @@
 # Backends overview
 
-FORML keeps backend execution behind explicit capability, numeric-compatibility,
+Toetra keeps backend execution behind explicit capability, numeric-compatibility,
 and execution-policy contracts.
 
 ## Built-in V1 backend

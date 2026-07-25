@@ -6,7 +6,7 @@
 
 ## Purpose
 
-`BackendQuery` is the final artifact produced before FORML calls a verification backend.
+`BackendQuery` is the final artifact produced before Toetra calls a verification backend.
 
 It represents the complete verification problem in a format understood by a specific backend.
 
@@ -21,7 +21,7 @@ Examples may include:
 
 ## Why BackendQuery Exists
 
-FORML must remain backend-agnostic for as long as possible.
+Toetra must remain backend-agnostic for as long as possible.
 
 DSL syntax, semantic validation, IR normalization, model constraints, and assertion aggregation should not directly depend on one solver.
 
@@ -197,6 +197,6 @@ Expected outcomes include:
 
 ## Summary
 
-`BackendQuery` is the final boundary between FORML's internal formal pipeline and external verification engines.
+`BackendQuery` is the final boundary between Toetra's internal formal pipeline and external verification engines.
 
 It must be explicit, traceable, diagnostic-rich, and backend-specific.

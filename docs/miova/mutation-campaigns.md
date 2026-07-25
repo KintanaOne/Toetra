@@ -1,16 +1,16 @@
 # Mutation Campaigns
 
 > Status: planned / critical  
-> Scope: campaign design for FORML artifact exploration  
+> Scope: campaign design for Toetra artifact exploration
 > Audience: test engineers, compiler maintainers, mutation authors
 
 ## Purpose
 
-A Miova campaign is a controlled exploration of FORML artifact transformations.
+A Miova campaign is a controlled exploration of Toetra artifact transformations.
 
 It repeatedly selects artifacts, applies mutations, checks contracts and invariants, and classifies results.
 
-The goal is to discover weak assumptions in the FORML pipeline before they appear as silent verification errors.
+The goal is to discover weak assumptions in the Toetra pipeline before they appear as silent verification errors.
 
 ## Campaign Model
 
@@ -260,7 +260,7 @@ A report should include:
 
 ## P0 Requirement
 
-At P0, FORML should define campaign specifications before implementing all campaign types.
+At P0, Toetra should define campaign specifications before implementing all campaign types.
 
 The minimum campaign set is:
 

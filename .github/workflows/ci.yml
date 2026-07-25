@@ -1,4 +1,4 @@
-name: FORML CI
+name: Toetra CI
 
 on:
   push:
@@ -30,7 +30,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install ".[dev,docs]"
 
-      - name: Run non-mutating FORML CI
+      - name: Run non-mutating Toetra CI
         run: make ci
 
       - name: Verify CI left the checkout unchanged

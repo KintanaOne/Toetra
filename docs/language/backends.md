@@ -3,11 +3,11 @@
 > Status: Syntax implemented / Z3-only V1 target  
 > Scope: User-facing backend syntax  
 > Priority: P1  
-> Audience: FORML users, backend contributors, compiler maintainers
+> Audience: Toetra users, backend contributors, compiler maintainers
 
 ## Purpose
 
-FORML allows properties to optionally specify a backend.
+Toetra allows properties to optionally specify a backend.
 
 The backend syntax is part of the language surface, but backend execution is not handled directly by the language layer.
 
@@ -87,7 +87,7 @@ A backend declaration can be interpreted in two possible ways:
 
 | Interpretation | Meaning |
 |---|---|
-| Backend hint | User suggests a preferred backend, but FORML may select another compatible backend. |
+| Backend hint | User suggests a preferred backend, but Toetra may select another compatible backend. |
 | Backend selection | User requires this backend; incompatible requests fail. |
 
 Recommended target behavior:

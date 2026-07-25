@@ -4,7 +4,7 @@ Semantic constraint violation mutations.
 GOAL:
     Inject impossible domain-level constraints.
 
-ROLE IN FORML:
+ROLE IN Toetra:
     - break business rule consistency
     - stress semantic interpretation layer
     - test cross-field validation logic
@@ -98,7 +98,7 @@ def create_fake_domain_violation(node):
     Generates a semantic contradiction predicate.
 
     NOTE:
-        In a real FORML system, this should be replaced by:
+        In a real Toetra system, this should be replaced by:
         - schema-based constraint inversion
         - field-level rule violation
         - ontology-driven contradiction generation

@@ -69,7 +69,7 @@ Routing fails closed when a requested control is unsupported.
 
 ## Status separation
 
-`VerificationStatus` answers the FORML question:
+`VerificationStatus` answers the Toetra question:
 
 ```text
 proved / counterexample / witness / no_witness / unknown

@@ -3,11 +3,11 @@
 > Status: P0 / Stabilizing  
 > Scope: Compiler architecture  
 > Implementation: Implemented until semantic validation and IR1, planned beyond IR1  
-> Audience: FORML maintainers, contributors, backend implementers, Miova campaign authors
+> Audience: Toetra maintainers, contributors, backend implementers, Miova campaign authors
 
 ## Purpose
 
-The FORML compiler pipeline transforms a `.toetra` specification into progressively more formal, normalized, and backend-preparable representations.
+The Toetra compiler pipeline transforms a `.toetra` specification into progressively more formal, normalized, and backend-preparable representations.
 
 The compiler is not a single parsing step. It is a sequence of explicit artifact transformations, each with its own responsibilities, guarantees, and failure boundaries.
 
@@ -43,13 +43,13 @@ Backend Boundary
 BackendQuery
 ```
 
-The current implementation reaches IR1. IR2, assertion aggregation, lowering, minimization, and backend query production are planned but architecturally required for the first true end-to-end FORML verification query.
+The current implementation reaches IR1. IR2, assertion aggregation, lowering, minimization, and backend query production are planned but architecturally required for the first true end-to-end Toetra verification query.
 
 ---
 
 ## Architectural Intent
 
-FORML follows a progressive formalization model.
+Toetra follows a progressive formalization model.
 
 Each layer receives an artifact from the previous layer and produces a stronger representation:
 
@@ -73,7 +73,7 @@ Each layer receives an artifact from the previous layer and produces a stronger 
 |---|---|---|
 | Language vocabulary | Implemented / needs cleanup | Grammar and enum vocabulary exist; normalization rules need stabilization. |
 | Parser | Implemented | Lark parser produces CST from `.toetra` source. |
-| Builder | Implemented / stabilizing | CST is converted into FORML AST nodes. |
+| Builder | Implemented / stabilizing | CST is converted into Toetra AST nodes. |
 | AST | Implemented / stabilizing | Most domain nodes exist; semantic attachment policy needs harmonization. |
 | Semantic validation | Implemented / stabilizing | LHS validation, binding, logic validation and compatibility checks exist. |
 | IR1 | Implemented / stabilizing | `VerificationTask`, `ScopeIR`, `QueryIR`, logical IR nodes exist. |
@@ -147,7 +147,7 @@ Every transformation after parsing must preserve the intended meaning of the use
 
 This does not mean every transformation must preserve the same syntax. It means the logical meaning must remain stable or any relaxation must be explicit.
 
-FORML distinguishes:
+Toetra distinguishes:
 
 | Preservation Type | Meaning |
 |---|---|
@@ -170,10 +170,10 @@ ModelBridge represents the target ML model and its schema.
 They converge at two major points:
 
 1. **Schema-aware semantic validation**  
-   FORML checks that DSL properties reference model-compatible features, targets and task types.
+   Toetra checks that DSL properties reference model-compatible features, targets and task types.
 
 2. **Assertion aggregation**  
-   FORML combines DSL assertions with model-derived constraints to produce a complete verification problem.
+   Toetra combines DSL assertions with model-derived constraints to produce a complete verification problem.
 
 ---
 
@@ -196,7 +196,7 @@ AggregatedAssertionSet
 BackendQuery
 ```
 
-For each boundary, FORML should define:
+For each boundary, Toetra should define:
 
 - valid mutations;
 - invalid mutations;

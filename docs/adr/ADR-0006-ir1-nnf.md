@@ -6,7 +6,7 @@
 
 ## Context
 
-After semantic validation, FORML needs a backend-independent representation of the verification query.
+After semantic validation, Toetra needs a backend-independent representation of the verification query.
 
 This representation should be independent from DSL syntax, but not yet optimized for a specific backend.
 
@@ -61,7 +61,7 @@ Rejected because CNF is not always the desired next form and can cause structura
 
 Rejected because backend lowering should receive normalized logic, not user syntax.
 
-## Impact on FORML
+## Impact on Toetra
 
 IR1 is the logical stabilization layer.
 

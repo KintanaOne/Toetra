@@ -1,13 +1,13 @@
 # Contracts Overview
 
 > Status: P0 / Active architecture baseline  
-> Scope: FORML artifact boundaries and verification contracts  
+> Scope: Toetra artifact boundaries and verification contracts
 > Implementation: Mixed — implemented, stabilizing and target contracts  
 > Audience: maintainers, contributors, backend authors and Miova campaign authors
 
 ## Purpose
 
-FORML is organized as a sequence of explicit artifact transformations.
+Toetra is organized as a sequence of explicit artifact transformations.
 
 A contract answers:
 
@@ -81,7 +81,7 @@ The implemented Patch 21 public contracts are:
   freezing the first logistic binary route and its decision boundary.
 - [Model Output Reporting and Replay](output-reporting-and-replay.md),
   preserving source intent, formal reconstruction, observer-based concrete replay,
-  and the additive JSON v5 evidence contract.
+  and the current JSON v6 evidence contract.
 
 These contracts are public in `1.0.0rc2` for the direct fitted binary sklearn
 `LogisticRegression` route. They do not generalize support to other classifiers,
@@ -103,11 +103,11 @@ Together they operationalize ADR-0018 without making sklearn or Z3 the architect
 
 ## Verification Provenance Contract
 
-The [Verification Provenance Contract](verification-provenance.md) defines content-addressed artifact evidence, completeness, software/compiler identity and the five fingerprints exported by JSON schema v5.
+The [Verification Provenance Contract](verification-provenance.md) defines content-addressed artifact evidence, completeness, software/compiler identity and the five fingerprints exported by JSON schema v6.
 
 ## Public V1 Contract
 
-The [Public V1 Contract](public-v1-contract.md) freezes the supported Python facade, executable framework/model/backend profile, JSON v5 compatibility rules, result semantics, license alignment and release gates for the FORML 1.x line.
+The [Public V1 Contract](public-v1-contract.md) freezes the supported Python facade, executable framework/model/backend profile, JSON v6 compatibility rules, result semantics, license alignment and release gates for the Toetra 1.x line.
 
 ## Contract Categories
 

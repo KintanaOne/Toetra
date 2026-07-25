@@ -1,4 +1,4 @@
-# /forml/grammar/official_contents/properties.py
+# dsl/language/vocabulary/properties.py
 
 from enum import Enum
 from dsl.language.vocabulary.utils import EnumMixin

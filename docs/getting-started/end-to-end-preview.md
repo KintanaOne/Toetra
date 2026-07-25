@@ -1,6 +1,6 @@
 # End-to-End Preview
 
-FORML V1 verifies numeric affine model behavior over concrete and symbolic points.
+Toetra V1 verifies numeric affine model behavior over concrete and symbolic points.
 
 ## Global bound
 
@@ -56,7 +56,7 @@ where higher.income >= lower.income
 => target[higher] <= target[lower] using Z3
 ```
 
-FORML creates two model equations, distinct Z3 outputs, grouped evidence, and a two-point replay.
+Toetra creates two model equations, distinct Z3 outputs, grouped evidence, and a two-point replay.
 
 ## Local robustness sugar
 

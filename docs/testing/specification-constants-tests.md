@@ -185,7 +185,7 @@ Mandatory cases:
 Complete source programs should be reusable through named fixtures or source constants, for example:
 
 ```text
-test/fixtures/forml/specification_constants/
+test/fixtures/toetra/specification_constants/
 ├── valid_numeric_threshold.toetra
 ├── valid_feature_name_collision.toetra
 ├── valid_domain_bound.toetra

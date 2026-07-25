@@ -6,9 +6,9 @@
 
 ## Purpose
 
-Property-Based Testing is a core testing strategy for FORML.
+Property-Based Testing is a core testing strategy for Toetra.
 
-FORML should not only be tested with hand-written examples. It must also be tested against many generated specifications, scopes, assertions, and model-schema combinations in order to discover edge cases that would not appear in manually curated fixtures.
+Toetra should not only be tested with hand-written examples. It must also be tested against many generated specifications, scopes, assertions, and model-schema combinations in order to discover edge cases that would not appear in manually curated fixtures.
 
 The purpose of Property-Based Testing is to validate general properties of the compiler pipeline:
 
@@ -44,7 +44,7 @@ Hypothesis generates structured examples from strategies. Miova mutates artifact
 
 ## Why Hypothesis
 
-Hypothesis is useful for FORML because the language has structured grammar, typed AST nodes, semantic scopes, and layered transformations.
+Hypothesis is useful for Toetra because the language has structured grammar, typed AST nodes, semantic scopes, and layered transformations.
 
 Instead of writing only examples such as:
 
@@ -55,7 +55,7 @@ target := label
 [ROBUSTNESS]: forall baseline, candidate => CLASSIFICATION.EQUAL()
 ```
 
-FORML can generate families of valid and invalid specifications:
+Toetra can generate families of valid and invalid specifications:
 
 ```text
 valid property types
@@ -109,7 +109,7 @@ Examples:
 | `valid_model_schema()` | produces a schema with target and features |
 | `valid_ir1_logical_tree()` | produces a backend-independent logical tree |
 
-Valid generation is used to assert that FORML accepts what it is supposed to accept.
+Valid generation is used to assert that Toetra accepts what it is supposed to accept.
 
 ## Invalid Generation
 
@@ -187,7 +187,7 @@ For every generated logical tree lowered to IR1-NNF:
 NOT nodes may only appear directly above atomic predicates
 ```
 
-If FORML eliminates implication before NNF, then:
+If Toetra eliminates implication before NNF, then:
 
 ```text
 IR1-NNF contains no ImplyIR
@@ -215,7 +215,7 @@ each case is a conjunction of literals.
 
 When a generated example fails, Hypothesis should shrink it to a minimal counterexample.
 
-This is strategically important for FORML because minimal failing DSL snippets become high-quality regression tests and golden samples.
+This is strategically important for Toetra because minimal failing DSL snippets become high-quality regression tests and golden samples.
 
 ## Example Test Families
 
@@ -242,15 +242,15 @@ Hypothesis and Miova should not be confused.
 
 | Tooling | Main object | Main question |
 |---|---|---|
-| Hypothesis | generated examples | Does FORML satisfy a property over many generated cases? |
-| Miova | mutated artifacts | Does FORML remain robust when artifacts are transformed or corrupted? |
+| Hypothesis | generated examples | Does Toetra satisfy a property over many generated cases? |
+| Miova | mutated artifacts | Does Toetra remain robust when artifacts are transformed or corrupted? |
 
-A strong FORML testing strategy can combine both:
+A strong Toetra testing strategy can combine both:
 
 ```text
 Hypothesis generates valid Toetra programs.
 Miova mutates the resulting AST, Semantic AST, IR1, IR2, or ModelSchema.
-FORML checks whether each mutation is accepted, rejected, skipped, or fails unexpectedly.
+Toetra checks whether each mutation is accepted, rejected, skipped, or fails unexpectedly.
 ```
 
 ## Non-Goals

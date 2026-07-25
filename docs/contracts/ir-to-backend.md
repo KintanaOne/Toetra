@@ -103,11 +103,11 @@ An unsupported requirement causes a routing or backend-compilation diagnostic.
 
 ## Sort Mapping
 
-Backend sort mapping is driven by canonical FORML scalar types.
+Backend sort mapping is driven by canonical Toetra scalar types.
 
 Examples:
 
-| FORML type | Possible Z3 sort |
+| Toetra type | Possible Z3 sort |
 |---|---|
 | INT | `Int` |
 | REAL | `Real` |

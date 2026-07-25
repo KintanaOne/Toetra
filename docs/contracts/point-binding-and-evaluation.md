@@ -7,7 +7,7 @@
 
 ## Purpose
 
-This contract defines the information that every FORML layer must preserve when a specification introduces concrete or symbolic points and evaluates the same model at one or more of those points.
+This contract defines the information that every Toetra layer must preserve when a specification introduces concrete or symbolic points and evaluates the same model at one or more of those points.
 
 The contracted pipeline is:
 

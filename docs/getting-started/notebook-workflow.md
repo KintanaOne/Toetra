@@ -66,7 +66,7 @@ The replay:
 1. converts exact backend values to standard Python values;
 2. reconstructs the model input in schema feature order;
 3. calls the original estimator's `predict(...)`;
-4. compares the model output with the FORML backend output;
+4. compares the model output with the Toetra backend output;
 5. reports the absolute error and consistency result.
 
 When `verify(...)` is called with a `ModelSchema` only, no estimator is attached.

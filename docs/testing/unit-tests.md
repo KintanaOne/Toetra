@@ -6,7 +6,7 @@
 
 ## Purpose
 
-Unit tests validate the smallest meaningful FORML behaviors.
+Unit tests validate the smallest meaningful Toetra behaviors.
 
 They should be fast, deterministic, and isolated. A unit test should not require the full
 compiler pipeline unless the behavior under test explicitly depends on it.
@@ -151,7 +151,7 @@ ModelBridge unit tests should validate:
 - detector recognizes supported frameworks;
 - unsupported models fail;
 - introspectors produce a normalized `ModelSchema`;
-- feature dtypes are mapped to FORML semantic types;
+- feature dtypes are mapped to Toetra semantic types;
 - framework-specific metadata does not break normalized schema shape.
 
 Example test families:

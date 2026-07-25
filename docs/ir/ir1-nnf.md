@@ -6,7 +6,7 @@
 
 ## Purpose
 
-IR1 is FORML's first backend-independent logical representation.
+IR1 is Toetra's first backend-independent logical representation.
 
 Its role is not only to represent a property as a `VerificationTask`, but also to begin logical normalization.
 
@@ -237,6 +237,6 @@ Expected outcomes should distinguish:
 
 ## Summary
 
-IR1-NNF is the first serious logical normalization layer in FORML.
+IR1-NNF is the first serious logical normalization layer in Toetra.
 
 It is where the system starts moving from “parsed property” to “formal logical object”.

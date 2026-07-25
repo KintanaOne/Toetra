@@ -1,5 +1,5 @@
 
-# Normative FORML Examples
+# Normative Toetra Examples
 
 > Status: Accepted language baseline  
 > Scope: Explicit quantified bindings, typed domains, scalar arithmetic and specification constants  
@@ -156,7 +156,7 @@ AND _model.score >= 0.8
 
 ### Result interpretation
 
-| Solver result | FORML result |
+| Solver result | Toetra result |
 |---|---|
 | SAT | Witness found |
 | UNSAT | No admissible witness exists |

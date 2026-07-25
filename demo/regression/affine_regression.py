@@ -38,7 +38,7 @@ def build_demo_artifacts(directory: Path) -> tuple[Path, Path]:
 
 
 def build_demo_schema(model_path: Path, dataset_path: Path) -> ModelSchema:
-    """Load the serialized model and expose its normalized FORML schema."""
+    """Load the serialized model and expose its normalized Toetra schema."""
 
     return ModelManager(
         model_path=model_path,
@@ -84,7 +84,7 @@ def print_demo(schema: ModelSchema, session: VerificationSession) -> None:
     """Print the demo through the shared user-facing report renderer."""
 
     print("=" * 80)
-    print("FORML — affine model, specification constants and typed domains")
+    print("Toetra — affine model, specification constants and typed domains")
     print("=" * 80)
     print(SPEC_PATH.read_text(encoding="utf-8"))
     print()
@@ -107,7 +107,7 @@ def main() -> None:
         )
 
     print_demo(schema, session)
-    print("✅ FORML affine end-to-end demo succeeded.")
+    print("✅ Toetra affine end-to-end demo succeeded.")
 
 
 if __name__ == "__main__":

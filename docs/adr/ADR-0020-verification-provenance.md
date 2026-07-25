@@ -8,11 +8,11 @@
 
 A verification result is useful only when a reviewer can identify what was verified and under which semantic and operational configuration it was produced. Filenames and timestamps are insufficient because artifacts can be renamed, overwritten or supplied in memory.
 
-FORML must identify the specification, model or normalized schema, dataset and anchors when used, compiled property, selected route, execution policy and complete verification configuration. The design must remain framework-neutral and backend-neutral, and must never fabricate evidence for opaque external sources.
+Toetra must identify the specification, model or normalized schema, dataset and anchors when used, compiled property, selected route, execution policy and complete verification configuration. The design must remain framework-neutral and backend-neutral, and must never fabricate evidence for opaque external sources.
 
 ## Decision
 
-FORML records content-addressed provenance for each `verify(...)` invocation and derives property-level provenance for every completed report.
+Toetra records content-addressed provenance for each `verify(...)` invocation and derives property-level provenance for every completed report.
 
 ### Artifact evidence
 
@@ -20,7 +20,7 @@ Every artifact records its role, source kind, fingerprint state, optional human-
 
 | State | Meaning |
 |---|---|
-| `AVAILABLE` | FORML computed a content fingerprint. |
+| `AVAILABLE` | Toetra computed a content fingerprint. |
 | `UNAVAILABLE` | The artifact was used but could not be fingerprinted. |
 | `NOT_PROVIDED` | The optional artifact was not supplied. |
 | `NOT_USED` | The artifact category was not consumed. |
@@ -43,7 +43,7 @@ Human-readable filenames do not participate in content identity.
 
 ### Derived fingerprints
 
-FORML records five independent identifiers:
+Toetra records five independent identifiers:
 
 1. **input fingerprint** — artifacts and compiler policy shared by the session;
 2. **property fingerprint** — normalized property and actual IR2 form;
@@ -55,7 +55,7 @@ Capture time is excluded so identical reruns retain the same verification identi
 
 ### Software and compiler identity
 
-Reports record the FORML version and optional build identifier, Python runtime, core component versions, requested and actual normal forms, distribution limit, fallback policy, backend hint, strictness and available IR builder metadata.
+Reports record the Toetra version and optional build identifier, Python runtime, core component versions, requested and actual normal forms, distribution limit, fallback policy, backend hint, strictness and available IR builder metadata.
 
 ### Reporting contract
 

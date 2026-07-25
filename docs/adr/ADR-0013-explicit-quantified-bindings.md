@@ -8,7 +8,7 @@
 
 ## Context
 
-FORML supports quantified properties intended to describe behavior over a symbolic input space.
+Toetra supports quantified properties intended to describe behavior over a symbolic input space.
 
 An implicit compiler-generated variable such as `_x` makes short examples possible, but it hides an important part of the user's intent and weakens diagnostics. In particular, an implementation that silently aliases an unknown explicit entity to the only variable in scope can accept misspelled or inconsistent properties.
 
@@ -34,7 +34,7 @@ exists candidate => candidate.score > 0
 
 ## Decision
 
-FORML quantifiers bind an explicit identifier.
+Toetra quantifiers bind an explicit identifier.
 
 The normative forms are:
 
@@ -164,7 +164,7 @@ Rejected because a typo such as `x1.age` inside `forall x0` would be accepted wi
 
 Rejected for assertions because concise expressions such as `age >= 18` are useful when the scope supplies one unambiguous default entity. Domain subjects remain explicitly qualified because they are declaration-like constraints and must be future-proof for multi-variable scopes.
 
-## Impact on FORML
+## Impact on Toetra
 
 ### Grammar
 

@@ -10,11 +10,11 @@ The ERAN backend represents the class of neural-network-specific verification ba
 
 Unlike a general SMT solver, ERAN-like systems are designed to reason about neural network robustness through abstract domains and specialized verification algorithms.
 
-This document defines how FORML should treat ERAN as a future backend candidate.
+This document defines how Toetra should treat ERAN as a future backend candidate.
 
-## Role in FORML
+## Role in Toetra
 
-The ERAN backend should be considered when FORML needs to verify properties such as:
+The ERAN backend should be considered when Toetra needs to verify properties such as:
 
 - local robustness;
 - stability under perturbations;
@@ -83,7 +83,7 @@ This should remain separate from semantic validation.
 
 ## Candidate property support
 
-| FORML property | Candidate support |
+| Toetra property | Candidate support |
 |---|---|
 | ROBUSTNESS | Strong candidate |
 | STABILITY | Possible |
@@ -137,9 +137,9 @@ ERAN backend cannot encode the current logical assertion because it contains uns
 
 ## Result normalization
 
-ERAN-native results should be normalized into FORML results.
+ERAN-native results should be normalized into Toetra results.
 
-Possible FORML result statuses:
+Possible Toetra result statuses:
 
 | Status | Meaning |
 |---|---|
@@ -167,7 +167,7 @@ This is especially useful because neural verification backends often have strict
 
 Initial ERAN documentation should not imply ERAN support is implemented.
 
-This backend should remain clearly marked as planned or research-oriented until FORML has:
+This backend should remain clearly marked as planned or research-oriented until Toetra has:
 
 - a supported neural model format;
 - model export or encoding;

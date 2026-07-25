@@ -6,7 +6,7 @@
 
 
 class ParserError(Exception):
-    """General FORML parsing error"""
+    """General Toetra parsing error"""
 
     pass
 

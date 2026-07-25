@@ -12,7 +12,7 @@ The parser layer converts raw `.toetra` source code into a Concrete Syntax Tree.
 It answers the question:
 
 ```text
-Is this text syntactically valid FORML?
+Is this text syntactically valid Toetra?
 ```
 
 The parser does not interpret semantic meaning. It only recognizes whether the source conforms to the grammar.
@@ -151,13 +151,13 @@ Semantic errors must not be collapsed into parser errors in the final stabilized
 | Resolve grammar path robustly | Parser should work independently of current working directory. |
 | Define parser cache policy | Dev and production may use different settings. |
 | Preserve source positions | Better diagnostics and mutation reporting. |
-| Map raw parser errors into FORML-specific parser errors | Cleaner user feedback. |
+| Map raw parser errors into Toetra-specific parser errors | Cleaner user feedback. |
 
 ---
 
 ## Relation to Builder
 
-The builder consumes the CST and produces a FORML AST.
+The builder consumes the CST and produces a Toetra AST.
 
 The parser must not hide information that the builder needs.
 
