@@ -1,6 +1,6 @@
 # Toetra Identity Migration Roadmap
 
-> Status: Active — P23.5 release hardening
+> Status: Complete — delivered in `1.0.0rc3`
 > Patch family: P23
 > Baseline: `1.0.0rc2`
 > Target: `1.0.0rc3`
