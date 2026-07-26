@@ -1,11 +1,11 @@
 import pytest
 
-from dsl.ir.ir1.nodes import ModelEvaluationIR, PointBindingIR
-from dsl.semantic.context.evaluations import (
+from toetra._compiler.ir.ir1.nodes import ModelEvaluationIR, PointBindingIR
+from toetra._compiler.semantic.context.evaluations import (
     ModelEvaluationIdentity,
     ModelEvaluationRegistry,
 )
-from dsl.semantic.symbols.point import PointBindingKind, PointSymbol
+from toetra._compiler.semantic.symbols.point import PointBindingKind, PointSymbol
 
 
 def _point(name: str = "x0") -> PointSymbol:

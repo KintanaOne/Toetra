@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import pytest
 
-from dsl.backends.z3_backend.runner import VerificationStatus, Z3Runner
-from dsl.backends.z3_backend.translator import Z3Translator
-from dsl.ir.ir2.run_ir2 import run_ir2_with_model_schema
-from dsl.parser.errors import ParserError
+from toetra._backends.z3_backend.runner import VerificationStatus, Z3Runner
+from toetra._backends.z3_backend.translator import Z3Translator
+from toetra._compiler.ir.ir2.run_ir2 import run_ir2_with_model_schema
+from toetra._compiler.parser.errors import ParserError
 from test.unit.backends.z3_backend._point_aware_helpers import (
     build_task,
     linear_schema,

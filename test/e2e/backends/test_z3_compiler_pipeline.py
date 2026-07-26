@@ -5,8 +5,8 @@ from demo.internals.compiler_pipeline_z3 import (
     PROVED_SAMPLE,
     run_compiler_pipeline,
 )
-from dsl.backends.z3_backend.runner import VerificationStatus
-from dsl.language.vocabulary.backends import EnumBackend
+from toetra._backends.z3_backend.runner import VerificationStatus
+from toetra._language.vocabulary.backends import EnumBackend
 
 
 def test_z3_compiler_pipeline_proves_tautological_property() -> None:

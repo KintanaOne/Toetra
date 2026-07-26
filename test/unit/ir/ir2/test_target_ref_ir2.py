@@ -1,11 +1,11 @@
-from dsl.ir.ir1.nodes import (
+from toetra._compiler.ir.ir1.nodes import (
     ComparisonIR,
     ConstantExpressionIR,
     TargetExpressionIR,
 )
-from dsl.ir.ir2.nodes import NNFFormulaIR2
-from dsl.ir.ir2.run_ir2 import run_ir2
-from dsl.language.vocabulary.operators import EnumComparisonOperator
+from toetra._compiler.ir.ir2.nodes import NNFFormulaIR2
+from toetra._compiler.ir.ir2.run_ir2 import run_ir2
+from toetra._language.vocabulary.operators import EnumComparisonOperator
 
 
 def test_target_ref_survives_to_ir2_spec_formula():

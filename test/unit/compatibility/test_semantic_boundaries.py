@@ -2,20 +2,20 @@ from __future__ import annotations
 
 import pytest
 
-from dsl.backends.results import VerificationResult, VerificationStatus
-from dsl.compatibility.descriptors import PropertyNumericRequirements
-from dsl.compatibility.enums import (
+from toetra._backends.results import VerificationResult, VerificationStatus
+from toetra._compatibility.descriptors import PropertyNumericRequirements
+from toetra._compatibility.enums import (
     CompatibilityClassification,
     ConclusionKind,
     ConclusionScope,
     SupportStatus,
 )
-from dsl.compatibility.model import (
+from toetra._compatibility.model import (
     NumericCompatibilityAssessment,
     NumericCompatibilityQuery,
 )
-from dsl.compatibility.policy import apply_numeric_compatibility_policy
-from dsl.language.vocabulary.backends import EnumBackend
+from toetra._compatibility.policy import apply_numeric_compatibility_policy
+from toetra._language.vocabulary.backends import EnumBackend
 
 _STATUS_TO_CONCLUSION = {
     VerificationStatus.PROVED: ConclusionKind.UNIVERSAL_PROOF,

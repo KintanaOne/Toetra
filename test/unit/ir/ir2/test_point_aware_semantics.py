@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from dsl.ir.ir1.nodes import AndIR, ComparisonIR, NotIR
-from dsl.ir.ir2.enums import VerificationSemantics
-from dsl.ir.ir2.nodes import NNFFormulaIR2
+from toetra._compiler.ir.ir1.nodes import AndIR, ComparisonIR, NotIR
+from toetra._compiler.ir.ir2.enums import VerificationSemantics
+from toetra._compiler.ir.ir2.nodes import NNFFormulaIR2
 from test.unit.ir.ir2._point_aware_helpers import compile_ir2
 
 

@@ -1,10 +1,10 @@
-from dsl.ast.nodes.base import ASTNode
-from dsl.ast.nodes.header import (
+from toetra._compiler.ast.nodes.base import ASTNode
+from toetra._compiler.ast.nodes.header import (
     HeaderNode,
     SpecificationConstantDeclarationNode,
 )
-from dsl.ast.nodes.primitives import ConstantNode
-from dsl.semantic.types.enums import EnumDataType
+from toetra._compiler.ast.nodes.primitives import ConstantNode
+from toetra._compiler.semantic.types.enums import EnumDataType
 
 
 def test_specification_constant_declaration_preserves_name_and_typed_value() -> None:

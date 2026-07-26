@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dsl.ast.nodes.assertion import ComparisonNode
-from dsl.ast.nodes.outputs import (
+from toetra._compiler.ast.nodes.assertion import ComparisonNode
+from toetra._compiler.ast.nodes.outputs import (
     ClassProbabilityObservableNode,
     PredictedLabelObservableNode,
 )

@@ -5,9 +5,9 @@ import pandas as pd
 import pytest
 from sklearn.linear_model import LinearRegression
 
-from dsl.semantic.types.enums import EnumDataType
-from model.errors.introspection import MissingFeatureMetadataError
-from model.introspector.sklearn_introspector import SklearnIntrospector
+from toetra._compiler.semantic.types.enums import EnumDataType
+from toetra._models.errors.introspection import MissingFeatureMetadataError
+from toetra._models.introspector.sklearn_introspector import SklearnIntrospector
 
 
 def test_model_feature_names_exclude_lookup_metadata_columns(tmp_path) -> None:

@@ -1,15 +1,15 @@
-from dsl.builder.program import parse_program
-from dsl.ir.ir1.nodes import (
+from toetra._compiler.builder.program import parse_program
+from toetra._compiler.ir.ir1.nodes import (
     AttributeExpressionIR,
     ComparisonIR,
     ConstantExpressionIR,
 )
-from dsl.ir.ir1.translator import IRTranslator
-from dsl.parser.parser import parse_toetra_code
-from dsl.semantic.core.validator import ToetraValidator
-from dsl.semantic.runtime.tracer import ValidationTracer
-from dsl.semantic.types.enums import EnumDataType
-from model.runtime.manager import ModelManager
+from toetra._compiler.ir.ir1.translator import IRTranslator
+from toetra._compiler.parser.parser import parse_toetra_code
+from toetra._compiler.semantic.core.validator import ToetraValidator
+from toetra._compiler.semantic.runtime.tracer import ValidationTracer
+from toetra._compiler.semantic.types.enums import EnumDataType
+from toetra._models.runtime.manager import ModelManager
 from test.fixtures.ir_schema_aware.e2e_factories import create_tiny_sklearn_artifacts
 
 

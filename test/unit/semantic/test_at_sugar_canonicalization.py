@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import pytest
 
-from dsl.ast.nodes.assertion import ComparisonNode
-from dsl.ast.nodes.primitives import BinaryArithmeticNode, TargetRefNode
-from dsl.parser.errors import ParserError
-from dsl.semantic.context.restrictions import RestrictionOrigin
-from dsl.semantic.context.scope import SemanticScope
-from dsl.semantic.symbols.point import PointBindingKind
+from toetra._compiler.ast.nodes.assertion import ComparisonNode
+from toetra._compiler.ast.nodes.primitives import BinaryArithmeticNode, TargetRefNode
+from toetra._compiler.parser.errors import ParserError
+from toetra._compiler.semantic.context.restrictions import RestrictionOrigin
+from toetra._compiler.semantic.context.scope import SemanticScope
+from toetra._compiler.semantic.symbols.point import PointBindingKind
 from test.unit.semantic.restriction_helpers import (
     inline_anchor,
     parse_and_validate,

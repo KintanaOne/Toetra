@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Iterable
 
-from dsl.ir.ir1.nodes import (
+from toetra._compiler.ir.ir1.nodes import (
     AndIR,
     AttributeExpressionIR,
     ComparisonIR,
@@ -16,12 +16,12 @@ from dsl.ir.ir1.nodes import (
     ScopeIR,
     VerificationTask,
 )
-from dsl.language.vocabulary.backends import EnumBackend
-from dsl.language.vocabulary.functions import EnumFunction
-from dsl.language.vocabulary.operators import EnumComparisonOperator
-from dsl.language.vocabulary.problems import EnumProblem
-from dsl.language.vocabulary.properties import EnumProperty
-from dsl.semantic.types.enums import EnumDataType
+from toetra._language.vocabulary.backends import EnumBackend
+from toetra._language.vocabulary.functions import EnumFunction
+from toetra._language.vocabulary.operators import EnumComparisonOperator
+from toetra._language.vocabulary.problems import EnumProblem
+from toetra._language.vocabulary.properties import EnumProperty
+from toetra._compiler.semantic.types.enums import EnumDataType
 
 # -----------------------------------------------------------------------------
 # Public API imports under test
@@ -34,10 +34,10 @@ def import_nnf_normalizer_cls():
 
     If this import fails, the production code does not expose the expected public
     architecture:
-        dsl.ir.normalization.nnf.NNFNormalizer
+        toetra._compiler.ir.normalization.nnf.NNFNormalizer
     """
 
-    from dsl.ir.normalization.nnf import NNFNormalizer
+    from toetra._compiler.ir.normalization.nnf import NNFNormalizer
 
     return NNFNormalizer
 
@@ -48,10 +48,10 @@ def import_run_nnf():
 
     If this import fails, the production code does not expose the expected public
     executable entrypoint:
-        dsl.ir.normalization.run_nnf.run_nnf
+        toetra._compiler.ir.normalization.run_nnf.run_nnf
     """
 
-    from dsl.ir.normalization.run_nnf import run_nnf
+    from toetra._compiler.ir.normalization.run_nnf import run_nnf
 
     return run_nnf
 
@@ -189,7 +189,7 @@ def assert_scope_domain_values(
 ) -> None:
     """Assert one finite-set domain entry preserved in the IR1 scope."""
 
-    from dsl.ir.ir1.nodes import (
+    from toetra._compiler.ir.ir1.nodes import (
         ConstantExpressionIR,
         FiniteSetDomainIR,
         SymbolLiteralIR,
@@ -220,7 +220,7 @@ def _enum_value(value: object) -> object:
 
 
 def _cmp_to_str(node: ComparisonIR) -> str:
-    from dsl.ir.ir1.scalar import format_scalar_expression
+    from toetra._compiler.ir.ir1.scalar import format_scalar_expression
 
     left = format_scalar_expression(node.left)
     right = format_scalar_expression(node.right)

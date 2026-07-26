@@ -4,7 +4,7 @@ from collections.abc import Callable
 
 from lark import Tree
 
-from dsl.parser.parser import parse_toetra_code
+from toetra._compiler.parser.parser import parse_toetra_code
 
 
 def test_arithmetic_precedence_is_preserved_in_cst(

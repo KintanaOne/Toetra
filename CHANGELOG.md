@@ -4,6 +4,13 @@
 
 ### Changed
 
+- Migrated all installable code to the canonical `src/toetra/` layout.
+- Consolidated the former top-level `dsl` and `model` implementation packages
+  into private responsibility-based `toetra._*` namespaces.
+- Restricted wheel package discovery to the single `toetra` top-level package
+  and strengthened clean-install checks against obsolete namespaces.
+- Switched grammar loading to packaged resources so parsing works from wheels,
+  source distributions, editable installs, and external working directories.
 - Accepted the final `src/toetra` single-package layout and the P24
   responsibility-based internal namespace plan.
 

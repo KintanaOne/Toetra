@@ -5,7 +5,7 @@ from typing import Any, cast
 
 import pytest
 
-from dsl.semantic.symbols.point import PointBindingKind, PointSymbol
+from toetra._compiler.semantic.symbols.point import PointBindingKind, PointSymbol
 from test.unit.semantic.anchor_helpers import validate_program
 
 

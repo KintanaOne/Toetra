@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dsl.ir.ir1.nodes import ImplyIR
-from dsl.ir.ir1.run_ir1 import run_ir
+from toetra._compiler.ir.ir1.nodes import ImplyIR
+from toetra._compiler.ir.ir1.run_ir1 import run_ir
 from test.unit.semantic.restriction_helpers import numeric_schema
 
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dsl.ir.ir1.nodes import AndIR, ComparisonIR, ImplyIR
-from dsl.ir.ir1.run_ir1 import run_ir
+from toetra._compiler.ir.ir1.nodes import AndIR, ComparisonIR, ImplyIR
+from toetra._compiler.ir.ir1.run_ir1 import run_ir
 
 
 def test_ir1_rst_001_where_is_preserved_separately_from_language_formula() -> None:

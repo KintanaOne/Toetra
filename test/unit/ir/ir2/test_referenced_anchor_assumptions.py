@@ -2,18 +2,18 @@ from __future__ import annotations
 
 import pytest
 
-from dsl.ir.ir2.errors import InvalidIR2InputError
-from dsl.ir.ir2.run_ir2 import run_ir2_with_model_schema
-from dsl.semantic.symbols.point import (
+from toetra._compiler.ir.ir2.errors import InvalidIR2InputError
+from toetra._compiler.ir.ir2.run_ir2 import run_ir2_with_model_schema
+from toetra._compiler.semantic.symbols.point import (
     AnchorResolutionProvenance,
     PointLiteral,
     ResolvedAnchorBinding,
     frozen_mapping,
 )
-from dsl.semantic.types.enums import EnumDataType
-from model.detector.model_framework import EnumModelFramework
-from model.schema.feature_schema import FeatureSchema
-from model.schema.model_schema import ModelSchema
+from toetra._compiler.semantic.types.enums import EnumDataType
+from toetra._models.detector.model_framework import EnumModelFramework
+from toetra._models.schema.feature_schema import FeatureSchema
+from toetra._models.schema.model_schema import ModelSchema
 
 _SOURCE = """
 model := "linear.joblib"

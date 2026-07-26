@@ -1,6 +1,6 @@
-from dsl.ast.nodes.assertion import ComparisonNode
-from dsl.ast.nodes.base import ASTNode
-from dsl.ast.nodes.primitives import (
+from toetra._compiler.ast.nodes.assertion import ComparisonNode
+from toetra._compiler.ast.nodes.base import ASTNode
+from toetra._compiler.ast.nodes.primitives import (
     AttributeNode,
     BinaryArithmeticNode,
     ConstantNode,
@@ -9,12 +9,12 @@ from dsl.ast.nodes.primitives import (
     TargetRefNode,
     UnaryArithmeticNode,
 )
-from dsl.language.vocabulary.operators import (
+from toetra._language.vocabulary.operators import (
     EnumArithmeticOperator,
     EnumComparisonOperator,
     EnumUnaryOperator,
 )
-from dsl.semantic.types.enums import EnumDataType
+from toetra._compiler.semantic.types.enums import EnumDataType
 
 
 def test_name_ref_node_is_an_unresolved_scalar_expression() -> None:

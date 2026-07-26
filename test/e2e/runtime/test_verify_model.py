@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from demo.regression.affine_regression import build_demo_artifacts
 from demo.quickstart.verify_model import main, run_verification
-from dsl.backends.results import VerificationStatus
+from toetra._backends.results import VerificationStatus
 
 
 def test_verify_model_runs_public_api_and_writes_json(tmp_path, capsys) -> None:

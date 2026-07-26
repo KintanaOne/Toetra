@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from dsl.compatibility.descriptors import (
+from toetra._compatibility.descriptors import (
     FrameworkModelDescriptor,
     NumericSemanticDescriptor,
 )
-from dsl.semantic.types.enums import EnumDataType
-from model.detector.model_framework import EnumModelFramework
-from model.schema.feature_schema import FeatureSchema
-from model.schema.model_schema import ModelSchema
-from model.schema.output_schema import ClassificationOutputSchema
-from model.semantics.binary_classification import (
+from toetra._compiler.semantic.types.enums import EnumDataType
+from toetra._models.detector.model_framework import EnumModelFramework
+from toetra._models.schema.feature_schema import FeatureSchema
+from toetra._models.schema.model_schema import ModelSchema
+from toetra._models.schema.output_schema import ClassificationOutputSchema
+from toetra._models.semantics.binary_classification import (
     BINARY_LOGISTIC_AFFINE_MODEL_FAMILY,
 )
 

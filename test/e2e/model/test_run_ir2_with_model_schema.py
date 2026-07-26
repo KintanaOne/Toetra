@@ -1,10 +1,10 @@
-from dsl.ir.ir2.context import IR2BuildContext
-from dsl.ir.ir2.enums import NormalFormKind
-from dsl.ir.ir2.run_ir2 import run_ir2_with_model_schema
-from dsl.semantic.types.enums import EnumDataType
-from model.detector.model_framework import EnumModelFramework
-from model.schema.feature_schema import FeatureSchema
-from model.schema.model_schema import ModelSchema
+from toetra._compiler.ir.ir2.context import IR2BuildContext
+from toetra._compiler.ir.ir2.enums import NormalFormKind
+from toetra._compiler.ir.ir2.run_ir2 import run_ir2_with_model_schema
+from toetra._compiler.semantic.types.enums import EnumDataType
+from toetra._models.detector.model_framework import EnumModelFramework
+from toetra._models.schema.feature_schema import FeatureSchema
+from toetra._models.schema.model_schema import ModelSchema
 
 SOURCE = """
 model := "model.pkl"

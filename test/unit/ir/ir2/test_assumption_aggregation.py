@@ -4,7 +4,7 @@ from typing import Any, cast
 
 import pytest
 
-from dsl.ir.ir1.nodes import (
+from toetra._compiler.ir.ir1.nodes import (
     AndIR,
     AttributeExpressionIR,
     ComparisonIR,
@@ -14,17 +14,17 @@ from dsl.ir.ir1.nodes import (
     ScopeIR,
     VerificationTask,
 )
-from dsl.ir.ir2.assumptions import AssumptionCollector
-from dsl.ir.ir2.builder import IR2Builder
-from dsl.ir.ir2.context import IR2BuildContext
-from dsl.ir.ir2.enums import (
+from toetra._compiler.ir.ir2.assumptions import AssumptionCollector
+from toetra._compiler.ir.ir2.builder import IR2Builder
+from toetra._compiler.ir.ir2.context import IR2BuildContext
+from toetra._compiler.ir.ir2.enums import (
     AssumptionSource,
     NormalFormKind,
     Polarity,
     VerificationSemantics,
 )
-from dsl.ir.ir2.errors import IR2ValidationError, InvalidIR2InputError
-from dsl.ir.ir2.nodes import (
+from toetra._compiler.ir.ir2.errors import IR2ValidationError, InvalidIR2InputError
+from toetra._compiler.ir.ir2.nodes import (
     AssumptionIR2,
     ClauseIR2,
     CNFFormulaIR2,
@@ -33,11 +33,11 @@ from dsl.ir.ir2.nodes import (
     NNFFormulaIR2,
     VerificationTaskIR2,
 )
-from dsl.ir.ir2.requirements import IR2Requirements
-from dsl.ir.ir2.validator import IR2Validator
-from dsl.language.vocabulary.operators import EnumComparisonOperator
-from dsl.language.vocabulary.properties import EnumProperty
-from dsl.semantic.types.enums import EnumDataType
+from toetra._compiler.ir.ir2.requirements import IR2Requirements
+from toetra._compiler.ir.ir2.validator import IR2Validator
+from toetra._language.vocabulary.operators import EnumComparisonOperator
+from toetra._language.vocabulary.properties import EnumProperty
+from toetra._compiler.semantic.types.enums import EnumDataType
 
 
 def _cmp(feature: str, value: int = 1) -> ComparisonIR:

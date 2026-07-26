@@ -13,8 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from dsl.builder.program import parse_program  # noqa: E402
-from dsl.parser.parser import parse_toetra_code  # noqa: E402
+from toetra._compiler.builder.program import parse_program  # noqa: E402
+from toetra._compiler.parser.parser import parse_toetra_code  # noqa: E402
 
 EXPECTED_PROJECT_NAME = "toetra"
 EXPECTED_VERSION = "1.0.0rc3"
@@ -99,7 +99,9 @@ def _validate_toetra_examples(path: Path) -> None:
 
 
 def report_schema_version() -> int:
-    source = (ROOT / "dsl" / "reporting" / "json.py").read_text(encoding="utf-8")
+    source = (ROOT / "src" / "toetra" / "_reporting" / "json.py").read_text(
+        encoding="utf-8"
+    )
     module = ast.parse(source)
     for node in module.body:
         if isinstance(node, ast.Assign):
@@ -115,7 +117,9 @@ def report_schema_version() -> int:
 
 
 def report_schema_identities() -> tuple[str, str]:
-    source = (ROOT / "dsl" / "reporting" / "json.py").read_text(encoding="utf-8")
+    source = (ROOT / "src" / "toetra" / "_reporting" / "json.py").read_text(
+        encoding="utf-8"
+    )
     module = ast.parse(source)
     values: dict[str, str] = {}
     for node in module.body:
@@ -290,8 +294,8 @@ def _validate_sdist_manifest() -> None:
         "include README.md",
         "include CHANGELOG.md",
         "include pyproject.toml",
-        "recursive-include dsl/language/grammar *.ebnf *.lark",
-        "recursive-include toetra/examples *.toetra",
+        "recursive-include src/toetra/_language/grammar *.ebnf *.lark",
+        "recursive-include src/toetra/examples *.toetra",
     }
     missing = sorted(required - directives)
     if missing:

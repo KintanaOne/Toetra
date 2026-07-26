@@ -1,4 +1,4 @@
-from model.runtime.manager import ModelManager
+from toetra._models.runtime.manager import ModelManager
 from test.fixtures.model_bridge.factories import (
     dataset_path,
     load_golden,

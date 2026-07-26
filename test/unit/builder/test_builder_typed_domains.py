@@ -2,22 +2,22 @@ from __future__ import annotations
 
 import pytest
 
-from dsl.ast.nodes.domain import (
+from toetra._compiler.ast.nodes.domain import (
     FiniteSetDomainNode,
     IntervalDomainNode,
 )
-from dsl.ast.nodes.expressions import AtExprNode, QuantifierExprNode
-from dsl.ast.nodes.primitives import (
+from toetra._compiler.ast.nodes.expressions import AtExprNode, QuantifierExprNode
+from toetra._compiler.ast.nodes.primitives import (
     AttributeNode,
     BinaryArithmeticNode,
     ConstantNode,
     NameRefNode,
 )
-from dsl.builder.program import parse_program
-from dsl.language.vocabulary.domains import EnumBoundaryKind
-from dsl.language.vocabulary.operators import EnumArithmeticOperator
-from dsl.parser.parser import parse_toetra_code
-from dsl.semantic.types.enums import EnumDataType
+from toetra._compiler.builder.program import parse_program
+from toetra._language.vocabulary.domains import EnumBoundaryKind
+from toetra._language.vocabulary.operators import EnumArithmeticOperator
+from toetra._compiler.parser.parser import parse_toetra_code
+from toetra._compiler.semantic.types.enums import EnumDataType
 
 
 def build(source: str):

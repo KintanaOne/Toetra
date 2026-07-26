@@ -2,11 +2,11 @@ from pathlib import Path
 
 import pytest
 
-from model.errors.loading import UnsupportedModelFormatError
-from model.loader.joblib_loader import JoblibModelLoader
-from model.loader.json_loader import JsonModelLoader
-from model.loader.loader_factory import LoaderFactory
-from model.loader.pkl_loader import PklModelLoader
+from toetra._models.errors.loading import UnsupportedModelFormatError
+from toetra._models.loader.joblib_loader import JoblibModelLoader
+from toetra._models.loader.json_loader import JsonModelLoader
+from toetra._models.loader.loader_factory import LoaderFactory
+from toetra._models.loader.pkl_loader import PklModelLoader
 
 
 def test_loader_factory_selects_joblib_loader():

@@ -17,8 +17,8 @@ from hypothesis import strategies as st
 
 from hypothesis.strategies import composite
 
-from dsl.parser.parser import parse_toetra_code
-from dsl.builder.program import parse_program
+from toetra._compiler.parser.parser import parse_toetra_code
+from toetra._compiler.builder.program import parse_program
 
 from test.hypothesis.strategies.valid.valid_lexical import (
     valid_lexical_program,

@@ -7,13 +7,13 @@ import pandas as pd
 import pytest
 from sklearn.linear_model import LinearRegression, LogisticRegression
 
-from dsl.runtime.errors import ReplayUnavailableError
-from dsl.runtime.model_observer import (
+from toetra._runtime.errors import ReplayUnavailableError
+from toetra._runtime.model_observer import (
     ModelObservation,
     ModelObserverRegistry,
 )
-from model.introspector.sklearn_introspector import SklearnIntrospector
-from model.runtime.sklearn_observer import SklearnModelObserver
+from toetra._models.introspector.sklearn_introspector import SklearnIntrospector
+from toetra._models.runtime.sklearn_observer import SklearnModelObserver
 
 
 def _classification_artifacts(tmp_path):

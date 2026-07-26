@@ -1,6 +1,6 @@
 # P24 — Repository Final Polish Roadmap
 
-> Status: Active — P24.0 baseline and layout decision
+> Status: Active — P24.1 canonical `src/toetra` migration
 > Baseline: `1.0.0rc3`
 > Target: repository and package layout frozen for P25–P27
 > Governing decision: [ADR-0028](../adr/ADR-0028-src-based-single-package-layout.md)
@@ -31,7 +31,7 @@ scripts/        CI, documentation, release, and repository tooling
 
 ## Patch sequence
 
-### P24.0 — Baseline, decision, and hygiene guardrails
+### P24.0 — Baseline, decision, and hygiene guardrails ✅
 
 - accept ADR-0028 and record the complete P24 sequence;
 - mark P23 as complete;

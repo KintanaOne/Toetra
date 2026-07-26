@@ -4,7 +4,7 @@ from fractions import Fraction
 
 import z3
 
-from dsl.reporting.model import ReportAssignment, ReportAssignmentKind
+from toetra._reporting.model import ReportAssignment, ReportAssignmentKind
 
 
 def test_assignment_exposes_exact_and_python_values() -> None:

@@ -35,7 +35,7 @@ def test_run_nnf_module_is_executable_from_repo_root():
     )
 
     completed = subprocess.run(
-        [sys.executable, "-m", "dsl.ir.normalization.run_nnf"],
+        [sys.executable, "-m", "toetra._compiler.ir.normalization.run_nnf"],
         cwd=repo_root,
         text=True,
         encoding="utf-8",

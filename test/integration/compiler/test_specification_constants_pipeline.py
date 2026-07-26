@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from dsl.ir.ir1.nodes import (
+from toetra._compiler.ir.ir1.nodes import (
     AttributeExpressionIR,
     ComparisonIR,
     ConstantExpressionIR,
     ScalarValueSource,
     TargetExpressionIR,
 )
-from dsl.ir.ir1.run_ir1 import run_ir
-from dsl.semantic.types.enums import EnumDataType
+from toetra._compiler.ir.ir1.run_ir1 import run_ir
+from toetra._compiler.semantic.types.enums import EnumDataType
 
 
 def test_specification_constant_reaches_ir1_with_provenance() -> None:

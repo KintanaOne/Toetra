@@ -2,28 +2,28 @@ from __future__ import annotations
 
 import pytest
 
-from dsl.compatibility.descriptors import (
+from toetra._compatibility.descriptors import (
     BackendProfileDescriptor,
     NumericSemanticDescriptor,
     PropertyNumericRequirements,
 )
-from dsl.compatibility.enums import (
+from toetra._compatibility.enums import (
     BackendKind,
     CompatibilityClassification,
     ConclusionKind,
     ConclusionScope,
     SupportStatus,
 )
-from dsl.compatibility.errors import (
+from toetra._compatibility.errors import (
     AmbiguousCompatibilityRuleError,
     DuplicateCompatibilityRuleError,
 )
-from dsl.compatibility.model import (
+from toetra._compatibility.model import (
     CompatibilityRule,
     CompatibilityRulePattern,
     NumericCompatibilityQuery,
 )
-from dsl.compatibility.registry import NumericCompatibilityRegistry
+from toetra._compatibility.registry import NumericCompatibilityRegistry
 
 
 def _backend_profile() -> BackendProfileDescriptor:

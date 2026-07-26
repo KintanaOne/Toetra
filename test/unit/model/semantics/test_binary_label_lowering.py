@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import pytest
 
-from dsl.ir.ir1.model_quantities import (
+from toetra._compiler.ir.ir1.model_quantities import (
     EnumModelQuantityKind,
     ModelQuantityExpressionIR,
 )
-from dsl.ir.ir1.nodes import ComparisonIR, ConstantExpressionIR
-from dsl.ir.ir1.run_ir1 import run_ir
-from dsl.language.vocabulary.operators import EnumComparisonOperator
-from model.semantics.evidence import LoweringEvidence
-from model.semantics.lowering import ModelSemanticLowerer
+from toetra._compiler.ir.ir1.nodes import ComparisonIR, ConstantExpressionIR
+from toetra._compiler.ir.ir1.run_ir1 import run_ir
+from toetra._language.vocabulary.operators import EnumComparisonOperator
+from toetra._models.semantics.evidence import LoweringEvidence
+from toetra._models.semantics.lowering import ModelSemanticLowerer
 from test.fixtures.model_semantic_lowering import (
     label_property,
     make_binary_logistic_schema,

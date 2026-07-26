@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dsl.ast.nodes.assertion import AndNode, ImplicationNode, NotNode
-from dsl.semantic.context.restrictions import VerificationSemantics
+from toetra._compiler.ast.nodes.assertion import AndNode, ImplicationNode, NotNode
+from toetra._compiler.semantic.context.restrictions import VerificationSemantics
 from test.unit.semantic.restriction_helpers import parse_and_validate
 
 

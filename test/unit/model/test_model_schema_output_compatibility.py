@@ -1,9 +1,9 @@
 import pytest
 
-from dsl.semantic.types.enums import EnumDataType
-from model.detector.model_framework import EnumModelFramework
-from model.schema.model_schema import ModelSchema
-from model.schema.output_schema import (
+from toetra._compiler.semantic.types.enums import EnumDataType
+from toetra._models.detector.model_framework import EnumModelFramework
+from toetra._models.schema.model_schema import ModelSchema
+from toetra._models.schema.output_schema import (
     ClassificationOutputSchema,
     RegressionOutputSchema,
 )

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from dsl.ir.ir1.nodes import NotIR
-from dsl.language.vocabulary.operators import EnumComparisonOperator
+from toetra._compiler.ir.ir1.nodes import NotIR
+from toetra._language.vocabulary.operators import EnumComparisonOperator
 
 from test.fixtures.normalization.nnf.helpers import (
     assert_is_nnf,

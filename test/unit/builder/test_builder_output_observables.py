@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import pytest
 
-from dsl.ast.nodes.assertion import ComparisonNode
-from dsl.ast.nodes.outputs import (
+from toetra._compiler.ast.nodes.assertion import ComparisonNode
+from toetra._compiler.ast.nodes.outputs import (
     ClassProbabilityObservableNode,
     ModelOutputRefNode,
     PredictedLabelObservableNode,
 )
-from dsl.ast.nodes.primitives import ConstantNode
-from dsl.language.vocabulary.outputs import EnumOutputSelector
-from dsl.semantic.types.enums import EnumDataType
+from toetra._compiler.ast.nodes.primitives import ConstantNode
+from toetra._language.vocabulary.outputs import EnumOutputSelector
+from toetra._compiler.semantic.types.enums import EnumDataType
 from test.unit.builder._point_binding_helpers import build_program
 
 

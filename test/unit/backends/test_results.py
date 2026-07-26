@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from dsl.backends.results import VerificationResult, VerificationStatus
-from dsl.backends.z3_backend.runner import Z3VerificationResult
-from dsl.language.vocabulary.backends import EnumBackend
+from toetra._backends.results import VerificationResult, VerificationStatus
+from toetra._backends.z3_backend.runner import Z3VerificationResult
+from toetra._language.vocabulary.backends import EnumBackend
 
 
 def test_generic_verification_result_exposes_backend_neutral_fields() -> None:

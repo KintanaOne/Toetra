@@ -1,6 +1,6 @@
-from dsl.ir.ir2.model.affine import AffineOutputConstraintIR2
-from dsl.ir.ir2.model.base import ModelConstraintIR2
-from dsl.ir.ir2.nodes import (
+from toetra._compiler.ir.ir2.model.affine import AffineOutputConstraintIR2
+from toetra._compiler.ir.ir2.model.base import ModelConstraintIR2
+from toetra._compiler.ir.ir2.nodes import (
     AffineOutputConstraintIR2 as CompatAffineOutputConstraintIR2,
 )
 

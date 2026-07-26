@@ -1,17 +1,17 @@
 from __future__ import annotations
 
-from dsl.ir.ir1.nodes import (
+from toetra._compiler.ir.ir1.nodes import (
     AndIR,
     AttributeExpressionIR,
     ComparisonIR,
     ConstantExpressionIR,
     NotIR,
 )
-from dsl.ir.ir2.condition import VerificationConditionBuilder
-from dsl.ir.ir2.enums import AssumptionSource, VerificationSemantics
-from dsl.ir.ir2.nodes import AssumptionIR2, NNFFormulaIR2
-from dsl.language.vocabulary.operators import EnumComparisonOperator
-from dsl.semantic.types.enums import EnumDataType
+from toetra._compiler.ir.ir2.condition import VerificationConditionBuilder
+from toetra._compiler.ir.ir2.enums import AssumptionSource, VerificationSemantics
+from toetra._compiler.ir.ir2.nodes import AssumptionIR2, NNFFormulaIR2
+from toetra._language.vocabulary.operators import EnumComparisonOperator
+from toetra._compiler.semantic.types.enums import EnumDataType
 
 
 def _property_atom() -> ComparisonIR:

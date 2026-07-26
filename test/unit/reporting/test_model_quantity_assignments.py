@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from dsl.backends.defaults import create_default_backend_registry
-from dsl.backends.router import BackendRouter
-from dsl.backends.z3_backend.runner import Z3Runner
-from dsl.ir.ir2.run_ir2 import run_ir2_with_model_schema
-from dsl.reporting.builder import build_verification_report
-from dsl.reporting.model import ReportAssignmentKind
+from toetra._backends.defaults import create_default_backend_registry
+from toetra._backends.router import BackendRouter
+from toetra._backends.z3_backend.runner import Z3Runner
+from toetra._compiler.ir.ir2.run_ir2 import run_ir2_with_model_schema
+from toetra._reporting.builder import build_verification_report
+from toetra._reporting.model import ReportAssignmentKind
 from test.fixtures.binary_classification import (
     binary_label_property,
     make_sklearn_logistic_schema,

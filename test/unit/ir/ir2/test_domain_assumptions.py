@@ -2,18 +2,18 @@ from __future__ import annotations
 
 import pytest
 
-from dsl.ir.ir1.nodes import (
+from toetra._compiler.ir.ir1.nodes import (
     AttributeExpressionIR,
     ComparisonIR,
     ConstantExpressionIR,
 )
-from dsl.ir.ir2.domain_assumptions import (
+from toetra._compiler.ir.ir2.domain_assumptions import (
     DomainAssumptionEncoder,
     NumericFeatureBounds,
 )
-from dsl.ir.ir2.enums import AssumptionSource
-from dsl.ir.ir2.nodes import NNFFormulaIR2
-from dsl.language.vocabulary.operators import EnumComparisonOperator
+from toetra._compiler.ir.ir2.enums import AssumptionSource
+from toetra._compiler.ir.ir2.nodes import NNFFormulaIR2
+from toetra._language.vocabulary.operators import EnumComparisonOperator
 
 
 def test_domain_assumption_encoder_emits_lower_and_upper_bounds() -> None:

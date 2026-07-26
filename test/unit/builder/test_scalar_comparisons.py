@@ -1,14 +1,14 @@
-from dsl.ast.nodes.assertion import ComparisonNode
-from dsl.ast.nodes.primitives import (
+from toetra._compiler.ast.nodes.assertion import ComparisonNode
+from toetra._compiler.ast.nodes.primitives import (
     AttributeNode,
     BinaryArithmeticNode,
     ConstantNode,
     NameRefNode,
     TargetRefNode,
 )
-from dsl.builder.program import parse_program
-from dsl.language.vocabulary.operators import EnumArithmeticOperator
-from dsl.parser.parser import parse_toetra_code
+from toetra._compiler.builder.program import parse_program
+from toetra._language.vocabulary.operators import EnumArithmeticOperator
+from toetra._compiler.parser.parser import parse_toetra_code
 
 
 def _build(source: str):

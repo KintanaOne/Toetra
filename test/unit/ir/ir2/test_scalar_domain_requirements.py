@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from dsl.ir.ir2.context import IR2BuildContext
-from dsl.ir.ir2.enums import NormalFormKind
-from dsl.ir.ir2.run_ir2 import run_ir2
-from dsl.semantic.types.enums import EnumDataType
+from toetra._compiler.ir.ir2.context import IR2BuildContext
+from toetra._compiler.ir.ir2.enums import NormalFormKind
+from toetra._compiler.ir.ir2.run_ir2 import run_ir2
+from toetra._compiler.semantic.types.enums import EnumDataType
 
 
 def _requirements(source: str):

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from dsl.ir.ir1.run_ir1 import run_ir
+from toetra._compiler.ir.ir1.run_ir1 import run_ir
 
 from test.fixtures.normalization.nnf.helpers import (
     assert_is_nnf,

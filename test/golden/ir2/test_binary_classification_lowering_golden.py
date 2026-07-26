@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from dsl.ir.ir2.pretty import pretty_ir2_task
-from dsl.ir.ir2.run_ir2 import run_ir2_with_model_schema
-from model.encoder.context import ModelEncodingContext
+from toetra._compiler.ir.ir2.pretty import pretty_ir2_task
+from toetra._compiler.ir.ir2.run_ir2 import run_ir2_with_model_schema
+from toetra._models.encoder.context import ModelEncodingContext
 from test.fixtures.model_semantic_lowering import make_binary_logistic_schema
 
 _ROOT = Path(__file__).resolve().parent

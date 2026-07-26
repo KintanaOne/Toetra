@@ -22,9 +22,9 @@ from __future__ import annotations
 import random
 from copy import deepcopy
 
-from dsl.builder.program import ProgramNode
+from toetra._compiler.builder.program import ProgramNode
 
-from dsl.language.vocabulary.properties import (
+from toetra._language.vocabulary.properties import (
     EnumProperty,
 )
 

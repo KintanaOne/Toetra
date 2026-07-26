@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from dsl.compatibility.enums import CompatibilityClassification, ConclusionKind
-from dsl.ir.ir1.run_ir1 import run_ir
-from model.semantics.evidence import LoweringEvidence
-from model.semantics.lowering import ModelSemanticLowerer
+from toetra._compatibility.enums import CompatibilityClassification, ConclusionKind
+from toetra._compiler.ir.ir1.run_ir1 import run_ir
+from toetra._models.semantics.evidence import LoweringEvidence
+from toetra._models.semantics.lowering import ModelSemanticLowerer
 from test.fixtures.model_semantic_lowering import (
     label_property,
     make_binary_logistic_schema,

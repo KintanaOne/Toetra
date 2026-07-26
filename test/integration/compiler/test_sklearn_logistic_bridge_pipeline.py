@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from dsl.backends.defaults import create_default_backend_registry
-from dsl.backends.router import BackendRouter
-from dsl.ir.ir2.model.affine import AffineModelQuantityConstraintIR2
-from dsl.ir.ir2.run_ir2 import run_ir2_with_model_schema
-from dsl.semantic.types.enums import EnumDataType
-from model.detector.model_framework import EnumModelFramework
-from model.schema.feature_schema import FeatureSchema
-from model.schema.model_schema import ModelSchema
-from model.schema.output_schema import (
+from toetra._backends.defaults import create_default_backend_registry
+from toetra._backends.router import BackendRouter
+from toetra._compiler.ir.ir2.model.affine import AffineModelQuantityConstraintIR2
+from toetra._compiler.ir.ir2.run_ir2 import run_ir2_with_model_schema
+from toetra._compiler.semantic.types.enums import EnumDataType
+from toetra._models.detector.model_framework import EnumModelFramework
+from toetra._models.schema.feature_schema import FeatureSchema
+from toetra._models.schema.model_schema import ModelSchema
+from toetra._models.schema.output_schema import (
     BinaryClassificationDecisionPolicy,
     ClassificationOutputSchema,
 )

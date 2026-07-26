@@ -3,23 +3,23 @@ from __future__ import annotations
 from dataclasses import replace
 from textwrap import dedent
 
-from dsl.backends.defaults import create_default_backend_registry
-from dsl.backends.router import BackendRouter
-from dsl.backends.z3_backend.runner import VerificationStatus, Z3Runner
-from dsl.ir.ir1.nodes import ModelEvaluationIR
-from dsl.ir.ir1.run_ir1 import run_ir
-from dsl.ir.ir2.builder import IR2Builder
-from dsl.ir.ir2.context import IR2BuildContext
-from dsl.ir.ir2.enums import AssumptionSource, NormalFormKind
-from dsl.ir.ir2.nodes import (
+from toetra._backends.defaults import create_default_backend_registry
+from toetra._backends.router import BackendRouter
+from toetra._backends.z3_backend.runner import VerificationStatus, Z3Runner
+from toetra._compiler.ir.ir1.nodes import ModelEvaluationIR
+from toetra._compiler.ir.ir1.run_ir1 import run_ir
+from toetra._compiler.ir.ir2.builder import IR2Builder
+from toetra._compiler.ir.ir2.context import IR2BuildContext
+from toetra._compiler.ir.ir2.enums import AssumptionSource, NormalFormKind
+from toetra._compiler.ir.ir2.nodes import (
     AffineExpressionIR2,
     AffineOutputConstraintIR2,
     AffineTermIR2,
     AssumptionIR2,
     NNFFormulaIR2,
 )
-from dsl.ir.normalization.nnf import NNFNormalizer
-from dsl.language.vocabulary.operators import EnumComparisonOperator
+from toetra._compiler.ir.normalization.nnf import NNFNormalizer
+from toetra._language.vocabulary.operators import EnumComparisonOperator
 
 BOUND_SAMPLE = dedent("""
     model := "demo-linear.onnx"

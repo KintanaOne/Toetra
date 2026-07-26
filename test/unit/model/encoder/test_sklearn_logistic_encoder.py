@@ -4,24 +4,24 @@ import math
 
 import pytest
 
-from dsl.ir.ir1.model_quantities import EnumModelQuantityKind
-from dsl.ir.ir1.nodes import ModelEvaluationIR, PointBindingIR
-from dsl.ir.ir2.model.affine import AffineModelQuantityConstraintIR2
-from model.detector.model_framework import EnumModelFramework
-from model.encoder import (
+from toetra._compiler.ir.ir1.model_quantities import EnumModelQuantityKind
+from toetra._compiler.ir.ir1.nodes import ModelEvaluationIR, PointBindingIR
+from toetra._compiler.ir.ir2.model.affine import AffineModelQuantityConstraintIR2
+from toetra._models.detector.model_framework import EnumModelFramework
+from toetra._models.encoder import (
     MissingModelParameterError,
     ModelEncoderFactory,
     SklearnLogisticRegressionEncoder,
     UnsupportedModelEncoderError,
     UnsupportedModelParameterError,
 )
-from model.schema.feature_schema import FeatureSchema
-from model.schema.model_schema import ModelSchema
-from model.schema.output_schema import (
+from toetra._models.schema.feature_schema import FeatureSchema
+from toetra._models.schema.model_schema import ModelSchema
+from toetra._models.schema.output_schema import (
     BinaryClassificationDecisionPolicy,
     ClassificationOutputSchema,
 )
-from dsl.semantic.types.enums import EnumDataType
+from toetra._compiler.semantic.types.enums import EnumDataType
 
 
 def _schema(*, coefficient: float = 1.5) -> ModelSchema:

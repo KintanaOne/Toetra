@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dsl.ir.ir1.nodes import ImplyIR, NotIR
+from toetra._compiler.ir.ir1.nodes import ImplyIR, NotIR
 
 from test.fixtures.normalization.nnf.helpers import (
     assert_is_nnf,

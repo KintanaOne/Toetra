@@ -7,10 +7,10 @@ import pandas as pd
 from sklearn.linear_model import LinearRegression
 
 from toetra import ReplayUnavailableError, verify
-from dsl.semantic.types.enums import EnumDataType
-from model.detector.model_framework import EnumModelFramework
-from model.schema.feature_schema import FeatureSchema
-from model.schema.model_schema import ModelSchema
+from toetra._compiler.semantic.types.enums import EnumDataType
+from toetra._models.detector.model_framework import EnumModelFramework
+from toetra._models.schema.feature_schema import FeatureSchema
+from toetra._models.schema.model_schema import ModelSchema
 
 _SOURCE = """
 model := "model.joblib"

@@ -1,7 +1,7 @@
 # Verification Provenance Contract
 
-> Status: Implemented  
-> Source of truth: `dsl.provenance`  
+> Status: Implemented
+> Source of truth: `toetra._provenance`
 > Report schema: `toetra.verification-report` version 6
 
 ## Purpose

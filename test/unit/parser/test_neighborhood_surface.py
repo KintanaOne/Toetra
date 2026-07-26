@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 from lark.exceptions import UnexpectedInput
 from lark import Token
-from dsl.parser.parser import parse_toetra_code
+from toetra._compiler.parser.parser import parse_toetra_code
 from test.unit.parser._point_binding_helpers import (
     direct_trees,
     program,

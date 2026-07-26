@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from dsl.ast.nodes.assertion import ComparisonNode
-from dsl.ast.nodes.expressions import DirectExprNode
-from dsl.ast.nodes.primitives import TargetRefNode
+from toetra._compiler.ast.nodes.assertion import ComparisonNode
+from toetra._compiler.ast.nodes.expressions import DirectExprNode
+from toetra._compiler.ast.nodes.primitives import TargetRefNode
 from test.unit.builder._point_binding_helpers import build_program
 
 

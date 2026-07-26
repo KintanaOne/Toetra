@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from dsl.parser.errors import ParserError
-from dsl.semantic.context.scope import SemanticScope
+from toetra._compiler.parser.errors import ParserError
+from toetra._compiler.semantic.context.scope import SemanticScope
 from ._point_binding_helpers import (
     build_and_validate,
     semantic_context,

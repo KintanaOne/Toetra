@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import pytest
 
-from dsl.backends.defaults import create_default_backend_registry
-from dsl.backends.errors import NoCompatibleBackendError
-from dsl.backends.router import BackendRouter
-from dsl.ir.ir2.run_ir2 import run_ir2
+from toetra._backends.defaults import create_default_backend_registry
+from toetra._backends.errors import NoCompatibleBackendError
+from toetra._backends.router import BackendRouter
+from toetra._compiler.ir.ir2.run_ir2 import run_ir2
 
 
 def test_z3_current_profile_accepts_one_model_evaluation() -> None:

@@ -1,22 +1,22 @@
 from __future__ import annotations
 
-from dsl.ir.ir1.nodes import ModelEvaluationIR
-from dsl.ir.ir2.builder import IR2Builder
-from dsl.ir.ir2.enums import AssumptionSource
-from dsl.ir.ir2.guardrails.model_output import (
+from toetra._compiler.ir.ir1.nodes import ModelEvaluationIR
+from toetra._compiler.ir.ir2.builder import IR2Builder
+from toetra._compiler.ir.ir2.enums import AssumptionSource
+from toetra._compiler.ir.ir2.guardrails.model_output import (
     MODEL_EVALUATION_DISCONNECTED,
     MODEL_EVALUATION_DUPLICATE,
     MODEL_EVALUATION_MISSING,
 )
-from dsl.ir.ir2.model.affine import (
+from toetra._compiler.ir.ir2.model.affine import (
     AffineExpressionIR2,
     AffineOutputConstraintIR2,
 )
-from dsl.ir.ir2.nodes import AssumptionIR2, NNFFormulaIR2
-from dsl.ir.ir2.run_ir2 import run_ir2
-from dsl.ir.ir1.run_ir1 import run_ir
-from dsl.ir.normalization.nnf import NNFNormalizer
-from dsl.language.vocabulary.operators import EnumComparisonOperator
+from toetra._compiler.ir.ir2.nodes import AssumptionIR2, NNFFormulaIR2
+from toetra._compiler.ir.ir2.run_ir2 import run_ir2
+from toetra._compiler.ir.ir1.run_ir1 import run_ir
+from toetra._compiler.ir.normalization.nnf import NNFNormalizer
+from toetra._language.vocabulary.operators import EnumComparisonOperator
 
 
 def _codes(task) -> set[str]:

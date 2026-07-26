@@ -1,21 +1,21 @@
 from __future__ import annotations
 
-from dsl.backends.capabilities import BackendCapabilities
-from dsl.backends.defaults import create_default_backend_registry
-from dsl.backends.execution import BackendExecutionCapabilities
-from dsl.backends.registry import BackendRegistry
-from dsl.backends.router import BackendRouter
-from dsl.compatibility.defaults import (
+from toetra._backends.capabilities import BackendCapabilities
+from toetra._backends.defaults import create_default_backend_registry
+from toetra._backends.execution import BackendExecutionCapabilities
+from toetra._backends.registry import BackendRegistry
+from toetra._backends.router import BackendRouter
+from toetra._compatibility.defaults import (
     SKLEARN_AFFINE_TO_EXACT_REAL_RULE_ID,
     SKLEARN_BINARY_LOGISTIC_TO_EXACT_REAL_RULE_ID,
 )
-from dsl.compatibility.descriptors import (
+from toetra._compatibility.descriptors import (
     BackendProfileDescriptor,
     FrameworkModelDescriptor,
     ModelEncoderDescriptor,
     NumericSemanticDescriptor,
 )
-from dsl.compatibility.enums import (
+from toetra._compatibility.enums import (
     BackendKind,
     CompatibilityClassification,
     ConclusionKind,
@@ -23,29 +23,29 @@ from dsl.compatibility.enums import (
     NumericFamily,
     SupportStatus,
 )
-from dsl.compatibility.model import (
+from toetra._compatibility.model import (
     CompatibilityRule,
     CompatibilityRulePattern,
     NumericCompatibilityContext,
 )
-from dsl.compatibility.registry import NumericCompatibilityRegistry
-from dsl.ir.ir1.nodes import (
+from toetra._compatibility.registry import NumericCompatibilityRegistry
+from toetra._compiler.ir.ir1.nodes import (
     AttributeExpressionIR,
     ComparisonIR,
     ConstantExpressionIR,
     ScopeIR,
 )
-from dsl.ir.ir2.enums import NormalFormKind, VerificationSemantics
-from dsl.ir.ir2.nodes import NNFFormulaIR2, VerificationTaskIR2
-from dsl.ir.ir2.run_ir2 import run_ir2_with_model_schema
-from dsl.ir.ir2.requirements import IR2Requirements
-from dsl.language.vocabulary.backends import EnumBackend
-from dsl.language.vocabulary.operators import EnumComparisonOperator
-from dsl.language.vocabulary.properties import EnumProperty
-from dsl.semantic.types.enums import EnumDataType
-from model.compatibility import framework_model_descriptor
-from model.encoder.profile import model_encoder_descriptor
-from model.encoder.sklearn.logistic import SklearnLogisticRegressionEncoder
+from toetra._compiler.ir.ir2.enums import NormalFormKind, VerificationSemantics
+from toetra._compiler.ir.ir2.nodes import NNFFormulaIR2, VerificationTaskIR2
+from toetra._compiler.ir.ir2.run_ir2 import run_ir2_with_model_schema
+from toetra._compiler.ir.ir2.requirements import IR2Requirements
+from toetra._language.vocabulary.backends import EnumBackend
+from toetra._language.vocabulary.operators import EnumComparisonOperator
+from toetra._language.vocabulary.properties import EnumProperty
+from toetra._compiler.semantic.types.enums import EnumDataType
+from toetra._models.compatibility import framework_model_descriptor
+from toetra._models.encoder.profile import model_encoder_descriptor
+from toetra._models.encoder.sklearn.logistic import SklearnLogisticRegressionEncoder
 from test.fixtures.binary_classification import (
     binary_label_property,
     make_sklearn_logistic_schema,

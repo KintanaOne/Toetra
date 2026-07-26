@@ -5,33 +5,33 @@ from typing import cast
 
 import pytest
 
-from dsl.backends.execution import (
+from toetra._backends.execution import (
     BackendCancellationToken,
     BackendExecutionPolicy,
     BackendExecutionStatus,
     BackendResourceLimits,
 )
-from dsl.backends.results import VerificationStatus
-from dsl.backends.z3_backend.runner import (
+from toetra._backends.results import VerificationStatus
+from toetra._backends.z3_backend.runner import (
     BACKEND_CANCELLED,
     BACKEND_RESOURCE_LIMIT,
     BACKEND_TIMEOUT,
     Z3Runner,
 )
-from dsl.backends.z3_backend.translator import Z3Translator
-from dsl.ir.ir1.nodes import (
+from toetra._backends.z3_backend.translator import Z3Translator
+from toetra._compiler.ir.ir1.nodes import (
     AttributeExpressionIR,
     ComparisonIR,
     ConstantExpressionIR,
     ScopeIR,
 )
-from dsl.ir.ir2.enums import NormalFormKind, VerificationSemantics
-from dsl.ir.ir2.nodes import NNFFormulaIR2, VerificationTaskIR2
-from dsl.ir.ir2.requirements import IR2Requirements
-from dsl.language.vocabulary.backends import EnumBackend
-from dsl.language.vocabulary.operators import EnumComparisonOperator
-from dsl.language.vocabulary.properties import EnumProperty
-from dsl.semantic.types.enums import EnumDataType
+from toetra._compiler.ir.ir2.enums import NormalFormKind, VerificationSemantics
+from toetra._compiler.ir.ir2.nodes import NNFFormulaIR2, VerificationTaskIR2
+from toetra._compiler.ir.ir2.requirements import IR2Requirements
+from toetra._language.vocabulary.backends import EnumBackend
+from toetra._language.vocabulary.operators import EnumComparisonOperator
+from toetra._language.vocabulary.properties import EnumProperty
+from toetra._compiler.semantic.types.enums import EnumDataType
 
 
 def _task() -> VerificationTaskIR2:
@@ -123,7 +123,7 @@ def test_z3_unknown_reason_is_normalized_to_generic_execution_status(
     expected_status: BackendExecutionStatus,
     diagnostic_code: str,
 ) -> None:
-    import dsl.backends.z3_backend.runner as runner_module
+    import toetra._backends.z3_backend.runner as runner_module
 
     class UnknownSolver:
         def set(self, **_options: object) -> None:
@@ -152,7 +152,7 @@ def test_z3_unknown_reason_is_normalized_to_generic_execution_status(
 def test_z3_maps_generic_policy_to_native_solver_options(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    import dsl.backends.z3_backend.runner as runner_module
+    import toetra._backends.z3_backend.runner as runner_module
 
     configured: dict[str, object] = {}
 
@@ -216,8 +216,8 @@ def test_translation_time_consumes_the_same_total_timeout_budget() -> None:
 def test_technical_backend_failure_raises_structured_error(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    import dsl.backends.z3_backend.runner as runner_module
-    from dsl.backends.errors import BackendExecutionError
+    import toetra._backends.z3_backend.runner as runner_module
+    from toetra._backends.errors import BackendExecutionError
 
     class FailingSolver:
         def set(self, **_options: object) -> None:

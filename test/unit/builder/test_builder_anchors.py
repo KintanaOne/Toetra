@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from dsl.ast.nodes.anchors import (
+from toetra._compiler.ast.nodes.anchors import (
     AnchorReferenceBindingNode,
     InlineAnchorBindingNode,
 )
-from dsl.semantic.types.enums import EnumDataType
+from toetra._compiler.semantic.types.enums import EnumDataType
 from test.unit.builder._point_binding_helpers import build_program
 
 

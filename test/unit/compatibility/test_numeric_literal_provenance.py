@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from dsl.builder.core.ast_utils import parse_literal_value
-from dsl.ir.ir1.nodes import ConstantExpressionIR
-from dsl.ir.ir1.scalar_translator import ScalarExpressionTranslator
-from dsl.semantic.types.enums import EnumDataType
+from toetra._compiler.builder.core.ast_utils import parse_literal_value
+from toetra._compiler.ir.ir1.nodes import ConstantExpressionIR
+from toetra._compiler.ir.ir1.scalar_translator import ScalarExpressionTranslator
+from toetra._compiler.semantic.types.enums import EnumDataType
 
 
 def test_decimal_literal_spelling_survives_ast_to_ir1_translation() -> None:

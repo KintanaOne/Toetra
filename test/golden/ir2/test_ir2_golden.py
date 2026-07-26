@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from dsl.ir.ir2.pretty import pretty_ir2_task
-from dsl.ir.ir2.run_ir2 import run_ir2
+from toetra._compiler.ir.ir2.pretty import pretty_ir2_task
+from toetra._compiler.ir.ir2.run_ir2 import run_ir2
 
 CASES_DIR = Path(__file__).parent / "cases"
 EXPECTED_DIR = Path(__file__).parent / "expected"

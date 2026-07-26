@@ -1,19 +1,22 @@
 from __future__ import annotations
 
-from dsl.ast.nodes.assertion import AndNode, ComparisonNode
-from dsl.ast.nodes.outputs import (
+from toetra._compiler.ast.nodes.assertion import AndNode, ComparisonNode
+from toetra._compiler.ast.nodes.outputs import (
     ClassProbabilityObservableNode,
     PredictedLabelObservableNode,
 )
-from dsl.builder.program import parse_program
-from dsl.parser.parser import parse_toetra_code
-from dsl.semantic.core.validator import ToetraValidator
-from dsl.semantic.runtime.tracer import ValidationTracer
-from dsl.semantic.types.enums import EnumDataType
-from model.detector.model_framework import EnumModelFramework
-from model.schema.feature_schema import FeatureSchema
-from model.schema.model_schema import ModelSchema
-from model.schema.output_schema import ClassificationOutputSchema, EnumOutputObservable
+from toetra._compiler.builder.program import parse_program
+from toetra._compiler.parser.parser import parse_toetra_code
+from toetra._compiler.semantic.core.validator import ToetraValidator
+from toetra._compiler.semantic.runtime.tracer import ValidationTracer
+from toetra._compiler.semantic.types.enums import EnumDataType
+from toetra._models.detector.model_framework import EnumModelFramework
+from toetra._models.schema.feature_schema import FeatureSchema
+from toetra._models.schema.model_schema import ModelSchema
+from toetra._models.schema.output_schema import (
+    ClassificationOutputSchema,
+    EnumOutputObservable,
+)
 
 
 def _schema() -> ModelSchema:

@@ -22,7 +22,7 @@ from test.hypothesis.mutation.metadata.contract import (
 )
 from test.hypothesis.mutation.metadata.enums import Layer, Nature, Strategy, Domain
 
-from dsl.builder.assertion import NotNode
+from toetra._compiler.builder.assertion import NotNode
 
 # =========================================================
 # CONTRACTS

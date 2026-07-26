@@ -7,16 +7,16 @@ import pandas as pd
 import pytest
 from sklearn.linear_model import LinearRegression
 
-from dsl.backends.results import VerificationStatus
-from dsl.runtime import (
+from toetra._backends.results import VerificationStatus
+from toetra._runtime import (
     AnchorLookupRequest,
     AnchorResolutionError,
     AnchorResolver,
     verify,
 )
-from dsl.semantic.symbols.point import ResolvedAnchorBinding
-from dsl.semantic.types.enums import EnumDataType
-from model.schema.model_schema import ModelSchema
+from toetra._compiler.semantic.symbols.point import ResolvedAnchorBinding
+from toetra._compiler.semantic.types.enums import EnumDataType
+from toetra._models.schema.model_schema import ModelSchema
 
 _SOURCE = """
 model := "linear.joblib"

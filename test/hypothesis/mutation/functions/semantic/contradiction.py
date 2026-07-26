@@ -1,8 +1,8 @@
 import random
 from copy import deepcopy
 
-from dsl.builder.program import ProgramNode
-from dsl.builder.assertion import NotNode, AndNode
+from toetra._compiler.builder.program import ProgramNode
+from toetra._compiler.builder.assertion import NotNode, AndNode
 
 from test.hypothesis.mutation.functions.base import (
     mutation,

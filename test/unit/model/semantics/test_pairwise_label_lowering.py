@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import pytest
 
-from dsl.ir.ir1.model_quantities import ModelQuantityExpressionIR
-from dsl.ir.ir1.nodes import AndIR, ComparisonIR, OrIR, ProblemIR
-from dsl.ir.ir1.run_ir1 import run_ir
-from dsl.language.vocabulary.operators import EnumComparisonOperator
-from model.semantics.errors import UnsupportedObservableLoweringError
-from model.semantics.evidence import PairwiseLoweringEvidence
-from model.semantics.lowering import ModelSemanticLowerer
+from toetra._compiler.ir.ir1.model_quantities import ModelQuantityExpressionIR
+from toetra._compiler.ir.ir1.nodes import AndIR, ComparisonIR, OrIR, ProblemIR
+from toetra._compiler.ir.ir1.run_ir1 import run_ir
+from toetra._language.vocabulary.operators import EnumComparisonOperator
+from toetra._models.semantics.errors import UnsupportedObservableLoweringError
+from toetra._models.semantics.evidence import PairwiseLoweringEvidence
+from toetra._models.semantics.lowering import ModelSemanticLowerer
 from test.fixtures.model_semantic_lowering import make_binary_logistic_schema
 
 

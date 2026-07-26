@@ -20,16 +20,16 @@ properties of machine-learning models.
 
 | Path | Responsibility |
 |---|---|
-| `dsl/language` | EBNF source, generated grammar, vocabulary |
-| `dsl/ast`, `dsl/builder`, `dsl/parser` | syntax representation |
-| `dsl/semantic` | binding, typing, point visibility, validation |
-| `dsl/ir/ir1` | backend-neutral declarative intent |
-| `model/semantics` | model-family lowering and evidence |
-| `dsl/ir/ir2` | normalized verification tasks and assumptions |
-| `model/schema`, `model/introspector`, `model/encoder` | ModelBridge |
-| `dsl/compatibility`, `dsl/backends` | route qualification and execution |
-| `dsl/reporting`, `dsl/provenance`, `dsl/runtime` | reports and replay |
-| `toetra` | stable public Python facade |
+| `src/toetra/_language` | EBNF source, generated grammar, vocabulary |
+| `src/toetra/_compiler/ast`, `src/toetra/_compiler/builder`, `src/toetra/_compiler/parser` | syntax representation |
+| `src/toetra/_compiler/semantic` | binding, typing, point visibility, validation |
+| `src/toetra/_compiler/ir/ir1` | backend-neutral declarative intent |
+| `src/toetra/_models/semantics` | model-family lowering and evidence |
+| `src/toetra/_compiler/ir/ir2` | normalized verification tasks and assumptions |
+| `src/toetra/_models/schema`, `src/toetra/_models/introspector`, `src/toetra/_models/encoder` | ModelBridge |
+| `src/toetra/_compatibility`, `src/toetra/_backends` | route qualification and execution |
+| `src/toetra/_reporting`, `src/toetra/_provenance`, `src/toetra/_runtime` | reports and replay |
+| `src/toetra` | stable public facade and private implementation packages |
 
 A `target` is an output port. Regression uses `target[point]`; classification
 selects `target[point].label` or `target[point].probability(label)`. Internal

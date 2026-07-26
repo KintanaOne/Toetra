@@ -5,13 +5,13 @@ import pandas as pd
 from sklearn import __version__ as sklearn_version
 from sklearn.linear_model import LinearRegression
 
-from dsl.compatibility.enums import NumericFamily
-from dsl.semantic.types.enums import EnumDataType
-from model.compatibility import framework_model_descriptor
-from model.detector.model_framework import EnumModelFramework
-from model.introspector.sklearn_introspector import SklearnIntrospector
-from model.schema.feature_schema import FeatureSchema
-from model.schema.model_schema import ModelSchema
+from toetra._compatibility.enums import NumericFamily
+from toetra._compiler.semantic.types.enums import EnumDataType
+from toetra._models.compatibility import framework_model_descriptor
+from toetra._models.detector.model_framework import EnumModelFramework
+from toetra._models.introspector.sklearn_introspector import SklearnIntrospector
+from toetra._models.schema.feature_schema import FeatureSchema
+from toetra._models.schema.model_schema import ModelSchema
 
 
 def test_sklearn_introspector_preserves_framework_and_dtype_profile(tmp_path) -> None:

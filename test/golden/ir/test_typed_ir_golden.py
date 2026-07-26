@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from dsl.ir.ir1.pretty import pretty_task
+from toetra._compiler.ir.ir1.pretty import pretty_task
 from test.fixtures.ir_schema_aware.ir_helpers import serialize_task, translate_source
 from test.fixtures.ir_schema_aware.samples import (
     CHECK_AT_INCOME,

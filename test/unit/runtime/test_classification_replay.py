@@ -6,19 +6,19 @@ from typing import Any, Mapping
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
 
-from dsl.backends.defaults import create_default_backend_registry
-from dsl.backends.router import BackendRouter
-from dsl.backends.results import VerificationStatus
-from dsl.backends.z3_backend.runner import Z3Runner
-from dsl.ir.ir2.run_ir2 import run_ir2_with_model_schema
-from dsl.reporting.builder import build_verification_report
-from dsl.runtime.model_observer import (
+from toetra._backends.defaults import create_default_backend_registry
+from toetra._backends.router import BackendRouter
+from toetra._backends.results import VerificationStatus
+from toetra._backends.z3_backend.runner import Z3Runner
+from toetra._compiler.ir.ir2.run_ir2 import run_ir2_with_model_schema
+from toetra._reporting.builder import build_verification_report
+from toetra._runtime.model_observer import (
     ModelObservation,
     ModelObserverRegistry,
 )
-from dsl.runtime.replay import replay_verification_report
-from dsl.runtime.session import VerificationFinding
-from model.introspector.sklearn_introspector import SklearnIntrospector
+from toetra._runtime.replay import replay_verification_report
+from toetra._runtime.session import VerificationFinding
+from toetra._models.introspector.sklearn_introspector import SklearnIntrospector
 
 
 def _artifacts(tmp_path):

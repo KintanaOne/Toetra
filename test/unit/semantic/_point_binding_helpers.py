@@ -1,17 +1,17 @@
 from __future__ import annotations
 
-from dsl.ast.nodes.assertion import (
+from toetra._compiler.ast.nodes.assertion import (
     AndNode,
     ComparisonNode,
     ImplicationNode,
     NotNode,
     OrNode,
 )
-from dsl.ast.nodes.primitives import AttributeNode, TargetRefNode
-from dsl.builder.program import parse_program
-from dsl.parser.parser import parse_toetra_code
-from dsl.semantic.core.validator import ToetraValidator
-from dsl.semantic.runtime.tracer import ValidationTracer
+from toetra._compiler.ast.nodes.primitives import AttributeNode, TargetRefNode
+from toetra._compiler.builder.program import parse_program
+from toetra._compiler.parser.parser import parse_toetra_code
+from toetra._compiler.semantic.core.validator import ToetraValidator
+from toetra._compiler.semantic.runtime.tracer import ValidationTracer
 
 
 def build_and_validate(source: str):

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dsl.semantic.context.scope import SemanticScope
-from dsl.semantic.symbols.point import PointSymbol
+from toetra._compiler.semantic.context.scope import SemanticScope
+from toetra._compiler.semantic.symbols.point import PointSymbol
 from test.unit.semantic.anchor_helpers import validate_program
 
 

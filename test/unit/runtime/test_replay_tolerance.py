@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from dsl.ir.ir1.nodes import (
+from toetra._compiler.ir.ir1.nodes import (
     LogicalIR,
     AndIR,
     ComparisonIR,
@@ -11,12 +11,12 @@ from dsl.ir.ir1.nodes import (
     NotIR,
     OrIR,
 )
-from dsl.language.vocabulary.operators import EnumComparisonOperator
-from dsl.runtime.replay import (
+from toetra._language.vocabulary.operators import EnumComparisonOperator
+from toetra._runtime.replay import (
     CounterexampleReplay,
     _evaluate_logical,
 )
-from dsl.semantic.types.enums import EnumDataType
+from toetra._compiler.semantic.types.enums import EnumDataType
 
 
 def _constant(value: float) -> ConstantExpressionIR:

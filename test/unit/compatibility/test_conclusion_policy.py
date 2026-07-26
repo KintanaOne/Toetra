@@ -1,22 +1,22 @@
 from __future__ import annotations
 
-from dsl.backends.results import VerificationResult, VerificationStatus
-from dsl.compatibility.descriptors import PropertyNumericRequirements
-from dsl.compatibility.enums import (
+from toetra._backends.results import VerificationResult, VerificationStatus
+from toetra._compatibility.descriptors import PropertyNumericRequirements
+from toetra._compatibility.enums import (
     CompatibilityClassification,
     ConclusionKind,
     ConclusionScope,
     SupportStatus,
 )
-from dsl.compatibility.model import (
+from toetra._compatibility.model import (
     NumericCompatibilityAssessment,
     NumericCompatibilityQuery,
 )
-from dsl.compatibility.policy import (
+from toetra._compatibility.policy import (
     NUMERIC_CONCLUSION_NOT_PERMITTED,
     apply_numeric_compatibility_policy,
 )
-from dsl.language.vocabulary.backends import EnumBackend
+from toetra._language.vocabulary.backends import EnumBackend
 
 
 def _assessment(

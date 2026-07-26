@@ -2,25 +2,25 @@ from __future__ import annotations
 
 from textwrap import dedent
 
-from dsl.backends.defaults import create_default_backend_registry
-from dsl.backends.router import BackendRouter
-from dsl.backends.z3_backend.runner import VerificationStatus, Z3Runner
-from dsl.ir.ir1.run_ir1 import run_ir
-from dsl.ir.ir2.builder import IR2Builder
-from dsl.ir.ir2.context import IR2BuildContext
-from dsl.ir.ir2.domain_assumptions import (
+from toetra._backends.defaults import create_default_backend_registry
+from toetra._backends.router import BackendRouter
+from toetra._backends.z3_backend.runner import VerificationStatus, Z3Runner
+from toetra._compiler.ir.ir1.run_ir1 import run_ir
+from toetra._compiler.ir.ir2.builder import IR2Builder
+from toetra._compiler.ir.ir2.context import IR2BuildContext
+from toetra._compiler.ir.ir2.domain_assumptions import (
     DomainAssumptionEncoder,
     NumericFeatureBounds,
 )
-from dsl.ir.ir2.enums import NormalFormKind
-from dsl.ir.ir2.nodes import NNFFormulaIR2
-from dsl.ir.ir2.points import PointAwareIR2Analyzer
-from dsl.ir.normalization.nnf import NNFNormalizer
-from dsl.semantic.types.enums import EnumDataType
-from model.detector.model_framework import EnumModelFramework
-from model.encoder.factory import ModelEncoderFactory
-from model.schema.feature_schema import FeatureSchema
-from model.schema.model_schema import ModelSchema
+from toetra._compiler.ir.ir2.enums import NormalFormKind
+from toetra._compiler.ir.ir2.nodes import NNFFormulaIR2
+from toetra._compiler.ir.ir2.points import PointAwareIR2Analyzer
+from toetra._compiler.ir.normalization.nnf import NNFNormalizer
+from toetra._compiler.semantic.types.enums import EnumDataType
+from toetra._models.detector.model_framework import EnumModelFramework
+from toetra._models.encoder.factory import ModelEncoderFactory
+from toetra._models.schema.feature_schema import FeatureSchema
+from toetra._models.schema.model_schema import ModelSchema
 
 BOUND_SAMPLE = dedent("""
     model := "demo-linear.pkl"

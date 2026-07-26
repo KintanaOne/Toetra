@@ -3,18 +3,18 @@ from typing import cast
 import pytest
 from lark import Tree
 
-from dsl.ast.nodes.domain import FiniteSetDomainNode, SymbolLiteralNode
-from dsl.ast.nodes.expressions import (
+from toetra._compiler.ast.nodes.domain import FiniteSetDomainNode, SymbolLiteralNode
+from toetra._compiler.ast.nodes.expressions import (
     AtExprNode,
     CheckAtExprNode,
     PairwiseExprNode,
     QuantifierExprNode,
 )
-from dsl.ast.nodes.primitives import NameRefNode
-from dsl.builder.program import parse_program
-from dsl.language.vocabulary.backends import EnumBackend
-from dsl.language.vocabulary.properties import EnumProperty
-from dsl.parser.parser import parse_toetra_code
+from toetra._compiler.ast.nodes.primitives import NameRefNode
+from toetra._compiler.builder.program import parse_program
+from toetra._language.vocabulary.backends import EnumBackend
+from toetra._language.vocabulary.properties import EnumProperty
+from toetra._compiler.parser.parser import parse_toetra_code
 
 from test.fixtures.program_samples import (
     INVALID_BODY_MISSING_EXPRESSION,

@@ -3,12 +3,12 @@ import pytest
 pytest.importorskip("pandas")
 pytest.importorskip("sklearn.linear_model")
 
-from dsl.ir.ir2.demos.linear_model_demo import (  # noqa: E402
+from toetra._compiler.ir.ir2.demos.linear_model_demo import (  # noqa: E402
     build_demo_linear_regression_schema,
     print_demo_linear_regression_ir2,
     run_ir2_with_demo_linear_regression_model,
 )
-from dsl.ir.ir2.pretty import pretty_ir2_task  # noqa: E402
+from toetra._compiler.ir.ir2.pretty import pretty_ir2_task  # noqa: E402
 
 
 def test_demo_linear_regression_schema_is_introspected_from_real_model():

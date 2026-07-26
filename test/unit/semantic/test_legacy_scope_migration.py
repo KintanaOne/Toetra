@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from dsl.parser.errors import ParserError
-from dsl.semantic.rules.migration import (
+from toetra._compiler.parser.errors import ParserError
+from toetra._compiler.semantic.rules.migration import (
     LEGACY_AT_MESSAGE,
     LEGACY_CHECK_AT_MESSAGE,
     LEGACY_PAIRWISE_MESSAGE,

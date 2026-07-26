@@ -1,7 +1,7 @@
 # Backend Execution Contract
 
 > Status: Implemented  
-> Source of truth: `dsl.backends.execution`
+> Source of truth: `toetra._backends.execution`
 
 ## Purpose
 
@@ -23,7 +23,7 @@ enforce the requested operational policy.
 ## Public policy
 
 ```python
-from dsl.backends import (
+from toetra._backends import (
     BackendCancellationToken,
     BackendExecutionPolicy,
     BackendResourceLimits,

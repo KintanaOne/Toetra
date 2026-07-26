@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from dsl.backends.results import VerificationStatus
-from dsl.backends.z3_backend.runner import Z3Runner
-from dsl.ir.ir2.run_ir2 import run_ir2_with_model_schema
+from toetra._backends.results import VerificationStatus
+from toetra._backends.z3_backend.runner import Z3Runner
+from toetra._compiler.ir.ir2.run_ir2 import run_ir2_with_model_schema
 from test.fixtures.binary_classification import (
     binary_probability_property,
     make_sklearn_logistic_schema,

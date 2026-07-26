@@ -1,12 +1,16 @@
 from __future__ import annotations
 
-from dsl.ast.nodes.assertion import ComparisonNode
-from dsl.ast.nodes.domain import FiniteSetDomainNode
-from dsl.ast.nodes.expressions import QuantifierExprNode
-from dsl.ast.nodes.primitives import AttributeNode, NameRefNode, TargetRefNode
-from dsl.builder.program import parse_program
-from dsl.parser.parser import parse_toetra_code
-from dsl.semantic.types.enums import EnumDataType
+from toetra._compiler.ast.nodes.assertion import ComparisonNode
+from toetra._compiler.ast.nodes.domain import FiniteSetDomainNode
+from toetra._compiler.ast.nodes.expressions import QuantifierExprNode
+from toetra._compiler.ast.nodes.primitives import (
+    AttributeNode,
+    NameRefNode,
+    TargetRefNode,
+)
+from toetra._compiler.builder.program import parse_program
+from toetra._compiler.parser.parser import parse_toetra_code
+from toetra._compiler.semantic.types.enums import EnumDataType
 
 
 def _build(source: str):

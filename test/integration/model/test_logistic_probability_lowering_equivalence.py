@@ -5,8 +5,8 @@ from decimal import Decimal
 import numpy as np
 from sklearn.linear_model import LogisticRegression
 
-from dsl.ir.ir1.run_ir1 import run_ir
-from model.semantics.lowering import ModelSemanticLowerer
+from toetra._compiler.ir.ir1.run_ir1 import run_ir
+from toetra._models.semantics.lowering import ModelSemanticLowerer
 from test.fixtures.model_semantic_lowering import make_binary_logistic_schema
 
 

@@ -4,26 +4,26 @@ from dataclasses import dataclass
 
 import pytest
 
-from dsl.ir.ir1.nodes import (
+from toetra._compiler.ir.ir1.nodes import (
     AttributeExpressionIR,
     ComparisonIR,
     ConstantExpressionIR,
     ModelEvaluationIR,
 )
-from dsl.ir.ir2.enums import AssumptionSource
-from dsl.ir.ir2.nodes import AssumptionIR2, NNFFormulaIR2
-from dsl.language.vocabulary.operators import EnumComparisonOperator
-from dsl.semantic.types.enums import EnumDataType
-from model.detector.model_framework import EnumModelFramework
-from model.encoder import (
+from toetra._compiler.ir.ir2.enums import AssumptionSource
+from toetra._compiler.ir.ir2.nodes import AssumptionIR2, NNFFormulaIR2
+from toetra._language.vocabulary.operators import EnumComparisonOperator
+from toetra._compiler.semantic.types.enums import EnumDataType
+from toetra._models.detector.model_framework import EnumModelFramework
+from toetra._models.encoder import (
     InvalidModelAssumptionError,
     ModelEncoderFactory,
     ModelEncoderRegistry,
     UnsupportedModelEncoderError,
     validate_model_assumptions,
 )
-from model.encoder.context import ModelEncodingContext
-from model.schema.model_schema import ModelSchema
+from toetra._models.encoder.context import ModelEncodingContext
+from toetra._models.schema.model_schema import ModelSchema
 
 
 @dataclass

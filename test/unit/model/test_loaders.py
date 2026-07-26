@@ -2,10 +2,13 @@ import json
 
 import pytest
 
-from model.errors.loading import ModelDeserializationError, ModelFileNotFoundError
-from model.loader.joblib_loader import JoblibModelLoader
-from model.loader.json_loader import JsonModelLoader
-from model.loader.pkl_loader import PklModelLoader
+from toetra._models.errors.loading import (
+    ModelDeserializationError,
+    ModelFileNotFoundError,
+)
+from toetra._models.loader.joblib_loader import JoblibModelLoader
+from toetra._models.loader.json_loader import JsonModelLoader
+from toetra._models.loader.pkl_loader import PklModelLoader
 from test.fixtures.model_bridge.factories import (
     make_classification_joblib,
     make_classification_pkl,

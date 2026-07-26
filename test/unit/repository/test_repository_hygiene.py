@@ -17,7 +17,7 @@ OBSOLETE_DOCUMENTS = {
     "docs/review-corrections.md",
 }
 OBSOLETE_CODE_PATHS = {
-    "dsl/builder/core/to_delete.py",
+    "src/toetra/_compiler/builder/core/to_delete.py",
     "test/unit/parsing",
     "test/e2e/normalization/test_run_nnf.py",
     "test/hypothesis/mutation/functions/semantic/relationnal.py",

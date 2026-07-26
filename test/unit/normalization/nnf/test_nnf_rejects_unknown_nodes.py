@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import pytest
 
-from dsl.ir.ir1.nodes import LogicalIR
+from toetra._compiler.ir.ir1.nodes import LogicalIR
 
 from test.fixtures.normalization.nnf.helpers import normalizer
 

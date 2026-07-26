@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from dsl.ast.nodes.expressions import QuantifierExprNode
+from toetra._compiler.ast.nodes.expressions import QuantifierExprNode
 from test.unit.builder._point_binding_helpers import build_program
 
 

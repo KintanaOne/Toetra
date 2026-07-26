@@ -54,12 +54,11 @@ docs = [
 ]
 
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["toetra*", "dsl*", "model*"]
-exclude = ["test*", "tests*", "docs*"]
+where = ["src"]
+include = ["toetra*"]
 
 [tool.setuptools.package-data]
-"dsl.language.grammar" = ["*.lark", "*.ebnf"]
+"toetra._language.grammar" = ["*.lark", "*.ebnf"]
 "toetra.examples" = ["*.toetra"]
 
 [tool.black]
@@ -95,9 +94,7 @@ norecursedirs = [
 [tool.pyright]
 pythonVersion = "3.11"
 include = [
-    "toetra",
-    "dsl",
-    "model",
+    "src/toetra",
     "scripts",
     "test/unit",
 ]

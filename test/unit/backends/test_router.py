@@ -2,22 +2,22 @@ from __future__ import annotations
 
 import pytest
 
-from dsl.backends.capabilities import BackendCapabilities
-from dsl.backends.execution import BackendExecutionCapabilities
-from dsl.backends.errors import (
+from toetra._backends.capabilities import BackendCapabilities
+from toetra._backends.execution import BackendExecutionCapabilities
+from toetra._backends.errors import (
     BackendNotRegisteredError,
     NoCompatibleBackendError,
 )
-from dsl.backends.registry import BackendRegistry
-from dsl.backends.router import BackendRouter
-from dsl.ir.ir1.nodes import (
+from toetra._backends.registry import BackendRegistry
+from toetra._backends.router import BackendRouter
+from toetra._compiler.ir.ir1.nodes import (
     AttributeExpressionIR,
     ComparisonIR,
     ConstantExpressionIR,
     ScopeIR,
 )
-from dsl.ir.ir2.enums import NormalFormKind, VerificationSemantics
-from dsl.ir.ir2.nodes import (
+from toetra._compiler.ir.ir2.enums import NormalFormKind, VerificationSemantics
+from toetra._compiler.ir.ir2.nodes import (
     CNFFormulaIR2,
     ClauseIR2,
     DNFFormulaIR2,
@@ -27,11 +27,11 @@ from dsl.ir.ir2.nodes import (
     TermIR2,
     VerificationTaskIR2,
 )
-from dsl.ir.ir2.requirements import IR2Requirements
-from dsl.language.vocabulary.backends import EnumBackend
-from dsl.language.vocabulary.operators import EnumComparisonOperator
-from dsl.language.vocabulary.properties import EnumProperty
-from dsl.semantic.types.enums import EnumDataType
+from toetra._compiler.ir.ir2.requirements import IR2Requirements
+from toetra._language.vocabulary.backends import EnumBackend
+from toetra._language.vocabulary.operators import EnumComparisonOperator
+from toetra._language.vocabulary.properties import EnumProperty
+from toetra._compiler.semantic.types.enums import EnumDataType
 
 
 def _requirements(
@@ -303,7 +303,7 @@ def test_backend_router_rejects_backend_without_required_normal_form():
 def test_backend_router_rejects_execution_controls_the_backend_cannot_enforce():
     from dataclasses import replace
 
-    from dsl.backends.execution import (
+    from toetra._backends.execution import (
         BackendCancellationToken,
         BackendExecutionCapabilities,
         BackendExecutionPolicy,
@@ -334,7 +334,7 @@ def test_backend_router_rejects_execution_controls_the_backend_cannot_enforce():
 def test_backend_router_accepts_a_backend_neutral_execution_policy():
     from dataclasses import replace
 
-    from dsl.backends.execution import (
+    from toetra._backends.execution import (
         BackendCancellationToken,
         BackendExecutionCapabilities,
         BackendExecutionPolicy,

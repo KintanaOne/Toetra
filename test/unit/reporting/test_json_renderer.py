@@ -6,19 +6,19 @@ from fractions import Fraction
 
 import z3
 
-from dsl.backends.diagnostics import (
+from toetra._backends.diagnostics import (
     BackendDiagnosticSeverity,
     BackendResultDiagnostic,
 )
-from dsl.backends.execution import (
+from toetra._backends.execution import (
     BackendExecutionPolicy,
     BackendExecutionStatus,
 )
-from dsl.backends.results import VerificationStatus
-from dsl.ir.ir2.enums import VerificationSemantics
-from dsl.language.vocabulary.backends import EnumBackend
-from dsl.language.vocabulary.properties import EnumProperty
-from dsl.reporting import (
+from toetra._backends.results import VerificationStatus
+from toetra._compiler.ir.ir2.enums import VerificationSemantics
+from toetra._language.vocabulary.backends import EnumBackend
+from toetra._language.vocabulary.properties import EnumProperty
+from toetra._reporting import (
     ArtifactProvenance,
     CompilerProvenance,
     ContentFingerprint,

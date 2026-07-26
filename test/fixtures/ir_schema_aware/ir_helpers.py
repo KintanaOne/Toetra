@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dsl.builder.program import parse_program
-from dsl.ir.ir1.nodes import (
+from toetra._compiler.builder.program import parse_program
+from toetra._compiler.ir.ir1.nodes import (
     AndIR,
     AttributeExpressionIR,
     BinaryArithmeticExpressionIR,
@@ -19,12 +19,12 @@ from dsl.ir.ir1.nodes import (
     UnaryArithmeticExpressionIR,
     VerificationTask,
 )
-from dsl.ir.ir1.outputs import OutputObservableExpressionIR
-from dsl.ir.ir1.scalar import iter_scalar_expressions
-from dsl.ir.ir1.translator import IRTranslator
-from dsl.parser.parser import parse_toetra_code
-from dsl.semantic.core.validator import ToetraValidator
-from dsl.semantic.runtime.tracer import ValidationTracer
+from toetra._compiler.ir.ir1.outputs import OutputObservableExpressionIR
+from toetra._compiler.ir.ir1.scalar import iter_scalar_expressions
+from toetra._compiler.ir.ir1.translator import IRTranslator
+from toetra._compiler.parser.parser import parse_toetra_code
+from toetra._compiler.semantic.core.validator import ToetraValidator
+from toetra._compiler.semantic.runtime.tracer import ValidationTracer
 
 
 def translate_source(source: str, model_schema=None) -> list[VerificationTask]:
