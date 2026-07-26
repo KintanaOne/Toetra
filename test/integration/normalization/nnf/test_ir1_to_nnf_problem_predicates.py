@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dsl.ir.ir1.run_ir1 import run_ir
-from dsl.ir.ir1.nodes import NotIR, ProblemIR
+from toetra._compiler.ir.ir1.run_ir1 import run_ir
+from toetra._compiler.ir.ir1.nodes import NotIR, ProblemIR
 
 from test.fixtures.normalization.nnf.helpers import assert_is_nnf, normalizer, sexpr
 

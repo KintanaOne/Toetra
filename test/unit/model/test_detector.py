@@ -1,8 +1,8 @@
 import pytest
 
-from model.detector.detector import ModelDetector
-from model.detector.model_framework import EnumModelFramework
-from model.errors.detection import UnsupportedModelError
+from toetra._models.detector.detector import ModelDetector
+from toetra._models.detector.model_framework import EnumModelFramework
+from toetra._models.errors.detection import UnsupportedModelError
 from test.fixtures.model_bridge.factories import train_classification_model
 
 

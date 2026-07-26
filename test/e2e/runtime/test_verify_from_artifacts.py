@@ -4,9 +4,9 @@ import joblib
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 
-from dsl.backends.results import VerificationStatus
-from dsl.runtime import verify
-from dsl.semantic.types.enums import EnumDataType
+from toetra._backends.results import VerificationStatus
+from toetra._runtime import verify
+from toetra._compiler.semantic.types.enums import EnumDataType
 
 
 def test_verify_resolves_header_model_relative_to_toetra_file(tmp_path) -> None:

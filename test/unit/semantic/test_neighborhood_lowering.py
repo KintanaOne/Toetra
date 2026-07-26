@@ -4,20 +4,20 @@ from types import MappingProxyType
 
 import pytest
 
-from dsl.ast.nodes.assertion import AndNode, ComparisonNode
-from dsl.ast.nodes.neighborhood import NeighborhoodMembershipNode
-from dsl.ast.nodes.primitives import ConstantNode
-from dsl.parser.errors import ParserError
-from dsl.semantic.context.context import SemanticContext
-from dsl.semantic.context.points import PointEnvironment
-from dsl.semantic.context.scope import SemanticScope
-from dsl.semantic.core.restrictions import NeighborhoodLowerer
-from dsl.semantic.symbols.point import (
+from toetra._compiler.ast.nodes.assertion import AndNode, ComparisonNode
+from toetra._compiler.ast.nodes.neighborhood import NeighborhoodMembershipNode
+from toetra._compiler.ast.nodes.primitives import ConstantNode
+from toetra._compiler.parser.errors import ParserError
+from toetra._compiler.semantic.context.context import SemanticContext
+from toetra._compiler.semantic.context.points import PointEnvironment
+from toetra._compiler.semantic.context.scope import SemanticScope
+from toetra._compiler.semantic.core.restrictions import NeighborhoodLowerer
+from toetra._compiler.semantic.symbols.point import (
     PointBindingKind,
     PointFeatureSchema,
     PointSymbol,
 )
-from dsl.semantic.types.enums import EnumDataType
+from toetra._compiler.semantic.types.enums import EnumDataType
 from test.unit.semantic.restriction_helpers import (
     inline_anchor,
     parse_and_validate,

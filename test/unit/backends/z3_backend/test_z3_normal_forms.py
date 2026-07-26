@@ -1,14 +1,18 @@
 from __future__ import annotations
 
-from dsl.backends.z3_backend.runner import VerificationStatus, Z3Runner
-from dsl.ir.ir1.nodes import (
+from toetra._backends.z3_backend.runner import VerificationStatus, Z3Runner
+from toetra._compiler.ir.ir1.nodes import (
     AttributeExpressionIR,
     ComparisonIR,
     ConstantExpressionIR,
     ScopeIR,
 )
-from dsl.ir.ir2.enums import NormalFormKind, Polarity, VerificationSemantics
-from dsl.ir.ir2.nodes import (
+from toetra._compiler.ir.ir2.enums import (
+    NormalFormKind,
+    Polarity,
+    VerificationSemantics,
+)
+from toetra._compiler.ir.ir2.nodes import (
     ClauseIR2,
     CNFFormulaIR2,
     DNFFormulaIR2,
@@ -18,11 +22,11 @@ from dsl.ir.ir2.nodes import (
     TermIR2,
     VerificationTaskIR2,
 )
-from dsl.ir.ir2.requirements import IR2Requirements
-from dsl.language.vocabulary.backends import EnumBackend
-from dsl.language.vocabulary.operators import EnumComparisonOperator
-from dsl.language.vocabulary.properties import EnumProperty
-from dsl.semantic.types.enums import EnumDataType
+from toetra._compiler.ir.ir2.requirements import IR2Requirements
+from toetra._language.vocabulary.backends import EnumBackend
+from toetra._language.vocabulary.operators import EnumComparisonOperator
+from toetra._language.vocabulary.properties import EnumProperty
+from toetra._compiler.semantic.types.enums import EnumDataType
 
 
 def _atom() -> ComparisonIR:

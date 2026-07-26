@@ -2,7 +2,7 @@ from hypothesis import given
 import pytest
 from test.hypothesis.strategies.valid.program_string import valid_string_program
 
-from dsl.parser.parser import parse_toetra_code
+from toetra._compiler.parser.parser import parse_toetra_code
 from test.hypothesis.utils.serialize import serialize
 
 pytestmark = pytest.mark.wip

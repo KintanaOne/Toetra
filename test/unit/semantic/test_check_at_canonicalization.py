@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import pytest
 
-from dsl.ast.nodes.assertion import ComparisonNode
-from dsl.ast.nodes.expressions import CheckAtExprNode
-from dsl.ast.nodes.primitives import TargetRefNode
-from dsl.parser.errors import ParserError
-from dsl.semantic.context.points import PointEnvironment
-from dsl.semantic.core.lhs import LHSValidator
-from dsl.semantic.symbols.point import PointBindingKind, PointSymbol
+from toetra._compiler.ast.nodes.assertion import ComparisonNode
+from toetra._compiler.ast.nodes.expressions import CheckAtExprNode
+from toetra._compiler.ast.nodes.primitives import TargetRefNode
+from toetra._compiler.parser.errors import ParserError
+from toetra._compiler.semantic.context.points import PointEnvironment
+from toetra._compiler.semantic.core.lhs import LHSValidator
+from toetra._compiler.semantic.symbols.point import PointBindingKind, PointSymbol
 from test.unit.semantic.restriction_helpers import (
     inline_anchor,
     numeric_schema,

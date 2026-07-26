@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dsl.ast.nodes.source import SourceSpan
+from toetra._compiler.ast.nodes.source import SourceSpan
 from test.unit.builder._point_binding_helpers import build_program
 
 

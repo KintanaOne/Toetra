@@ -1,7 +1,7 @@
 # Results and Reports
 
-> Status: Implemented for text, JSON and HTML/Jupyter  
-> Implementation: `dsl.backends.results`, `dsl.reporting`  
+> Status: Implemented for text, JSON and HTML/Jupyter
+> Implementation: `toetra._backends.results`, `toetra._reporting`
 > Scope: Backend-neutral verification results and user-facing report output
 
 ## Purpose
@@ -24,7 +24,7 @@ consume `VerificationReport`.
 
 ## Backend-Neutral Result
 
-`dsl.backends.results.VerificationResult` is the common execution contract:
+`toetra._backends.results.VerificationResult` is the common execution contract:
 
 ```python
 VerificationResult(
@@ -54,7 +54,7 @@ subtype of the backend-neutral result. Historical accessors `solver_status` and
 
 ## Verification Report
 
-`dsl.reporting.VerificationReport` combines:
+`toetra._reporting.VerificationReport` combines:
 
 - property index and type;
 - verification semantics;
@@ -155,7 +155,7 @@ print(report.to_text())
 or as a standalone function:
 
 ```python
-from dsl.reporting import render_verification_reports_text
+from toetra._reporting import render_verification_reports_text
 
 print(render_verification_reports_text(reports))
 ```
@@ -173,7 +173,7 @@ The renderer displays:
 ASCII-only output is supported for restricted terminals:
 
 ```python
-from dsl.reporting import TextRenderOptions
+from toetra._reporting import TextRenderOptions
 
 print(
     report.to_text()
@@ -207,7 +207,7 @@ report.write_json("artifacts/property-1.json")
 A report collection uses a separate envelope:
 
 ```python
-from dsl.reporting import write_verification_reports_json
+from toetra._reporting import write_verification_reports_json
 
 write_verification_reports_json(reports, "artifacts/toetra-report.json")
 ```

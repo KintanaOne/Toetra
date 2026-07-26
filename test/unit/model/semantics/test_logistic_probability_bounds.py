@@ -4,8 +4,8 @@ from decimal import Decimal, localcontext
 
 import pytest
 
-from dsl.language.vocabulary.operators import EnumComparisonOperator
-from model.semantics.logistic_probability import (
+from toetra._language.vocabulary.operators import EnumComparisonOperator
+from toetra._models.semantics.logistic_probability import (
     LOGIT_BOUND_GUARD_DIGITS,
     LOGIT_BOUND_PRECISION_DIGITS,
     logit_threshold_interval,

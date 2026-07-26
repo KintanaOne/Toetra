@@ -25,11 +25,9 @@ DIST_INFO = f"toetra-{PROJECT_VERSION}.dist-info"
 SDIST_ROOT = f"toetra-{PROJECT_VERSION}"
 
 WHEEL_MEMBERS = {
-    "toetra/__init__.py": b"from dsl.runtime import verify\n",
-    "dsl/__init__.py": b"",
-    "model/__init__.py": b"",
-    "dsl/language/grammar/toetra_grammar.ebnf": b"start = program\n",
-    "dsl/language/grammar/toetra_grammar.lark": b"start: program\n",
+    "toetra/__init__.py": b"from toetra._runtime import verify\n",
+    "toetra/_language/grammar/toetra_grammar.ebnf": b"start = program\n",
+    "toetra/_language/grammar/toetra_grammar.lark": b"start: program\n",
     "toetra/examples/credit_risk_policy.toetra": b"target := risk_score\n",
     f"{DIST_INFO}/METADATA": (
         f"Metadata-Version: 2.1\nName: toetra\nVersion: {PROJECT_VERSION}\n\n".encode()
@@ -44,7 +42,7 @@ def _write_wheel(
     *,
     leak_tests: bool = False,
     include_public_example: bool = True,
-    include_legacy_facade: bool = False,
+    forbidden_package: str | None = None,
 ) -> None:
     with zipfile.ZipFile(path, mode="w") as archive:
         for name, payload in WHEEL_MEMBERS.items():
@@ -56,8 +54,8 @@ def _write_wheel(
             archive.writestr(name, payload)
         if leak_tests:
             archive.writestr("test/test_leak.py", b"")
-        if include_legacy_facade:
-            archive.writestr("forml/__init__.py", b"")
+        if forbidden_package is not None:
+            archive.writestr(f"{forbidden_package}/__init__.py", b"")
 
 
 def _write_sdist(path: Path, *, mtime: int) -> None:
@@ -68,12 +66,14 @@ def _write_sdist(path: Path, *, mtime: int) -> None:
         f"{SDIST_ROOT}/pyproject.toml": (
             f"[project]\nname='toetra'\nversion='{PROJECT_VERSION}'\n".encode()
         ),
-        f"{SDIST_ROOT}/toetra/__init__.py": b"",
-        f"{SDIST_ROOT}/dsl/__init__.py": b"",
-        f"{SDIST_ROOT}/model/__init__.py": b"",
-        f"{SDIST_ROOT}/dsl/language/grammar/toetra_grammar.ebnf": b"start=program\n",
-        f"{SDIST_ROOT}/dsl/language/grammar/toetra_grammar.lark": b"start: program\n",
-        f"{SDIST_ROOT}/toetra/examples/credit_risk_policy.toetra": (
+        f"{SDIST_ROOT}/src/toetra/__init__.py": b"",
+        f"{SDIST_ROOT}/src/toetra/_language/grammar/toetra_grammar.ebnf": (
+            b"start=program\n"
+        ),
+        f"{SDIST_ROOT}/src/toetra/_language/grammar/toetra_grammar.lark": (
+            b"start: program\n"
+        ),
+        f"{SDIST_ROOT}/src/toetra/examples/credit_risk_policy.toetra": (
             b"target := risk_score\n"
         ),
     }
@@ -99,16 +99,18 @@ def test_distribution_contract_accepts_complete_wheel_and_sdist(
     assert artifacts.sdist.name.endswith(".tar.gz")
 
 
-def test_distribution_contract_rejects_legacy_public_facade(
+@pytest.mark.parametrize("package", ["forml", "dsl", "model"])
+def test_distribution_contract_rejects_forbidden_top_level_packages(
     tmp_path: Path,
+    package: str,
 ) -> None:
     _write_wheel(
         tmp_path / f"toetra-{PROJECT_VERSION}-py3-none-any.whl",
-        include_legacy_facade=True,
+        forbidden_package=package,
     )
     _write_sdist(tmp_path / f"toetra-{PROJECT_VERSION}.tar.gz", mtime=100)
 
-    with pytest.raises(DistributionContractError, match="forbidden legacy package"):
+    with pytest.raises(DistributionContractError, match="forbidden top-level package"):
         check_distribution_directory(tmp_path)
 
 
@@ -166,7 +168,7 @@ def test_release_source_rejects_a_dirty_git_checkout(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     class Completed:
-        stdout = " M dsl/runtime/replay.py\n?? local.patch\n"
+        stdout = " M src/toetra/_runtime/replay.py\n?? local.patch\n"
 
     monkeypatch.setattr(
         "scripts.release.distribution.subprocess.run",

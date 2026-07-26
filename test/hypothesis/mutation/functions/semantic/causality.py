@@ -20,8 +20,8 @@ CHARACTERISTICS:
 
 from copy import deepcopy
 
-from dsl.ast.nodes.assertion import ImplicationNode
-from dsl.ast.nodes.program import ProgramNode
+from toetra._compiler.ast.nodes.assertion import ImplicationNode
+from toetra._compiler.ast.nodes.program import ProgramNode
 from test.hypothesis.mutation.decorators.mutation import mutation
 
 from test.hypothesis.mutation.metadata.contract import (

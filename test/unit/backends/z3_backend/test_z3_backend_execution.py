@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import pytest
 
-from dsl.backends.errors import UnsupportedScalarExpressionError
-from dsl.backends.z3_backend.runner import VerificationStatus, Z3Runner
-from dsl.backends.z3_backend.translator import Z3Translator
-from dsl.ir.ir1.nodes import (
+from toetra._backends.errors import UnsupportedScalarExpressionError
+from toetra._backends.z3_backend.runner import VerificationStatus, Z3Runner
+from toetra._backends.z3_backend.translator import Z3Translator
+from toetra._compiler.ir.ir1.nodes import (
     AndIR,
     AttributeExpressionIR,
     BinaryArithmeticExpressionIR,
@@ -15,12 +15,12 @@ from dsl.ir.ir1.nodes import (
     ScopeIR,
     UnaryArithmeticExpressionIR,
 )
-from dsl.ir.ir2.enums import (
+from toetra._compiler.ir.ir2.enums import (
     AssumptionSource,
     NormalFormKind,
     VerificationSemantics,
 )
-from dsl.ir.ir2.nodes import (
+from toetra._compiler.ir.ir2.nodes import (
     AffineExpressionIR2,
     AffineOutputConstraintIR2,
     AffineTermIR2,
@@ -28,15 +28,15 @@ from dsl.ir.ir2.nodes import (
     NNFFormulaIR2,
     VerificationTaskIR2,
 )
-from dsl.ir.ir2.requirements import IR2Requirements
-from dsl.language.vocabulary.backends import EnumBackend
-from dsl.language.vocabulary.operators import (
+from toetra._compiler.ir.ir2.requirements import IR2Requirements
+from toetra._language.vocabulary.backends import EnumBackend
+from toetra._language.vocabulary.operators import (
     EnumArithmeticOperator,
     EnumComparisonOperator,
     EnumUnaryOperator,
 )
-from dsl.language.vocabulary.properties import EnumProperty
-from dsl.semantic.types.enums import EnumDataType
+from toetra._language.vocabulary.properties import EnumProperty
+from toetra._compiler.semantic.types.enums import EnumDataType
 
 
 def _pointwise_scope() -> ScopeIR:
@@ -371,7 +371,7 @@ def test_z3_runner_returns_structured_message_for_each_result() -> None:
 
 
 def test_z3_runner_reports_unknown_as_inconclusive(monkeypatch) -> None:
-    import dsl.backends.z3_backend.runner as runner_module
+    import toetra._backends.z3_backend.runner as runner_module
 
     class UnknownSolver:
         def add(self, expression) -> None:
@@ -431,8 +431,8 @@ def _inconsistent_assumptions() -> tuple[AssumptionIR2, ...]:
 
 
 def test_z3_runner_warns_when_universal_proof_is_vacuous() -> None:
-    from dsl.backends.diagnostics import BackendDiagnosticSeverity
-    from dsl.backends.z3_backend.runner import Z3_VACUOUS_PROOF
+    from toetra._backends.diagnostics import BackendDiagnosticSeverity
+    from toetra._backends.z3_backend.runner import Z3_VACUOUS_PROOF
 
     atom = _comparison()
     task = _task(
@@ -453,7 +453,7 @@ def test_z3_runner_warns_when_universal_proof_is_vacuous() -> None:
 
 
 def test_z3_runner_warns_when_no_witness_comes_from_inconsistent_assumptions() -> None:
-    from dsl.backends.z3_backend.runner import Z3_INCONSISTENT_ASSUMPTIONS
+    from toetra._backends.z3_backend.runner import Z3_INCONSISTENT_ASSUMPTIONS
 
     atom = _comparison()
     task = _task(

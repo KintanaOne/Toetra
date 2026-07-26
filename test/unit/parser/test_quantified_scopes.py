@@ -6,7 +6,7 @@ import pytest
 from lark import Token, Tree
 from lark.exceptions import UnexpectedInput
 
-from dsl.parser.parser import parse_toetra_code
+from toetra._compiler.parser.parser import parse_toetra_code
 
 
 @pytest.mark.parametrize(

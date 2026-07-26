@@ -1,7 +1,11 @@
 from __future__ import annotations
-from dsl.ir.ir1.nodes import DomainEntryIR, FiniteSetDomainIR, SymbolLiteralIR
+from toetra._compiler.ir.ir1.nodes import (
+    DomainEntryIR,
+    FiniteSetDomainIR,
+    SymbolLiteralIR,
+)
 
-from dsl.ir.ir1.nodes import AndIR, DomainIR, NotIR, ScopeIR
+from toetra._compiler.ir.ir1.nodes import AndIR, DomainIR, NotIR, ScopeIR
 
 from test.fixtures.normalization.nnf.helpers import (
     assert_is_nnf,

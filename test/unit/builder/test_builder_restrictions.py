@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from dsl.ast.nodes.assertion import AndNode, ComparisonNode
-from dsl.ast.nodes.expressions import QuantifierExprNode
-from dsl.ast.nodes.neighborhood import NeighborhoodMembershipNode
-from dsl.ast.nodes.primitives import ConstantNode
-from dsl.semantic.types.enums import EnumDataType
+from toetra._compiler.ast.nodes.assertion import AndNode, ComparisonNode
+from toetra._compiler.ast.nodes.expressions import QuantifierExprNode
+from toetra._compiler.ast.nodes.neighborhood import NeighborhoodMembershipNode
+from toetra._compiler.ast.nodes.primitives import ConstantNode
+from toetra._compiler.semantic.types.enums import EnumDataType
 from test.unit.builder._point_binding_helpers import build_program
 
 

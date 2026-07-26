@@ -1,8 +1,13 @@
 from __future__ import annotations
 
-from dsl.ir.ir1.nodes import ComparisonIR, ImplyIR, OrIR, TargetExpressionIR
-from dsl.ir.ir1.run_ir1 import run_ir
-from dsl.ir.normalization.nnf import NNFNormalizer
+from toetra._compiler.ir.ir1.nodes import (
+    ComparisonIR,
+    ImplyIR,
+    OrIR,
+    TargetExpressionIR,
+)
+from toetra._compiler.ir.ir1.run_ir1 import run_ir
+from toetra._compiler.ir.normalization.nnf import NNFNormalizer
 
 
 def test_nnf_preserves_binder_point_and_evaluation_identity() -> None:

@@ -1,14 +1,17 @@
 from __future__ import annotations
 
-from dsl.ir.ir1.nodes import AndIR, ComparisonIR
-from dsl.ir.ir1.outputs import OutputObservableExpressionIR
-from dsl.ir.ir1.pretty import pretty_task
-from dsl.ir.ir1.run_ir1 import run_ir
-from dsl.semantic.types.enums import EnumDataType
-from model.detector.model_framework import EnumModelFramework
-from model.schema.feature_schema import FeatureSchema
-from model.schema.model_schema import ModelSchema
-from model.schema.output_schema import ClassificationOutputSchema, EnumOutputObservable
+from toetra._compiler.ir.ir1.nodes import AndIR, ComparisonIR
+from toetra._compiler.ir.ir1.outputs import OutputObservableExpressionIR
+from toetra._compiler.ir.ir1.pretty import pretty_task
+from toetra._compiler.ir.ir1.run_ir1 import run_ir
+from toetra._compiler.semantic.types.enums import EnumDataType
+from toetra._models.detector.model_framework import EnumModelFramework
+from toetra._models.schema.feature_schema import FeatureSchema
+from toetra._models.schema.model_schema import ModelSchema
+from toetra._models.schema.output_schema import (
+    ClassificationOutputSchema,
+    EnumOutputObservable,
+)
 
 
 def test_source_to_ir1_preserves_declarative_classification_observables() -> None:

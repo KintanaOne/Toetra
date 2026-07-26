@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import List
 
 
-from dsl.ast.nodes.assertion import (
+from toetra._compiler.ast.nodes.assertion import (
     AndNode,
     OrNode,
     NotNode,
@@ -12,7 +12,7 @@ from dsl.ast.nodes.assertion import (
     LogicalNode,
 )
 
-from dsl.ast.nodes.primitives import AttributeNode
+from toetra._compiler.ast.nodes.primitives import AttributeNode
 from test.hypothesis.mutation.functions.semantic.helper.constraint import (
     SemanticConstraint,
     SemanticConstraintSet,

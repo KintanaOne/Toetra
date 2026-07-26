@@ -1,4 +1,4 @@
-from dsl.ir.ir1.nodes import (
+from toetra._compiler.ir.ir1.nodes import (
     AttributeExpressionIR,
     ComparisonIR,
     ConstantExpressionIR,
@@ -6,10 +6,10 @@ from dsl.ir.ir1.nodes import (
     ScopeIR,
     VerificationTask,
 )
-from dsl.ir.ir1.pretty import pretty_task
-from dsl.language.vocabulary.operators import EnumComparisonOperator
-from dsl.language.vocabulary.properties import EnumProperty
-from dsl.semantic.types.enums import EnumDataType
+from toetra._compiler.ir.ir1.pretty import pretty_task
+from toetra._language.vocabulary.operators import EnumComparisonOperator
+from toetra._language.vocabulary.properties import EnumProperty
+from toetra._compiler.semantic.types.enums import EnumDataType
 
 
 def _task(comparison: ComparisonIR) -> VerificationTask:

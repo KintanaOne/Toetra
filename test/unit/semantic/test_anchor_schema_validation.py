@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import pytest
 
-from dsl.parser.errors import ParserError
-from dsl.semantic.core.validator import ToetraValidator
-from dsl.semantic.runtime.tracer import ValidationTracer
+from toetra._compiler.parser.errors import ParserError
+from toetra._compiler.semantic.core.validator import ToetraValidator
+from toetra._compiler.semantic.runtime.tracer import ValidationTracer
 from test.unit.semantic.anchor_helpers import (
     anchor_schema,
     build_program,

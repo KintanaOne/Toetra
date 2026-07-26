@@ -4,10 +4,10 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
 
-from dsl.ir.ir1.nodes import ModelEvaluationIR, PointBindingIR
-from dsl.ir.ir2.model.affine import AffineModelQuantityConstraintIR2
-from model.encoder import ModelEncoderFactory
-from model.introspector.sklearn_introspector import SklearnIntrospector
+from toetra._compiler.ir.ir1.nodes import ModelEvaluationIR, PointBindingIR
+from toetra._compiler.ir.ir2.model.affine import AffineModelQuantityConstraintIR2
+from toetra._models.encoder import ModelEncoderFactory
+from toetra._models.introspector.sklearn_introspector import SklearnIntrospector
 
 
 def test_encoded_affine_quantity_matches_sklearn_decision_function(tmp_path) -> None:

@@ -1,12 +1,12 @@
-from dsl.ast.nodes.assertion import (
+from toetra._compiler.ast.nodes.assertion import (
     AndNode,
     LogicalNode,
     ComparisonNode,
 )
 
-from dsl.ast.nodes.primitives import AttributeNode, ConstantNode
+from toetra._compiler.ast.nodes.primitives import AttributeNode, ConstantNode
 
-from dsl.language.vocabulary.operators import EnumComparisonOperator
+from toetra._language.vocabulary.operators import EnumComparisonOperator
 from test.hypothesis.mutation.functions.semantic.helper.constraint import (
     SemanticConstraint,
     SemanticConstraintSet,
@@ -74,7 +74,7 @@ class SemanticASTRebuilder:
 
     def _infer_dtype(self, value):
 
-        from dsl.semantic.types.enums import EnumDataType
+        from toetra._compiler.semantic.types.enums import EnumDataType
 
         if isinstance(value, bool):
             return EnumDataType.BOOL

@@ -1,7 +1,7 @@
-from dsl.ast.nodes.base import ASTNode
-from dsl.ast.nodes.primitives import ArgNode, AttributeNode, ConstantNode
-from dsl.semantic.runtime.annotations import SemanticAnnotations
-from dsl.semantic.types.enums import EnumDataType
+from toetra._compiler.ast.nodes.base import ASTNode
+from toetra._compiler.ast.nodes.primitives import ArgNode, AttributeNode, ConstantNode
+from toetra._compiler.semantic.runtime.annotations import SemanticAnnotations
+from toetra._compiler.semantic.types.enums import EnumDataType
 
 
 def test_attribute_node_is_semantic_ast_node():

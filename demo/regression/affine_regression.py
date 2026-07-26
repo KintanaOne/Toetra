@@ -8,8 +8,8 @@ import pandas as pd
 from sklearn.linear_model import LinearRegression
 
 from toetra import VerificationSession, VerificationStatus, verify
-from model.runtime.manager import ModelManager
-from model.schema.model_schema import ModelSchema
+from toetra._models.runtime.manager import ModelManager
+from toetra._models.schema.model_schema import ModelSchema
 
 SPEC_PATH = Path(__file__).with_name("affine_regression_policy.toetra")
 EXPECTED_STATUSES = (

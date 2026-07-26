@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import pytest
 
-from dsl.ir.ir1.nodes import ModelEvaluationIR, PointBindingIR
-from dsl.ir.ir2.enums import AssumptionSource
-from dsl.ir.ir2.model.affine import (
+from toetra._compiler.ir.ir1.nodes import ModelEvaluationIR, PointBindingIR
+from toetra._compiler.ir.ir2.enums import AssumptionSource
+from toetra._compiler.ir.ir2.model.affine import (
     AffineExpressionIR2,
     AffineOutputConstraintIR2,
 )
-from dsl.ir.ir2.nodes import AssumptionIR2, NNFFormulaIR2
-from dsl.language.vocabulary.operators import EnumComparisonOperator
-from model.encoder import (
+from toetra._compiler.ir.ir2.nodes import AssumptionIR2, NNFFormulaIR2
+from toetra._language.vocabulary.operators import EnumComparisonOperator
+from toetra._models.encoder import (
     InvalidModelAssumptionError,
     validate_model_assumptions,
     validate_model_evaluation_coverage,

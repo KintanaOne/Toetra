@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from dsl.ir.ir1.model_quantities import ModelQuantityExpressionIR
-from dsl.ir.ir1.nodes import ComparisonIR, NotIR, OrIR
-from dsl.ir.ir1.run_ir1 import run_ir
-from dsl.ir.normalization.nnf import NNFNormalizer
-from model.semantics.lowering import ModelSemanticLowerer
+from toetra._compiler.ir.ir1.model_quantities import ModelQuantityExpressionIR
+from toetra._compiler.ir.ir1.nodes import ComparisonIR, NotIR, OrIR
+from toetra._compiler.ir.ir1.run_ir1 import run_ir
+from toetra._compiler.ir.normalization.nnf import NNFNormalizer
+from toetra._models.semantics.lowering import ModelSemanticLowerer
 from test.fixtures.model_semantic_lowering import make_binary_logistic_schema
 
 

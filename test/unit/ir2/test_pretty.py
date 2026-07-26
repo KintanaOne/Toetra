@@ -1,19 +1,19 @@
-from dsl.ir.ir1.nodes import (
+from toetra._compiler.ir.ir1.nodes import (
     AttributeExpressionIR,
     ComparisonIR,
     ConstantExpressionIR,
 )
-from dsl.ir.ir2.enums import Polarity
-from dsl.ir.ir2.nodes import (
+from toetra._compiler.ir.ir2.enums import Polarity
+from toetra._compiler.ir.ir2.nodes import (
     ClauseIR2,
     CNFFormulaIR2,
     DNFFormulaIR2,
     LiteralIR2,
     TermIR2,
 )
-from dsl.ir.ir2.pretty import pretty_formula
-from dsl.language.vocabulary.operators import EnumComparisonOperator
-from dsl.semantic.types.enums import EnumDataType
+from toetra._compiler.ir.ir2.pretty import pretty_formula
+from toetra._language.vocabulary.operators import EnumComparisonOperator
+from toetra._compiler.semantic.types.enums import EnumDataType
 
 
 def _cmp(name: str) -> ComparisonIR:

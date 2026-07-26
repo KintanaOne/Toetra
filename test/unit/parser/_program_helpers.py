@@ -2,16 +2,16 @@ from typing import Type, TypeVar, cast
 
 from lark import Tree
 
-from dsl.ast.nodes.expressions import (
+from toetra._compiler.ast.nodes.expressions import (
     AtExprNode,
     CheckAtExprNode,
     PairwiseExprNode,
     QuantifierExprNode,
 )
-from dsl.builder.program import parse_program
-from dsl.language.vocabulary.backends import EnumBackend
-from dsl.language.vocabulary.properties import EnumProperty
-from dsl.parser.parser import parse_toetra_code
+from toetra._compiler.builder.program import parse_program
+from toetra._language.vocabulary.backends import EnumBackend
+from toetra._language.vocabulary.properties import EnumProperty
+from toetra._compiler.parser.parser import parse_toetra_code
 
 T = TypeVar("T")
 
@@ -138,8 +138,8 @@ def assert_domain(
 ) -> None:
     """Assert one finite-set typed domain entry."""
 
-    from dsl.ast.nodes.domain import FiniteSetDomainNode, SymbolLiteralNode
-    from dsl.ast.nodes.primitives import NameRefNode
+    from toetra._compiler.ast.nodes.domain import FiniteSetDomainNode, SymbolLiteralNode
+    from toetra._compiler.ast.nodes.primitives import NameRefNode
 
     assert domain is not None
     assert len(domain.entries) == 1

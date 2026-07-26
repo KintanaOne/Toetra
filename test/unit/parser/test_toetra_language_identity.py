@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import dsl.parser.parser as parser_module
+import toetra._compiler.parser.parser as parser_module
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
-GRAMMAR_ROOT = PROJECT_ROOT / "dsl" / "language" / "grammar"
+GRAMMAR_ROOT = PROJECT_ROOT / "src" / "toetra" / "_language" / "grammar"
 
 
 def test_parser_exposes_only_toetra_named_entry_point() -> None:
@@ -21,7 +21,7 @@ def test_canonical_grammar_files_use_toetra_identity() -> None:
 
 
 def test_repository_contains_no_legacy_specification_files() -> None:
-    source_roots = ("demo", "docs", "dsl", "model", "test", "toetra")
+    source_roots = ("demo", "docs", "src", "test")
     legacy_files = tuple(
         path.relative_to(PROJECT_ROOT)
         for root_name in source_roots

@@ -5,7 +5,7 @@ from decimal import Decimal
 
 import pytest
 
-from dsl.provenance.fingerprint import (
+from toetra._provenance.fingerprint import (
     CanonicalizationError,
     canonical_json_bytes,
     fingerprint_canonical_json,

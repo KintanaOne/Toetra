@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from dsl.ir.ir1.nodes import (
+from toetra._compiler.ir.ir1.nodes import (
     ConstantExpressionIR,
     DomainEntryIR,
     FiniteSetDomainIR,
     IntervalDomainIR,
     SymbolLiteralIR,
 )
-from dsl.ir.ir1.run_ir1 import run_ir
-from dsl.language.vocabulary.domains import EnumBoundaryKind
-from dsl.semantic.types.enums import EnumDataType
+from toetra._compiler.ir.ir1.run_ir1 import run_ir
+from toetra._language.vocabulary.domains import EnumBoundaryKind
+from toetra._compiler.semantic.types.enums import EnumDataType
 
 
 def test_typed_domain_survives_ast_to_ir1_without_legacy_name_values_shape():

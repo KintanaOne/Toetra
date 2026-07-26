@@ -27,6 +27,8 @@ from toetra.examples import credit_risk_policy
 
 module_path = Path(toetra.__file__).resolve()
 assert importlib.util.find_spec("forml") is None
+assert importlib.util.find_spec("dsl") is None
+assert importlib.util.find_spec("model") is None
 assert "site-packages" in module_path.parts, module_path
 assert callable(verify)
 assert VerificationSession is not None
@@ -34,7 +36,7 @@ policy_source = credit_risk_policy()
 assert "target := risk_score" in policy_source
 assert "exists applicant" in policy_source
 
-spec = importlib.util.find_spec("dsl.language.grammar")
+spec = importlib.util.find_spec("toetra._language.grammar")
 assert spec is not None and spec.submodule_search_locations
 root = Path(next(iter(spec.submodule_search_locations)))
 assert (root / "toetra_grammar.ebnf").is_file()

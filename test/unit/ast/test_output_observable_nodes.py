@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from dsl.ast.nodes.base import ASTNode
-from dsl.ast.nodes.outputs import (
+from toetra._compiler.ast.nodes.base import ASTNode
+from toetra._compiler.ast.nodes.outputs import (
     ClassProbabilityObservableNode,
     ModelOutputRefNode,
     OutputObservableNode,
     PredictedLabelObservableNode,
 )
-from dsl.ast.nodes.primitives import ConstantNode, ScalarExpressionNode
-from dsl.language.vocabulary.outputs import EnumOutputSelector
-from dsl.semantic.types.enums import EnumDataType
+from toetra._compiler.ast.nodes.primitives import ConstantNode, ScalarExpressionNode
+from toetra._language.vocabulary.outputs import EnumOutputSelector
+from toetra._compiler.semantic.types.enums import EnumDataType
 
 
 def test_ast_obs_001_output_reference_is_not_a_scalar_expression() -> None:

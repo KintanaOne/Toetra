@@ -1,12 +1,12 @@
-from dsl.ir.ir1.nodes import ModelEvaluationIR, PointBindingIR
-from dsl.ir.ir2.model.affine import (
+from toetra._compiler.ir.ir1.nodes import ModelEvaluationIR, PointBindingIR
+from toetra._compiler.ir.ir2.model.affine import (
     AffineExpressionIR2,
     AffineOutputConstraintIR2,
     AffineTermIR2,
 )
-from dsl.ir.ir2.nodes import NNFFormulaIR2
-from dsl.ir.ir2.pretty import pretty_formula
-from dsl.language.vocabulary.operators import EnumComparisonOperator
+from toetra._compiler.ir.ir2.nodes import NNFFormulaIR2
+from toetra._compiler.ir.ir2.pretty import pretty_formula
+from toetra._language.vocabulary.operators import EnumComparisonOperator
 
 
 def test_point_aware_affine_equation_pretty_prints_indexed_target() -> None:

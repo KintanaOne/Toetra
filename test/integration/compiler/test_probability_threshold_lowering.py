@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dsl.compatibility.descriptors import PropertyNumericRequirements
-from dsl.ir.ir2.run_ir2 import run_ir2_with_model_schema
+from toetra._compatibility.descriptors import PropertyNumericRequirements
+from toetra._compiler.ir.ir2.run_ir2 import run_ir2_with_model_schema
 from test.fixtures.binary_classification import (
     binary_probability_property,
     make_sklearn_logistic_schema,

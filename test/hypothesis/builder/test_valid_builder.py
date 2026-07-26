@@ -1,8 +1,8 @@
 from hypothesis import given
 import pytest
 
-from dsl.builder.program import parse_program
-from dsl.parser.parser import parse_toetra_code
+from toetra._compiler.builder.program import parse_program
+from toetra._compiler.parser.parser import parse_toetra_code
 
 from test.hypothesis.settings import DEFAULT_SETTINGS
 from test.hypothesis.strategies.valid.program_string import valid_string_program

@@ -1,11 +1,11 @@
-from dsl.ir.ir1.nodes import (
+from toetra._compiler.ir.ir1.nodes import (
     ComparisonIR,
     ConstantExpressionIR,
     TargetExpressionIR,
 )
-from dsl.ir.ir1.run_ir1 import run_ir
-from dsl.language.vocabulary.operators import EnumComparisonOperator
-from dsl.semantic.types.enums import EnumDataType
+from toetra._compiler.ir.ir1.run_ir1 import run_ir
+from toetra._language.vocabulary.operators import EnumComparisonOperator
+from toetra._compiler.semantic.types.enums import EnumDataType
 
 
 def test_target_ref_lowers_to_model_output_in_ir1():

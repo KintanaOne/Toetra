@@ -21,9 +21,9 @@ from __future__ import annotations
 
 from copy import deepcopy
 
-from dsl.builder.program import ProgramNode
+from toetra._compiler.builder.program import ProgramNode
 
-from dsl.ast.nodes.expressions import (
+from toetra._compiler.ast.nodes.expressions import (
     PairwiseExprNode,
     AtExprNode,
 )

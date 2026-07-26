@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dsl.ir.ir1.nodes import AttributeExpressionIR, ComparisonIR
-from dsl.ir.ir2.enums import AssumptionSource
+from toetra._compiler.ir.ir1.nodes import AttributeExpressionIR, ComparisonIR
+from toetra._compiler.ir.ir2.enums import AssumptionSource
 from test.unit.ir.ir2._point_aware_helpers import compile_ir2
 
 

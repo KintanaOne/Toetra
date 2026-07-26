@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import pytest
 
-from dsl.compatibility.enums import (
+from toetra._compatibility.enums import (
     CompatibilityClassification,
     ConclusionKind,
     ConclusionScope,
     SupportStatus,
 )
-from dsl.compatibility.errors import InvalidCompatibilityRuleError
-from dsl.compatibility.model import CompatibilityRule, CompatibilityRulePattern
+from toetra._compatibility.errors import InvalidCompatibilityRuleError
+from toetra._compatibility.model import CompatibilityRule, CompatibilityRulePattern
 
 
 def test_lossy_source_artifact_rule_cannot_claim_a_universal_proof() -> None:

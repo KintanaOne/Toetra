@@ -1,6 +1,6 @@
-from dsl.backends.z3_backend.capabilities import Z3_CAPABILITIES
-from dsl.ir.ir2.enums import NormalFormKind, VerificationSemantics
-from dsl.semantic.types.enums import EnumDataType
+from toetra._backends.z3_backend.capabilities import Z3_CAPABILITIES
+from toetra._compiler.ir.ir2.enums import NormalFormKind, VerificationSemantics
+from toetra._compiler.semantic.types.enums import EnumDataType
 
 
 def test_z3_declares_numeric_affine_profile() -> None:

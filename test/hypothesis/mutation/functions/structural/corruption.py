@@ -12,7 +12,7 @@ ROLE IN Toetra:
 import random
 from copy import deepcopy
 
-from dsl.ast.nodes.program import ProgramNode
+from toetra._compiler.ast.nodes.program import ProgramNode
 from test.hypothesis.mutation.functions.base import (
     PipelineStage,
     mutation,

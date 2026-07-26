@@ -1,8 +1,8 @@
-from dsl.builder.program import parse_program
-from dsl.parser.parser import parse_toetra_code
-from dsl.semantic.core.validator import ToetraValidator
-from dsl.semantic.runtime.tracer import ValidationTracer
-from model.runtime.manager import ModelManager
+from toetra._compiler.builder.program import parse_program
+from toetra._compiler.parser.parser import parse_toetra_code
+from toetra._compiler.semantic.core.validator import ToetraValidator
+from toetra._compiler.semantic.runtime.tracer import ValidationTracer
+from toetra._models.runtime.manager import ModelManager
 from test.fixtures.model_bridge.factories import (
     dataset_path,
     make_classification_joblib,

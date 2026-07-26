@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dsl.parser.parser import parse_toetra_code
+from toetra._compiler.parser.parser import parse_toetra_code
 
 
 def test_named_argument_words_remain_identifiers_outside_argument_positions() -> None:

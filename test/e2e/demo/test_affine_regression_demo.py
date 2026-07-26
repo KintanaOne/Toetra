@@ -4,8 +4,8 @@ from demo.regression.affine_regression import (
     EXPECTED_STATUSES,
     run_demo,
 )
-from dsl.backends.results import VerificationStatus
-from dsl.semantic.types.enums import EnumDataType
+from toetra._backends.results import VerificationStatus
+from toetra._compiler.semantic.types.enums import EnumDataType
 
 
 def test_affine_regression_demo_runs_end_to_end() -> None:

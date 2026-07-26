@@ -1,18 +1,18 @@
 from __future__ import annotations
 
-from dsl.backends.execution import (
+from toetra._backends.execution import (
     BackendExecutionEvidence,
     BackendExecutionPolicy,
     BackendExecutionStatus,
     BackendResourceLimits,
 )
-from dsl.backends.results import VerificationResult, VerificationStatus
-from dsl.language.vocabulary.backends import EnumBackend
-from dsl.runtime import BackendRunnerRegistry, verify
-from dsl.semantic.types.enums import EnumDataType
-from model.detector.model_framework import EnumModelFramework
-from model.schema.feature_schema import FeatureSchema
-from model.schema.model_schema import ModelSchema
+from toetra._backends.results import VerificationResult, VerificationStatus
+from toetra._language.vocabulary.backends import EnumBackend
+from toetra._runtime import BackendRunnerRegistry, verify
+from toetra._compiler.semantic.types.enums import EnumDataType
+from toetra._models.detector.model_framework import EnumModelFramework
+from toetra._models.schema.feature_schema import FeatureSchema
+from toetra._models.schema.model_schema import ModelSchema
 
 _SOURCE = """
 model := "model.joblib"

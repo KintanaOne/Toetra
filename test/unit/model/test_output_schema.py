@@ -1,7 +1,7 @@
 import pytest
 
-from dsl.semantic.types.enums import EnumDataType
-from model.schema.output_schema import (
+from toetra._compiler.semantic.types.enums import EnumDataType
+from toetra._models.schema.output_schema import (
     BinaryClassificationDecisionPolicy,
     ClassificationOutputSchema,
     EnumModelOutputKind,

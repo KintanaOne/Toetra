@@ -1,7 +1,7 @@
 from hypothesis import strategies as st
 from lark import ParseTree
 
-from dsl.parser.parser import parse_toetra_code
+from toetra._compiler.parser.parser import parse_toetra_code
 from ..ast.header import header
 from ..ast.body import body
 

@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import pytest
 
-from dsl.ir.ir1.run_ir1 import run_ir
-from model.semantics.errors import UnsupportedObservableLoweringError
-from model.semantics.lowering import ModelSemanticLowerer
+from toetra._compiler.ir.ir1.run_ir1 import run_ir
+from toetra._models.semantics.errors import UnsupportedObservableLoweringError
+from toetra._models.semantics.lowering import ModelSemanticLowerer
 from test.fixtures.model_semantic_lowering import make_binary_logistic_schema
 
 

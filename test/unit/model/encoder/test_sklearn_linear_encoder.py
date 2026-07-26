@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dsl.ir.ir1.nodes import (
+from toetra._compiler.ir.ir1.nodes import (
     AttributeExpressionIR,
     ComparisonIR,
     ConstantExpressionIR,
@@ -10,18 +10,18 @@ from dsl.ir.ir1.nodes import (
     ScopeIR,
     VerificationTask,
 )
-from dsl.ir.ir2.builder import IR2Builder
-from dsl.ir.ir2.context import IR2BuildContext
-from dsl.ir.ir2.enums import NormalFormKind
-from dsl.ir.ir2.nodes import DNFFormulaIR2, AffineOutputConstraintIR2
-from dsl.language.vocabulary.operators import EnumComparisonOperator
-from dsl.language.vocabulary.properties import EnumProperty
-from dsl.semantic.types.enums import EnumDataType
-from model.detector.model_framework import EnumModelFramework
-from model.encoder import ModelEncoderFactory, SklearnLinearRegressorEncoder
-from model.encoder.context import ModelEncodingContext
-from model.schema.feature_schema import FeatureSchema
-from model.schema.model_schema import ModelSchema
+from toetra._compiler.ir.ir2.builder import IR2Builder
+from toetra._compiler.ir.ir2.context import IR2BuildContext
+from toetra._compiler.ir.ir2.enums import NormalFormKind
+from toetra._compiler.ir.ir2.nodes import DNFFormulaIR2, AffineOutputConstraintIR2
+from toetra._language.vocabulary.operators import EnumComparisonOperator
+from toetra._language.vocabulary.properties import EnumProperty
+from toetra._compiler.semantic.types.enums import EnumDataType
+from toetra._models.detector.model_framework import EnumModelFramework
+from toetra._models.encoder import ModelEncoderFactory, SklearnLinearRegressorEncoder
+from toetra._models.encoder.context import ModelEncodingContext
+from toetra._models.schema.feature_schema import FeatureSchema
+from toetra._models.schema.model_schema import ModelSchema
 
 
 def _schema() -> ModelSchema:

@@ -4,14 +4,14 @@ import inspect
 
 import pytest
 
-from dsl.backends.defaults import create_default_backend_registry
-from dsl.backends.router import BackendRouter
-from dsl.backends.z3_backend.translator import Z3Translator
-from dsl.ir.ir1.model_quantities import ModelQuantityExpressionIR
-from dsl.ir.ir1.nodes import ComparisonIR
-from dsl.ir.ir2.run_ir2 import run_ir2, run_ir2_with_model_schema
-from model.encoder.context import ModelEncodingContext
-from model.semantics.errors import (
+from toetra._backends.defaults import create_default_backend_registry
+from toetra._backends.router import BackendRouter
+from toetra._backends.z3_backend.translator import Z3Translator
+from toetra._compiler.ir.ir1.model_quantities import ModelQuantityExpressionIR
+from toetra._compiler.ir.ir1.nodes import ComparisonIR
+from toetra._compiler.ir.ir2.run_ir2 import run_ir2, run_ir2_with_model_schema
+from toetra._models.encoder.context import ModelEncodingContext
+from toetra._models.semantics.errors import (
     MissingModelSemanticsError,
     UnsupportedModelSemanticProfileError,
 )

@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-from dsl.backends.defaults import create_default_backend_registry
-from dsl.backends.router import BackendRouter
-from dsl.compatibility.defaults import (
+from toetra._backends.defaults import create_default_backend_registry
+from toetra._backends.router import BackendRouter
+from toetra._compatibility.defaults import (
     SKLEARN_BINARY_LOGISTIC_EXACT_PROBABILITY_RULE_ID,
     SKLEARN_BINARY_LOGISTIC_PROBABILITY_RULE_ID,
 )
-from dsl.compatibility.model import NumericCompatibilityContext
-from dsl.ir.ir2.run_ir2 import run_ir2_with_model_schema
-from model.compatibility import framework_model_descriptor
-from model.encoder.profile import model_encoder_descriptor
-from model.encoder.sklearn.logistic import SklearnLogisticRegressionEncoder
+from toetra._compatibility.model import NumericCompatibilityContext
+from toetra._compiler.ir.ir2.run_ir2 import run_ir2_with_model_schema
+from toetra._models.compatibility import framework_model_descriptor
+from toetra._models.encoder.profile import model_encoder_descriptor
+from toetra._models.encoder.sklearn.logistic import SklearnLogisticRegressionEncoder
 from test.fixtures.binary_classification import (
     binary_probability_property,
     make_sklearn_logistic_schema,

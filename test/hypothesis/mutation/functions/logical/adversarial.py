@@ -26,7 +26,7 @@ from test.hypothesis.mutation.metadata.enums import (
     Strategy,
 )
 
-from dsl.ast.nodes.assertion import AndNode, OrNode, NotNode
+from toetra._compiler.ast.nodes.assertion import AndNode, OrNode, NotNode
 
 # =========================================================
 # 1. TAUTOLOGY INJECTION

@@ -1,20 +1,20 @@
-from dsl.ir.ir1.nodes import (
+from toetra._compiler.ir.ir1.nodes import (
     AndIR,
     ComparisonIR,
     ConstantExpressionIR,
     NotIR,
     TargetExpressionIR,
 )
-from dsl.ir.ir2.context import IR2BuildContext
-from dsl.ir.ir2.enums import AssumptionSource, NormalFormKind
-from dsl.ir.ir2.model.affine import AffineOutputConstraintIR2
-from dsl.ir.ir2.nodes import NNFFormulaIR2
-from dsl.ir.ir2.run_ir2 import run_ir2_with_model_schema
-from dsl.language.vocabulary.operators import EnumComparisonOperator
-from dsl.semantic.types.enums import EnumDataType
-from model.detector.model_framework import EnumModelFramework
-from model.schema.feature_schema import FeatureSchema
-from model.schema.model_schema import ModelSchema
+from toetra._compiler.ir.ir2.context import IR2BuildContext
+from toetra._compiler.ir.ir2.enums import AssumptionSource, NormalFormKind
+from toetra._compiler.ir.ir2.model.affine import AffineOutputConstraintIR2
+from toetra._compiler.ir.ir2.nodes import NNFFormulaIR2
+from toetra._compiler.ir.ir2.run_ir2 import run_ir2_with_model_schema
+from toetra._language.vocabulary.operators import EnumComparisonOperator
+from toetra._compiler.semantic.types.enums import EnumDataType
+from toetra._models.detector.model_framework import EnumModelFramework
+from toetra._models.schema.feature_schema import FeatureSchema
+from toetra._models.schema.model_schema import ModelSchema
 
 
 def _linear_regression_schema() -> ModelSchema:

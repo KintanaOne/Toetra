@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from dsl.backends.router import BackendRoute
-from dsl.backends.z3_backend.capabilities import Z3_CAPABILITIES
-from dsl.backends.z3_backend.runner import Z3Runner
-from dsl.language.vocabulary.backends import EnumBackend
-from dsl.reporting.builder import build_verification_report
+from toetra._backends.router import BackendRoute
+from toetra._backends.z3_backend.capabilities import Z3_CAPABILITIES
+from toetra._backends.z3_backend.runner import Z3Runner
+from toetra._language.vocabulary.backends import EnumBackend
+from toetra._reporting.builder import build_verification_report
 from test.unit.backends.z3_backend._point_aware_helpers import build_task
 
 _SOURCE = """

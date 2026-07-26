@@ -6,16 +6,16 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from dsl.ir.ir2.context import IR2BuildContext
-from dsl.ir.ir2.enums import NormalFormKind
-from dsl.provenance import builder as provenance_builder
-from dsl.provenance.builder import build_provenance_context
-from dsl.provenance.model import FingerprintStatus, ProvenanceCompleteness
-from dsl.semantic.types.enums import EnumDataType
-from model.detector.model_framework import EnumModelFramework
-from model.schema.feature_schema import FeatureSchema
-from model.schema.model_schema import ModelSchema
-from model.schema.output_schema import (
+from toetra._compiler.ir.ir2.context import IR2BuildContext
+from toetra._compiler.ir.ir2.enums import NormalFormKind
+from toetra._provenance import builder as provenance_builder
+from toetra._provenance.builder import build_provenance_context
+from toetra._provenance.model import FingerprintStatus, ProvenanceCompleteness
+from toetra._compiler.semantic.types.enums import EnumDataType
+from toetra._models.detector.model_framework import EnumModelFramework
+from toetra._models.schema.feature_schema import FeatureSchema
+from toetra._models.schema.model_schema import ModelSchema
+from toetra._models.schema.output_schema import (
     BinaryClassificationDecisionPolicy,
     ClassificationOutputSchema,
 )

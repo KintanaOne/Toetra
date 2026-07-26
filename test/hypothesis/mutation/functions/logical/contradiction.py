@@ -1,12 +1,12 @@
 from copy import deepcopy
 
-from dsl.builder.assertion import (
+from toetra._compiler.builder.assertion import (
     AndNode,
     NotNode,
     OrNode,
 )
 
-from dsl.builder.program import ProgramNode
+from toetra._compiler.builder.program import ProgramNode
 
 from test.hypothesis.mutation.functions.base import (
     MutationLayer,

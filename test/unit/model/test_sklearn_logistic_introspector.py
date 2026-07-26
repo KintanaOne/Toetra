@@ -3,12 +3,12 @@ from __future__ import annotations
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
 
-from model.introspector.sklearn_introspector import SklearnIntrospector
-from model.schema.output_schema import (
+from toetra._models.introspector.sklearn_introspector import SklearnIntrospector
+from toetra._models.schema.output_schema import (
     BinaryClassificationDecisionPolicy,
     ClassificationOutputSchema,
 )
-from model.families import BINARY_LOGISTIC_AFFINE_MODEL_FAMILY
+from toetra._models.families import BINARY_LOGISTIC_AFFINE_MODEL_FAMILY
 
 
 def _binary_frame() -> pd.DataFrame:

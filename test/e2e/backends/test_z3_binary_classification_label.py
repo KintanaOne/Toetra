@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from dsl.backends.defaults import create_default_backend_registry
-from dsl.backends.router import BackendRouter
-from dsl.backends.results import VerificationStatus
-from dsl.backends.z3_backend.runner import Z3Runner
-from dsl.ir.ir2.run_ir2 import run_ir2_with_model_schema
-from dsl.language.vocabulary.backends import EnumBackend
+from toetra._backends.defaults import create_default_backend_registry
+from toetra._backends.router import BackendRouter
+from toetra._backends.results import VerificationStatus
+from toetra._backends.z3_backend.runner import Z3Runner
+from toetra._compiler.ir.ir2.run_ir2 import run_ir2_with_model_schema
+from toetra._language.vocabulary.backends import EnumBackend
 from test.fixtures.binary_classification import (
     binary_label_property,
     make_sklearn_logistic_schema,

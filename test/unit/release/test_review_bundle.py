@@ -21,7 +21,9 @@ def _complete_repository(root: Path) -> Path:
         path = repository / raw_path
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(f"fixture for {raw_path}\n", encoding="utf-8")
-    (repository / "dsl" / "module.py").write_text("VALUE = 1\n", encoding="utf-8")
+    module_path = repository / "src" / "toetra" / "_runtime" / "module.py"
+    module_path.parent.mkdir(parents=True, exist_ok=True)
+    module_path.write_text("VALUE = 1\n", encoding="utf-8")
     return repository
 
 
@@ -39,7 +41,7 @@ def test_review_bundle_is_byte_reproducible_and_manifested(tmp_path: Path) -> No
         assert manifest["bundle_kind"] == "toetra_review_source_snapshot"
         assert manifest["repository_root_name"] == "Toetra"
         assert manifest["missing_critical_paths"] == []
-        assert "toetra/__init__.py" in archive.namelist()
+        assert "src/toetra/__init__.py" in archive.namelist()
         assert not any("__pycache__" in name for name in archive.namelist())
 
 

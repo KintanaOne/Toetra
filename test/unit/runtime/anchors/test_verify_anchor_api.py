@@ -5,19 +5,19 @@ from collections.abc import Mapping, Sequence
 import pandas as pd
 import pytest
 
-from dsl.backends.results import VerificationStatus
-from dsl.runtime import (
+from toetra._backends.results import VerificationStatus
+from toetra._runtime import (
     AnchorLookupRequest,
     AnchorResolutionError,
     AnchorResolver,
     VerificationConfigurationError,
     verify,
 )
-from dsl.semantic.symbols.point import ResolvedAnchorBinding
-from dsl.semantic.types.enums import EnumDataType
-from model.detector.model_framework import EnumModelFramework
-from model.schema.feature_schema import FeatureSchema
-from model.schema.model_schema import ModelSchema
+from toetra._compiler.semantic.symbols.point import ResolvedAnchorBinding
+from toetra._compiler.semantic.types.enums import EnumDataType
+from toetra._models.detector.model_framework import EnumModelFramework
+from toetra._models.schema.feature_schema import FeatureSchema
+from toetra._models.schema.model_schema import ModelSchema
 
 _SOURCE = """
 model := "linear.joblib"

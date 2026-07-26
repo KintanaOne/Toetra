@@ -6,8 +6,8 @@ from demo.internals.affine_model_assumption_z3 import (
     linear_output_assumption,
     run_toetra_z3_with_assumption,
 )
-from dsl.backends.z3_backend.runner import VerificationStatus
-from dsl.language.vocabulary.backends import EnumBackend
+from toetra._backends.z3_backend.runner import VerificationStatus
+from toetra._language.vocabulary.backends import EnumBackend
 
 
 def test_z3_e2e_proves_bound_with_constant_affine_model_assumption() -> None:

@@ -1,9 +1,9 @@
 import pytest
 
-from model.detector.model_framework import EnumModelFramework
-from model.errors.introspection import UnsupportedIntrospectorError
-from model.introspector.introspector_factory import IntrospectorFactory
-from model.introspector.sklearn_introspector import SklearnIntrospector
+from toetra._models.detector.model_framework import EnumModelFramework
+from toetra._models.errors.introspection import UnsupportedIntrospectorError
+from toetra._models.introspector.introspector_factory import IntrospectorFactory
+from toetra._models.introspector.sklearn_introspector import SklearnIntrospector
 from test.fixtures.model_bridge.factories import (
     dataset_path,
     train_classification_model,

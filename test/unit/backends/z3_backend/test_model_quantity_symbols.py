@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from dsl.backends.z3_backend.symbols import Z3ModelQuantityIdentity
-from dsl.backends.z3_backend.translator import Z3Translator
-from dsl.ir.ir2.run_ir2 import run_ir2_with_model_schema
+from toetra._backends.z3_backend.symbols import Z3ModelQuantityIdentity
+from toetra._backends.z3_backend.translator import Z3Translator
+from toetra._compiler.ir.ir2.run_ir2 import run_ir2_with_model_schema
 from test.fixtures.binary_classification import (
     binary_label_property,
     make_sklearn_logistic_schema,

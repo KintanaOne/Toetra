@@ -1,7 +1,7 @@
 import pytest
 from lark import Tree
 
-from dsl.ast.nodes.assertion import (
+from toetra._compiler.ast.nodes.assertion import (
     AndNode,
     OrNode,
     NotNode,
@@ -10,9 +10,9 @@ from dsl.ast.nodes.assertion import (
     ComparisonNode,
     ProblemNode,
 )
-from dsl.builder.program import parse_program
-from dsl.language.vocabulary.problems import EnumProblem
-from dsl.parser.parser import parse_toetra_code
+from toetra._compiler.builder.program import parse_program
+from toetra._language.vocabulary.problems import EnumProblem
+from toetra._compiler.parser.parser import parse_toetra_code
 
 from test.fixtures.logic_samples import (
     INVALID_LOGIC_SYNTAX,

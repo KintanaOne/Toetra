@@ -20,11 +20,11 @@ from packaging.utils import parse_sdist_filename, parse_wheel_filename
 
 DEFAULT_SOURCE_DATE_EPOCH = 1_700_000_000
 EXPECTED_DISTRIBUTION_NAME = "toetra"
-EXPECTED_TOP_LEVEL_PACKAGES = ("toetra", "dsl", "model")
-FORBIDDEN_TOP_LEVEL_PACKAGES = ("forml",)
+EXPECTED_TOP_LEVEL_PACKAGES = ("toetra",)
+FORBIDDEN_TOP_LEVEL_PACKAGES = ("forml", "dsl", "model")
 EXPECTED_PACKAGE_DATA = (
-    "dsl/language/grammar/toetra_grammar.ebnf",
-    "dsl/language/grammar/toetra_grammar.lark",
+    "toetra/_language/grammar/toetra_grammar.ebnf",
+    "toetra/_language/grammar/toetra_grammar.lark",
     "toetra/examples/credit_risk_policy.toetra",
 )
 
@@ -280,21 +280,30 @@ def _metadata_from_wheel(archive: zipfile.ZipFile) -> dict[str, str]:
     return {"name": parsed.get("Name", ""), "version": parsed.get("Version", "")}
 
 
+def _is_top_level_package_member(name: str, package: str) -> bool:
+    parts = PurePosixPath(name).parts
+    if not parts:
+        return False
+    if parts[0] == package:
+        return True
+    if len(parts) >= 2 and parts[1] == package:
+        return True
+    return len(parts) >= 3 and parts[1:3] == ("src", package)
+
+
 def _check_required_members(members: Iterable[str], *, archive_kind: str) -> None:
     normalized = tuple(str(_safe_archive_path(name)) for name in members)
     for package in FORBIDDEN_TOP_LEVEL_PACKAGES:
-        leaked = [name for name in normalized if package in PurePosixPath(name).parts]
+        leaked = [
+            name for name in normalized if _is_top_level_package_member(name, package)
+        ]
         if leaked:
             raise DistributionContractError(
-                f"{archive_kind} contains forbidden legacy package {package!r}: "
+                f"{archive_kind} contains forbidden top-level package {package!r}: "
                 f"{leaked[:5]}"
             )
     for package in EXPECTED_TOP_LEVEL_PACKAGES:
-        marker = f"{package}/"
-        if not any(
-            marker in name or name.endswith(f"/{package}/__init__.py")
-            for name in normalized
-        ):
+        if not any(_is_top_level_package_member(name, package) for name in normalized):
             raise DistributionContractError(
                 f"{archive_kind} does not contain the {package!r} package."
             )

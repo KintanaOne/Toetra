@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dsl.ir.ir1.nodes import ComparisonIR, TargetExpressionIR
-from dsl.ir.ir1.run_ir1 import run_ir
+from toetra._compiler.ir.ir1.nodes import ComparisonIR, TargetExpressionIR
+from toetra._compiler.ir.ir1.run_ir1 import run_ir
 
 
 def test_ir1_tgt_001_indexed_output_keeps_model_point_and_target() -> None:

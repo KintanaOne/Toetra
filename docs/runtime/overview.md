@@ -2,7 +2,7 @@
 
 > Status: High-level Z3 runtime implemented  
 > Public facade: `toetra`
-> Internal implementation: `dsl.runtime`, backend routing, execution and reporting
+> Internal implementation: `toetra._runtime`, backend routing, execution and reporting
 
 ## Purpose
 
@@ -92,7 +92,7 @@ json_text = session.to_json()
 session.write_artifacts("artifacts/", formats={"json", "html"})
 ```
 
-All output is produced by `dsl.reporting`. The runtime and backend never format
+All output is produced by `toetra._reporting`. The runtime and backend never format
 terminal or notebook output themselves.
 
 ## Runtime Registries

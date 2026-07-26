@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from dsl.backends.execution import (
+from toetra._backends.execution import (
     BackendCancellationToken,
     BackendExecutionCapabilities,
     BackendExecutionPolicy,

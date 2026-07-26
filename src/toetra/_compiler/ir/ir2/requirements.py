@@ -1,0 +1,341 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Iterable
+
+from toetra._compiler.ir.ir1.model_quantities import ModelQuantityExpressionIR
+from toetra._compiler.ir.ir1.nodes import (
+    AndIR,
+    AtomicIR,
+    AttributeExpressionIR,
+    BinaryArithmeticExpressionIR,
+    ComparisonIR,
+    ConstantExpressionIR,
+    LogicalIR,
+    ModelEvaluationIR,
+    NotIR,
+    OrIR,
+    ProblemIR,
+    ScalarExpressionIR,
+    ScopeIR,
+    SymbolLiteralIR,
+    TargetExpressionIR,
+    UnaryArithmeticExpressionIR,
+)
+from toetra._compiler.ir.ir1.scalar import iter_scalar_expressions
+from toetra._compiler.ir.ir2.dsl.nodes import (
+    AssumptionIR2,
+    CNFFormulaIR2,
+    DNFFormulaIR2,
+    FormulaIR2,
+    LiteralIR2,
+    NNFFormulaIR2,
+    PointIdentityMapIR2,
+    QuantifierStructureIR2,
+)
+from toetra._compiler.ir.ir2.enums import (
+    AssumptionSource,
+    NormalFormKind,
+    VerificationSemantics,
+)
+from toetra._compiler.ir.ir2.model.affine import (
+    AffineModelQuantityConstraintIR2,
+    AffineOutputConstraintIR2,
+)
+from toetra._compiler.ir.ir2.model.base import ModelConstraintIR2
+from toetra._language.vocabulary.operators import EnumArithmeticOperator
+from toetra._compiler.semantic.types.enums import EnumArithmeticClass, EnumDataType
+
+
+@dataclass(frozen=True)
+class IR2Requirements:
+    """Backend-neutral capabilities required by a VerificationTaskIR2.
+
+    The legacy coarse flags remain available for compatibility. The additional
+    scalar/domain fields expose the distinctions required by typed domains and
+    recursive arithmetic before backend capability matching is upgraded.
+    """
+
+    requires_boolean_logic: bool
+    requires_numeric_comparisons: bool
+    requires_problem_predicates: bool
+    requires_model_assertions: bool
+
+    requires_domains: bool
+    requires_neighborhoods: bool
+    normal_form: NormalFormKind
+
+    uses_quantified_scope: bool = False
+    requires_native_quantifiers: bool = False
+    required_verification_semantics: VerificationSemantics = (
+        VerificationSemantics.REFUTATION
+    )
+
+    requires_affine_arithmetic: bool = False
+    requires_nonlinear_arithmetic: bool = False
+    requires_symbolic_division: bool = False
+    required_scalar_sorts: frozenset[EnumDataType] = frozenset()
+    requires_finite_set_membership: bool = False
+    requires_symbolic_categories: bool = False
+    requires_domain_assumptions: bool = False
+
+    point_count: int = 0
+    anchor_count: int = 0
+    model_evaluation_count: int = 0
+    binder_sequence: tuple[str, ...] = ()
+    alternation_depth: int = 0
+    requires_quantifier_alternation: bool = False
+    requires_model_semantic_quantities: bool = False
+    requires_logistic_probability_threshold: bool = False
+    requires_transcendental_threshold_lowering: bool = False
+
+
+class RequirementsAnalyzer:
+    """Compute backend requirements from an already lowered IR2 task.
+
+    Requirements describe what reaches the backend after domain/model
+    assumptions have been aggregated. They never select a backend and never
+    rewrite unsupported arithmetic silently.
+    """
+
+    def analyze(
+        self,
+        *,
+        scope: ScopeIR,
+        verification_condition: FormulaIR2,
+        assumptions: tuple[AssumptionIR2, ...],
+        normal_form: NormalFormKind,
+        semantics: VerificationSemantics = VerificationSemantics.REFUTATION,
+        requires_native_quantifiers: bool = False,
+        point_mappings: tuple[PointIdentityMapIR2, ...] = (),
+        model_evaluations: tuple[ModelEvaluationIR, ...] = (),
+        quantifier_structure: QuantifierStructureIR2 | None = None,
+    ) -> IR2Requirements:
+        atoms = list(self._iter_literals_or_atoms(verification_condition))
+
+        assumption_atoms: list[AtomicIR] = []
+        for assumption in assumptions:
+            assumption_atoms.extend(self._iter_literals_or_atoms(assumption.formula))
+
+        all_items = atoms + assumption_atoms
+        quantifier_structure = quantifier_structure or QuantifierStructureIR2()
+        uses_quantified_scope = (
+            scope.kind == "quantifier" or quantifier_structure.is_quantified
+        )
+        domain_assumptions = tuple(
+            assumption
+            for assumption in assumptions
+            if assumption.source is AssumptionSource.DOMAIN
+        )
+
+        scalar_expressions = tuple(self._iter_scalar_expressions(all_items))
+        arithmetic_classes = {
+            arithmetic_class
+            for expression in scalar_expressions
+            if (arithmetic_class := self._arithmetic_class(expression)) is not None
+        }
+        required_scalar_sorts = frozenset(
+            dtype
+            for expression in scalar_expressions
+            if (dtype := self._dtype(expression)) is not None
+        )
+
+        requires_symbolic_categories = any(
+            isinstance(expression, SymbolLiteralIR) for expression in scalar_expressions
+        )
+        requires_finite_set_membership = any(
+            assumption.metadata.get("constraint_kind") == "finite_set"
+            for assumption in domain_assumptions
+        )
+
+        return IR2Requirements(
+            requires_boolean_logic=True,
+            requires_numeric_comparisons=any(
+                isinstance(
+                    item,
+                    (
+                        ComparisonIR,
+                        AffineModelQuantityConstraintIR2,
+                        AffineOutputConstraintIR2,
+                    ),
+                )
+                for item in all_items
+            ),
+            requires_problem_predicates=any(
+                isinstance(item, ProblemIR) for item in all_items
+            ),
+            requires_model_assertions=any(
+                assumption.source is AssumptionSource.MODEL
+                for assumption in assumptions
+            )
+            or any(isinstance(item, ModelConstraintIR2) for item in all_items),
+            requires_domains=scope.domain is not None or bool(domain_assumptions),
+            requires_neighborhoods=scope.neighborhood is not None,
+            normal_form=normal_form,
+            uses_quantified_scope=uses_quantified_scope,
+            requires_native_quantifiers=requires_native_quantifiers,
+            required_verification_semantics=semantics,
+            requires_affine_arithmetic=(
+                EnumArithmeticClass.AFFINE in arithmetic_classes
+                or any(
+                    isinstance(
+                        item,
+                        (
+                            AffineModelQuantityConstraintIR2,
+                            AffineOutputConstraintIR2,
+                        ),
+                    )
+                    for item in all_items
+                )
+            ),
+            requires_nonlinear_arithmetic=(
+                EnumArithmeticClass.NONLINEAR in arithmetic_classes
+            ),
+            requires_symbolic_division=(
+                EnumArithmeticClass.SYMBOLIC_DIVISION in arithmetic_classes
+            ),
+            required_scalar_sorts=required_scalar_sorts,
+            requires_finite_set_membership=requires_finite_set_membership,
+            requires_symbolic_categories=requires_symbolic_categories,
+            requires_domain_assumptions=bool(domain_assumptions),
+            point_count=len(point_mappings),
+            anchor_count=sum(
+                mapping.ir_point.binding_kind
+                in {"inline_anchor", "referenced_anchor", "legacy_anchor"}
+                for mapping in point_mappings
+            ),
+            model_evaluation_count=len(model_evaluations),
+            binder_sequence=quantifier_structure.binder_sequence,
+            alternation_depth=quantifier_structure.alternation_depth,
+            requires_quantifier_alternation=quantifier_structure.is_alternating,
+            requires_model_semantic_quantities=any(
+                isinstance(expression, ModelQuantityExpressionIR)
+                for expression in scalar_expressions
+            ),
+        )
+
+    def _iter_literals_or_atoms(
+        self,
+        formula: FormulaIR2,
+    ) -> Iterable[AtomicIR]:
+        if isinstance(formula, NNFFormulaIR2):
+            yield from self._iter_atoms_from_logical(formula.expression)
+            return
+
+        if isinstance(formula, CNFFormulaIR2):
+            for clause in formula.clauses:
+                for literal in clause.literals:
+                    yield from self._iter_atom_from_literal(literal)
+            return
+
+        if isinstance(formula, DNFFormulaIR2):
+            for term in formula.terms:
+                for literal in term.literals:
+                    yield from self._iter_atom_from_literal(literal)
+            return
+
+        raise TypeError(f"Unsupported IR2 formula type: {type(formula).__name__}")
+
+    @staticmethod
+    def _iter_atom_from_literal(
+        literal: LiteralIR2,
+    ) -> Iterable[AtomicIR]:
+        yield literal.atom
+
+    def _iter_atoms_from_logical(
+        self,
+        node: LogicalIR,
+    ) -> Iterable[AtomicIR]:
+        if isinstance(node, AtomicIR):
+            yield node
+            return
+
+        if isinstance(node, NotIR):
+            if isinstance(node.operand, AtomicIR):
+                yield node.operand
+                return
+
+            yield from self._iter_atoms_from_logical(node.operand)
+            return
+
+        if isinstance(node, (AndIR, OrIR)):
+            for operand in node.operands:
+                yield from self._iter_atoms_from_logical(operand)
+            return
+
+        raise TypeError(
+            "Unsupported logical IR node while computing requirements: "
+            f"{type(node).__name__}"
+        )
+
+    def _iter_scalar_expressions(
+        self,
+        atoms: Iterable[AtomicIR],
+    ) -> Iterable[ScalarExpressionIR]:
+        for atom in atoms:
+            if isinstance(atom, ComparisonIR):
+                yield from iter_scalar_expressions(atom.left)
+                yield from iter_scalar_expressions(atom.right)
+            elif isinstance(atom, AffineOutputConstraintIR2):
+                yield TargetExpressionIR(
+                    entity=atom.output_entity,
+                    feature=atom.output_feature,
+                    dtype=EnumDataType.FLOAT,
+                )
+            elif isinstance(atom, AffineModelQuantityConstraintIR2):
+                yield atom.quantity
+
+    @staticmethod
+    def _dtype(expression: ScalarExpressionIR) -> EnumDataType | None:
+        if isinstance(expression, ConstantExpressionIR):
+            return expression.dtype
+        if isinstance(
+            expression,
+            (
+                AttributeExpressionIR,
+                TargetExpressionIR,
+                UnaryArithmeticExpressionIR,
+                BinaryArithmeticExpressionIR,
+                ModelQuantityExpressionIR,
+            ),
+        ):
+            return expression.dtype
+        return None
+
+    def _arithmetic_class(
+        self,
+        expression: ScalarExpressionIR,
+    ) -> EnumArithmeticClass | None:
+        if isinstance(expression, UnaryArithmeticExpressionIR):
+            return expression.arithmetic_class or EnumArithmeticClass.AFFINE
+
+        if not isinstance(expression, BinaryArithmeticExpressionIR):
+            return None
+
+        if expression.arithmetic_class is not None:
+            return expression.arithmetic_class
+
+        if expression.operator is EnumArithmeticOperator.DIV:
+            if not self._is_constant_expression(expression.right):
+                return EnumArithmeticClass.SYMBOLIC_DIVISION
+            return EnumArithmeticClass.AFFINE
+
+        if expression.operator is EnumArithmeticOperator.MUL:
+            if not (
+                self._is_constant_expression(expression.left)
+                or self._is_constant_expression(expression.right)
+            ):
+                return EnumArithmeticClass.NONLINEAR
+
+        return EnumArithmeticClass.AFFINE
+
+    def _is_constant_expression(self, expression: ScalarExpressionIR) -> bool:
+        if isinstance(expression, ConstantExpressionIR):
+            return True
+        if isinstance(expression, UnaryArithmeticExpressionIR):
+            return self._is_constant_expression(expression.operand)
+        if isinstance(expression, BinaryArithmeticExpressionIR):
+            return self._is_constant_expression(
+                expression.left
+            ) and self._is_constant_expression(expression.right)
+        return False

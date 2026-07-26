@@ -1,4 +1,4 @@
-from dsl.ir.ir1.nodes import (
+from toetra._compiler.ir.ir1.nodes import (
     AttributeExpressionIR,
     BinaryArithmeticExpressionIR,
     ComparisonIR,
@@ -8,14 +8,14 @@ from dsl.ir.ir1.nodes import (
     TargetExpressionIR,
     UnaryArithmeticExpressionIR,
 )
-from dsl.ir.ir1.run_ir1 import run_ir
-from dsl.ir.ir1.scalar import format_scalar_expression
-from dsl.language.vocabulary.operators import (
+from toetra._compiler.ir.ir1.run_ir1 import run_ir
+from toetra._compiler.ir.ir1.scalar import format_scalar_expression
+from toetra._language.vocabulary.operators import (
     EnumArithmeticOperator,
     EnumComparisonOperator,
     EnumUnaryOperator,
 )
-from dsl.semantic.types.enums import EnumArithmeticClass, EnumDataType
+from toetra._compiler.semantic.types.enums import EnumArithmeticClass, EnumDataType
 
 
 def test_ir1_preserves_symmetric_feature_to_feature_comparison() -> None:

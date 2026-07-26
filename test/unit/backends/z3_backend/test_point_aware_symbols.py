@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from dsl.backends.z3_backend.runner import VerificationStatus, Z3Runner
-from dsl.backends.z3_backend.symbols import (
+from toetra._backends.z3_backend.runner import VerificationStatus, Z3Runner
+from toetra._backends.z3_backend.symbols import (
     Z3ModelOutputIdentity,
     Z3PointFeatureIdentity,
 )
-from dsl.backends.z3_backend.translator import Z3Translator
+from toetra._backends.z3_backend.translator import Z3Translator
 from test.unit.backends.z3_backend._point_aware_helpers import build_task
 
 UNIVERSAL_SOURCE = """

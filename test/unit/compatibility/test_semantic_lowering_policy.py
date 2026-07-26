@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from dsl.backends.results import VerificationResult, VerificationStatus
-from dsl.compatibility.policy import (
+from toetra._backends.results import VerificationResult, VerificationStatus
+from toetra._compatibility.policy import (
     SEMANTIC_LOWERING_CONCLUSION_NOT_PERMITTED,
     apply_semantic_lowering_policy,
 )
-from dsl.ir.ir1.run_ir1 import run_ir
-from dsl.language.vocabulary.backends import EnumBackend
-from model.semantics.lowering import ModelSemanticLowerer
+from toetra._compiler.ir.ir1.run_ir1 import run_ir
+from toetra._language.vocabulary.backends import EnumBackend
+from toetra._models.semantics.lowering import ModelSemanticLowerer
 from test.fixtures.model_semantic_lowering import make_binary_logistic_schema
 
 

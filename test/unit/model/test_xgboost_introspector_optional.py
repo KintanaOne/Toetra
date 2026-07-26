@@ -2,8 +2,8 @@ import pytest
 
 xgboost = pytest.importorskip("xgboost")
 
-from model.detector.model_framework import EnumModelFramework
-from model.introspector.xgboost_introspector import XGBoostIntrospector
+from toetra._models.detector.model_framework import EnumModelFramework
+from toetra._models.introspector.xgboost_introspector import XGBoostIntrospector
 from test.fixtures.model_bridge.factories import dataset_path
 
 

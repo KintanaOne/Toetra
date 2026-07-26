@@ -1,9 +1,9 @@
-from dsl.ir.ir1.nodes import (
+from toetra._compiler.ir.ir1.nodes import (
     AttributeExpressionIR,
     ComparisonIR,
     ConstantExpressionIR,
 )
-from dsl.semantic.types.enums import EnumDataType
+from toetra._compiler.semantic.types.enums import EnumDataType
 from test.fixtures.ir_schema_aware.ir_helpers import translate_source
 from test.fixtures.ir_schema_aware.samples import (
     CHECK_AT_BOOL_FEATURE,

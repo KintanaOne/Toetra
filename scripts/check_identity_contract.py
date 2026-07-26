@@ -79,7 +79,7 @@ LEGACY_IDENTITY_ALLOWANCES: dict[str, tuple[re.Pattern[str], ...]] = {
         "unapproved `FORML`, `forml` or `.forml`",
         "rg -n 'FORML|forml|\\.forml'",
     ),
-    "dsl/runtime/api.py": _allow(
+    "src/toetra/_runtime/api.py": _allow(
         'candidate.suffix.lower() == ".forml"',
         "Legacy '.forml' specifications are not supported",
     ),
@@ -87,7 +87,7 @@ LEGACY_IDENTITY_ALLOWANCES: dict[str, tuple[re.Pattern[str], ...]] = {
         'find_spec("forml") is None',
     ),
     "scripts/release/distribution.py": _allow(
-        'FORBIDDEN_TOP_LEVEL_PACKAGES = ("forml",)',
+        'FORBIDDEN_TOP_LEVEL_PACKAGES = ("forml", "dsl", "model")',
     ),
     "test/fixtures/reporting/golden/verification_report_v1.json": _allow(
         '"schema": "forml.verification-report"',
@@ -118,6 +118,7 @@ LEGACY_IDENTITY_ALLOWANCES: dict[str, tuple[re.Pattern[str], ...]] = {
     ),
     "test/unit/release/test_distribution_contract.py": _allow(
         '"forml/__init__.py"',
+        '["forml", "dsl", "model"]',
     ),
     "test/unit/release/test_identity_contract.py": _allow(
         "The FORML package accepts policy.forml.",

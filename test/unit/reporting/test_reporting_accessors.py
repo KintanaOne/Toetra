@@ -3,12 +3,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from dsl.reporting.accessors import (
+from toetra._reporting.accessors import (
     point_input_values,
     point_output_values,
     report_output_values_by_point,
 )
-from dsl.reporting.model import (
+from toetra._reporting.model import (
     ReportAssignment,
     ReportAssignmentKind,
     ReportPointEvidence,

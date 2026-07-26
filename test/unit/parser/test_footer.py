@@ -1,4 +1,4 @@
-from dsl.parser.parser import parse_toetra_code
+from toetra._compiler.parser.parser import parse_toetra_code
 
 
 def test_footer_empty():

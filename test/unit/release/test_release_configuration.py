@@ -65,6 +65,8 @@ def test_release_probe_exercises_binary_classification() -> None:
     assert "VerificationStatus.WITNESS" in probe
     assert "from toetra.examples import credit_risk_policy" in probe
     assert 'find_spec("forml") is None' in probe
+    assert 'find_spec("dsl") is None' in probe
+    assert 'find_spec("model") is None' in probe
     assert "target := risk_score" in probe
     assert "demo-quickstart" in makefile
     assert "demo-regression" in makefile

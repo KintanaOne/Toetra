@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from dsl.compatibility.defaults import create_default_numeric_compatibility_registry
-from dsl.compatibility.matrix import (
+from toetra._compatibility.defaults import create_default_numeric_compatibility_registry
+from toetra._compatibility.matrix import (
     compatibility_matrix_rows,
     render_compatibility_matrices_markdown,
 )
@@ -46,14 +46,14 @@ def test_checked_in_matrix_matches_the_default_registry() -> None:
 
 
 def test_generated_matrix_accepts_non_sklearn_non_smt_rows() -> None:
-    from dsl.compatibility.enums import (
+    from toetra._compatibility.enums import (
         CompatibilityClassification,
         ConclusionKind,
         ConclusionScope,
         SupportStatus,
     )
-    from dsl.compatibility.model import CompatibilityRule, CompatibilityRulePattern
-    from dsl.compatibility.registry import NumericCompatibilityRegistry
+    from toetra._compatibility.model import CompatibilityRule, CompatibilityRulePattern
+    from toetra._compatibility.registry import NumericCompatibilityRegistry
 
     registry = NumericCompatibilityRegistry()
     registry.register(

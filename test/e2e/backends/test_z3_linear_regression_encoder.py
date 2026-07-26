@@ -6,8 +6,8 @@ from demo.internals.linear_regression_encoder_z3 import (
     run_linear_regression_encoder,
     unbounded_linear_schema,
 )
-from dsl.backends.z3_backend.runner import VerificationStatus
-from dsl.language.vocabulary.backends import EnumBackend
+from toetra._backends.z3_backend.runner import VerificationStatus
+from toetra._language.vocabulary.backends import EnumBackend
 
 
 def test_z3_linear_regression_encoder_proves_constant_like_model() -> None:

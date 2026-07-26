@@ -2,27 +2,27 @@ from __future__ import annotations
 
 import pytest
 
-from dsl.backends.diagnostics import (
+from toetra._backends.diagnostics import (
     BackendDiagnosticSeverity,
     BackendResultDiagnostic,
 )
-from dsl.backends.results import VerificationResult, VerificationStatus
-from dsl.backends.z3_backend.capabilities import Z3_CAPABILITIES
-from dsl.backends.router import BackendRoute
-from dsl.ir.ir1.nodes import (
+from toetra._backends.results import VerificationResult, VerificationStatus
+from toetra._backends.z3_backend.capabilities import Z3_CAPABILITIES
+from toetra._backends.router import BackendRoute
+from toetra._compiler.ir.ir1.nodes import (
     ComparisonIR,
     ConstantExpressionIR,
     ScopeIR,
     TargetExpressionIR,
 )
-from dsl.ir.ir2.enums import NormalFormKind, VerificationSemantics
-from dsl.ir.ir2.nodes import NNFFormulaIR2, VerificationTaskIR2
-from dsl.ir.ir2.requirements import IR2Requirements
-from dsl.language.vocabulary.backends import EnumBackend
-from dsl.language.vocabulary.operators import EnumComparisonOperator
-from dsl.language.vocabulary.properties import EnumProperty
-from dsl.reporting import ReportAssignmentKind, build_verification_report
-from dsl.semantic.types.enums import EnumDataType
+from toetra._compiler.ir.ir2.enums import NormalFormKind, VerificationSemantics
+from toetra._compiler.ir.ir2.nodes import NNFFormulaIR2, VerificationTaskIR2
+from toetra._compiler.ir.ir2.requirements import IR2Requirements
+from toetra._language.vocabulary.backends import EnumBackend
+from toetra._language.vocabulary.operators import EnumComparisonOperator
+from toetra._language.vocabulary.properties import EnumProperty
+from toetra._reporting import ReportAssignmentKind, build_verification_report
+from toetra._compiler.semantic.types.enums import EnumDataType
 
 
 def _task() -> VerificationTaskIR2:

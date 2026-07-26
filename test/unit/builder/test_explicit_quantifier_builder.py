@@ -1,8 +1,8 @@
 import pytest
 
-from dsl.ast.nodes.expressions import QuantifierExprNode
-from dsl.builder.program import parse_program
-from dsl.parser.parser import parse_toetra_code
+from toetra._compiler.ast.nodes.expressions import QuantifierExprNode
+from toetra._compiler.builder.program import parse_program
+from toetra._compiler.parser.parser import parse_toetra_code
 
 
 @pytest.mark.parametrize(

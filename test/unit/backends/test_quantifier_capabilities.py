@@ -2,16 +2,16 @@ from __future__ import annotations
 
 import pytest
 
-from dsl.backends.capabilities import BackendCapabilities
-from dsl.backends.errors import NoCompatibleBackendError
-from dsl.backends.execution import BackendExecutionCapabilities
-from dsl.backends.registry import BackendRegistry
-from dsl.backends.router import BackendRouter
-from dsl.ir.ir2.context import IR2BuildContext
-from dsl.ir.ir2.enums import NormalFormKind, VerificationSemantics
-from dsl.ir.ir2.run_ir2 import run_ir2
-from dsl.language.vocabulary.backends import EnumBackend
-from dsl.semantic.types.enums import EnumDataType
+from toetra._backends.capabilities import BackendCapabilities
+from toetra._backends.errors import NoCompatibleBackendError
+from toetra._backends.execution import BackendExecutionCapabilities
+from toetra._backends.registry import BackendRegistry
+from toetra._backends.router import BackendRouter
+from toetra._compiler.ir.ir2.context import IR2BuildContext
+from toetra._compiler.ir.ir2.enums import NormalFormKind, VerificationSemantics
+from toetra._compiler.ir.ir2.run_ir2 import run_ir2
+from toetra._language.vocabulary.backends import EnumBackend
+from toetra._compiler.semantic.types.enums import EnumDataType
 
 
 def _alternating_task():

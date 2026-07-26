@@ -18,9 +18,9 @@ CHARACTERISTICS:
 
 from copy import deepcopy
 
-from dsl.ast.nodes.assertion import ComparisonNode
-from dsl.builder.program import ProgramNode
-from dsl.ast.nodes.primitives import ConstantNode
+from toetra._compiler.ast.nodes.assertion import ComparisonNode
+from toetra._compiler.builder.program import ProgramNode
+from toetra._compiler.ast.nodes.primitives import ConstantNode
 
 from test.hypothesis.mutation.functions.base import (
     MutationLayer,

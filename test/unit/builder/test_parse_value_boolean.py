@@ -1,7 +1,7 @@
-from dsl.builder.core.ast_utils import parse_value
-from dsl.builder.core.utils import find_node
-from dsl.parser.parser import parse_toetra_code
-from dsl.semantic.types.enums import EnumDataType
+from toetra._compiler.builder.core.ast_utils import parse_value
+from toetra._compiler.builder.core.utils import find_node
+from toetra._compiler.parser.parser import parse_toetra_code
+from toetra._compiler.semantic.types.enums import EnumDataType
 
 
 def _first_value_node(source: str):

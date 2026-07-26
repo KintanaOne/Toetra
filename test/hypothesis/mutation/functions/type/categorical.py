@@ -19,11 +19,11 @@ CHARACTERISTICS:
 import random
 from copy import deepcopy
 
-from dsl.ast.nodes.assertion import ComparisonNode
-from dsl.builder.program import ProgramNode
-from dsl.language.vocabulary.operators import EnumComparisonOperator
-from dsl.language.vocabulary.functions import EnumFunction
-from dsl.language.vocabulary.problems import EnumProblem
+from toetra._compiler.ast.nodes.assertion import ComparisonNode
+from toetra._compiler.builder.program import ProgramNode
+from toetra._language.vocabulary.operators import EnumComparisonOperator
+from toetra._language.vocabulary.functions import EnumFunction
+from toetra._language.vocabulary.problems import EnumProblem
 
 from test.hypothesis.mutation.functions.base import (
     mutation,

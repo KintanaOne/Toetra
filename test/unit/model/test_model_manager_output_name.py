@@ -1,6 +1,6 @@
 import pytest
 
-from model.runtime.manager import ModelManager
+from toetra._models.runtime.manager import ModelManager
 
 
 def test_model_manager_uses_output_name_as_source_of_truth() -> None:

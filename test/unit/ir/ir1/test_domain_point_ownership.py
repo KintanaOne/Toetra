@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dsl.ir.ir1.nodes import AttributeExpressionIR, ComparisonIR
-from dsl.ir.ir1.run_ir1 import run_ir
+from toetra._compiler.ir.ir1.nodes import AttributeExpressionIR, ComparisonIR
+from toetra._compiler.ir.ir1.run_ir1 import run_ir
 
 
 def test_domain_and_feature_references_reuse_exact_point_identity() -> None:

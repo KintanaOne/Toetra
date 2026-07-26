@@ -1,24 +1,28 @@
-from dsl.ir.ir1.nodes import (
+from toetra._compiler.ir.ir1.nodes import (
     AttributeExpressionIR,
     ComparisonIR,
     ConstantExpressionIR,
     ScopeIR,
 )
-from dsl.ir.ir2.enums import (
+from toetra._compiler.ir.ir2.enums import (
     AssumptionSource,
     NormalFormKind,
     VerificationSemantics,
 )
-from dsl.ir.ir2.explain import IR2ExplainOptions, explain_ir2_task
-from dsl.ir.ir2.guardrails.diagnostics import (
+from toetra._compiler.ir.ir2.explain import IR2ExplainOptions, explain_ir2_task
+from toetra._compiler.ir.ir2.guardrails.diagnostics import (
     DiagnosticSeverity,
     IR2Diagnostic,
 )
-from dsl.ir.ir2.nodes import AssumptionIR2, NNFFormulaIR2, VerificationTaskIR2
-from dsl.ir.ir2.requirements import IR2Requirements
-from dsl.language.vocabulary.operators import EnumComparisonOperator
-from dsl.language.vocabulary.properties import EnumProperty
-from dsl.semantic.types.enums import EnumDataType
+from toetra._compiler.ir.ir2.nodes import (
+    AssumptionIR2,
+    NNFFormulaIR2,
+    VerificationTaskIR2,
+)
+from toetra._compiler.ir.ir2.requirements import IR2Requirements
+from toetra._language.vocabulary.operators import EnumComparisonOperator
+from toetra._language.vocabulary.properties import EnumProperty
+from toetra._compiler.semantic.types.enums import EnumDataType
 
 
 def _comparison(feature: str, value: int) -> ComparisonIR:
