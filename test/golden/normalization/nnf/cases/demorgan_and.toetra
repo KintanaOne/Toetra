@@ -1,5 +1,0 @@
-model := "model.onnx"
-target := MyTarget
-
-[LOGIC]:
-forall x0 => NOT (x0.a <= 1 AND x0.b <= 2) using Z3

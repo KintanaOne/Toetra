@@ -17,6 +17,11 @@
   `nodes` shim; internal imports now target concrete private modules.
 - Added `make ci-local`, a complete non-Ruff local gate for Windows hosts where
   Smart App Control blocks Ruff's unsigned native executable.
+- Normalized the repository test tree under `tests/`, separated input
+  fixtures from golden outputs, consolidated IR2 test locations, and moved
+  reusable test builders and helpers under `tests/support/`.
+- Renamed the Hypothesis implementation tree to `tests/property_based/` and
+  standardized point-binding fixture names.
 
 ### Fixed
 

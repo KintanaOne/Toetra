@@ -1,6 +1,6 @@
 # P24 — Repository Final Polish Roadmap
 
-> Status: Active — P24.2 public and internal boundary hardening
+> Status: Active — P24.3 tests, fixtures, and golden normalization
 > Baseline: `1.0.0rc3`
 > Target: repository and package layout frozen for P25–P27
 > Governing decision: [ADR-0028](../adr/ADR-0028-src-based-single-package-layout.md)
@@ -56,7 +56,7 @@ layout is unambiguous before any large move begins.
 Exit criterion: source, wheel, and source distribution expose only `toetra`, and
 all existing verification behavior remains unchanged.
 
-### P24.2 — Public and internal boundary hardening
+### P24.2 — Public and internal boundary hardening ✅
 
 - review every `__init__.py` and remove accidental aggregate exports;
 - keep the supported V1 facade equal to `toetra.__all__`;
