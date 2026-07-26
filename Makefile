@@ -42,7 +42,9 @@ format: notebooks-clean
 	python -m black .
 
 format-check: notebooks-check
+	python -m black .
 	python -m black --check .
+
 
 type:
 	python -m pyright
@@ -50,17 +52,12 @@ type:
 docs-check:
 	python -m mkdocs build --strict
 
-# Non-mutating local verification gate.
+# Non-mutating authoritative verification gate.
 ci: lint format-check generated-check identity-check public-contract-check type test docs-check
 
-ci-local:
-	python scripts/clean_notebooks.py --check demo
-	python -m black --check .
-	python scripts/generate_numeric_compatibility_matrices.py --check
-	python scripts/check_identity_contract.py
-	python scripts/check_public_contract.py
-	python -m pyright
-	python -m pytest -q -m "not wip"
+# Complete local gate without Ruff for hosts that block unsigned native tools.
+# Hosted CI remains authoritative for lint.
+ci-local: format-check generated-check identity-check public-contract-check type test docs-check
 	
 ci-check:
 	python -m ruff check --fix

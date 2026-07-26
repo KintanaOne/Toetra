@@ -1,22 +1,21 @@
-"""Public Python facade for Toetra model verification.
+"""Supported public Python API for Toetra model verification.
 
-The compiler, IR and backend packages remain available for advanced use, but
-normal application code should start here.
+Only names listed in :data:`__all__` belong to the stable V1 Python contract.
+Modules beneath ``toetra._*`` are private implementation details.
 """
 
 from toetra._backends.results import VerificationStatus
-from toetra._reporting import VerificationReport
-from toetra._runtime import (
-    CounterexampleReplay,
+from toetra._reporting.model import VerificationReport
+from toetra._runtime.api import verify
+from toetra._runtime.errors import (
     ReplayUnavailableError,
     VerificationConfigurationError,
-    VerificationFinding,
     VerificationRuntimeError,
-    VerificationSession,
-    verify,
 )
+from toetra._runtime.replay import CounterexampleReplay
+from toetra._runtime.session import VerificationFinding, VerificationSession
 
-__all__ = [
+__all__ = (
     "CounterexampleReplay",
     "ReplayUnavailableError",
     "VerificationConfigurationError",
@@ -26,4 +25,4 @@ __all__ = [
     "VerificationSession",
     "VerificationStatus",
     "verify",
-]
+)

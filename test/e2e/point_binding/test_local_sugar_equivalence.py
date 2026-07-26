@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from toetra._backends.results import VerificationStatus
 from toetra._backends.z3_backend.translator import Z3Translator
-from toetra._runtime import verify
+from toetra._runtime.api import verify
 from test.e2e.point_binding._helpers import build_linear_artifacts, source
 
 

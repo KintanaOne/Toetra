@@ -1,15 +1,1 @@
-from toetra._compiler.ir.ir2.model.affine import (
-    AffineExpressionIR2,
-    AffineModelQuantityConstraintIR2,
-    AffineOutputConstraintIR2,
-    AffineTermIR2,
-)
-from toetra._compiler.ir.ir2.model.base import ModelConstraintIR2
-
-__all__ = [
-    "AffineExpressionIR2",
-    "AffineModelQuantityConstraintIR2",
-    "AffineOutputConstraintIR2",
-    "AffineTermIR2",
-    "ModelConstraintIR2",
-]
+"""Private model-constraint IR2 package."""

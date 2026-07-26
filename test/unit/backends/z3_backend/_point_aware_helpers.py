@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from toetra._compiler.ir.ir2.nodes import VerificationTaskIR2
+from toetra._compiler.ir.ir2.dsl.nodes import VerificationTaskIR2
 from toetra._compiler.ir.ir2.run_ir2 import run_ir2_with_model_schema
 from toetra._compiler.semantic.types.enums import EnumDataType
 from toetra._models.detector.model_framework import EnumModelFramework

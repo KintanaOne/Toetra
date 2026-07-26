@@ -12,7 +12,10 @@ from toetra._compiler.ir.ir2.model.affine import (
     AffineExpressionIR2,
     AffineOutputConstraintIR2,
 )
-from toetra._compiler.ir.ir2.nodes import AssumptionIR2, NNFFormulaIR2
+from toetra._compiler.ir.ir2.dsl.nodes import (
+    AssumptionIR2,
+    NNFFormulaIR2,
+)
 from toetra._compiler.ir.ir2.run_ir2 import run_ir2
 from toetra._compiler.ir.ir1.run_ir1 import run_ir
 from toetra._compiler.ir.normalization.nnf import NNFNormalizer

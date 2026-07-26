@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from toetra._compiler.ir.ir1.nodes import AndIR, LogicalIR, NotIR, QueryIR
 from toetra._compiler.ir.ir2.enums import VerificationSemantics
-from toetra._compiler.ir.ir2.nodes import AssumptionIR2, NNFFormulaIR2
+from toetra._compiler.ir.ir2.dsl.nodes import (
+    AssumptionIR2,
+    NNFFormulaIR2,
+)
 from toetra._compiler.ir.normalization.nnf import NNFNormalizer
 
 

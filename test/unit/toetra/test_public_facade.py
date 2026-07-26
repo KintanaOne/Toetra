@@ -27,7 +27,9 @@ EXPECTED_PUBLIC_API = (
 
 
 def test_public_facade_exports_exactly_the_v1_api() -> None:
-    assert tuple(toetra_module.__all__) == EXPECTED_PUBLIC_API
+    assert toetra_module.__all__ == EXPECTED_PUBLIC_API
+    exported = {name: getattr(toetra_module, name) for name in toetra_module.__all__}
+    assert tuple(exported) == EXPECTED_PUBLIC_API
 
 
 def test_public_facade_exposes_the_normal_user_api() -> None:

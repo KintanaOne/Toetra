@@ -12,7 +12,7 @@ from toetra._compiler.ir.ir2.enums import (
     Polarity,
     VerificationSemantics,
 )
-from toetra._compiler.ir.ir2.nodes import (
+from toetra._compiler.ir.ir2.dsl.nodes import (
     ClauseIR2,
     CNFFormulaIR2,
     DNFFormulaIR2,

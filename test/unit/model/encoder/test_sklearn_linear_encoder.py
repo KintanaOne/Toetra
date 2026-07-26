@@ -13,12 +13,14 @@ from toetra._compiler.ir.ir1.nodes import (
 from toetra._compiler.ir.ir2.builder import IR2Builder
 from toetra._compiler.ir.ir2.context import IR2BuildContext
 from toetra._compiler.ir.ir2.enums import NormalFormKind
-from toetra._compiler.ir.ir2.nodes import DNFFormulaIR2, AffineOutputConstraintIR2
+from toetra._compiler.ir.ir2.dsl.nodes import DNFFormulaIR2
+from toetra._compiler.ir.ir2.model.affine import AffineOutputConstraintIR2
 from toetra._language.vocabulary.operators import EnumComparisonOperator
 from toetra._language.vocabulary.properties import EnumProperty
 from toetra._compiler.semantic.types.enums import EnumDataType
 from toetra._models.detector.model_framework import EnumModelFramework
-from toetra._models.encoder import ModelEncoderFactory, SklearnLinearRegressorEncoder
+from toetra._models.encoder.factory import ModelEncoderFactory
+from toetra._models.encoder.sklearn.linear import SklearnLinearRegressorEncoder
 from toetra._models.encoder.context import ModelEncodingContext
 from toetra._models.schema.feature_schema import FeatureSchema
 from toetra._models.schema.model_schema import ModelSchema

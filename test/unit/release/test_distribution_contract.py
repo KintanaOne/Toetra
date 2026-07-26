@@ -25,7 +25,7 @@ DIST_INFO = f"toetra-{PROJECT_VERSION}.dist-info"
 SDIST_ROOT = f"toetra-{PROJECT_VERSION}"
 
 WHEEL_MEMBERS = {
-    "toetra/__init__.py": b"from toetra._runtime import verify\n",
+    "toetra/__init__.py": b"from toetra._runtime.api import verify\n",
     "toetra/_language/grammar/toetra_grammar.ebnf": b"start = program\n",
     "toetra/_language/grammar/toetra_grammar.lark": b"start: program\n",
     "toetra/examples/credit_risk_policy.toetra": b"target := risk_score\n",

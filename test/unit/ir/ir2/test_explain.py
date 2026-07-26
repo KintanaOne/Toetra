@@ -14,7 +14,7 @@ from toetra._compiler.ir.ir2.guardrails.diagnostics import (
     DiagnosticSeverity,
     IR2Diagnostic,
 )
-from toetra._compiler.ir.ir2.nodes import (
+from toetra._compiler.ir.ir2.dsl.nodes import (
     AssumptionIR2,
     NNFFormulaIR2,
     VerificationTaskIR2,

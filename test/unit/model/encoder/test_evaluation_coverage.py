@@ -8,10 +8,13 @@ from toetra._compiler.ir.ir2.model.affine import (
     AffineExpressionIR2,
     AffineOutputConstraintIR2,
 )
-from toetra._compiler.ir.ir2.nodes import AssumptionIR2, NNFFormulaIR2
+from toetra._compiler.ir.ir2.dsl.nodes import (
+    AssumptionIR2,
+    NNFFormulaIR2,
+)
 from toetra._language.vocabulary.operators import EnumComparisonOperator
-from toetra._models.encoder import (
-    InvalidModelAssumptionError,
+from toetra._models.encoder.errors import InvalidModelAssumptionError
+from toetra._models.encoder.base import (
     validate_model_assumptions,
     validate_model_evaluation_coverage,
 )

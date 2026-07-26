@@ -23,7 +23,7 @@ enforce the requested operational policy.
 ## Public policy
 
 ```python
-from toetra._backends import (
+from toetra._backends.execution import (
     BackendCancellationToken,
     BackendExecutionPolicy,
     BackendResourceLimits,

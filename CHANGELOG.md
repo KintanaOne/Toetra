@@ -13,6 +13,10 @@
   source distributions, editable installs, and external working directories.
 - Accepted the final `src/toetra` single-package layout and the P24
   responsibility-based internal namespace plan.
+- Removed broad private-package aggregate exports and the historical IR2
+  `nodes` shim; internal imports now target concrete private modules.
+- Added `make ci-local`, a complete non-Ruff local gate for Windows hosts where
+  Smart App Control blocks Ruff's unsigned native executable.
 
 ### Fixed
 

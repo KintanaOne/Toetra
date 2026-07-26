@@ -18,7 +18,7 @@ from toetra._compiler.ir.ir2.builder import IR2Builder
 from toetra._compiler.ir.ir2.context import IR2BuildContext
 from toetra._compiler.ir.ir2.domain_assumptions import DomainAssumptionEncoder
 from toetra._compiler.ir.ir2.enums import AssumptionSource, NormalFormKind
-from toetra._compiler.ir.ir2.nodes import NNFFormulaIR2
+from toetra._compiler.ir.ir2.dsl.nodes import NNFFormulaIR2
 from toetra._compiler.ir.normalization.nnf import NNFNormalizer
 from toetra._language.vocabulary.domains import EnumBoundaryKind
 from toetra._language.vocabulary.operators import (

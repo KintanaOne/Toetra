@@ -42,11 +42,13 @@ from toetra._compiler.ir.ir1.nodes import (
     UnaryArithmeticExpressionIR,
 )
 from toetra._compiler.ir.ir2.enums import Polarity
-from toetra._compiler.ir.ir2.nodes import (
+from toetra._compiler.ir.ir2.model.affine import (
     AffineExpressionIR2,
     AffineModelQuantityConstraintIR2,
     AffineOutputConstraintIR2,
     AffineTermIR2,
+)
+from toetra._compiler.ir.ir2.dsl.nodes import (
     AtomIR2,
     CNFFormulaIR2,
     DNFFormulaIR2,

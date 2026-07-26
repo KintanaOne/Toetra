@@ -54,7 +54,7 @@ subtype of the backend-neutral result. Historical accessors `solver_status` and
 
 ## Verification Report
 
-`toetra._reporting.VerificationReport` combines:
+`toetra._reporting.model.VerificationReport` combines:
 
 - property index and type;
 - verification semantics;
@@ -155,7 +155,7 @@ print(report.to_text())
 or as a standalone function:
 
 ```python
-from toetra._reporting import render_verification_reports_text
+from toetra._reporting.text import render_verification_reports_text
 
 print(render_verification_reports_text(reports))
 ```
@@ -173,7 +173,7 @@ The renderer displays:
 ASCII-only output is supported for restricted terminals:
 
 ```python
-from toetra._reporting import TextRenderOptions
+from toetra._reporting.text import TextRenderOptions
 
 print(
     report.to_text()
@@ -207,7 +207,7 @@ report.write_json("artifacts/property-1.json")
 A report collection uses a separate envelope:
 
 ```python
-from toetra._reporting import write_verification_reports_json
+from toetra._reporting.json import write_verification_reports_json
 
 write_verification_reports_json(reports, "artifacts/toetra-report.json")
 ```

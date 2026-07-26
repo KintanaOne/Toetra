@@ -16,7 +16,10 @@ from toetra._compiler.ir.ir2.model.affine import (
     AffineModelQuantityConstraintIR2,
     AffineTermIR2,
 )
-from toetra._compiler.ir.ir2.nodes import AssumptionIR2, NNFFormulaIR2
+from toetra._compiler.ir.ir2.dsl.nodes import (
+    AssumptionIR2,
+    NNFFormulaIR2,
+)
 from toetra._language.vocabulary.operators import EnumComparisonOperator
 from toetra._models.compatibility import framework_model_descriptor
 from toetra._models.encoder.context import ModelEncodingContext

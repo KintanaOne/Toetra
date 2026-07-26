@@ -8,7 +8,7 @@ import pytest
 
 from toetra._compiler.ir.ir2.context import IR2BuildContext
 from toetra._compiler.ir.ir2.enums import NormalFormKind
-from toetra._provenance import builder as provenance_builder
+import toetra._provenance.builder as provenance_builder
 from toetra._provenance.builder import build_provenance_context
 from toetra._provenance.model import FingerprintStatus, ProvenanceCompleteness
 from toetra._compiler.semantic.types.enums import EnumDataType

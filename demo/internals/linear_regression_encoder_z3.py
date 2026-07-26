@@ -9,7 +9,7 @@ from toetra._compiler.ir.ir1.run_ir1 import run_ir
 from toetra._compiler.ir.ir2.builder import IR2Builder
 from toetra._compiler.ir.ir2.context import IR2BuildContext
 from toetra._compiler.ir.ir2.enums import NormalFormKind
-from toetra._compiler.ir.ir2.nodes import NNFFormulaIR2
+from toetra._compiler.ir.ir2.dsl.nodes import NNFFormulaIR2
 from toetra._compiler.ir.ir2.points import PointAwareIR2Analyzer
 from toetra._compiler.ir.normalization.nnf import NNFNormalizer
 from toetra._compiler.semantic.types.enums import EnumDataType

@@ -13,6 +13,13 @@ python -m pip install -r requirements-dev.txt
 make ci
 ```
 
+If Windows Smart App Control blocks Ruff's unsigned native executable, use the
+non-Ruff local gate and rely on hosted CI for the authoritative lint result:
+
+```bash
+make ci-local
+```
+
 Validate the release candidate from a clean checkout:
 
 ```bash
@@ -29,5 +36,6 @@ probes.
 from toetra import verify, VerificationSession, VerificationStatus
 ```
 
-Normal user code imports from `toetra`; `dsl` and `model` are internal/extension
-surfaces.
+Normal user code imports only from `toetra`. The former top-level `dsl` and
+`model` packages are not installed. Modules under `toetra._*` are private and
+carry no compatibility guarantee.

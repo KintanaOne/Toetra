@@ -17,7 +17,7 @@ from toetra._compiler.ir.ir1.nodes import (
     ScopeIR,
 )
 from toetra._compiler.ir.ir2.enums import NormalFormKind, VerificationSemantics
-from toetra._compiler.ir.ir2.nodes import (
+from toetra._compiler.ir.ir2.dsl.nodes import (
     CNFFormulaIR2,
     ClauseIR2,
     DNFFormulaIR2,

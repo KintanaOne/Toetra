@@ -6,7 +6,7 @@ from sklearn.linear_model import LogisticRegression
 
 from toetra._compiler.ir.ir1.nodes import ModelEvaluationIR, PointBindingIR
 from toetra._compiler.ir.ir2.model.affine import AffineModelQuantityConstraintIR2
-from toetra._models.encoder import ModelEncoderFactory
+from toetra._models.encoder.factory import ModelEncoderFactory
 from toetra._models.introspector.sklearn_introspector import SklearnIntrospector
 
 

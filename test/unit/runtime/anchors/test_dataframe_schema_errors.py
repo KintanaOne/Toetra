@@ -3,11 +3,11 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
-from toetra._runtime import (
+from toetra._runtime.anchors import (
     AnchorLookupRequest,
-    AnchorResolutionError,
     DataFrameAnchorResolver,
 )
+from toetra._runtime.errors import AnchorResolutionError
 from toetra._compiler.semantic.symbols.point import PointLiteral
 from toetra._compiler.semantic.types.enums import EnumDataType
 from toetra._models.detector.model_framework import EnumModelFramework

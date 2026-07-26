@@ -26,7 +26,7 @@ from toetra._backends.z3_backend.symbols import (
 )
 from toetra._backends.z3_backend.translator import Z3Translation, Z3Translator
 from toetra._compiler.ir.ir2.enums import VerificationSemantics
-from toetra._compiler.ir.ir2.nodes import VerificationTaskIR2
+from toetra._compiler.ir.ir2.dsl.nodes import VerificationTaskIR2
 from toetra._language.vocabulary.backends import EnumBackend
 
 Z3_VACUOUS_PROOF = "Z3_VACUOUS_PROOF"

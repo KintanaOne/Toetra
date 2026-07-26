@@ -11,7 +11,7 @@ from toetra._backends.results import VerificationStatus
 from toetra._backends.router import BackendRouter
 from toetra._backends.z3_backend.translator import Z3Translator
 from toetra._compiler.ir.ir2.run_ir2 import run_ir2_with_model_schema
-from toetra._runtime import verify
+from toetra._runtime.api import verify
 from toetra._models.runtime.manager import ModelManager
 from test.e2e.point_binding._helpers import build_linear_artifacts, source
 

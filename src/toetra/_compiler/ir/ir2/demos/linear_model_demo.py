@@ -4,7 +4,7 @@ from toetra._compiler.ir.ir2.context import IR2BuildContext
 from toetra._compiler.ir.ir2.enums import NormalFormKind
 from toetra._compiler.ir.ir2.explain import IR2ExplainOptions, explain_ir2_tasks
 from toetra._compiler.ir.ir2.examples.samples import REAL_LINEAR_MODEL_SAMPLE
-from toetra._compiler.ir.ir2.nodes import VerificationTaskIR2
+from toetra._compiler.ir.ir2.dsl.nodes import VerificationTaskIR2
 from toetra._compiler.ir.ir2.pretty import pretty_print_ir2_tasks
 from toetra._compiler.ir.ir2.run_ir2 import run_ir2_with_model_schema
 from toetra._compiler.semantic.types.enums import EnumDataType

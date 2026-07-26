@@ -8,7 +8,10 @@ from toetra._compiler.ir.ir2.enums import AssumptionSource
 from toetra._compiler.ir.ir2.errors import InvalidIR2InputError
 from toetra._compiler.ir.ir2.guard import NNFGuard
 from toetra._compiler.ir.ir2.model.base import ModelConstraintIR2
-from toetra._compiler.ir.ir2.nodes import AssumptionIR2, NNFFormulaIR2
+from toetra._compiler.ir.ir2.dsl.nodes import (
+    AssumptionIR2,
+    NNFFormulaIR2,
+)
 from toetra._models.encoder.context import ModelEncodingContext
 from toetra._models.encoder.errors import InvalidModelAssumptionError
 from toetra._models.schema.model_schema import ModelSchema

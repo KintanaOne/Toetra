@@ -13,7 +13,7 @@ from toetra._compiler.ir.ir2.enums import NormalFormKind, VerificationSemantics
 from toetra._compiler.ir.ir2.errors import NormalFormExplosionError
 from toetra._compiler.ir.ir2.guard import NNFGuard
 from toetra._compiler.ir.ir2.guardrails.validator import collect_ir2_diagnostics
-from toetra._compiler.ir.ir2.nodes import (
+from toetra._compiler.ir.ir2.dsl.nodes import (
     AssumptionIR2,
     FormulaIR2,
     NNFFormulaIR2,

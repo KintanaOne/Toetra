@@ -18,25 +18,29 @@ from toetra._backends.results import VerificationStatus
 from toetra._compiler.ir.ir2.enums import VerificationSemantics
 from toetra._language.vocabulary.backends import EnumBackend
 from toetra._language.vocabulary.properties import EnumProperty
-from toetra._reporting import (
+from toetra._provenance.model import (
     ArtifactProvenance,
     CompilerProvenance,
     ContentFingerprint,
     FingerprintStatus,
     ProvenanceCompleteness,
     ReportProvenance,
+    SoftwareProvenance,
+)
+from toetra._reporting.json import (
     REPORT_COLLECTION_SCHEMA,
     REPORT_SCHEMA,
     REPORT_SCHEMA_VERSION,
+    verification_reports_to_dict,
+    write_verification_reports_json,
+)
+from toetra._reporting.model import (
     ReportAssignment,
     ReportAssignmentKind,
     ReportBackendExecution,
     ReportScope,
     ReportScopeVariable,
-    SoftwareProvenance,
     VerificationReport,
-    verification_reports_to_dict,
-    write_verification_reports_json,
 )
 
 

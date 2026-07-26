@@ -21,7 +21,7 @@ from toetra._compiler.ir.ir2.enums import NormalFormKind
 from toetra._compiler.ir.ir2.run_ir2 import run_ir2_with_model_schema
 from toetra._compiler.parser.parser import parse_toetra_code
 from toetra._provenance.builder import build_provenance_context
-from toetra._reporting import build_verification_report
+from toetra._reporting.builder import build_verification_report
 from toetra._runtime.anchors import (
     AnchorLookupRequest,
     AnchorResolver,

@@ -8,7 +8,7 @@ from toetra._compiler.ir.ir1.nodes import (
 from toetra._compiler.ir.ir2.context import IR2BuildContext
 from toetra._compiler.ir.ir2.enums import AssumptionSource, NormalFormKind
 from toetra._compiler.ir.ir2.model.affine import AffineOutputConstraintIR2
-from toetra._compiler.ir.ir2.nodes import NNFFormulaIR2
+from toetra._compiler.ir.ir2.dsl.nodes import NNFFormulaIR2
 from toetra._compiler.ir.ir2.run_ir2 import run_ir2_with_model_schema
 from toetra._language.vocabulary.operators import EnumComparisonOperator
 from toetra._compiler.semantic.types.enums import EnumDataType

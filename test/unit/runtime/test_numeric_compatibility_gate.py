@@ -4,7 +4,7 @@ import pytest
 
 from toetra._backends.errors import NoCompatibleBackendError
 from toetra._compatibility.defaults import SKLEARN_AFFINE_TO_EXACT_REAL_RULE_ID
-from toetra._runtime import verify
+from toetra._runtime.api import verify
 from toetra._compiler.semantic.types.enums import EnumDataType
 from toetra._models.detector.model_framework import EnumModelFramework
 from toetra._models.schema.feature_schema import FeatureSchema

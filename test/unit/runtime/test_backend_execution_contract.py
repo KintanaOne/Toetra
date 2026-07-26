@@ -8,7 +8,8 @@ from toetra._backends.execution import (
 )
 from toetra._backends.results import VerificationResult, VerificationStatus
 from toetra._language.vocabulary.backends import EnumBackend
-from toetra._runtime import BackendRunnerRegistry, verify
+from toetra._runtime.backends import BackendRunnerRegistry
+from toetra._runtime.api import verify
 from toetra._compiler.semantic.types.enums import EnumDataType
 from toetra._models.detector.model_framework import EnumModelFramework
 from toetra._models.schema.feature_schema import FeatureSchema
