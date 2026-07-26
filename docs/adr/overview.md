@@ -31,7 +31,8 @@ The goal of the ADR section is to make explicit:
 - why model outputs are typed ports with declarative observables,
 - why model-family semantic lowering is explicit and auditable,
 - why the first binary-classification profile is deliberately constrained,
-- and why Toetra is the single canonical product, package and language identity.
+- why Toetra is the single canonical product, package and language identity,
+- and why installable code uses a `src`-based single-package layout.
 
 ## ADR format
 
@@ -78,6 +79,7 @@ Impact on Toetra
 | ADR-0025 | Define the initial binary logistic classification profile |
 | ADR-0026 | Extend the public V1 profile with binary classification |
 | ADR-0027 | Adopt Toetra as the canonical product identity |
+| ADR-0028 | Adopt a `src`-based single-package layout |
 
 ## Decision status vocabulary
 

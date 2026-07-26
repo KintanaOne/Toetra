@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Accepted the final `src/toetra` single-package layout and the P24
+  responsibility-based internal namespace plan.
+
+### Fixed
+
+- Removed an exact duplicate NNF end-to-end test and corrected misspelled
+  mutation-module filenames.
+- Tightened the public-facade and former-identity repository contracts.
+
 ## [1.0.0rc3] - 2026-07-26
 
 ### Changed

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+from collections import defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).parents[3]
@@ -17,6 +19,9 @@ OBSOLETE_DOCUMENTS = {
 OBSOLETE_CODE_PATHS = {
     "dsl/builder/core/to_delete.py",
     "test/unit/parsing",
+    "test/e2e/normalization/test_run_nnf.py",
+    "test/hypothesis/mutation/functions/semantic/relationnal.py",
+    "test/hypothesis/mutation/functions/structural/cooruotion.py",
 }
 
 
@@ -65,10 +70,36 @@ def test_every_documentation_page_is_in_mkdocs_navigation() -> None:
     assert not missing
 
 
-def test_repository_has_no_empty_python_modules() -> None:
-    roots = tuple(
-        ROOT / name for name in ("toetra", "dsl", "model", "scripts", "demo", "test")
+def test_repository_has_no_duplicate_test_modules() -> None:
+    test_roots = tuple(
+        path for name in ("test", "tests") if (path := ROOT / name).is_dir()
     )
+    assert len(test_roots) == 1
+
+    paths_by_digest: dict[str, list[str]] = defaultdict(list)
+    for test_root in test_roots:
+        for path in test_root.rglob("test_*.py"):
+            digest = hashlib.sha256(path.read_bytes()).hexdigest()
+            paths_by_digest[digest].append(path.relative_to(ROOT).as_posix())
+
+    duplicates = tuple(
+        sorted(paths) for paths in paths_by_digest.values() if len(paths) > 1
+    )
+    assert not duplicates
+
+
+def test_repository_has_no_empty_python_modules() -> None:
+    root_names = (
+        "src",
+        "toetra",
+        "dsl",
+        "model",
+        "scripts",
+        "demo",
+        "test",
+        "tests",
+    )
+    roots = tuple(ROOT / name for name in root_names if (ROOT / name).is_dir())
     empty_modules = {
         path.relative_to(ROOT).as_posix()
         for source_root in roots
