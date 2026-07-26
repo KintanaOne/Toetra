@@ -31,8 +31,13 @@ def test_run_nnf_module_is_executable_from_repo_root():
     repo_root = next(
         parent
         for parent in Path(__file__).resolve().parents
-        if (parent / "dsl").exists()
+        if (parent / "src" / "toetra").is_dir()
     )
+    source_root = repo_root / "src"
+    existing_pythonpath = os.environ.get("PYTHONPATH")
+    pythonpath = str(source_root)
+    if existing_pythonpath:
+        pythonpath = f"{pythonpath}{os.pathsep}{existing_pythonpath}"
 
     completed = subprocess.run(
         [sys.executable, "-m", "toetra._compiler.ir.normalization.run_nnf"],
@@ -46,6 +51,7 @@ def test_run_nnf_module_is_executable_from_repo_root():
             **os.environ,
             "PYTHONUTF8": "1",
             "PYTHONIOENCODING": "utf-8",
+            "PYTHONPATH": pythonpath,
         },
     )
 
