@@ -65,21 +65,21 @@ include = ["toetra*"]
 line-length = 88
 target-version = ["py311"]
 force-exclude = '''
-test/hypothesis/
+tests/property_based/
 '''
 
 [tool.ruff]
 line-length = 88
 target-version = "py311"
 extend-exclude = [
-    "test/hypothesis",
+    "tests/property_based",
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"test/unit/model/test_xgboost_introspector_optional.py" = ["E402"]
+"tests/unit/model/test_xgboost_introspector_optional.py" = ["E402"]
 
 [tool.pytest.ini_options]
-testpaths = ["test"]
+testpaths = ["tests"]
 python_files = ["test_*.py"]
 norecursedirs = [
     ".git",
@@ -88,7 +88,7 @@ norecursedirs = [
     "build",
     "dist",
     ".hypothesis",
-    "test/hypothesis",
+    "tests/property_based",
 ]
 
 [tool.pyright]
@@ -96,7 +96,7 @@ pythonVersion = "3.11"
 include = [
     "src/toetra",
     "scripts",
-    "test/unit",
+    "tests/unit",
 ]
 exclude = [
     "**/node_modules",
@@ -108,5 +108,5 @@ exclude = [
     "**/*.venv",
     "build",
     "dist",
-    "test/hypothesis",
+    "tests/property_based",
 ]

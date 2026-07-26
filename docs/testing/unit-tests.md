@@ -220,7 +220,7 @@ A unit test should target one responsibility. Full source-to-solver behavior bel
 The parser portion should remain split as:
 
 ```text
-test/unit/parser/
+tests/unit/parser/
 ├── conftest.py
 ├── test_grammar_generation.py
 ├── test_quantified_scopes.py

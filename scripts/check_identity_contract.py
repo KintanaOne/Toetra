@@ -89,59 +89,59 @@ LEGACY_IDENTITY_ALLOWANCES: dict[str, tuple[re.Pattern[str], ...]] = {
     "scripts/release/distribution.py": _allow(
         'FORBIDDEN_TOP_LEVEL_PACKAGES = ("forml", "dsl", "model")',
     ),
-    "test/fixtures/reporting/golden/verification_report_v1.json": _allow(
+    "tests/golden/reporting/verification_report_v1.json": _allow(
         '"schema": "forml.verification-report"',
     ),
-    "test/fixtures/reporting/golden/verification_report_v2.json": _allow(
+    "tests/golden/reporting/verification_report_v2.json": _allow(
         '"schema": "forml.verification-report"',
     ),
-    "test/fixtures/reporting/golden/verification_report_v3.json": _allow(
+    "tests/golden/reporting/verification_report_v3.json": _allow(
         '"schema": "forml.verification-report"',
     ),
-    "test/fixtures/reporting/golden/verification_report_v4.json": _allow(
+    "tests/golden/reporting/verification_report_v4.json": _allow(
         '"schema": "forml.verification-report"',
     ),
-    "test/fixtures/reporting/golden/verification_report_v5.json": _allow(
+    "tests/golden/reporting/verification_report_v5.json": _allow(
         '"schema": "forml.verification-report"',
         '"forml_version": "1.0.0rc1"',
         '"forml_build_id": "git:abc123"',
     ),
-    "test/unit/parser/test_toetra_language_identity.py": _allow(
+    "tests/unit/parser/test_toetra_language_identity.py": _allow(
         'hasattr(parser_module, "parse_forml_code")',
         '"forml_grammar.ebnf"',
         '"forml_grammar.lark"',
         'rglob("*.forml")',
     ),
-    "test/unit/provenance/test_builder.py": _allow(
+    "tests/unit/provenance/test_builder.py": _allow(
         '"forml" not in requested',
         'setenv("FORML_BUILD_ID"',
     ),
-    "test/unit/release/test_distribution_contract.py": _allow(
+    "tests/unit/release/test_distribution_contract.py": _allow(
         '"forml/__init__.py"',
         '["forml", "dsl", "model"]',
     ),
-    "test/unit/release/test_identity_contract.py": _allow(
+    "tests/unit/release/test_identity_contract.py": _allow(
         "The FORML package accepts policy.forml.",
         "name `FORML` was found to",
     ),
-    "test/unit/release/test_release_configuration.py": _allow(
+    "tests/unit/release/test_release_configuration.py": _allow(
         'find_spec("forml") is None',
     ),
-    "test/unit/reporting/test_classification_evaluations.py": _allow(
+    "tests/unit/reporting/test_classification_evaluations.py": _allow(
         '"forml.verification-report"',
     ),
-    "test/unit/reporting/test_json_renderer.py": _allow(
+    "tests/unit/reporting/test_json_renderer.py": _allow(
         '"forml_version" not in software',
         '"forml_build_id" not in software',
     ),
-    "test/unit/repository/test_repository_hygiene.py": _allow(
+    "tests/unit/repository/test_repository_hygiene.py": _allow(
         'glob("forml_review_bundle_*.zip")',
         '"/forml_review_bundle_*.zip" not in ignore_rules',
     ),
-    "test/unit/runtime/test_replay.py": _allow(
+    "tests/unit/runtime/test_replay.py": _allow(
         '"forml_score" not in record',
     ),
-    "test/unit/runtime/test_verify_api.py": _allow(
+    "tests/unit/runtime/test_verify_api.py": _allow(
         '"legacy.forml"',
         "legacy_forml_extension",
     ),

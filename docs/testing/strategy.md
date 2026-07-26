@@ -200,3 +200,23 @@ The existing test suite remains a regression gate throughout the migration.
 
 
 Detailed specification-constant test ownership is defined in [Specification Constants Test Plan](specification-constants-tests.md).
+## Repository test layout
+
+The repository uses one canonical test tree:
+
+```text
+tests/
+├── unit/             focused component contracts
+├── integration/      contracts spanning adjacent layers
+├── e2e/              complete executable workflows
+├── property_based/   generated and mutation-based campaigns
+├── fixtures/         test inputs only
+├── golden/           expected serialized or rendered outputs only
+└── support/          reusable builders, serializers, schemas, and paths
+```
+
+Test modules remain under `unit/`, `integration/`, or `e2e/`; the `golden/`
+tree contains no executable Python. Input specifications and datasets belong in
+`fixtures/`, while expected JSON and text snapshots belong in `golden/`.
+Shared test code imports canonical roots from `tests.support.paths` instead of
+reconstructing repository-relative paths in each module.

@@ -20,7 +20,7 @@ source → CST → AST → semantic points → IR1 → IR2
 | E2E-05 | existential adversarial search | witness terminology and replay of both points |
 | E2E-06 | alternating quantifiers | preserved order and capability rejection before solver |
 
-Fixtures live under `test/fixtures/point_binding_evaluation/`; tests are split by anchor, multi-point, and sugar-equivalence concerns under `test/e2e/point_binding/`.
+Fixtures live under `tests/fixtures/point_binding/`; tests are split by anchor, multi-point, and sugar-equivalence concerns under `tests/e2e/point_binding/`.
 
 ## Regression obligations
 

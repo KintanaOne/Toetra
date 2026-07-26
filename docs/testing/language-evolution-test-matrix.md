@@ -258,6 +258,6 @@ Patches 01 through 08 implement and test all gates in this matrix for the initia
 The mandatory affine fixture is frozen as a golden contract under:
 
 ```text
-test/fixtures/end_to_end/cases/affine_specification_constants.toetra
-test/fixtures/end_to_end/expected/affine_specification_constants.json
+tests/fixtures/end_to_end/affine_specification_constants.toetra
+tests/golden/end_to_end/affine_specification_constants.json
 ```

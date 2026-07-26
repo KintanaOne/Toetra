@@ -39,7 +39,7 @@ Fragments are acceptable only for:
 ## Recommended File Split
 
 ```text
-test/unit/parser/
+tests/unit/parser/
 ├── conftest.py
 ├── test_grammar_generation.py
 ├── test_quantified_scopes.py
@@ -48,14 +48,14 @@ test/unit/parser/
 ├── test_specification_constants.py
 └── test_parser_regressions.py
 
-test/unit/builder/
+tests/unit/builder/
 ├── test_quantified_scopes.py
 ├── test_typed_domains.py
 ├── test_scalar_expressions.py
 ├── test_specification_constants.py
 └── test_name_references.py
 
-test/unit/semantic/
+tests/unit/semantic/
 ├── test_quantified_bindings.py
 ├── test_domain_bindings.py
 ├── test_scalar_expression_types.py
@@ -63,17 +63,17 @@ test/unit/semantic/
 ├── test_name_resolution.py
 └── test_specification_constant_types.py
 
-test/unit/ir/ir1/
+tests/unit/ir/ir1/
 ├── test_scalar_expression_lowering.py
 ├── test_typed_domain_lowering.py
 └── test_specification_constant_lowering.py
 
-test/unit/ir/ir2/
+tests/unit/ir/ir2/
 ├── test_domain_assumptions.py
 ├── test_requirements.py
 └── test_specification_constant_provenance.py
 
-test/integration/
+tests/integration/
 ├── test_specification_constants_pipeline.py
 └── test_specification_constants_z3.py
 ```
@@ -85,7 +85,7 @@ A repository may use slightly different directories, but it must preserve this s
 Target file:
 
 ```text
-test/unit/parser/test_specification_constants.py
+tests/unit/parser/test_specification_constants.py
 ```
 
 Mandatory complete-program cases:
@@ -110,8 +110,8 @@ Parser assertions should inspect the relevant CST shape, not only `tree is not N
 Target files:
 
 ```text
-test/unit/builder/test_specification_constants.py
-test/unit/builder/test_name_references.py
+tests/unit/builder/test_specification_constants.py
+tests/unit/builder/test_name_references.py
 ```
 
 Mandatory cases:
@@ -132,9 +132,9 @@ The builder must not apply the constant-first resolution rule.
 Target files:
 
 ```text
-test/unit/semantic/test_specification_constant_registration.py
-test/unit/semantic/test_name_resolution.py
-test/unit/semantic/test_specification_constant_types.py
+tests/unit/semantic/test_specification_constant_registration.py
+tests/unit/semantic/test_name_resolution.py
+tests/unit/semantic/test_specification_constant_types.py
 ```
 
 Mandatory cases:
@@ -185,7 +185,7 @@ Mandatory cases:
 Complete source programs should be reusable through named fixtures or source constants, for example:
 
 ```text
-test/fixtures/toetra/specification_constants/
+tests/fixtures/toetra/specification_constants/
 ├── valid_numeric_threshold.toetra
 ├── valid_feature_name_collision.toetra
 ├── valid_domain_bound.toetra
