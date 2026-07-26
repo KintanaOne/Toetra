@@ -5,7 +5,8 @@
 .PHONY: install test test-wip test-all lint format format-check type \
 	notebooks-clean notebooks-check generated-check identity-check public-contract-check docs-check ci \
 	dist dist-check install-check release-check review-bundle \
-	review-bundle-check demo-regression demo-quickstart demo-classification clean
+	review-bundle-check demo-regression demo-quickstart demo-classification clean \
+	ci-local
 
 install:
 	python -m pip install -e ".[dev,docs]"
@@ -52,6 +53,15 @@ docs-check:
 # Non-mutating local verification gate.
 ci: lint format-check generated-check identity-check public-contract-check type test docs-check
 
+ci-local:
+	python scripts/clean_notebooks.py --check demo
+	python -m black --check .
+	python scripts/generate_numeric_compatibility_matrices.py --check
+	python scripts/check_identity_contract.py
+	python scripts/check_public_contract.py
+	python -m pyright
+	python -m pytest -q -m "not wip"
+	
 ci-check:
 	python -m ruff check --fix
 	python -m ruff check .
