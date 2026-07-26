@@ -6,13 +6,15 @@ import pandas as pd
 import pytest
 
 from toetra._backends.results import VerificationStatus
-from toetra._runtime import (
+from toetra._runtime.anchors import (
     AnchorLookupRequest,
-    AnchorResolutionError,
     AnchorResolver,
-    VerificationConfigurationError,
-    verify,
 )
+from toetra._runtime.errors import (
+    AnchorResolutionError,
+    VerificationConfigurationError,
+)
+from toetra._runtime.api import verify
 from toetra._compiler.semantic.symbols.point import ResolvedAnchorBinding
 from toetra._compiler.semantic.types.enums import EnumDataType
 from toetra._models.detector.model_framework import EnumModelFramework

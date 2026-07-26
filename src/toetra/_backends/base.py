@@ -5,7 +5,7 @@ from typing import Any, Protocol
 from toetra._backends.capabilities import BackendCapabilities
 from toetra._backends.execution import BackendExecutionPolicy
 from toetra._backends.results import VerificationResult
-from toetra._compiler.ir.ir2.nodes import VerificationTaskIR2
+from toetra._compiler.ir.ir2.dsl.nodes import VerificationTaskIR2
 from toetra._language.vocabulary.backends import EnumBackend
 
 

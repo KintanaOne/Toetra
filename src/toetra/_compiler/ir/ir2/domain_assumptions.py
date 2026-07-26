@@ -20,7 +20,10 @@ from toetra._compiler.ir.ir1.nodes import (
 )
 from toetra._compiler.ir.ir1.scalar import format_scalar_expression
 from toetra._compiler.ir.ir2.enums import AssumptionSource
-from toetra._compiler.ir.ir2.nodes import AssumptionIR2, NNFFormulaIR2
+from toetra._compiler.ir.ir2.dsl.nodes import (
+    AssumptionIR2,
+    NNFFormulaIR2,
+)
 from toetra._language.vocabulary.domains import EnumBoundaryKind
 from toetra._language.vocabulary.operators import EnumComparisonOperator
 from toetra._compiler.semantic.types.enums import EnumDataType

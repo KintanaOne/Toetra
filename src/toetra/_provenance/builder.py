@@ -11,7 +11,7 @@ from typing import Any
 from toetra._backends.results import VerificationResult
 from toetra._backends.router import BackendRoute
 from toetra._compiler.ir.ir2.context import IR2BuildContext
-from toetra._compiler.ir.ir2.nodes import VerificationTaskIR2
+from toetra._compiler.ir.ir2.dsl.nodes import VerificationTaskIR2
 from toetra._provenance.fingerprint import (
     CanonicalizationError,
     canonical_json_bytes,

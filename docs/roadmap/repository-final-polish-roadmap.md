@@ -1,6 +1,6 @@
 # P24 — Repository Final Polish Roadmap
 
-> Status: Active — P24.1 canonical `src/toetra` migration
+> Status: Active — P24.2 public and internal boundary hardening
 > Baseline: `1.0.0rc3`
 > Target: repository and package layout frozen for P25–P27
 > Governing decision: [ADR-0028](../adr/ADR-0028-src-based-single-package-layout.md)
@@ -44,7 +44,7 @@ scripts/        CI, documentation, release, and repository tooling
 Exit criterion: the current post-P23 baseline remains green and the destination
 layout is unambiguous before any large move begins.
 
-### P24.1 — Canonical `src/toetra` migration
+### P24.1 — Canonical `src/toetra` migration ✅
 
 - move installable code directly to the responsibility-based namespaces defined
   by ADR-0028;

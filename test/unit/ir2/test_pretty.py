@@ -4,7 +4,7 @@ from toetra._compiler.ir.ir1.nodes import (
     ConstantExpressionIR,
 )
 from toetra._compiler.ir.ir2.enums import Polarity
-from toetra._compiler.ir.ir2.nodes import (
+from toetra._compiler.ir.ir2.dsl.nodes import (
     ClauseIR2,
     CNFFormulaIR2,
     DNFFormulaIR2,

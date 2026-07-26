@@ -34,6 +34,13 @@ python -m pip install -r requirements-dev.txt
 make ci
 ```
 
+On Windows hosts where Smart App Control blocks Ruff's unsigned native binary,
+run the complete non-Ruff local gate and keep hosted CI authoritative for lint:
+
+```bash
+make ci-local
+```
+
 ## Regression property
 
 ```toetra

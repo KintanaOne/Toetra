@@ -11,17 +11,20 @@ from toetra._compiler.ir.ir1.nodes import (
     ModelEvaluationIR,
 )
 from toetra._compiler.ir.ir2.enums import AssumptionSource
-from toetra._compiler.ir.ir2.nodes import AssumptionIR2, NNFFormulaIR2
+from toetra._compiler.ir.ir2.dsl.nodes import (
+    AssumptionIR2,
+    NNFFormulaIR2,
+)
 from toetra._language.vocabulary.operators import EnumComparisonOperator
 from toetra._compiler.semantic.types.enums import EnumDataType
 from toetra._models.detector.model_framework import EnumModelFramework
-from toetra._models.encoder import (
+from toetra._models.encoder.errors import (
     InvalidModelAssumptionError,
-    ModelEncoderFactory,
-    ModelEncoderRegistry,
     UnsupportedModelEncoderError,
-    validate_model_assumptions,
 )
+from toetra._models.encoder.factory import ModelEncoderFactory
+from toetra._models.encoder.registry import ModelEncoderRegistry
+from toetra._models.encoder.base import validate_model_assumptions
 from toetra._models.encoder.context import ModelEncodingContext
 from toetra._models.schema.model_schema import ModelSchema
 

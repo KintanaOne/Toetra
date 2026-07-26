@@ -10,14 +10,16 @@ from toetra._backends.results import VerificationStatus
 from toetra._compiler.ir.ir2.enums import VerificationSemantics
 from toetra._language.vocabulary.backends import EnumBackend
 from toetra._language.vocabulary.properties import EnumProperty
-from toetra._reporting import (
+from toetra._reporting.html import (
     HtmlRenderOptions,
+    render_verification_reports_html,
+)
+from toetra._reporting.model import (
     ReportAssignment,
     ReportAssignmentKind,
     ReportScope,
     ReportScopeVariable,
     VerificationReport,
-    render_verification_reports_html,
 )
 
 

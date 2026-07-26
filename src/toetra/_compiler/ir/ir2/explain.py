@@ -3,7 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from toetra._compiler.ir.ir2.enums import VerificationSemantics
-from toetra._compiler.ir.ir2.nodes import AssumptionIR2, VerificationTaskIR2
+from toetra._compiler.ir.ir2.dsl.nodes import (
+    AssumptionIR2,
+    VerificationTaskIR2,
+)
 from toetra._compiler.ir.ir2.pretty import pretty_formula
 
 

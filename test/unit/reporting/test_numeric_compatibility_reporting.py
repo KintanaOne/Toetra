@@ -16,12 +16,15 @@ from toetra._compatibility.model import (
 )
 from toetra._compiler.ir.ir1.nodes import ComparisonIR, ConstantExpressionIR, ScopeIR
 from toetra._compiler.ir.ir2.enums import NormalFormKind, VerificationSemantics
-from toetra._compiler.ir.ir2.nodes import NNFFormulaIR2, VerificationTaskIR2
+from toetra._compiler.ir.ir2.dsl.nodes import (
+    NNFFormulaIR2,
+    VerificationTaskIR2,
+)
 from toetra._compiler.ir.ir2.requirements import IR2Requirements
 from toetra._language.vocabulary.backends import EnumBackend
 from toetra._language.vocabulary.operators import EnumComparisonOperator
 from toetra._language.vocabulary.properties import EnumProperty
-from toetra._reporting import build_verification_report
+from toetra._reporting.builder import build_verification_report
 from toetra._compiler.semantic.types.enums import EnumDataType
 
 

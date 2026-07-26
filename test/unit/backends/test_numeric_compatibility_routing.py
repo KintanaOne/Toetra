@@ -36,7 +36,10 @@ from toetra._compiler.ir.ir1.nodes import (
     ScopeIR,
 )
 from toetra._compiler.ir.ir2.enums import NormalFormKind, VerificationSemantics
-from toetra._compiler.ir.ir2.nodes import NNFFormulaIR2, VerificationTaskIR2
+from toetra._compiler.ir.ir2.dsl.nodes import (
+    NNFFormulaIR2,
+    VerificationTaskIR2,
+)
 from toetra._compiler.ir.ir2.run_ir2 import run_ir2_with_model_schema
 from toetra._compiler.ir.ir2.requirements import IR2Requirements
 from toetra._language.vocabulary.backends import EnumBackend

@@ -9,7 +9,10 @@ from toetra._compiler.ir.ir1.nodes import (
 )
 from toetra._compiler.ir.ir2.condition import VerificationConditionBuilder
 from toetra._compiler.ir.ir2.enums import AssumptionSource, VerificationSemantics
-from toetra._compiler.ir.ir2.nodes import AssumptionIR2, NNFFormulaIR2
+from toetra._compiler.ir.ir2.dsl.nodes import (
+    AssumptionIR2,
+    NNFFormulaIR2,
+)
 from toetra._language.vocabulary.operators import EnumComparisonOperator
 from toetra._compiler.semantic.types.enums import EnumDataType
 

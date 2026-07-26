@@ -8,13 +8,13 @@ from toetra._compiler.ir.ir1.model_quantities import EnumModelQuantityKind
 from toetra._compiler.ir.ir1.nodes import ModelEvaluationIR, PointBindingIR
 from toetra._compiler.ir.ir2.model.affine import AffineModelQuantityConstraintIR2
 from toetra._models.detector.model_framework import EnumModelFramework
-from toetra._models.encoder import (
+from toetra._models.encoder.errors import (
     MissingModelParameterError,
-    ModelEncoderFactory,
-    SklearnLogisticRegressionEncoder,
     UnsupportedModelEncoderError,
     UnsupportedModelParameterError,
 )
+from toetra._models.encoder.factory import ModelEncoderFactory
+from toetra._models.encoder.sklearn.logistic import SklearnLogisticRegressionEncoder
 from toetra._models.schema.feature_schema import FeatureSchema
 from toetra._models.schema.model_schema import ModelSchema
 from toetra._models.schema.output_schema import (

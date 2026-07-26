@@ -6,8 +6,9 @@
 
 The supported Python entry point is `toetra`. Normal user surfaces include
 `verify`, sessions/findings/reports, statuses, artifacts, and replay errors.
-Internal `dsl.*`, `model.*`, IR, semantic-profile, and backend modules may evolve
-unless another contract explicitly marks them public.
+The former `dsl.*` and `model.*` top-level packages are absent. Every module
+beneath `toetra._*` is private and may evolve unless another contract explicitly
+marks a surface public.
 
 The EBNF is the language source of truth; the generated Lark grammar is never
 edited directly.

@@ -4,7 +4,7 @@ from toetra._compiler.ir.ir2.model.affine import (
     AffineOutputConstraintIR2,
     AffineTermIR2,
 )
-from toetra._compiler.ir.ir2.nodes import NNFFormulaIR2
+from toetra._compiler.ir.ir2.dsl.nodes import NNFFormulaIR2
 from toetra._compiler.ir.ir2.pretty import pretty_formula
 from toetra._language.vocabulary.operators import EnumComparisonOperator
 

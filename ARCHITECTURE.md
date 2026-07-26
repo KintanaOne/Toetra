@@ -31,6 +31,10 @@ properties of machine-learning models.
 | `src/toetra/_reporting`, `src/toetra/_provenance`, `src/toetra/_runtime` | reports and replay |
 | `src/toetra` | stable public facade and private implementation packages |
 
+Only `src/toetra/__init__.py` and the installed `toetra.examples` resource helper
+intentionally aggregate names. Private `toetra._*` package initializers do not
+re-export implementation symbols; internal code imports concrete modules.
+
 A `target` is an output port. Regression uses `target[point]`; classification
 selects `target[point].label` or `target[point].probability(label)`. Internal
 quantities such as the logistic decision value appear only after IR1 and remain

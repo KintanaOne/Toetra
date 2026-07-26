@@ -5,7 +5,7 @@ import pandas as pd
 from sklearn.linear_model import LinearRegression
 
 from toetra._backends.results import VerificationStatus
-from toetra._runtime import verify
+from toetra._runtime.api import verify
 from toetra._compiler.semantic.types.enums import EnumDataType
 
 

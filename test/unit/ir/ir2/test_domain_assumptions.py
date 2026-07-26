@@ -12,7 +12,7 @@ from toetra._compiler.ir.ir2.domain_assumptions import (
     NumericFeatureBounds,
 )
 from toetra._compiler.ir.ir2.enums import AssumptionSource
-from toetra._compiler.ir.ir2.nodes import NNFFormulaIR2
+from toetra._compiler.ir.ir2.dsl.nodes import NNFFormulaIR2
 from toetra._language.vocabulary.operators import EnumComparisonOperator
 
 

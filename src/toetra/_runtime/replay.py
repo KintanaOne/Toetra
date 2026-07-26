@@ -25,7 +25,7 @@ from toetra._compiler.ir.ir1.nodes import (
     UnaryArithmeticExpressionIR,
 )
 from toetra._compiler.ir.ir1.outputs import OutputObservableExpressionIR
-from toetra._compiler.ir.ir2.nodes import VerificationTaskIR2
+from toetra._compiler.ir.ir2.dsl.nodes import VerificationTaskIR2
 from toetra._reporting.accessors import point_input_values, point_output_values
 from toetra._reporting.evaluations import ReportModelEvaluation
 from toetra._reporting.model import VerificationReport

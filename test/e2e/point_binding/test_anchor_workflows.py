@@ -3,7 +3,7 @@ from __future__ import annotations
 import pandas as pd
 
 from toetra._backends.results import VerificationStatus
-from toetra._runtime import verify
+from toetra._runtime.api import verify
 from test.e2e.point_binding._helpers import build_linear_artifacts, source
 
 

@@ -8,12 +8,12 @@ import pytest
 from sklearn.linear_model import LinearRegression
 
 from toetra._backends.results import VerificationStatus
-from toetra._runtime import (
+from toetra._runtime.anchors import (
     AnchorLookupRequest,
-    AnchorResolutionError,
     AnchorResolver,
-    verify,
 )
+from toetra._runtime.errors import AnchorResolutionError
+from toetra._runtime.api import verify
 from toetra._compiler.semantic.symbols.point import ResolvedAnchorBinding
 from toetra._compiler.semantic.types.enums import EnumDataType
 from toetra._models.schema.model_schema import ModelSchema

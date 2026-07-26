@@ -15,7 +15,7 @@ from toetra._compatibility.model import (
     NumericCompatibilityQuery,
 )
 from toetra._compatibility.registry import NumericCompatibilityRegistry
-from toetra._compiler.ir.ir2.nodes import VerificationTaskIR2
+from toetra._compiler.ir.ir2.dsl.nodes import VerificationTaskIR2
 from toetra._language.vocabulary.backends import EnumBackend
 
 

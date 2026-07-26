@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import pandas as pd
 
-from toetra._runtime import AnchorLookupRequest, DataFrameAnchorResolver
+from toetra._runtime.anchors import (
+    AnchorLookupRequest,
+    DataFrameAnchorResolver,
+)
 from toetra._compiler.semantic.symbols.point import PointLiteral
 from toetra._compiler.semantic.types.enums import EnumDataType
 from toetra._models.detector.model_framework import EnumModelFramework

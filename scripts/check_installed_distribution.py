@@ -26,6 +26,22 @@ from toetra import VerificationSession, VerificationStatus, verify
 from toetra.examples import credit_risk_policy
 
 module_path = Path(toetra.__file__).resolve()
+expected_public_api = (
+    "CounterexampleReplay",
+    "ReplayUnavailableError",
+    "VerificationConfigurationError",
+    "VerificationFinding",
+    "VerificationReport",
+    "VerificationRuntimeError",
+    "VerificationSession",
+    "VerificationStatus",
+    "verify",
+)
+assert toetra.__all__ == expected_public_api
+assert {name for name in vars(toetra) if not name.startswith("_")} == {
+    *expected_public_api,
+    "examples",
+}
 assert importlib.util.find_spec("forml") is None
 assert importlib.util.find_spec("dsl") is None
 assert importlib.util.find_spec("model") is None

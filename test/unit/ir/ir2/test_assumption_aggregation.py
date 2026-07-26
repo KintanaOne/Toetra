@@ -24,7 +24,7 @@ from toetra._compiler.ir.ir2.enums import (
     VerificationSemantics,
 )
 from toetra._compiler.ir.ir2.errors import IR2ValidationError, InvalidIR2InputError
-from toetra._compiler.ir.ir2.nodes import (
+from toetra._compiler.ir.ir2.dsl.nodes import (
     AssumptionIR2,
     ClauseIR2,
     CNFFormulaIR2,

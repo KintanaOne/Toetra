@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from toetra._compiler.ir.ir1.nodes import ModelEvaluationIR
-from toetra._compiler.ir.ir2.nodes import AssumptionIR2
+from toetra._compiler.ir.ir2.dsl.nodes import AssumptionIR2
 from toetra._models.encoder.base import (
     ModelEncoder,
     validate_model_assumptions,

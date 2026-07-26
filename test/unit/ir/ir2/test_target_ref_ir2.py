@@ -3,7 +3,7 @@ from toetra._compiler.ir.ir1.nodes import (
     ConstantExpressionIR,
     TargetExpressionIR,
 )
-from toetra._compiler.ir.ir2.nodes import NNFFormulaIR2
+from toetra._compiler.ir.ir2.dsl.nodes import NNFFormulaIR2
 from toetra._compiler.ir.ir2.run_ir2 import run_ir2
 from toetra._language.vocabulary.operators import EnumComparisonOperator
 

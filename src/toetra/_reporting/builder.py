@@ -20,7 +20,10 @@ from toetra._compiler.ir.ir1.scalar import (
     format_scalar_expression,
     iter_scalar_expressions,
 )
-from toetra._compiler.ir.ir2.nodes import NNFFormulaIR2, VerificationTaskIR2
+from toetra._compiler.ir.ir2.dsl.nodes import (
+    NNFFormulaIR2,
+    VerificationTaskIR2,
+)
 from toetra._provenance.builder import build_report_provenance
 from toetra._provenance.model import VerificationProvenanceContext
 from toetra._reporting.evaluations import build_report_model_evaluations

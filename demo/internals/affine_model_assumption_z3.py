@@ -11,10 +11,12 @@ from toetra._compiler.ir.ir1.run_ir1 import run_ir
 from toetra._compiler.ir.ir2.builder import IR2Builder
 from toetra._compiler.ir.ir2.context import IR2BuildContext
 from toetra._compiler.ir.ir2.enums import AssumptionSource, NormalFormKind
-from toetra._compiler.ir.ir2.nodes import (
+from toetra._compiler.ir.ir2.model.affine import (
     AffineExpressionIR2,
     AffineOutputConstraintIR2,
     AffineTermIR2,
+)
+from toetra._compiler.ir.ir2.dsl.nodes import (
     AssumptionIR2,
     NNFFormulaIR2,
 )

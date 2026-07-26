@@ -4,12 +4,12 @@ from pathlib import Path
 
 import pytest
 
-from toetra._runtime import (
+from toetra._runtime.errors import (
     BackendRunnerNotRegisteredError,
-    BackendRunnerRegistry,
     VerificationConfigurationError,
-    verify,
 )
+from toetra._runtime.backends import BackendRunnerRegistry
+from toetra._runtime.api import verify
 from toetra._compiler.semantic.types.enums import EnumDataType
 from toetra._models.detector.model_framework import EnumModelFramework
 from toetra._models.schema.feature_schema import FeatureSchema

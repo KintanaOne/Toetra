@@ -9,17 +9,21 @@ from typing import TYPE_CHECKING, Any, TextIO, overload
 
 from toetra._backends.results import VerificationResult, VerificationStatus
 from toetra._backends.router import BackendRoute
-from toetra._compiler.ir.ir2.nodes import VerificationTaskIR2
+from toetra._compiler.ir.ir2.dsl.nodes import VerificationTaskIR2
 from toetra._provenance.model import VerificationProvenanceContext
-from toetra._reporting import (
+from toetra._reporting.html import (
     HtmlRenderOptions,
-    TextRenderOptions,
-    VerificationReport,
     render_verification_reports_html,
+    write_verification_reports_html,
+)
+from toetra._reporting.text import (
+    TextRenderOptions,
     render_verification_reports_text,
+)
+from toetra._reporting.model import VerificationReport
+from toetra._reporting.json import (
     verification_reports_to_dict,
     verification_reports_to_json,
-    write_verification_reports_html,
     write_verification_reports_json,
 )
 from toetra._reporting.accessors import (
