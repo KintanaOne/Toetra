@@ -4,6 +4,9 @@
 
 ### Changed
 
+- Consolidated the Cleveland classification workspace under `demo/`, grouped
+  repository scripts by responsibility, and archived completed roadmaps under
+  `docs/history/roadmaps/`.
 - Migrated all installable code to the canonical `src/toetra/` layout.
 - Consolidated the former top-level `dsl` and `model` implementation packages
   into private responsibility-based `toetra._*` namespaces.

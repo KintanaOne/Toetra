@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from scripts.check_public_contract import (
+from scripts.ci.check_public_contract import (
     CLASSIFICATION_AMENDED_DOCUMENTS,
     CLASSIFICATION_TARGET_DOCUMENTS,
     EXPECTED_VERSION,

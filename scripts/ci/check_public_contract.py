@@ -9,7 +9,7 @@ import tomllib
 from pathlib import Path
 from urllib.parse import unquote
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
@@ -29,7 +29,11 @@ CLASSIFICATION_TARGET_DOCUMENTS = (
     ROOT / "docs" / "contracts" / "binary-classification-profile.md",
     ROOT / "docs" / "language" / "model-output-observables.md",
     ROOT / "docs" / "testing" / "binary-classification-test-matrix.md",
-    ROOT / "docs" / "roadmap" / "binary-classification-implementation-roadmap.md",
+    ROOT
+    / "docs"
+    / "history"
+    / "roadmaps"
+    / "binary-classification-implementation-roadmap.md",
 )
 
 CLASSIFICATION_AMENDED_DOCUMENTS = (

@@ -208,6 +208,9 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
+# Toetra demo artifacts
+/demo/classification/cleveland/artifacts/
+
 # Toetra local review artifacts
 /.docs/
 /toetra_review_bundle_*.zip

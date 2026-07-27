@@ -1,8 +1,8 @@
 # Point Binding and Evaluation Implementation Roadmap
 
-> Status: Completed — Patch 15.1 through 15.12 delivered  
-> Date: 2026-07  
-> Scope: Patch 15 — first-class points, anchors, nested binders, restrictions, indexed model evaluations, and multi-point evidence  
+> Status: Completed — Patch 15.1 through 15.12 delivered
+> Date: 2026-07
+> Scope: Patch 15 — first-class points, anchors, nested binders, restrictions, indexed model evaluations, and multi-point evidence
 > Prerequisite: Patch 15-D1 documentation and contract freeze
 
 ## Purpose

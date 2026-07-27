@@ -4,7 +4,7 @@ import argparse
 import sys
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -47,7 +47,7 @@ def main() -> int:
         if current != content:
             raise SystemExit(
                 "Numeric compatibility matrices are stale. Run "
-                "python scripts/generate_numeric_compatibility_matrices.py"
+                "python scripts/docs/generate_numeric_compatibility_matrices.py"
             )
         print(f"Numeric compatibility matrices are current: {output}")
         return 0

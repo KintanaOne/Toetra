@@ -4,7 +4,7 @@
 > Patch family: P23
 > Baseline: `1.0.0rc2`
 > Target: `1.0.0rc3`
-> Governing decision: [ADR-0027](../adr/ADR-0027-adopt-toetra-as-canonical-identity.md)
+> Governing decision: [ADR-0027](../../adr/ADR-0027-adopt-toetra-as-canonical-identity.md)
 
 ## Goal
 
@@ -139,7 +139,7 @@ allowlist:
 ```bash
 rg -n 'FORML|forml|\.forml' \
   --glob '!docs/adr/ADR-0027-adopt-toetra-as-canonical-identity.md' \
-  --glob '!docs/roadmap/toetra-identity-migration-roadmap.md' \
+  --glob '!docs/history/roadmaps/toetra-identity-migration-roadmap.md' \
   --glob '!CHANGELOG.md'
 ```
 

@@ -5,7 +5,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-SCRIPT = Path(__file__).parents[3] / "scripts" / "clean_notebooks.py"
+SCRIPT = Path(__file__).parents[3] / "scripts" / "ci" / "clean_notebooks.py"
 
 
 def _write_dirty_notebook(path: Path) -> None:

@@ -55,9 +55,9 @@ def test_build_toolchain_and_dev_extra_are_pinned() -> None:
 
 
 def test_release_probe_exercises_binary_classification() -> None:
-    probe = (ROOT / "scripts" / "check_installed_distribution.py").read_text(
-        encoding="utf-8"
-    )
+    probe = (
+        ROOT / "scripts" / "release" / "check_installed_distribution.py"
+    ).read_text(encoding="utf-8")
     makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
     assert "LogisticRegression" in probe
     assert "target[applicant].label" in probe

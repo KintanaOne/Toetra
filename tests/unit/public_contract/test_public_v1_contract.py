@@ -3,7 +3,7 @@ from __future__ import annotations
 import tomllib
 from pathlib import Path
 
-from scripts.check_public_contract import (
+from scripts.ci.check_public_contract import (
     EXPECTED_LICENSE,
     EXPECTED_VERSION,
     check_public_contract,

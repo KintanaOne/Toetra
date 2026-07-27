@@ -7,7 +7,7 @@ verification profile:
 demo/
 ├── quickstart/      # public verify(...) workflow for application code
 ├── regression/      # public LinearRegression examples and notebook
-├── classification/  # public binary-classification examples and notebook
+├── classification/  # public binary-classification examples and Cleveland workspace
 └── internals/       # compiler, IR2 and backend-oriented engineering examples
 ```
 
@@ -156,6 +156,18 @@ The matching notebook is:
 ```text
 demo/classification/binary_classification_policy.ipynb
 ```
+
+### Cleveland heart-disease workspace
+
+A realistic data-preparation and training workspace is available at:
+
+```text
+demo/classification/cleveland/
+```
+
+It keeps its immutable source dataset under `data/` and writes generated local
+artifacts under an ignored `artifacts/` directory. See the scenario README for
+its current V1 boundary.
 
 ## Internal engineering examples
 

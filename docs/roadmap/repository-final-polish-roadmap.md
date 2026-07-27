@@ -1,6 +1,6 @@
 # P24 — Repository Final Polish Roadmap
 
-> Status: Active — P24.3 tests, fixtures, and golden normalization
+> Status: Active — P24.4 demo, documentation, and script organization
 > Baseline: `1.0.0rc3`
 > Target: repository and package layout frozen for P25–P27
 > Governing decision: [ADR-0028](../adr/ADR-0028-src-based-single-package-layout.md)
@@ -67,7 +67,7 @@ all existing verification behavior remains unchanged.
 Exit criterion: public imports are explicit, exact, documented, and protected by
 executable contracts.
 
-### P24.3 — Tests, fixtures, and golden normalization
+### P24.3 — Tests, fixtures, and golden normalization ✅
 
 - rename `test/` to `tests/`;
 - consolidate duplicate IR and normalization locations;
