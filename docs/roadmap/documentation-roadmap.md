@@ -1,175 +1,181 @@
-# Documentation Roadmap
+# P25 documentation roadmap
 
-> Status: Active  
-> Scope: Documentation planning
+> **Status:** Active
+>
+> **Baseline:** `1.0.0rc3` after P24 repository freeze
+>
+> **Scope:** public and contributor documentation
 
 ## Purpose
 
-This roadmap tracks the Toetra documentation structure and rewrite strategy.
+P25 makes the documentation describe the product that is implemented and
+supported today. It establishes a public Python reference, replaces prospective
+architecture descriptions with as-built views, documents extension paths, and
+prevents examples from drifting away from executable behavior.
 
-Toetra documentation is organized around:
+P25 does not add a model, property, framework, backend, public symbol, or result
+status. User-facing error and report redesign belongs to P26. Further release
+automation belongs to P27.
 
-- architecture,
-- compiler layers,
-- ModelBridge,
-- IR,
-- contracts,
-- testing,
-- Miova integration,
-- runtime,
-- backends,
-- ADRs,
-- roadmap.
+## Sources of authority
 
-## Documentation principle
+When documents disagree, resolve the conflict in this order:
 
-Each document should answer four questions:
+1. [`public-v1-profile.md`](../public-v1-profile.md) defines the executable
+   routes and exclusions exposed as Toetra V1.
+2. `src/toetra/__init__.py` and the
+   [public V1 contract](../contracts/public-v1-contract.md) define the supported
+   Python facade.
+3. Accepted contracts and ADRs define normative guarantees and architectural
+   decisions. They cannot silently widen the public V1 profile.
+4. As-built architecture pages describe the current implementation behind those
+   boundaries. If implementation and description disagree, P25 corrects the
+   description or records the discrepancy; it does not invent a guarantee.
+5. Completed roadmaps and historical documents provide context only. They do
+   not define current support or pending work.
 
-```text
-What does this layer do?
-Why does it exist?
-What does it guarantee?
-How is it tested or validated?
-```
+For language syntax specifically, the EBNF source is authoritative and the
+generated Lark grammar is derived. Language pages must still distinguish
+parseable syntax, accepted semantics, and the smaller end-to-end public V1
+profile.
 
-## Documentation maturity levels
+## Documentation rules
 
-| Level | Meaning |
-|---|---|
-| Draft | First version, may evolve |
-| Stabilizing | Aligned with implementation direction |
-| Contract | Defines expected behavior |
-| Reference | Stable enough to guide implementation |
-| Post-V1 | Future direction only |
+Every current page must make its audience and status clear enough to answer:
 
-## P0 documents
+- is this a public guarantee, an internal implementation description, or future
+  direction;
+- what inputs and outputs cross the documented boundary;
+- what is implemented in `1.0.0rc3`;
+- where the behavior is tested or otherwise validated.
 
-P0 documents define the architecture and contracts required for V1.
+Current documentation must not present planned types as implemented, private
+modules as supported imports, or post-V1 routes as available. Code examples use
+the public `toetra` facade unless a page is explicitly an internal contributor
+guide.
 
-They include:
+## Delivery sequence
 
-- `index.md`
-- `roadmap/documentation-roadmap.md`
-- architecture overview,
-- pipeline views,
-- runtime flow,
-- status matrix,
-- compiler pipeline,
-- ModelBridge overview,
-- IR overview,
-- contracts,
-- Miova integration,
-- testing strategy,
-- ADR overview.
+### P25.0 — Documentation truth reset
 
-## P1 documents
+Remove the retired P24 aggregate gate, establish this authority order, and
+define the remaining P25 exit criteria.
 
-P1 documents improve external readability and extension planning.
+Exit criteria:
 
-They include:
+- no reference to the retired P24 aggregate target remains;
+- release documentation names only durable Make targets;
+- this roadmap identifies public, normative, as-built, and historical sources;
+- identity, repository, public-contract, documentation, and CI checks remain
+  green.
 
-- language reference,
-- backend docs,
-- runtime docs,
-- C4 views,
-- detailed ADRs.
+### P25.1 — Public Python API reference
 
-## P2 documents
+Document the nine names exported by `toetra.__all__`: `verify`, sessions,
+findings, reports, statuses, counterexample replay, and the three public error
+types.
 
-P2 documents improve onboarding and project communication.
+Exit criteria:
 
-They include:
+- every public symbol has a stable reference entry;
+- signatures, return values, lifecycle, status handling, artifact writing, and
+  failure boundaries are documented from the implementation;
+- examples import only from `toetra`;
+- public reference pages do not expose private implementation modules as API.
 
-- getting started,
-- installation,
-- first property,
-- first model schema,
-- end-to-end preview,
-- implementation roadmap,
-- open questions.
+### P25.2 — As-built architecture
 
-## Rewrite strategy
-
-The documentation should be rewritten progressively in this order:
+Align architecture, compiler, IR, ModelBridge, backend, runtime, and status
+pages with the implemented pipeline:
 
 ```text
-1. Root docs
-2. Architecture
-3. Compiler
-4. ModelBridge
-5. IR
-6. Contracts
-7. Miova Integration
-8. Testing
-9. Language
-10. Backends
-11. Runtime
-12. C4 views
-13. ADRs
-14. Getting Started
-15. Roadmap
+source -> CST -> AST -> semantic validation -> IR1
+       -> model-semantic lowering -> NNF -> IR2 + assumptions
+       -> route qualification -> backend execution
+       -> report -> provenance -> replay
 ```
 
-## Quality checklist
+Exit criteria:
 
-Each page should define:
+- current pipeline stages and ownership match `src/toetra`;
+- planned or removed artifacts are not presented as runtime types;
+- the status matrix separates implemented V1 behavior from post-V1 direction;
+- architecture pages link to the contracts governing each boundary.
 
-- status,
-- scope,
-- current implementation status,
-- target architecture,
-- responsibilities,
-- inputs and outputs,
-- guarantees,
-- non-goals,
-- relation to tests,
-- relation to Miova if relevant.
+### P25.3 — Extension guides
 
-## Final consolidation
+Create separate contributor paths for adding a model family, a framework
+adapter, and a backend. Each path must identify the required schema, semantics,
+capabilities, numeric policy, execution, reporting, replay, and test work.
 
-After all packs are integrated, the documentation should be checked for:
+Exit criteria:
 
-- broken links,
-- duplicated concepts,
-- inconsistent status labels,
-- Z3 vs post-V1 backend wording,
-- Miova runtime confusion,
-- IR1 vs IR2 ambiguity,
-- ModelBridge terminology,
-- outdated SMS terminology,
-- missing golden samples.
+- the three extension types are not conflated;
+- each guide identifies registration points and private boundaries from the
+  current source tree;
+- each guide includes unit, contract, end-to-end, documentation, clean-install,
+  and release expectations;
+- no guide implies that an extension is public before the V1 extension rule is
+  satisfied.
 
----
+### P25.4 — Language reference consolidation
 
-## Language Evolution Documentation Freeze
+Organize the language documentation around three distinct questions: what
+parses, what has accepted meaning, and what executes through the public V1
+routes.
 
-The documentation-first package is complete when patches 01 through 06 are applied:
+Exit criteria:
 
-```text
-01 explicit quantified bindings
-02 typed domains
-03 arithmetic expressions
-04 architecture decisions
-05 cross-layer contracts
-06 normative examples and test matrix
+- syntax, semantic validity, and executable support are explicitly separated;
+- regression and binary-classification observables use consistent terminology;
+- supported and rejected examples agree with the grammar, semantic rules, and
+  public V1 profile;
+- post-V1 constructs are labelled as such and cannot be mistaken for support.
+
+### P25.5 — Executable documentation
+
+Make public snippets checkable and reuse canonical examples where practical.
+Integrate drift detection into an existing durable documentation or CI gate.
+
+Exit criteria:
+
+- selected public Python and Toetra snippets are parsed or executed in tests;
+- copied snippets have an identified canonical source;
+- snippet failures report the owning page clearly;
+- no temporary `p25-check` target is introduced.
+
+### P25.6 — Consolidation and freeze
+
+Review navigation, links, status labels, duplicated concepts, terminology, and
+historical placement. Archive the completed P25 plan once the documentation is
+frozen.
+
+Exit criteria:
+
+- `mkdocs build --strict` succeeds without broken navigation or links;
+- no active page contradicts the public profile, public facade, accepted
+  contracts, or as-built pipeline;
+- completed planning material lives under `docs/history/roadmaps/`;
+- all durable quality and release gates pass from a clean checkout.
+
+## Patch delivery contract
+
+Each P25 sub-step is delivered as an independently reviewable `.patch` against
+the baseline produced by the preceding accepted step. Every delivery includes:
+
+- the exact baseline and files changed;
+- an application command using `git apply`;
+- focused checks followed by the relevant durable gates;
+- a reversal command using `git apply -R`;
+- no unrelated source, version, or public-contract change.
+
+P25 uses existing validation targets:
+
+```bash
+make ci
+make demo-check
+make release-check
+make review-bundle-check
 ```
 
-The next work belongs to implementation and test delivery, not additional speculative language documentation. Documentation should now evolve alongside concrete code changes and discovered edge cases.
-
-## Patch 21 Classification Specification Freeze
-
-P21.0 applies the same documentation-first rule to binary classification:
-
-```text
-01 typed output and observable ADR
-02 model-semantic lowering ADR
-03 initial binary-classification profile ADR
-04 boundary contracts and amendments
-05 declarative language reference
-06 stable acceptance-test matrix
-07 implementation roadmap with explicit debts
-```
-
-The accepted documents are implementation specifications, not retrospective
-descriptions. Classification must not be added to the current public V1 profile
-until the P21.11 release gate is complete.
+No permanent target named after P25 is added.

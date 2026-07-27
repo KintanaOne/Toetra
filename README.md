@@ -131,14 +131,10 @@ make release-check
 make review-bundle-check
 ```
 
-The complete post-P24 aggregate gate is available from a clean checkout:
-
-```bash
-make p24-check
-```
-
-These validation gates are non-mutating. The frozen repository boundary is
-documented in the [repository contract](docs/contracts/repository-contract.md).
+Run the four gates explicitly from a clean checkout. They are the durable
+quality, demonstration, distribution, and review-bundle boundaries used after
+P24. The frozen repository structure is documented in the
+[repository contract](docs/contracts/repository-contract.md).
 
 ## License
 

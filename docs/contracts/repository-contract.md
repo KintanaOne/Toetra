@@ -78,15 +78,14 @@ make ci             # authoritative quality gate including Ruff
 make demo-check
 make release-check
 make review-bundle-check
-make p24-check      # aggregate final gate from a clean checkout
 ```
 
 `make ci` and `make ci-local` are non-mutating. Formatting changes are made
 explicitly with `make format`. Hosted CI remains authoritative for Ruff on hosts
 where Windows Smart App Control blocks its unsigned native executable.
 
-`make p24-check` is the final aggregate structural gate. Because distribution
-building requires a clean checkout, it is intended to run after the P24.6 commit.
+Release validation keeps the quality, public demonstration, distribution, and
+review-bundle gates explicit. Distribution building requires a clean checkout.
 
 ## Change control
 
