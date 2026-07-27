@@ -64,8 +64,10 @@ The generator may exclude caches, build outputs, virtual environments and serial
 
 Release tooling failures are build failures, not verification results. They must stop publication and must not be represented as `UNKNOWN`, `PROVED` or any other logical status.
 
-## Final repository gate
+## Gate composition
 
-`make p24-check` aggregates CI, public demonstrations, release validation, and
-review-bundle reproducibility from a clean committed checkout. The underlying
-layout is defined by the [repository contract](repository-contract.md).
+CI, public demonstrations, distribution validation, and review-bundle
+reproducibility remain separate durable gates. Run all four commands listed
+above from a clean committed checkout when validating a release candidate. The
+underlying layout is defined by the
+[repository contract](repository-contract.md).

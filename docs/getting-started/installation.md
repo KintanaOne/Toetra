@@ -41,11 +41,7 @@ Normal user code imports only from `toetra`. The former top-level `dsl` and
 `model` packages are not installed. Modules under `toetra._*` are private and
 carry no compatibility guarantee.
 
-For the complete post-P24 structural and release gate from a clean checkout:
-
-```bash
-make p24-check
-```
-
 See the [repository contract](../contracts/repository-contract.md) for the
-package, test, demo, documentation, and automation boundaries frozen before P25.
+package, test, demo, documentation, and automation boundaries frozen before
+P25. Release validation deliberately keeps `ci`, demonstrations, distribution,
+and review-bundle reproducibility as explicit gates.

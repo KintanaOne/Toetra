@@ -6,7 +6,7 @@
 	notebooks-clean notebooks-check generated-check identity-check public-contract-check docs-check ci \
 	dist dist-check install-check release-check review-bundle \
 	review-bundle-check repository-check demo-regression demo-quickstart \
-	demo-classification demo-check p24-check clean ci-local
+	demo-classification demo-check clean ci-local
 
 install:
 	python -m pip install -e ".[dev,docs]"
