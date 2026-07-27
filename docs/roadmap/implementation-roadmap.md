@@ -298,7 +298,7 @@ binary logistic classification profile. A direct fitted sklearn
 Z3 defines the public language semantics.
 
 The normative patch sequence, debts, and gates are maintained in the
-[Binary Classification Implementation Roadmap](binary-classification-implementation-roadmap.md),
+[Binary Classification Implementation Roadmap](../history/roadmaps/binary-classification-implementation-roadmap.md),
 with stable acceptance IDs in the
 [Binary Classification Test Matrix](../testing/binary-classification-test-matrix.md).
 
