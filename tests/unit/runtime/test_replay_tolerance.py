@@ -12,10 +12,8 @@ from toetra._compiler.ir.ir1.nodes import (
     OrIR,
 )
 from toetra._language.vocabulary.operators import EnumComparisonOperator
-from toetra._runtime.replay import (
-    CounterexampleReplay,
-    _evaluate_logical,
-)
+from toetra._runtime.replay import CounterexampleReplay
+from toetra._runtime.replay_evaluation import evaluate_logical
 from toetra._compiler.semantic.types.enums import EnumDataType
 
 
@@ -36,7 +34,7 @@ def _comparison(
 
 
 def _evaluate(node: LogicalIR, *, tolerance: float = 1e-8) -> bool | None:
-    return _evaluate_logical(node, {}, {}, tolerance=tolerance)
+    return evaluate_logical(node, {}, {}, tolerance=tolerance)
 
 
 def test_numeric_ordering_inside_tolerance_band_is_indeterminate() -> None:

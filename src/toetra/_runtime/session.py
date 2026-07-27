@@ -30,7 +30,8 @@ from toetra._reporting.accessors import (
     report_output_values_by_point,
     report_point_values,
 )
-from toetra._runtime.replay import CounterexampleReplay, replay_verification_report
+from toetra._runtime.replay import CounterexampleReplay
+from toetra._runtime.replay_engine import replay_verification_report
 from toetra._models.schema.model_schema import ModelSchema
 
 if TYPE_CHECKING:

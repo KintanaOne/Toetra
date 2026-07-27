@@ -16,7 +16,7 @@ from toetra._runtime.model_observer import (
     ModelObservation,
     ModelObserverRegistry,
 )
-from toetra._runtime.replay import replay_verification_report
+from toetra._runtime.replay_engine import replay_verification_report
 from toetra._runtime.session import VerificationFinding
 from toetra._models.introspector.sklearn_introspector import SklearnIntrospector
 

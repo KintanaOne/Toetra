@@ -1,6 +1,6 @@
 # P24 — Repository Final Polish Roadmap
 
-> Status: Active — P24.4 demo, documentation, and script organization
+> Status: Active — P24.5 targeted module decomposition
 > Baseline: `1.0.0rc3`
 > Target: repository and package layout frozen for P25–P27
 > Governing decision: [ADR-0028](../adr/ADR-0028-src-based-single-package-layout.md)
@@ -77,7 +77,7 @@ executable contracts.
 
 Exit criterion: every test asset has one clear role and one canonical location.
 
-### P24.4 — Demo, documentation, and script organization
+### P24.4 — Demo, documentation, and script organization ✅
 
 - consolidate complete user scenarios under `demo/`;
 - retain only small installed resources under `src/toetra/examples/`;
@@ -91,7 +91,7 @@ no example or script is orphaned.
 ### P24.5 — Targeted module decomposition
 
 - split replay orchestration by model, evaluation, classification, and rendering
-  responsibility;
+  responsibility (**completed in P24.5.1**);
 - split binary-classification semantic lowering into focused components;
 - separate HTML templates/styles only if the boundary is behavior-preserving;
 - avoid line-count-driven changes to coherent backend and provenance modules.
