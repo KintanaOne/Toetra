@@ -61,7 +61,9 @@ def test_review_bundle_excludes_sensitive_files_without_dropping_review_assets(
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("secret\n", encoding="utf-8")
 
-    csv_path = repository / "examples" / "review.csv"
+    csv_path = (
+        repository / "demo" / "classification" / "cleveland" / "data" / "review.csv"
+    )
     csv_path.parent.mkdir(parents=True, exist_ok=True)
     csv_path.write_text("feature,target\n1,0\n", encoding="utf-8")
     notebook_path = repository / "demo" / "regression" / "review.ipynb"
@@ -73,7 +75,7 @@ def test_review_bundle_excludes_sensitive_files_without_dropping_review_assets(
     with zipfile.ZipFile(bundle.path) as archive:
         names = set(archive.namelist())
         assert not names.intersection(sensitive_paths)
-        assert "examples/review.csv" in names
+        assert "demo/classification/cleveland/data/review.csv" in names
         assert "demo/regression/review.ipynb" in names
 
 

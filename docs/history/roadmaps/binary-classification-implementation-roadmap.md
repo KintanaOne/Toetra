@@ -34,10 +34,10 @@ verification, reporting, replay, packaging, and public documentation.
 
 ## Normative foundations
 
-- [ADR-0023 — Typed Model Outputs and Observables](../adr/ADR-0023-typed-model-outputs-and-observables.md)
-- [ADR-0024 — Model Semantic Lowering](../adr/ADR-0024-model-semantic-lowering.md)
-- [ADR-0025 — Initial Binary Classification Profile](../adr/ADR-0025-binary-classification-profile.md)
-- [Binary Classification Test Matrix](../testing/binary-classification-test-matrix.md)
+- [ADR-0023 — Typed Model Outputs and Observables](../../adr/ADR-0023-typed-model-outputs-and-observables.md)
+- [ADR-0024 — Model Semantic Lowering](../../adr/ADR-0024-model-semantic-lowering.md)
+- [ADR-0025 — Initial Binary Classification Profile](../../adr/ADR-0025-binary-classification-profile.md)
+- [Binary Classification Test Matrix](../../testing/binary-classification-test-matrix.md)
 
 ## Patch sequence
 

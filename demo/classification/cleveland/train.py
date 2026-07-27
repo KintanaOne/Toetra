@@ -27,13 +27,16 @@ from sklearn.preprocessing import StandardScaler
 
 ROOT = Path(__file__).resolve().parent
 
-DATASET_PATH = ROOT / "heart-disease-cleveland.csv"
+DATASET_PATH = ROOT / "data" / "heart-disease-cleveland.csv"
 
-MODEL_PATH = ROOT / "heart_model.joblib"
+ARTIFACTS_PATH = ROOT / "artifacts"
+ARTIFACTS_PATH.mkdir(parents=True, exist_ok=True)
 
-CLEAN_DATASET_PATH = ROOT / "heart_clean.csv"
+MODEL_PATH = ARTIFACTS_PATH / "heart_model.joblib"
 
-SCHEMA_PATH = ROOT / "schema.json"
+CLEAN_DATASET_PATH = ARTIFACTS_PATH / "heart_clean.csv"
+
+SCHEMA_PATH = ARTIFACTS_PATH / "schema.json"
 
 
 # ==========================================================

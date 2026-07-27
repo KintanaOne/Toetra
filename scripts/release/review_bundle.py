@@ -53,6 +53,8 @@ CRITICAL_PATHS = (
     "src/toetra/_language/grammar/toetra_grammar.ebnf",
     "src/toetra/_language/grammar/toetra_grammar.lark",
     "demo/regression/credit_risk_validation.ipynb",
+    "demo/classification/cleveland/README.md",
+    "demo/classification/cleveland/data/heart-disease-cleveland.csv",
     "tests/fixtures/model_bridge/classification.csv",
     "tests/fixtures/model_bridge/regression.csv",
 )

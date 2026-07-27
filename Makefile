@@ -24,19 +24,19 @@ lint:
 	python -m ruff check .
 
 notebooks-clean:
-	python scripts/clean_notebooks.py demo
+	python scripts/ci/clean_notebooks.py demo
 
 notebooks-check:
-	python scripts/clean_notebooks.py --check demo
+	python scripts/ci/clean_notebooks.py --check demo
 
 generated-check:
-	python scripts/generate_numeric_compatibility_matrices.py --check
+	python scripts/docs/generate_numeric_compatibility_matrices.py --check
 
 identity-check:
-	python scripts/check_identity_contract.py
+	python scripts/repository/check_identity_contract.py
 
 public-contract-check:
-	python scripts/check_public_contract.py
+	python scripts/ci/check_public_contract.py
 
 format: notebooks-clean
 	python -m black .
@@ -64,28 +64,28 @@ ci-check:
 	python -m ruff check .
 	python -m black .
 	python -m black --check .
-	python scripts/check_identity_contract.py
+	python scripts/repository/check_identity_contract.py
 	python -m pyright
 	python -m pytest -q
 
 # Build deterministic wheel and sdist artifacts.
 dist:
-	python scripts/build_distribution.py --output dist --check-reproducible --require-clean
+	python scripts/release/build_distribution.py --output dist --check-reproducible --require-clean
 
 dist-check:
-	python scripts/check_distribution.py dist
+	python scripts/release/check_distribution.py dist
 
 # Install the wheel in a fresh venv and import Toetra outside the checkout.
 install-check:
-	python scripts/check_installed_distribution.py dist
+	python scripts/release/check_installed_distribution.py dist
 
 release-check: identity-check dist dist-check install-check
 
 review-bundle:
-	python scripts/build_review_bundle.py --output dist/toetra_review_bundle.zip
+	python scripts/release/build_review_bundle.py --output dist/toetra_review_bundle.zip
 
 review-bundle-check: identity-check
-	python scripts/build_review_bundle.py --check-reproducible
+	python scripts/release/build_review_bundle.py --check-reproducible
 
 # Run the public affine-regression demonstration.
 demo-regression:

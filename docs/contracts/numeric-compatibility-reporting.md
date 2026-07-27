@@ -117,13 +117,13 @@ docs/generated/numeric-compatibility-matrices.md
 Generate it with:
 
 ```bash
-python scripts/generate_numeric_compatibility_matrices.py
+python scripts/docs/generate_numeric_compatibility_matrices.py
 ```
 
 Check that it is current without modifying files:
 
 ```bash
-python scripts/generate_numeric_compatibility_matrices.py --check
+python scripts/docs/generate_numeric_compatibility_matrices.py --check
 ```
 
 A unit test performs the same equality check. Manual edits to generated tables

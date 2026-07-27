@@ -9,7 +9,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 LEGACY_IDENTITY_PATTERN = re.compile(r"FORML|(?<![a-z])forml(?![a-z])|\.forml")
 TEXT_SUFFIXES = frozenset(
     {
@@ -67,7 +67,7 @@ LEGACY_IDENTITY_ALLOWANCES: dict[str, tuple[re.Pattern[str], ...]] = {
         "Keep FORML as the product",
         "Keep `.forml` as the language extension",
     ),
-    "docs/roadmap/toetra-identity-migration-roadmap.md": _allow(
+    "docs/history/roadmaps/toetra-identity-migration-roadmap.md": _allow(
         "identity from FORML to Toetra",
         "`forml` package facade",
         "remove `forml` from package discovery",
@@ -83,7 +83,7 @@ LEGACY_IDENTITY_ALLOWANCES: dict[str, tuple[re.Pattern[str], ...]] = {
         'candidate.suffix.lower() == ".forml"',
         "Legacy '.forml' specifications are not supported",
     ),
-    "scripts/check_installed_distribution.py": _allow(
+    "scripts/release/check_installed_distribution.py": _allow(
         'find_spec("forml") is None',
     ),
     "scripts/release/distribution.py": _allow(
@@ -203,7 +203,7 @@ def collect_identity_violations(
         ):
             continue
         relative = path.relative_to(repository).as_posix()
-        if relative == "scripts/check_identity_contract.py":
+        if relative == "scripts/repository/check_identity_contract.py":
             continue
         try:
             lines = path.read_text(encoding="utf-8").splitlines()

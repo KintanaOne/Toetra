@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts.check_identity_contract import (
+from scripts.repository.check_identity_contract import (
     IdentityContractError,
     check_identity_contract,
     collect_identity_violations,

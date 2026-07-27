@@ -202,6 +202,9 @@ nav:
       - Expected Failures: miova/expected-failures.md
       - Hypothesis Integration: miova/hypothesis-integration.md
 
+  - Development:
+      - Repository Layout: development/repository-layout.md
+
   - Testing:
       - Strategy: testing/strategy.md
       - Unit Tests: testing/unit-tests.md
@@ -249,9 +252,12 @@ nav:
 
   - Roadmap:
       - Implementation Roadmap: roadmap/implementation-roadmap.md
-      - Point Binding and Evaluation Roadmap: roadmap/point-binding-evaluation-implementation-roadmap.md
-      - Binary Classification Roadmap: roadmap/binary-classification-implementation-roadmap.md
       - Documentation Roadmap: roadmap/documentation-roadmap.md
-      - Toetra Identity Migration: roadmap/toetra-identity-migration-roadmap.md
       - Repository Final Polish: roadmap/repository-final-polish-roadmap.md
       - Open Questions: roadmap/open-questions.md
+
+  - History:
+      - Completed Roadmaps: history/roadmaps/index.md
+      - Point Binding and Evaluation: history/roadmaps/point-binding-evaluation-implementation-roadmap.md
+      - Binary Classification: history/roadmaps/binary-classification-implementation-roadmap.md
+      - Toetra Identity Migration: history/roadmaps/toetra-identity-migration-roadmap.md
