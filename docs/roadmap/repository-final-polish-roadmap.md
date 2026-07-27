@@ -1,6 +1,6 @@
 # P24 — Repository Final Polish Roadmap
 
-> Status: Active — P24.5 targeted module decomposition
+> Status: Active — P24.6 final repository contract
 > Baseline: `1.0.0rc3`
 > Target: repository and package layout frozen for P25–P27
 > Governing decision: [ADR-0028](../adr/ADR-0028-src-based-single-package-layout.md)
@@ -88,12 +88,14 @@ Exit criterion: every test asset has one clear role and one canonical location.
 Exit criterion: a contributor can infer the purpose of every top-level tree and
 no example or script is orphaned.
 
-### P24.5 — Targeted module decomposition
+### P24.5 — Targeted module decomposition ✅
 
 - split replay orchestration by model, evaluation, classification, and rendering
   responsibility (**completed in P24.5.1**);
-- split binary-classification semantic lowering into focused components;
-- separate HTML templates/styles only if the boundary is behavior-preserving;
+- split binary-classification semantic lowering into focused components
+  (**completed in P24.5.2**);
+- retain the cohesive HTML renderer after review rather than splitting it
+  only by line count;
 - avoid line-count-driven changes to coherent backend and provenance modules.
 
 Exit criterion: the identified oversized modules no longer mix distinct

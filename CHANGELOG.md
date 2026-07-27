@@ -4,6 +4,9 @@
 
 ### Changed
 
+- Split binary-classification semantic lowering into a stable profile facade
+  plus focused logical, label, probability, pairwise, and shared support
+  modules without changing canonical IR or evidence.
 - Split counterexample replay into stable public data models, orchestration,
   three-valued evaluation, and rendering modules without changing replay outputs.
 - Consolidated the Cleveland classification workspace under `demo/`, grouped
