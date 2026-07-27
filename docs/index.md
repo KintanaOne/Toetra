@@ -13,8 +13,9 @@ concrete replay.
 2. [1.0.0rc3 release notes](releases/1.0.0rc3.md)
 3. [Installation](getting-started/installation.md)
 4. [First Toetra property](getting-started/first-property.md)
-5. [Model output observables](language/model-output-observables.md)
-6. [Compatibility matrices](generated/numeric-compatibility-matrices.md)
+5. [Public Python API](api-reference/index.md)
+6. [Model output observables](language/model-output-observables.md)
+7. [Compatibility matrices](generated/numeric-compatibility-matrices.md)
 
 ```text
 .toetra + model/schema

@@ -84,6 +84,13 @@ nav:
       - End-to-End Preview: getting-started/end-to-end-preview.md
       - Notebook Workflow: getting-started/notebook-workflow.md
 
+  - Python API:
+      - Overview: api-reference/index.md
+      - verify: api-reference/verify.md
+      - Sessions and Findings: api-reference/sessions-and-findings.md
+      - Reports and Status: api-reference/reports-and-status.md
+      - Replay and Errors: api-reference/replay-and-errors.md
+
   - Architecture:
       - Overview: architecture/overview.md
       - Pipeline Views: architecture/pipeline-views.md
