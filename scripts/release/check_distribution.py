@@ -16,7 +16,9 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("directory", nargs="?", type=Path, default=Path("dist"))
     arguments = parser.parse_args()
-    artifacts = check_distribution_directory(arguments.directory)
+    artifacts = check_distribution_directory(
+        arguments.directory, repository=repository_root
+    )
     print(
         f"Distribution contract valid: {artifacts.wheel.name}, {artifacts.sdist.name}"
     )

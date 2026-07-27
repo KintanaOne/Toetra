@@ -9,3 +9,4 @@ Completed roadmaps:
 - [Point binding and evaluation](point-binding-evaluation-implementation-roadmap.md)
 - [Binary classification](binary-classification-implementation-roadmap.md)
 - [Toetra identity migration](toetra-identity-migration-roadmap.md)
+- [Repository final polish](repository-final-polish-roadmap.md)

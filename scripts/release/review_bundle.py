@@ -48,6 +48,8 @@ CRITICAL_PATHS = (
     "Makefile",
     "README.md",
     "pyproject.toml",
+    "docs/contracts/repository-contract.md",
+    "scripts/repository/check_repository_contract.py",
     "src/toetra/__init__.py",
     "src/toetra/examples/credit_risk_policy.toetra",
     "src/toetra/_language/grammar/toetra_grammar.ebnf",

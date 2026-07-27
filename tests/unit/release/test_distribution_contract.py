@@ -58,6 +58,16 @@ def _write_wheel(
             archive.writestr(f"{forbidden_package}/__init__.py", b"")
 
 
+def _write_source_inventory(repository: Path) -> None:
+    source_root = repository / "src"
+    for name, payload in WHEEL_MEMBERS.items():
+        if not name.startswith("toetra/"):
+            continue
+        path = source_root / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(payload)
+
+
 def _write_sdist(path: Path, *, mtime: int) -> None:
     members = {
         f"{SDIST_ROOT}/LICENSE": b"license\n",
@@ -112,6 +122,29 @@ def test_distribution_contract_rejects_forbidden_top_level_packages(
 
     with pytest.raises(DistributionContractError, match="forbidden top-level package"):
         check_distribution_directory(tmp_path)
+
+
+def test_distribution_contract_matches_wheel_and_sdist_to_source_inventory(
+    tmp_path: Path,
+) -> None:
+    repository = tmp_path / "repository"
+    artifacts = tmp_path / "dist"
+    artifacts.mkdir()
+    _write_source_inventory(repository)
+    wheel = artifacts / f"toetra-{PROJECT_VERSION}-py3-none-any.whl"
+    _write_wheel(wheel)
+    _write_sdist(artifacts / f"toetra-{PROJECT_VERSION}.tar.gz", mtime=100)
+
+    check_distribution_directory(artifacts, repository=repository)
+
+    with zipfile.ZipFile(wheel, mode="a") as archive:
+        archive.writestr("toetra/accidental.py", b"unexpected = True\n")
+
+    with pytest.raises(
+        DistributionContractError,
+        match="inventory differs from src/toetra",
+    ):
+        check_distribution_directory(artifacts, repository=repository)
 
 
 def test_distribution_contract_rejects_repository_paths_in_wheel(

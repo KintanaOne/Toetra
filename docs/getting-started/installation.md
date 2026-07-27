@@ -24,6 +24,7 @@ Validate the release candidate from a clean checkout:
 
 ```bash
 make ci
+make demo-check
 make release-check
 make review-bundle-check
 ```
@@ -39,3 +40,12 @@ from toetra import verify, VerificationSession, VerificationStatus
 Normal user code imports only from `toetra`. The former top-level `dsl` and
 `model` packages are not installed. Modules under `toetra._*` are private and
 carry no compatibility guarantee.
+
+For the complete post-P24 structural and release gate from a clean checkout:
+
+```bash
+make p24-check
+```
+
+See the [repository contract](../contracts/repository-contract.md) for the
+package, test, demo, documentation, and automation boundaries frozen before P25.

@@ -126,11 +126,19 @@ Classification evidence is optional and additive.
 
 ```bash
 make ci
+make demo-check
 make release-check
 make review-bundle-check
 ```
 
-These release gates are non-mutating.
+The complete post-P24 aggregate gate is available from a clean checkout:
+
+```bash
+make p24-check
+```
+
+These validation gates are non-mutating. The frozen repository boundary is
+documented in the [repository contract](docs/contracts/repository-contract.md).
 
 ## License
 

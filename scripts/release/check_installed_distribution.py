@@ -116,7 +116,9 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("directory", nargs="?", type=Path, default=Path("dist"))
     arguments = parser.parse_args()
-    artifacts = check_distribution_directory(arguments.directory.resolve())
+    artifacts = check_distribution_directory(
+        arguments.directory.resolve(), repository=repository_root
+    )
 
     with tempfile.TemporaryDirectory(prefix="toetra-install-check-") as raw_directory:
         root = Path(raw_directory)

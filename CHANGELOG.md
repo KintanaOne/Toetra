@@ -4,6 +4,9 @@
 
 ### Changed
 
+- Froze the post-P24 repository contract, added exact source-to-distribution
+  package inventory checks, and introduced repository, demo, and aggregate P24
+  validation gates.
 - Split binary-classification semantic lowering into a stable profile facade
   plus focused logical, label, probability, pairwise, and shared support
   modules without changing canonical IR or evidence.

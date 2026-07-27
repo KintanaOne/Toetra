@@ -15,7 +15,11 @@ EXPECTED_LAYOUT = {
         "distribution.py",
         "review_bundle.py",
     },
-    "repository": {"__init__.py", "check_identity_contract.py"},
+    "repository": {
+        "__init__.py",
+        "check_identity_contract.py",
+        "check_repository_contract.py",
+    },
 }
 
 

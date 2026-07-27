@@ -62,6 +62,9 @@ jobs:
       - name: Build reproducible distributions
         run: make release-check
 
+      - name: Run public demonstrations
+        run: make demo-check
+
       - name: Verify reproducible review bundle
         run: make review-bundle-check
 

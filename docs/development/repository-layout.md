@@ -42,3 +42,8 @@ to `docs/history/roadmaps/`, where they remain useful as engineering evidence
 without appearing to describe pending work.
 
 ADRs and contracts remain authoritative regardless of roadmap location.
+
+## Frozen boundary
+
+P24.6 freezes this layout for P25–P27. The executable invariants and change
+control rules are defined by the [repository contract](../contracts/repository-contract.md).
