@@ -58,6 +58,8 @@ guide.
 
 ### P25.0 — Documentation truth reset
 
+Status: Complete
+
 Remove the retired P24 aggregate gate, establish this authority order, and
 define the remaining P25 exit criteria.
 
@@ -70,6 +72,8 @@ Exit criteria:
   green.
 
 ### P25.1 — Public Python API reference
+
+Status: Complete
 
 Document the nine names exported by `toetra.__all__`: `verify`, sessions,
 findings, reports, statuses, counterexample replay, and the three public error

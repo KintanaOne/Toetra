@@ -116,6 +116,7 @@ Classification evidence is optional and additive.
 - [Public V1 profile](docs/public-v1-profile.md)
 - [1.0.0rc3 release notes](docs/releases/1.0.0rc3.md)
 - [Getting started](docs/getting-started/overview.md)
+- [Public Python API](docs/api-reference/index.md)
 - [Language reference](docs/language/overview.md)
 - [Compatibility matrices](docs/generated/numeric-compatibility-matrices.md)
 - [Architecture](docs/architecture/overview.md)
