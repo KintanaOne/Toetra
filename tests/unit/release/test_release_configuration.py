@@ -15,9 +15,16 @@ def test_make_ci_is_non_mutating() -> None:
 
     assert ci_block is not None
     text = ci_block.group(0)
+    format_check = re.search(
+        r"^format-check:.*?(?=\n\S|\Z)",
+        makefile,
+        flags=re.MULTILINE | re.DOTALL,
+    )
+    assert format_check is not None
     assert "black ." not in text
     assert "notebooks-clean" not in text
-    assert "black --check" in makefile
+    assert "python -m black ." not in format_check.group(0)
+    assert "python -m black --check ." in format_check.group(0)
 
 
 def test_ci_covers_supported_python_versions_and_checks_checkout() -> None:
@@ -26,6 +33,7 @@ def test_ci_covers_supported_python_versions_and_checks_checkout() -> None:
     assert 'python-version: ["3.11", "3.12"]' in workflow
     assert "git status --porcelain" in workflow
     assert "make release-check" in workflow
+    assert "make demo-check" in workflow
     assert "make review-bundle-check" in workflow
     makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
     assert "dist/toetra_review_bundle.zip" in makefile
@@ -73,3 +81,21 @@ def test_release_probe_exercises_binary_classification() -> None:
     assert "demo-classification" in makefile
     assert "prepare_rc2_changelog" not in makefile
     assert "--require-clean" in makefile
+
+
+def test_permanent_release_gates_cover_repository_boundaries() -> None:
+    makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+
+    assert "repository-check:" in makefile
+    assert "python scripts/repository/check_repository_contract.py" in makefile
+
+    assert "demo-check: demo-quickstart demo-regression demo-classification" in makefile
+    assert "release-check:" in makefile
+    assert "review-bundle-check:" in makefile
+
+    ci_target = re.search(r"^ci:.*$", makefile, flags=re.MULTILINE)
+    local_target = re.search(r"^ci-local:.*$", makefile, flags=re.MULTILINE)
+    assert ci_target is not None
+    assert local_target is not None
+    assert "repository-check" in ci_target.group(0)
+    assert "repository-check" in local_target.group(0)

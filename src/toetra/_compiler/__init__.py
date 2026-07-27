@@ -1,1 +1,1 @@
-"""Internal Toetra  compiler package."""
+"""Private compiler pipeline package."""

@@ -1,1 +1,1 @@
-"""Internal Toetra  language package."""
+"""Private language definition package."""

@@ -1,9 +1,9 @@
 # P24 — Repository Final Polish Roadmap
 
-> Status: Active — P24.6 final repository contract
+> Status: Complete — delivered before P25
 > Baseline: `1.0.0rc3`
 > Target: repository and package layout frozen for P25–P27
-> Governing decision: [ADR-0028](../adr/ADR-0028-src-based-single-package-layout.md)
+> Governing decision: [ADR-0028](../../adr/ADR-0028-src-based-single-package-layout.md)
 
 ## Goal
 
@@ -102,11 +102,11 @@ Exit criterion: the identified oversized modules no longer mix distinct
 responsibilities, with byte- or structure-equivalent public outputs where
 applicable.
 
-### P24.6 — Final repository contract
+### P24.6 — Final repository contract ✅
 
 - reject obsolete identities and paths outside documented historical evidence;
 - reject duplicate test modules and ambiguous fixture/golden placement;
-- validate the exact wheel and source-distribution contents;
+- validate wheel and source-distribution package inventories against `src/toetra`;
 - run all CI, release, documentation, demo, and review-bundle gates;
 - freeze the package layout consumed by P25 documentation.
 
@@ -124,3 +124,11 @@ Every patch must:
 - finish with `make ci` and `git diff --check`;
 - run `make release-check` and `make review-bundle-check` whenever package or
   artifact paths change.
+
+## Delivered state
+
+P24 completed the repository-only structural work required before V1. The
+`src/toetra`, `tests`, `demo`, `docs`, and `scripts` boundaries are executable
+contracts. Any pre-V1 change to those boundaries now requires an explicit
+architecture decision and updates to the repository contract rather than an
+implicit file move.

@@ -89,6 +89,12 @@ LEGACY_IDENTITY_ALLOWANCES: dict[str, tuple[re.Pattern[str], ...]] = {
     "scripts/release/distribution.py": _allow(
         'FORBIDDEN_TOP_LEVEL_PACKAGES = ("forml", "dsl", "model")',
     ),
+    "scripts/repository/check_repository_contract.py": _allow(
+        '"forml",',
+    ),
+    "docs/contracts/repository-contract.md": _allow(
+        "`toetra`, `dsl`, `model`, `forml`,",
+    ),
     "tests/golden/reporting/verification_report_v1.json": _allow(
         '"schema": "forml.verification-report"',
     ),

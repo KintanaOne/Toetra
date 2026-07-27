@@ -5,8 +5,8 @@
 .PHONY: install test test-wip test-all lint format format-check type \
 	notebooks-clean notebooks-check generated-check identity-check public-contract-check docs-check ci \
 	dist dist-check install-check release-check review-bundle \
-	review-bundle-check demo-regression demo-quickstart demo-classification clean \
-	ci-local
+	review-bundle-check repository-check demo-regression demo-quickstart \
+	demo-classification demo-check p24-check clean ci-local
 
 install:
 	python -m pip install -e ".[dev,docs]"
@@ -38,11 +38,13 @@ identity-check:
 public-contract-check:
 	python scripts/ci/check_public_contract.py
 
+repository-check:
+	python scripts/repository/check_repository_contract.py
+
 format: notebooks-clean
 	python -m black .
 
 format-check: notebooks-check
-	python -m black .
 	python -m black --check .
 
 
@@ -53,12 +55,14 @@ docs-check:
 	python -m mkdocs build --strict
 
 # Non-mutating authoritative verification gate.
-ci: lint format-check generated-check identity-check public-contract-check type test docs-check
+ci: lint format-check generated-check identity-check public-contract-check repository-check type test docs-check
 
 # Complete local gate without Ruff for hosts that block unsigned native tools.
 # Hosted CI remains authoritative for lint.
-ci-local: format-check generated-check identity-check public-contract-check type test docs-check
+ci-local: format format-check generated-check identity-check public-contract-check repository-check type test docs-check
 	
+ci-local-fix: format ci-local
+
 ci-check:
 	python -m ruff check --fix
 	python -m ruff check .
@@ -79,12 +83,12 @@ dist-check:
 install-check:
 	python scripts/release/check_installed_distribution.py dist
 
-release-check: identity-check dist dist-check install-check
+release-check: identity-check public-contract-check repository-check dist dist-check install-check
 
 review-bundle:
 	python scripts/release/build_review_bundle.py --output dist/toetra_review_bundle.zip
 
-review-bundle-check: identity-check
+review-bundle-check: identity-check repository-check
 	python scripts/release/build_review_bundle.py --check-reproducible
 
 # Run the public affine-regression demonstration.
@@ -98,6 +102,8 @@ demo-quickstart:
 # Run the public binary-classification release demo.
 demo-classification:
 	python -m demo.classification.binary_classification_policy
+
+demo-check: demo-quickstart demo-regression demo-classification
 
 clean:
 	python -c "import shutil; [shutil.rmtree(p, ignore_errors=True) for p in ('build', 'dist', 'site')]"

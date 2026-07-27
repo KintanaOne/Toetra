@@ -167,6 +167,7 @@ nav:
       - Backend Execution Contract: contracts/backend-execution-contract.md
       - Verification Provenance: contracts/verification-provenance.md
       - Release Engineering: contracts/release-engineering.md
+      - Repository Contract: contracts/repository-contract.md
       - Public V1 Contract: contracts/public-v1-contract.md
       - Generated Numeric Compatibility Matrices: generated/numeric-compatibility-matrices.md
       - Model to Schema: contracts/model-to-schema.md
@@ -253,11 +254,11 @@ nav:
   - Roadmap:
       - Implementation Roadmap: roadmap/implementation-roadmap.md
       - Documentation Roadmap: roadmap/documentation-roadmap.md
-      - Repository Final Polish: roadmap/repository-final-polish-roadmap.md
       - Open Questions: roadmap/open-questions.md
 
   - History:
       - Completed Roadmaps: history/roadmaps/index.md
+      - Repository Final Polish: history/roadmaps/repository-final-polish-roadmap.md
       - Point Binding and Evaluation: history/roadmaps/point-binding-evaluation-implementation-roadmap.md
       - Binary Classification: history/roadmaps/binary-classification-implementation-roadmap.md
       - Toetra Identity Migration: history/roadmaps/toetra-identity-migration-roadmap.md

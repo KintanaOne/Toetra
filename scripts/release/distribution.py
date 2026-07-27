@@ -242,7 +242,7 @@ def build_distributions(
     _run_build(repository, output, epoch=epoch)
     artifacts = _discover_artifacts(output)
     normalize_sdist(artifacts.sdist, epoch=epoch)
-    check_distribution_directory(output)
+    check_distribution_directory(output, repository=repository)
 
     if not check_reproducible:
         _write_checksums(artifacts)
@@ -253,7 +253,7 @@ def build_distributions(
         _run_build(repository, second_output, epoch=epoch)
         second = _discover_artifacts(second_output)
         normalize_sdist(second.sdist, epoch=epoch)
-        check_distribution_directory(second_output)
+        check_distribution_directory(second_output, repository=repository)
 
         first_hashes = artifacts.sha256()
         second_hashes = second.sha256()
@@ -316,7 +316,61 @@ def _check_required_members(members: Iterable[str], *, archive_kind: str) -> Non
             )
 
 
-def _check_wheel(path: Path) -> tuple[str, str]:
+def _source_package_inventory(repository: Path) -> set[str]:
+    source_root = repository / "src" / "toetra"
+    if not source_root.is_dir():
+        raise DistributionContractError(
+            f"Installable source package is missing: {source_root}"
+        )
+    return {
+        (PurePosixPath("toetra") / path.relative_to(source_root).as_posix()).as_posix()
+        for path in source_root.rglob("*")
+        if path.is_file()
+        and "__pycache__" not in path.parts
+        and path.suffix not in {".pyc", ".pyo"}
+    }
+
+
+def _wheel_package_inventory(members: Iterable[str]) -> set[str]:
+    return {
+        str(_safe_archive_path(name))
+        for name in members
+        if not name.endswith("/") and PurePosixPath(name).parts[:1] == ("toetra",)
+    }
+
+
+def _sdist_package_inventory(members: Iterable[str]) -> set[str]:
+    inventory: set[str] = set()
+    for name in members:
+        path = _safe_archive_path(name)
+        parts = path.parts
+        if len(parts) >= 3 and parts[1:3] == ("src", "toetra"):
+            inventory.add(PurePosixPath(*parts[2:]).as_posix())
+    return inventory
+
+
+def _check_source_inventory(
+    *,
+    repository: Path,
+    archive_kind: str,
+    packaged_inventory: set[str],
+) -> None:
+    expected = _source_package_inventory(repository)
+    if packaged_inventory == expected:
+        return
+    missing = sorted(expected - packaged_inventory)
+    unexpected = sorted(packaged_inventory - expected)
+    raise DistributionContractError(
+        f"{archive_kind} package inventory differs from src/toetra: "
+        f"missing={missing[:10]}, unexpected={unexpected[:10]}"
+    )
+
+
+def _check_wheel(
+    path: Path,
+    *,
+    repository: Path | None = None,
+) -> tuple[str, str]:
     name, version, _build, _tags = parse_wheel_filename(path.name)
     with zipfile.ZipFile(path) as archive:
         members = archive.namelist()
@@ -328,6 +382,12 @@ def _check_wheel(path: Path) -> tuple[str, str]:
                 f"Wheel contains repository-only paths: {leaked[:5]}"
             )
         metadata = _metadata_from_wheel(archive)
+        if repository is not None:
+            _check_source_inventory(
+                repository=repository,
+                archive_kind="Wheel",
+                packaged_inventory=_wheel_package_inventory(members),
+            )
     if metadata["name"].lower().replace("-", "_") != name:
         raise DistributionContractError(
             "Wheel filename and METADATA project names differ."
@@ -337,25 +397,41 @@ def _check_wheel(path: Path) -> tuple[str, str]:
     return name, str(version)
 
 
-def _check_sdist(path: Path) -> tuple[str, str]:
+def _check_sdist(
+    path: Path,
+    *,
+    repository: Path | None = None,
+) -> tuple[str, str]:
     name, version = parse_sdist_filename(path.name)
     with tarfile.open(path, mode="r:gz") as archive:
-        members = [member.name for member in archive.getmembers()]
+        archive_members = archive.getmembers()
+        members = [member.name for member in archive_members]
+        file_members = [member.name for member in archive_members if member.isfile()]
         _check_required_members(members, archive_kind="Source distribution")
         for required in ("pyproject.toml", "README.md", "CHANGELOG.md", "LICENSE"):
             if not any(member.endswith(f"/{required}") for member in members):
                 raise DistributionContractError(
                     f"Source distribution does not contain {required!r}."
                 )
+        if repository is not None:
+            _check_source_inventory(
+                repository=repository,
+                archive_kind="Source distribution",
+                packaged_inventory=_sdist_package_inventory(file_members),
+            )
     return name, str(version)
 
 
-def check_distribution_directory(directory: Path) -> DistributionArtifacts:
-    """Validate wheel/sdist inventory, metadata and package data."""
+def check_distribution_directory(
+    directory: Path,
+    *,
+    repository: Path | None = None,
+) -> DistributionArtifacts:
+    """Validate artifact identity, package data and optional source inventory."""
 
     artifacts = _discover_artifacts(directory)
-    wheel_identity = _check_wheel(artifacts.wheel)
-    sdist_identity = _check_sdist(artifacts.sdist)
+    wheel_identity = _check_wheel(artifacts.wheel, repository=repository)
+    sdist_identity = _check_sdist(artifacts.sdist, repository=repository)
     if wheel_identity != sdist_identity:
         raise DistributionContractError(
             "Wheel and source distribution identify different projects: "

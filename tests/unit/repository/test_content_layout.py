@@ -38,6 +38,7 @@ def test_completed_roadmaps_are_separate_from_active_plans() -> None:
         "point-binding-evaluation-implementation-roadmap.md",
         "binary-classification-implementation-roadmap.md",
         "toetra-identity-migration-roadmap.md",
+        "repository-final-polish-roadmap.md",
     }
 
     assert (history / "index.md").is_file()

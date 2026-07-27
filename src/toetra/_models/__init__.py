@@ -1,1 +1,1 @@
-"""Internal  models package."""
+"""Private model bridge and semantic lowering package."""
