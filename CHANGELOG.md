@@ -4,6 +4,8 @@
 
 ### Changed
 
+- Split counterexample replay into stable public data models, orchestration,
+  three-valued evaluation, and rendering modules without changing replay outputs.
 - Consolidated the Cleveland classification workspace under `demo/`, grouped
   repository scripts by responsibility, and archived completed roadmaps under
   `docs/history/roadmaps/`.
