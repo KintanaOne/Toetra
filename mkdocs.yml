@@ -266,6 +266,7 @@ nav:
       - ADR-0026 Public V1 Binary Classification Extension: adr/ADR-0026-public-v1-binary-classification-extension.md
       - ADR-0027 Toetra Canonical Identity: adr/ADR-0027-adopt-toetra-as-canonical-identity.md
       - ADR-0028 Src-Based Single-Package Layout: adr/ADR-0028-src-based-single-package-layout.md
+      - ADR-0029 Public Verification Failure Boundary: adr/ADR-0029-public-verification-failure-boundary.md
 
   - Roadmap:
       - Implementation Roadmap: roadmap/implementation-roadmap.md

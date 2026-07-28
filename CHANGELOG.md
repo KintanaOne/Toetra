@@ -4,6 +4,10 @@
 
 ### Changed
 
+- Accepted the P26 public failure boundary: the three existing error families
+  now expose stable diagnostic codes, owning stages, optional remediation and
+  source context, while private causes remain available through exception
+  chaining.
 - Froze the `1.0.0rc3` documentation around the nine-symbol public API,
   as-built compiler/runtime pipeline, explicit language support levels, and
   separate model-family, framework-adapter, and backend extension paths.

@@ -50,6 +50,12 @@ Changes to error wrapping must preserve the distinction between compilation
 failure, capability rejection, backend failure, and a logical result such as
 `COUNTEREXAMPLE` or `UNKNOWN`.
 
+P26.0 accepted the public failure classification and structured diagnostic
+contract in
+[ADR-0029](../adr/ADR-0029-public-verification-failure-boundary.md). Compiler,
+model, routing, and backend translation remain implementation steps within
+P26.
+
 ### P27 — Release readiness
 
 P27 turns the green release candidate into a publishable V1:

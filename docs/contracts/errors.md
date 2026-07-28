@@ -1,12 +1,36 @@
 # Error Boundaries Contract
 
-> Status: Accepted internal taxonomy; public normalization remains in P26
-> Scope: Failure ownership across the language and verification pipeline  
+> Status: Accepted internal and public taxonomy
+>
+> Scope: Failure ownership across the language and verification pipeline
+>
 > Audience: maintainers, diagnostic authors, testers and Miova campaign authors
 
 ## Purpose
 
 A failure is useful only when Toetra reports the correct owning boundary and preserves the original cause.
+
+---
+
+## Public boundary
+
+The internal layer that owns a failure and the public class that presents it
+are separate decisions.
+
+| Failure class | Public presentation from `verify(...)` |
+|---|---|
+| invalid syntax, AST structure, semantic input, artifact, or configuration | `VerificationConfigurationError` |
+| valid but unsupported model, compatibility, or backend route | `VerificationRuntimeError` |
+| technical routing, translation, runner, or backend failure | `VerificationRuntimeError` |
+| incomplete concrete replay | `ReplayUnavailableError` |
+| logical verification outcome | session/report status, never an exception |
+
+Public normalization must retain the owning layer in `stage` and the original
+exception in `__cause__`. It must not turn a private class into a public
+compatibility promise.
+
+The complete decision is recorded in
+[ADR-0029](../adr/ADR-0029-public-verification-failure-boundary.md).
 
 ---
 
@@ -26,13 +50,21 @@ A failure is useful only when Toetra reports the correct owning boundary and pre
 
 ---
 
-## Required Diagnostic Fields
+## Required public diagnostic fields
 
-A structured diagnostic should expose when available:
+Every public verification error exposes:
 
-- stable code;
-- owning boundary/layer;
-- human-readable message;
+- `message`;
+- stable `code`;
+- stable owning `stage`;
+- optional `hint`;
+- optional `path`;
+- optional one-based `line` and `column`.
+
+Callers branch on `code`, not prose. Unavailable context is `None`.
+
+Internal structured diagnostics should additionally expose when available:
+
 - property identity;
 - source span;
 - offending identifier/operator/domain entry;
