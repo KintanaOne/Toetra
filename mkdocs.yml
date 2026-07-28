@@ -212,6 +212,10 @@ nav:
 
   - Development:
       - Repository Layout: development/repository-layout.md
+      - Extension Architecture: development/extensions.md
+      - Add a Model Family: development/adding-model-family.md
+      - Add a Framework Adapter: development/adding-framework-adapter.md
+      - Add a Backend: development/adding-backend.md
 
   - Testing:
       - Strategy: testing/strategy.md
