@@ -2,7 +2,6 @@
 
 > Status: implemented / stabilizing  
 > Scope: ModelBridge loading boundary  
-> Priority: P0
 
 ## Purpose
 

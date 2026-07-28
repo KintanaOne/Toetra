@@ -1,6 +1,6 @@
 # ADR-0009 — Introduce Assertion Aggregation Before Backend Lowering
 
-> Status: Planned  
+> Status: Accepted and implemented
 > Date: 2026-06  
 > Scope: Logical verification pipeline
 

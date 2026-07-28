@@ -4,6 +4,12 @@
 
 ### Changed
 
+- Froze the `1.0.0rc3` documentation around the nine-symbol public API,
+  as-built compiler/runtime pipeline, explicit language support levels, and
+  separate model-family, framework-adapter, and backend extension paths.
+- Added canonical CI-checked public snippets, archived completed V1 and
+  documentation roadmaps, and replaced stale active planning with the remaining
+  UX, release, and post-V1 questions.
 - Froze the post-P24 repository contract, added exact source-to-distribution
   package inventory checks, and introduced repository, demo, and aggregate P24
   validation gates.

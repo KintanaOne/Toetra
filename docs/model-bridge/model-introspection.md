@@ -2,7 +2,6 @@
 
 > Status: implemented / stabilizing  
 > Scope: ModelBridge metadata extraction boundary  
-> Priority: P0
 
 ## Purpose
 

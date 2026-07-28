@@ -1,6 +1,6 @@
 # Parser Layer
 
-> Status: P0 / Implemented  
+> Status: Implemented
 > Scope: Source to CST  
 > Implementation: Lark-based parser  
 > Audience: compiler contributors, grammar maintainers, test authors

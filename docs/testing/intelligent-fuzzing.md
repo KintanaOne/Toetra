@@ -1,6 +1,6 @@
 # Intelligent Fuzzing
 
-> Status: P0 — planned / critical  
+> Status: Planned
 > Implementation: planned, complementary to Hypothesis and Miova  
 > Scope: adversarial exploration of Toetra source, compiler artifacts, semantic boundaries, IR normal forms, model schemas, and backend queries
 

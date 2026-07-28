@@ -82,7 +82,7 @@ replace them.
 
 A single top-level installed namespace aligns the physical distribution with
 the public contract. Responsibility-based internal packages also match the
-architecture that P25 will document: language and parsing, AST, semantic
+documented architecture: language and parsing, AST, semantic
 analysis, IR1, IR2, model bridge, backend, runtime, reporting, and provenance.
 
 The `src` boundary reduces accidental imports from the checkout and makes

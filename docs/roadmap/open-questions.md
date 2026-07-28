@@ -1,87 +1,104 @@
-# Open Questions
+# Open questions
 
-> Status: Active after Patch 21.0 specification freeze
+> **Status:** Active after the `1.0.0rc3` documentation freeze
+>
+> **Rule:** this page records unresolved choices, not implemented support
 
-Patch 15 resolved the language and architecture questions around points, scopes, anchors, quantifier nesting, multiple evaluations, reporting, and replay. Those decisions are normative in ADR-0017 and are no longer open.
+The public routes, nine-symbol Python facade, current language meanings, and
+as-built pipeline are already decided. Their authorities are the
+[public V1 profile](../public-v1-profile.md), accepted contracts and ADRs, and
+the [implementation status matrix](../architecture/status-matrix.md).
 
-## Closed by Patch 15
+## Before `1.0.0`
 
-- points are first-class symbols in a composed lexical environment;
-- anchor bindings are inline, referenced, or runtime-resolved;
-- `dataset` may be the default anchor source, with explicit overrides;
-- binder lists expand left to right and indentation is non-semantic;
-- one scalar target is indexed by input point;
-- bare references require exactly one eligible default point;
-- `where` and natural `neighborhood` have quantifier-sensitive lowering;
-- `check_at` selects a declared anchor;
-- new `at` is universal local sugar;
-- pairwise properties use explicit points and relations;
-- alternating quantifiers are preserved and capability-rejected;
-- ModelBridge emits one equation per requested evaluation;
-- Z3 uses distinct point-aware symbols;
-- JSON schema v2 and grouped replay are the public multi-point contract;
-- legacy provisional forms remain parseable only for migration diagnostics;
-- `SemanticScope` is compatibility metadata, not semantic authority.
+### Public error boundary
 
+Which parser, semantic, model-loading, routing, backend, and runtime exceptions
+should cross `toetra.verify(...)` unchanged, and which should be normalized into
+the three public error families?
 
-## Closed by Patch 21.0
+The answer must preserve actionable causes without exposing private exception
+classes as compatibility promises.
 
-- `target` remains the user-facing output-port reference but no longer implies one
-  directly addressable scalar in the target architecture;
-- classification users select `label` or `probability(label)` explicitly;
-- logits, decision functions, generic scores, framework methods, class indices,
-  and backend symbols are not DSL observables;
-- model evaluation identity is separate from observable identity;
-- model-family semantic lowering is explicit, provenanced, and occurs before
-  backend translation;
-- the first semantic family is binary logistic affine classification;
-- the first concrete bridge is direct fitted binary sklearn `LogisticRegression`;
-- the native decision policy uses probability `> 0.5`, equivalently oriented
-  decision value `> 0`, with equality assigned to the negative label;
-- custom/tuned thresholds, wrappers, calibration, pipelines, and multiclass are
-  outside the initial profile;
-- a property probability threshold is distinct from the model's native decision
-  threshold;
-- probability threshold materialization follows ADR-0018 and may never use an
-  unqualified silent float approximation;
-- ADR-0022 and `1.0.0rc1` remain unchanged until the final Patch 21 release gate.
+### Diagnostic identity and context
 
-## Patch 21 implementation questions
+Which diagnostics require stable codes, source spans, remediation hints, model
+context, or capability evidence? Message wording may improve, but callers must
+not be encouraged to parse prose.
 
-The following are implementation choices bounded by the accepted contracts, not
-open semantic questions:
+### Solver execution defaults
 
-- the exact Python discriminated-union shape for typed output schemas;
-- the temporary compatibility-alias lifetime for scalar-target class names;
-- the rational enclosure algorithm and refinement precision for general logit
-  thresholds;
-- whether classification report evolution requires JSON v6 or can remain a
-  strictly additive v5 extension;
-- the exact internal names for model quantities and lowering evidence objects.
+What timeout and cancellation defaults should the public workflow use? Which
+resource limits are enforceable enough to report as guarantees, and which must
+remain best-effort evidence?
 
-## Remaining V1 stabilization questions
+### Report consistency
 
-### Public error taxonomy
+Which fields must appear consistently across terminal text, HTML/Jupyter,
+records/DataFrame, and JSON v6? Presentation changes must not alter logical
+status or silently discard provenance, lowering, compatibility, or replay
+evidence.
 
-Which parser, semantic, model, routing, backend, and runtime exceptions should cross the public `toetra.verify` boundary unchanged, and which should be wrapped in stable user-facing errors?
+### Stable-release acceptance
 
-### Solver resource policy
+How long should the final release candidate soak, which external installation
+scenarios are mandatory, and which documentation or packaging defects block
+`1.0.0` even when the core solver tests remain green?
 
-What default timeout, cancellation, and resource metadata should V1 expose without changing logical result semantics?
+## Post-V1 product questions
 
-### Release packaging
+### Next model route
 
-Which examples, notebooks, JSON schemas, and compatibility promises are required for the first public V1 release?
+Which additional model family creates the most useful verifiable behavior while
+keeping the encoder and numeric contract auditable: another affine family,
+trees, ensembles, or a small neural profile?
 
-### Mutation and property-based coverage
+### Framework versus mathematical family
 
-Which compiler and runtime invariants should be promoted first into Miova campaigns after the deterministic Patch 15 suite?
+When should Toetra add another framework adapter for an existing semantic
+family instead of adding a new model family? Framework popularity alone is not
+evidence that a sound end-to-end route exists.
 
-## Post-V1 research questions
+### Second backend
 
-- rich model encoders and preprocessing-aware verification;
-- native execution of alternating quantifiers;
-- categorical and structured inputs;
-- multi-output and multi-model properties;
-- additional neighborhood metrics and optimization objectives;
-- backend orchestration beyond Z3.
+Which concrete property or model route justifies a backend beyond Z3? A second
+backend should add a needed capability or trust boundary, not merely exercise
+the registry abstraction.
+
+### Preprocessing boundary
+
+Which preprocessing operations can be reconstructed symbolically, which should
+be represented as verified contracts, and which must remain explicit
+preconditions supplied by the user?
+
+### Extension surface
+
+When have the internal registries been exercised by enough independent
+extensions to justify a stable third-party plugin API or scaffolding command?
+Freezing that surface after one backend or one model family would be premature.
+
+### Numeric semantics
+
+Which routes require bit-vector or floating-point reasoning rather than the
+current exact-real abstraction with explicit compatibility evidence?
+
+### Validation ecosystem
+
+Which compiler and runtime invariants should be promoted first into Miova
+mutation campaigns, and which higher-level orchestration decisions belong
+outside Toetra itself?
+
+## Closed questions
+
+The following are no longer open:
+
+- regression and direct binary-logistic public routes;
+- label and probability observables and their native decision boundary;
+- point identity, anchors, homogeneous binders, reporting, and replay;
+- the `src/toetra` package layout and nine-name public facade;
+- separation of syntax acceptance, semantic validity, and executable support;
+- ownership boundaries for model families, framework adapters, and backends;
+- canonical, CI-checked public documentation snippets.
+
+Their implementation history is preserved under
+[completed roadmaps](../history/roadmaps/index.md).

@@ -1,95 +1,103 @@
-# First Model Schema
+# First model schema
 
-> Status: Draft  
-> Scope: ModelBridge onboarding  
-> Implementation: Partially implemented
+> **Status:** Current onboarding for `1.0.0rc3`
+>
+> **Audience:** users who need to understand how a model becomes verifiable
 
-## Purpose
-
-ModelBridge connects Toetra specifications to real machine learning model artifacts.
-
-Its first responsibility is to produce a normalized `ModelSchema`.
-
-## ModelBridge pipeline
+`ModelSchema` is Toetra's normalized, framework-independent description of a
+model interface. Normal users pass a fitted model artifact and an optional
+reference dataset to `verify(...)`; the runtime loads, detects, and introspects
+the model before building the schema.
 
 ```text
-model artifact
-→ loader
-→ loaded model
-→ framework detection
-→ introspector
+model artifact + optional dataset + selected output
+→ loader → framework detector → introspector
 → ModelSchema
+→ schema-aware semantic validation and model encoding
 ```
 
-## What is a ModelSchema?
+`ModelSchema` is an internal compiler boundary, not one of the nine public names
+exported by `toetra`.
 
-A `ModelSchema` is the normalized representation used by Toetra to reason about a model.
+## What the schema records
 
-It contains:
-
-| Field | Purpose |
+| Field | Meaning |
 |---|---|
-| `framework` | Detected ML framework |
-| `model_type` | Concrete model class |
-| `features` | Input feature schema |
-| `target` | Target or output field |
-| `task` | ML task type |
-| `metadata` | Framework-specific metadata |
+| framework | normalized framework identity |
+| model type | concrete estimator family detected by the adapter |
+| features | ordered names, semantic dtypes, nullability, and source dtypes |
+| output name | selected model output port |
+| task | regression, classification, or unknown |
+| typed output schema | public observables and their types |
+| compatibility descriptor | framework/model numeric semantics used for routing |
+| metadata | adapter-specific evidence that does not define generic semantics |
 
-## Why does Toetra need it?
+Regression exposes one scalar value. The direct binary-logistic route exposes
+the predicted label and label-keyed probabilities together with its recognized
+native decision policy.
 
-The DSL can express properties such as:
+## Why Toetra needs it
+
+For a property such as:
 
 ```toetra
-age >= 18
-score <= 0.9
-target[baseline].label == target[candidate].label
+[LOGIC]:
+forall applicant
+with domain(applicant.income: [3.0, 6.0])
+=> target[applicant].probability("yes") >= 0.80 using Z3
 ```
 
-But Toetra must know whether:
+the schema lets semantic validation establish that:
 
-- `age` exists,
-- `score` is a valid feature or output,
-- the model is a classifier or regressor,
-- the target is compatible with the declared property,
-- the backend can encode the model.
+- `income` is a known numeric feature;
+- the selected output is a classifier output;
+- `"yes"` is one of the two canonical labels;
+- class probability is an available observable;
+- the framework/model pair has a compatible formal encoder.
 
-ModelSchema is the bridge used to answer those questions.
+The schema does not itself prove the property. Model-family semantics lower the
+public observable, the encoder contributes model equations as IR2 assumptions,
+and the selected backend executes the resulting verification task.
 
-## Current support
+## Public V1 routes
 
-The current ModelBridge foundation supports:
+| Model artifact | Typed output | Formal route |
+|---|---|---|
+| fitted single-output sklearn `LinearRegression` | scalar regression value | affine equation → Z3 |
+| direct fitted binary sklearn `LogisticRegression` | label and class probabilities | oriented affine decision equation → Z3 |
 
-- serialized model loading through dedicated loaders,
-- framework detection,
-- sklearn-style introspection,
-- XGBoost introspection through sklearn-compatible behavior,
-- normalized feature schema extraction,
-- task detection for classifiers and regressors.
+Detection or introspection code for another framework is not an end-to-end
+support claim. The [public V1 profile](../public-v1-profile.md) remains the
+authority for executable routes.
 
-## V1 role
+## Supplying inputs
 
-For the first V1, ModelSchema should support:
+The normal public workflow uses a model artifact:
 
-```text
-semantic validation
-+ model-aware feature checks
-+ model constraint preparation
-+ Z3 lowering support
+```python
+from toetra import verify
+
+session = verify(
+    "policy.toetra",
+    model="model.joblib",
+    dataset="reference.csv",
+)
 ```
 
-## Example target flow
+Advanced development hooks can inject an explicit schema, encoder factory, or
+registry, but their accepted types live below private `toetra._*` modules and
+carry no public compatibility guarantee.
 
-```text
-model.joblib
-+ dataset.csv
-→ ModelBridge
-→ ModelSchema
-→ schema-aware semantic validation
-→ model constraints
-→ assertion aggregation
-```
+## Boundaries
 
-## Stabilization note
+`ModelSchema` does not:
 
-This document should be updated once the public ModelBridge API is finalized.
+- reconstruct an sklearn `Pipeline`;
+- make XGBoost, PyTorch, TensorFlow, or ONNX publicly supported;
+- encode trees, ensembles, neural networks, or multiclass behavior;
+- choose a backend by itself;
+- replace reporting, provenance, or concrete replay.
+
+Continue with the [ModelBridge overview](../model-bridge/overview.md), the
+[as-built schema reference](../model-bridge/model-schema.md), and
+[supported framework/model routes](../model-bridge/supported-frameworks.md).

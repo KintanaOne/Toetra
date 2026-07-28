@@ -1,6 +1,6 @@
 # Hypothesis Integration
 
-> Status: P0 — planned integration  
+> Status: Planned external integration
 > Implementation: planned  
 > Scope: combining Hypothesis strategies with Miova artifact mutation campaigns
 

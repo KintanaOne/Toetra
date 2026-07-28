@@ -44,7 +44,9 @@ Built-in `1.0.0rc3` routes are single-output sklearn `LinearRegression` and
 direct fitted binary `LogisticRegression`, both through Z3 with explicit numeric
 compatibility and provenance.
 
-The repository and import layout is frozen by the [post-P24 repository contract](docs/contracts/repository-contract.md). P25–P27 may document, exercise, and release these boundaries without silently reorganizing them.
+The repository and import layout is frozen by the
+[repository contract](docs/contracts/repository-contract.md). UX and release
+work may exercise these boundaries without silently reorganizing them.
 
 Source-of-truth rules:
 

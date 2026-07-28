@@ -2,7 +2,6 @@
 
 > Status: Accepted target contract — implemented through point-aware IR2  
 > Scope: Source, CST, AST, semantic environment, IR1, IR2, ModelBridge, backend, runtime, replay  
-> Priority: P0  
 > Audience: compiler contributors, backend authors, runtime authors, test and mutation authors
 
 ## Purpose

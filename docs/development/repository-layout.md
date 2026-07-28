@@ -37,9 +37,9 @@ one-off migration scripts should not remain after the migration is complete.
 
 ## Documentation lifecycle
 
-Active implementation plans remain under `docs/roadmap/`. Delivered plans move
-to `docs/history/roadmaps/`, where they remain useful as engineering evidence
-without appearing to describe pending work.
+The implementation roadmap and open questions remain under `docs/roadmap/`.
+Delivered plans move to `docs/history/roadmaps/`, where they remain useful as
+engineering evidence without appearing to describe pending work.
 
 ADRs and contracts remain authoritative regardless of roadmap location.
 
@@ -55,5 +55,5 @@ soundness obligations.
 
 ## Frozen boundary
 
-P24.6 freezes this layout for P25–P27. The executable invariants and change
-control rules are defined by the [repository contract](../contracts/repository-contract.md).
+The executable invariants and change-control rules for this frozen layout are
+defined by the [repository contract](../contracts/repository-contract.md).

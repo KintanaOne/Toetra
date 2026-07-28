@@ -1,6 +1,6 @@
 # ADR-0007 — Define IR2 as CNF/DNF Normal-Form Layer
 
-> Status: Planned  
+> Status: Accepted and implemented
 > Date: 2026-06  
 > Scope: Intermediate representations
 
@@ -18,7 +18,7 @@ For example:
 
 ## Decision
 
-Toetra will introduce IR2 as the normal-form selection layer.
+Toetra uses IR2 as the normal-form selection layer.
 
 IR2 is responsible for producing clause-oriented or case-oriented representations such as:
 

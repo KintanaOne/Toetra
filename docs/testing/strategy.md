@@ -1,6 +1,6 @@
 # Testing Strategy
 
-> Status: P0 — target testing strategy  
+> Status: Current testing strategy for `1.0.0rc3`
 > Implementation: partially implemented  
 > Scope: Toetra compiler, ModelBridge, IR pipeline, backend boundary, and Miova campaigns
 

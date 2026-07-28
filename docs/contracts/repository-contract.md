@@ -1,13 +1,14 @@
 # Repository contract
 
-> Status: Accepted in P24.6
-> Scope: repository and package structure consumed by P25–P27
+> **Status:** Frozen for `1.0.0rc3`
+>
+> **Scope:** repository and package structure through the V1 release
 
 ## Purpose
 
-This contract freezes the structural boundaries established by P24. It prevents
-later documentation, UX, or release work from depending on another implicit
-package or repository migration before V1.
+This contract freezes the structural boundaries established before the
+documentation freeze. It prevents UX or release work from depending on another
+implicit package or repository migration before V1.
 
 ## Canonical roots
 
@@ -66,7 +67,9 @@ scripts/repository/
 
 The `scripts/` root contains no one-off implementation script.
 
-Active plans live under `docs/roadmap/`. Delivered patch plans live under
+Exactly two active planning documents live under `docs/roadmap/`: the
+implementation roadmap and open questions. Delivered patch plans, including the
+V1 implementation and documentation roadmaps, live under
 `docs/history/roadmaps/` and do not describe pending work.
 
 ## Executable gates
@@ -97,6 +100,5 @@ inventory, or fixture/golden role requires:
 3. clean-install and distribution validation;
 4. documentation and review-bundle validation.
 
-P25 may document these boundaries, P26 may improve their user experience, and
-P27 may harden their release execution. None of those phases should silently
-reorganize them.
+UX and release-hardening work may exercise these boundaries but must not
+silently reorganize them.

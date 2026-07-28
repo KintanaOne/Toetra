@@ -2,7 +2,6 @@
 
 > Status: implemented / stabilizing  
 > Scope: ModelBridge framework detection boundary  
-> Priority: P0
 
 ## Purpose
 

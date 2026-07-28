@@ -1,6 +1,6 @@
 # Builder Layer
 
-> Status: P0 / Implemented / Stabilizing  
+> Status: Implemented / stabilizing
 > Scope: CST to AST  
 > Implementation: custom CST traversal and AST construction  
 > Audience: compiler contributors, AST maintainers, test authors

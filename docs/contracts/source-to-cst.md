@@ -1,6 +1,6 @@
 # Source to CST Contract
 
-> Status: P0 / Accepted target syntax
+> Status: Implemented and accepted syntax
 > Scope: Raw Toetra source to Concrete Syntax Tree
 > Implementation: Lark parser
 > Audience: grammar authors, parser maintainers and parser-test authors

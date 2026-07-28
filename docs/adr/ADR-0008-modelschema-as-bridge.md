@@ -4,7 +4,10 @@
 > Date: 2026-06  
 > Scope: ModelBridge
 
-> **Patch 21 target amendment:** ADR-0023 replaces the assumption that the selected `target` is always one directly addressable scalar value. The current `1.0.0rc1` implementation remains governed by this ADR, while typed output ports and observables are the accepted target for `1.0.0rc2`.
+> **Patch 21 target amendment:** ADR-0023 replaces the assumption that the selected
+> `target` is always one directly addressable scalar value. Typed output ports
+> and observables have been public since `1.0.0rc2`; legacy target attributes
+> remain internal compatibility projections.
 
 ## Context
 

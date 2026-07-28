@@ -1,6 +1,6 @@
 # Compiler Contract Tests
 
-> Status: P0 — required  
+> Status: Implemented and required
 > Implementation: planned / partially implemented  
 > Scope: compiler and model pipeline boundaries
 

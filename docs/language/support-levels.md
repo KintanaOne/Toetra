@@ -168,6 +168,6 @@ Language pages use these labels consistently:
 
 Every new language example must make its intended level clear. A page must not
 label an example “supported” unless it identifies the public route that supports
-it. P25.5 adds automated checks for the selected canonical snippets; until then,
-the grammar, semantic tests, public profile, and release demos remain the
+it. Selected canonical snippets are checked by `make snippets-check`; the
+grammar, semantic tests, public profile, and release demos provide the broader
 evidence.

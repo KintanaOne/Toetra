@@ -1,178 +1,125 @@
-# Model to Schema Contract
+# Model-to-schema contract
 
-> Status: P0 / Partially Implemented  
-> Scope: Serialized model artifact to normalized ModelSchema  
-> Implementation: loaders, detector, sklearn/XGBoost introspectors  
-> Audience: ModelBridge maintainers, semantic maintainers, backend authors
+> **Status:** Implemented for the public sklearn routes
+>
+> **Scope:** model artifact and optional dataset to normalized `ModelSchema`
+>
+> **Audience:** ModelBridge, semantic, compatibility, and encoder maintainers
 
-## Purpose
-
-The Model to Schema contract defines how Toetra converts a model artifact into a normalized representation usable by the compiler.
-
-It answers the question:
-
-```text
-What does Toetra know about the model it is verifying?
-```
-
-ModelBridge is the subsystem responsible for this contract.
-
----
+This contract defines what downstream stages may rely on after Toetra loads,
+detects, and introspects a model.
 
 ## Input
 
-```text
-Model artifact
-```
+The normal public path receives:
 
-Potential input artifacts:
+- a supported serialized model artifact;
+- an optional reference dataset used for feature names, dtypes, and anchor
+  lookup;
+- the output name selected by the specification/runtime.
 
-- `.pkl` model;
-- `.joblib` model;
-- future JSON/model metadata artifacts;
-- optional dataset path;
-- optional external schema.
-
----
+An explicit schema is an advanced development input. It is mutually exclusive
+with model-artifact introspection so that one metadata authority owns the
+verification session.
 
 ## Output
 
-```text
-ModelSchema
-```
+Successful construction returns a normalized `ModelSchema` containing:
 
-A `ModelSchema` contains:
+- framework and concrete model type;
+- ordered feature schemas;
+- output-port name and task;
+- typed regression, classification, or unknown output schema;
+- available public observables and their semantic types;
+- optional framework/model compatibility descriptor;
+- adapter-specific metadata that does not override normalized fields.
 
-- framework identity;
-- model type;
-- feature schema;
-- target name;
-- task type;
-- framework-specific metadata.
+`target`, `target_dtype`, and `target_source_dtype` are read-only internal
+compatibility projections from the typed output source of truth.
 
----
-
-## ModelBridge Pipeline
+## Implemented pipeline
 
 ```text
 model path
-    ↓
-LoaderFactory
-    ↓
-loaded model
-    ↓
-ModelDetector
-    ↓
-framework
-    ↓
-IntrospectorFactory
-    ↓
-framework-specific introspector
-    ↓
-ModelSchema
+→ LoaderFactory
+→ loaded model
+→ ModelDetector
+→ IntrospectorFactory
+→ ModelSchema
 ```
 
----
+Schema construction is separate from:
 
-## Current Supported Frameworks
+```text
+model-family semantic lowering
+formal model encoding
+backend routing and execution
+runtime observation and replay
+```
 
-| Framework | Status | Notes |
-|---|---|---|
-| scikit-learn | Implemented / stabilizing | Detection and introspection exist. |
-| XGBoost | Implemented / stabilizing | Reuses sklearn-style introspection and enriches metadata. |
-| PyTorch | Planned | Framework enum exists, introspector not yet implemented. |
-| TensorFlow | Planned | Framework enum exists, introspector not yet implemented. |
+## Route status
 
----
+| Framework/model | Schema infrastructure | Public end-to-end route |
+|---|---:|---:|
+| sklearn single-output `LinearRegression` | implemented | yes |
+| direct binary sklearn `LogisticRegression` | implemented | yes |
+| other sklearn estimators or wrappers | partial/generic introspection may exist | no |
+| XGBoost | internal detection/introspection infrastructure | no |
+| PyTorch, TensorFlow, ONNX | no complete built-in schema route | no |
+
+Infrastructure presence never widens the
+[public V1 profile](../public-v1-profile.md).
 
 ## Guarantees
 
 If schema construction succeeds:
 
-- the model artifact was loadable;
-- the framework was detected;
-- an introspector was selected;
-- features are available through `ModelSchema.features`;
-- target and task are available;
-- downstream semantic validation can reason about feature existence and dtype;
-- future model constraint generation can use the schema as input.
+1. the artifact was loaded and its framework detected;
+2. a compatible introspector produced normalized feature identities and types;
+3. the output name is non-empty and agrees with the typed output schema;
+4. task and output kind are coherent;
+5. classification labels and observables are structurally valid;
+6. downstream semantic validation can check feature and observable references;
+7. compatibility evidence, when present, is explicit and backend-independent.
 
----
+These guarantees do not imply that a complete encoder/backend route exists.
+Route qualification must still fail closed.
 
-## Non-Goals
-
-The Model to Schema contract does not:
-
-- prove model correctness;
-- encode the model into a solver;
-- execute predictions;
-- verify Toetra properties;
-- choose the verification backend.
-
----
-
-## Failure Modes
+## Failure ownership
 
 Expected failures include:
 
-- unsupported model file extension;
-- missing file;
+- missing or unsupported artifact paths;
 - deserialization failure;
-- unsupported framework;
-- missing feature metadata;
-- unsupported introspector;
-- inconsistent external schema.
+- unknown framework or missing introspector;
+- absent or inconsistent feature metadata;
+- invalid output selection;
+- task/output-schema conflict;
+- invalid or non-finite classification labels;
+- ambiguous simultaneous model and schema authorities.
 
----
+P26 may normalize the public presentation of these failures without weakening
+their owning boundary.
 
-## Stabilization Notes
+## Non-goals
 
-The contract should stabilize:
+This contract does not:
 
-- loader error naming and hierarchy;
-- dataset requirement for feature inference;
-- model task normalization;
-- target inference policy;
-- schema override policy;
-- framework enum consistency.
-
----
-
-## Miova Hooks
-
-Miova may mutate model/schema artifacts by:
-
-- removing a feature;
-- changing a dtype;
-- corrupting framework metadata;
-- changing task type;
-- removing target;
-- altering feature nullability;
-- generating unsupported model metadata.
-
-Expected outcome:
-
-```text
-Invalid schema mutation → schema or semantic rejection
-Valid schema mutation   → semantic integration may continue
-```
+- prove model correctness;
+- reconstruct preprocessing;
+- translate model equations into a backend;
+- execute predictions or replay;
+- choose a backend;
+- declare a route public merely because introspection succeeds.
 
 ## Patch 21 Typed Output Addendum
 
-Patch 21 replaces the loose scalar-target assumption with the accepted
-[Model Output Observables Contract](model-output-observables.md).
+The typed output contract separates an output port from its observables.
+Regression exposes one scalar value. Classification exposes a label and,
+when supported by the recognized model profile, label-keyed probabilities.
+Logits, decision functions, class indices, framework methods, and solver
+symbols remain internal.
 
-The P21.1 `ModelSchema` now exposes `output_name` plus a typed
-`output_schema`. The normalized schema contains:
-
-- output-port identity;
-- task kind;
-- available public observables;
-- observable scalar types;
-- canonical labels for classification;
-- the model semantic profile needed for lowering.
-
-Free-form metadata such as `classes` remains source material for an
-introspector, but it is not itself the normalized output contract. `target`,
-`target_dtype`, and `target_source_dtype` are temporary read-only projections from
-the typed output schema while internal consumers migrate.
+See the [as-built ModelSchema](../model-bridge/model-schema.md),
+[model output observables](model-output-observables.md), and
+[model semantic lowering](model-semantic-lowering.md).

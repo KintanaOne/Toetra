@@ -1,6 +1,6 @@
 # IR1 to IR2 Contract
 
-> Status: P0 / Accepted target normalization and assumption lowering  
+> Status: Implemented and accepted normalization and assumption lowering
 > Scope: IR1 logical task to IR2 verification task  
 > Audience: IR2 maintainers, normalizer authors and backend-router authors
 
