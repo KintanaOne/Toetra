@@ -1,194 +1,84 @@
-# Lowering and Minimization
+# Lowering and normal-form selection
 
-> Status: P0 / Planned / Critical  
-> Scope: AggregatedAssertionSet to backend-preparable query  
-> Implementation: Not yet implemented  
-> Audience: backend authors, solver integration authors, optimization authors
+> **Status:** Implemented lowering and guarded normal-form conversion
+>
+> **Scope:** IR1 model semantics through IR2 formula selection
 
-## Purpose
+The current pipeline has no generic “minimization” pass and no `LoweredQuery`
+artifact. Two concrete mechanisms occupy the design space that older documents
+grouped under that name:
 
-The lowering and minimization layer prepares an aggregated verification problem for backend-specific compilation.
+1. model-semantic lowering rewrites public output observables;
+2. IR2 selects and converts the verification condition to NNF, CNF, or DNF.
 
-It answers the question:
+## Model-semantic lowering
 
-```text
-How can the complete verification problem be simplified and shaped before backend encoding?
-```
+`ModelSemanticLowerer` receives a `VerificationTask` and `ModelSchema`. When the
+task contains a model-dependent observable, the selected semantic profile
+returns:
 
-This layer is where Toetra can reduce logical complexity, remove redundancies, and prepare solver-friendly expressions.
+- a canonical backend-neutral task;
+- structured `SemanticLoweringEvidence`;
+- exact or directed numeric threshold information;
+- the conclusions allowed by the transformation.
 
----
+The initial binary-logistic profile lowers:
 
-## Position in the Pipeline
+- predicted-label equality and inequality;
+- pairwise predicted-label equality and inequality;
+- ordered class-probability comparisons.
 
-```text
-AggregatedAssertionSet
-    ↓
-Lowering / Minimization
-    ↓
-LoweredQuery
-    ↓
-Backend Boundary
-```
+The generated oriented decision quantity remains internal. Public report and
+replay views retain the original label/probability intent.
 
----
+## NNF normalization
 
-## Why This Layer Exists
+After lowering, `NNFNormalizer`:
 
-Backend solvers and verification engines can be expensive.
+- removes implication;
+- pushes negation toward atoms;
+- applies De Morgan transformations;
+- normalizes restrictions and the property query.
 
-The compiler should avoid sending unnecessary or poorly shaped constraints when a simpler equivalent or equisatisfiable problem exists.
+`NNFGuard` rejects a task that reaches IR2 without satisfying these invariants.
 
-Lowering and minimization help with:
+## IR2 formula selection
 
-- performance;
-- solver reliability;
-- query readability;
-- diagnostics;
-- counterexample clarity;
-- backend compatibility.
+`NormalFormSelector` examines the NNF verification condition and
+`IR2BuildContext`. The builder can:
 
----
+- keep `NNFFormulaIR2`;
+- convert to `CNFFormulaIR2`;
+- convert to `DNFFormulaIR2`.
 
-## Responsibilities
+The CNF/DNF converters preserve literal polarity explicitly. Conversion cost is
+bounded to prevent uncontrolled distributive expansion. The selected actual
+form is recorded on the task and in provenance.
 
-The layer is responsible for:
+## What is not implemented
 
-- simplifying logical expressions;
-- removing redundant constraints;
-- normalizing backend-preparable structures;
-- minimizing assertion sets where safe;
-- preserving traceability;
-- recording transformations;
-- preparing backend-specific compilers without producing backend objects directly.
+There is no general-purpose optimizer that performs arbitrary:
 
----
+- algebraic simplification;
+- redundant-constraint elimination;
+- solver-independent minimization;
+- model pruning;
+- backend-specific rewriting before routing.
 
-## Possible Transformations
+A contributor must not describe the absence of such an optimizer as an
+incomplete V1 execution step. The supported routes are executable without it.
+Future optimizations must preserve traceability, requirements, and semantics and
+must be measured independently from correctness.
 
-| Transformation | Purpose |
-|---|---|
-| Constant folding | Remove trivial true/false expressions. |
-| Redundancy elimination | Remove duplicated predicates. |
-| Constraint subsumption | Remove constraints implied by stronger constraints. |
-| Dead branch removal | Remove impossible DNF cases. |
-| Clause simplification | Simplify CNF clauses. |
-| Domain pruning | Reduce impossible domain branches. |
-| Backend compatibility rewrite | Rewrite unsupported patterns into supported equivalents when safe. |
+## Backend boundary
 
----
+IR2 normal-form selection remains backend-neutral. The router may use normal
+form and requirement metadata to choose a capable backend, but the selected
+backend performs its own native translation only after routing.
 
-## Preservation Modes
+## Contracts
 
-Every transformation must state its preservation mode.
-
-| Mode | Meaning |
-|---|---|
-| Equivalent | Same logical meaning. |
-| Equisatisfiable | Same satisfiability result, but not identical meaning. |
-| Approximate | Deliberate approximation, must be explicit. |
-| Diagnostic-only | No transformation, only metadata. |
-
-For P0, approximate transformations should be avoided unless explicitly flagged.
-
----
-
-## Output Artifact
-
-The output should be an explicit artifact:
-
-```text
-LoweredQuery
-```
-
-A `LoweredQuery` may contain:
-
-- simplified logical body;
-- preserved scope constraints;
-- model constraints;
-- backend hint;
-- selected normal form;
-- transformation trace;
-- removed constraints log;
-- preservation mode;
-- diagnostics.
-
----
-
-## Minimization Strategy
-
-Minimization should be conservative by default.
-
-The first implementation should favor:
-
-- correctness over aggressiveness;
-- traceability over compactness;
-- explicit diagnostics over silent rewrites;
-- deterministic transformations;
-- easy golden testing.
-
----
-
-## Backend Awareness
-
-This layer may be backend-aware but should remain backend-object-free.
-
-That means it can know that a backend prefers a structure, but it should not instantiate solver terms.
-
-Example:
-
-```text
-Allowed:
-    Rewrite query into a Z3-friendly conjunction structure.
-
-Not allowed:
-    Create z3.BoolRef objects.
-```
-
-Backend object creation belongs to backend compilers.
-
----
-
-## Guarantees
-
-Lowering and minimization must guarantee:
-
-- no required constraint is silently removed;
-- every transformation is traceable;
-- preservation mode is explicit;
-- backend-specific objects are not produced yet;
-- invalid simplifications are rejected;
-- diagnostics remain meaningful after simplification.
-
----
-
-## Relation to Backend Boundary
-
-The backend boundary receives a `LoweredQuery` and turns it into a backend-specific artifact.
-
-Therefore:
-
-```text
-LoweredQuery = backend-preparable
-BackendQuery = backend-specific
-```
-
----
-
-## Relation to Miova
-
-Miova can mutate lowering inputs and outputs to test:
-
-- preservation metadata;
-- redundant constraints;
-- impossible branches;
-- malformed transformation traces;
-- missing constraints;
-- backend-incompatible rewrites.
-
-Expected checks include:
-
-- no silent semantic drift;
-- no orphaned traceability links;
-- no invalid minimization accepted;
-- no backend object leakage before the backend boundary.
+- [Model semantic lowering](../contracts/model-semantic-lowering.md)
+- [Lowering and minimization contract](../contracts/lowering-minimization.md)
+- [IR1 to IR2](../contracts/ir1-to-ir2.md)
+- [Numeric compatibility reporting](../contracts/numeric-compatibility-reporting.md)

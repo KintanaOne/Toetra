@@ -1,26 +1,22 @@
-# Compiler Pipeline Contract
+# Compiler pipeline contract
 
-> Status: P0 / Stabilizing with accepted target extensions  
-> Scope: End-to-end compiler artifact progression  
-> Audience: compiler maintainers, architecture maintainers and Miova campaign authors
+> **Status:** Implemented and accepted
+>
+> **Scope:** source text through backend-neutral result preparation
 
-## Purpose
-
-This contract defines the official progression of Toetra artifacts and prohibits cross-layer shortcuts.
-
----
-
-## Official Artifact Chain
+## Official artifact chain
 
 ```text
 SourceText
-→ CST
+→ Lark CST
 → ProgramNode AST
-→ SemanticValidatedAST
-→ VerificationTask IR1
-→ VerificationTask IR2
-→ Aggregated verification condition
-→ BackendQuery
+→ semantically validated AST state
+→ VerificationTask (IR1)
+→ model-semantically lowered VerificationTask
+→ NNF VerificationTask
+→ VerificationTaskIR2
+→ BackendRoute
+→ backend-private translation
 → VerificationResult
 ```
 
@@ -29,139 +25,87 @@ The model path contributes:
 ```text
 ModelArtifact
 → ModelSchema
-→ ModelAssumptions
-→ VerificationTask IR2 / aggregation
+→ semantic profile + model encoder
+→ typed model AssumptionIR2 values
+→ VerificationTaskIR2
 ```
 
----
+Labels such as `SemanticValidatedAST`, `AggregatedAssertionSet`,
+`LoweredQuery`, and `BackendQuery` may appear in historical design records.
+They are not runtime classes in `1.0.0rc3` and must not be required by current
+extensions.
 
-## Artifact Ownership
+## Artifact ownership
 
-| Artifact | Producer | May contain | Must not contain |
+| Artifact/state | Producer | Must contain | Must exclude |
 |---|---|---|---|
-| SourceText | User/tooling | Public DSL syntax | Compiler objects |
-| CST | Parser | Grammar structure and tokens | Resolved symbols, solver objects |
-| AST | Builder | Typed syntax nodes | Assumed binding, Z3 expressions |
-| SemanticValidatedAST | Semantic passes | Resolved symbols, types, context | Backend expressions |
-| IR1 | IR1 translator | Backend-independent scopes, scalar/logical expressions, typed domains | Lark nodes, unresolved references |
-| IR2 | IR2 builder/normalizer | Normal forms, assumptions, requirements, verification semantics | Raw DSL syntax |
-| BackendQuery | Backend compiler | Backend-native declarations and formulas | Unchecked requirements |
+| source | caller/filesystem | public DSL text | compiler objects |
+| CST | parser | grammar tree and tokens | resolved symbols, model/backend objects |
+| AST | builder | typed source nodes | assumed binding, solver objects |
+| validated AST state | semantic validator | resolved contexts, symbols, points, types | backend expressions |
+| IR1 | IR translator | backend-neutral scope, scalar/logical intent, observable identity | Lark nodes, Z3 objects |
+| lowered IR1 | model semantic profile | canonical constraints and evidence | unresolved supported observables |
+| NNF IR1 | NNF normalizer | implication-free logical tree | non-leaf negation |
+| IR2 | IR2 builder | property, assumptions, condition, semantics, requirements, diagnostics | raw source syntax, backend API objects |
+| route | backend router | selected capabilities, reason, numeric assessment | native query objects |
+| native translation | backend adapter | exact backend representation and reverse mappings | unchecked requirements |
+| result | backend runner | logical status, assignments, execution evidence | public rendering policy |
 
----
+## Global guarantees
 
-## New Language Feature Flow
+1. Each layer consumes only its declared inputs.
+2. Each transition returns a valid next artifact/state or fails explicitly.
+3. Source identifiers, point identities, and model evaluations remain traceable.
+4. No backend object leaks into IR1 or IR2.
+5. No unresolved source/model reference enters IR1.
+6. Model-dependent public observables are lowered before final NNF.
+7. Domain, anchor, and model assumptions remain distinguishable.
+8. Requirement, numeric, and execution-policy checks precede backend
+   translation.
+9. Unsupported expressions are rejected, never silently approximated.
+10. Universal and existential semantics govern both condition construction and
+    result interpretation.
 
-### Quantified identifier
+## Verification-condition branch
 
-```text
-forall x0
-```
-
-must progress as:
-
-```text
-identifier token
-→ AST scope variable `x0`
-→ semantic symbol `x0`
-→ IR scope variable `x0`
-→ backend-symbol provenance `x0`
-```
-
-### Typed domain
-
-```text
-Domain syntax
-→ typed Domain AST
-→ validated typed domain
-→ typed Domain IR1
-→ DOMAIN assumptions in IR2
-→ backend expressions
-```
-
-### Scalar comparison
+Homogeneous binders are represented by symbolic variables and explicit
+verification semantics:
 
 ```text
-source arithmetic tree
-→ scalar AST tree
-→ resolved/typed scalar tree
-→ scalar IR1 tree
-→ comparison atom in IR2
-→ recursive backend scalar encoding
+universal:  Γdomain ∧ Γanchor ∧ Γmodel ∧ ¬P
+existential: Γdomain ∧ Γanchor ∧ Γmodel ∧ P
 ```
 
----
+Alternating quantifiers are represented in requirements and rejected by the V1
+route. They are not flattened unsoundly.
 
-## Global Guarantees
-
-The pipeline must guarantee:
-
-1. each layer consumes only its declared input artifact;
-2. each transformation either produces a valid next artifact or fails explicitly;
-3. source identifiers and provenance remain traceable;
-4. no solver object leaks before the backend boundary;
-5. no unresolved input or target reference enters IR1;
-6. domain assumptions remain distinct from the property formula;
-7. requirement analysis precedes backend compilation;
-8. unsupported expressions are rejected, not approximated;
-9. universal and existential semantics are preserved through result interpretation.
-
----
-
-## Verification-Condition Branch
-
-A quantified task does not become a native solver quantifier automatically.
-
-The initial semantics use symbolic variables and different verification conditions.
-
-Universal:
-
-```text
-Γdomain ∧ Γmodel ∧ ¬P
-```
-
-Existential:
-
-```text
-Γdomain ∧ Γmodel ∧ P
-```
-
-Native backend quantifiers are a separate future capability.
-
----
-
-## Expected Failure Boundaries
+## Expected failure boundaries
 
 | Failure | Boundary |
 |---|---|
-| Malformed quantified syntax | Source → CST |
-| Malformed expression/domain CST | CST → AST |
-| Unbound or mismatched entity | AST → Semantic |
-| Type-invalid arithmetic/domain | AST → Semantic |
-| Missing semantic resolution | Semantic → IR1 |
-| Invalid normal form or provenance | IR1 → IR2 |
-| Invalid condition composition | Aggregation |
-| Unsupported required capability | Routing / IR → Backend |
-| Solver runtime failure | Backend runtime |
+| malformed syntax | source → CST |
+| unsupported CST shape | CST → AST |
+| invalid binding/type/model reference | AST → semantic state |
+| missing semantic resolution | semantic state → IR1 |
+| unsupported model-family observable | model-semantic lowering |
+| invalid NNF or normal-form expansion | IR1 → IR2 |
+| missing/duplicate/unrequested model equation | IR2 guardrails |
+| unsupported structural/numeric/operational capability | routing |
+| invalid native translation | backend adapter |
+| backend technical failure | backend runner |
 
----
-
-## Forbidden Shortcuts
-
-The following paths are invalid:
+## Forbidden shortcuts
 
 ```text
 Source → Z3
 AST → Z3
-Raw Domain AST → Z3
-Unvalidated scalar AST → IR2
-Backend capability repair inside the parser
+Raw framework estimator → semantic validator
+Unvalidated AST → IR2
+IR2 → native translation without routing
+Renderer → solver-status reinterpretation
 ```
 
-Compatibility adapters may exist temporarily, but they must not redefine the target contract.
-
-## Specification Constant Pipeline Invariant
-
-Across the full compiler pipeline:
+## Specification-constant invariant
 
 ```text
 header declaration
@@ -172,4 +116,5 @@ header declaration
 → backend literal
 ```
 
-No stage may silently reinterpret a specification constant as a model feature or unconstrained backend variable.
+No layer may reinterpret a specification constant as a model feature or
+unconstrained backend variable.

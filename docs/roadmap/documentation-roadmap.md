@@ -89,6 +89,8 @@ Exit criteria:
 
 ### P25.2 — As-built architecture
 
+Status: Complete
+
 Align architecture, compiler, IR, ModelBridge, backend, runtime, and status
 pages with the implemented pipeline:
 

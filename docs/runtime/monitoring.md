@@ -106,9 +106,8 @@ The V1 priority is:
 → semantic validation
 → IR1
 → IR2
-→ aggregation
-→ lowering
-→ Z3 BackendQuery
+→ route qualification
+→ Z3-private translation
 → Z3 VerificationResult
 ```
 

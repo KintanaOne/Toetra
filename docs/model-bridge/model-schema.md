@@ -125,16 +125,17 @@ target compatibility
 framework metadata
 ```
 
-These constraints may later be aggregated with DSL assertions before backend lowering.
+Schema facts are used during semantic validation. Formal model equations are
+emitted separately as typed IR2 assumptions.
 
 ## Role in Backend Lowering
 
-Backend lowering should not consume raw framework model objects directly when avoidable.
+Backend translation does not consume raw framework model objects.
 
 Instead, the lowering process should consume:
 
 ```text
-AggregatedAssertionSet + ModelSchema + ModelConstraints
+VerificationTaskIR2 + routed backend capabilities
 ```
 
 This keeps the compiler pipeline independent from framework APIs.

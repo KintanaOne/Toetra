@@ -1,671 +1,213 @@
-# Toetra Runtime Flow
+# Runtime flow
 
-> Status: **P0 — end-to-end target flow, partially implemented**  
-> Scope: **runtime architecture / request lifecycle**  
-> Audience: maintainers, contributors, backend authors, and test designers
+> **Status:** As built for `1.0.0rc3`
+>
+> **Entry point:** `toetra.verify`
+>
+> **Scope:** lifecycle of one verification session
 
-## Purpose
+`verify(...)` orchestrates the complete public request. Compilation helpers and
+registries are private implementation details; callers receive a completed
+`VerificationSession` or an exception, never a partially populated session.
 
-This document describes the lifecycle of a single Toetra request from user input to verification result.
-
-It defines the target end-to-end flow even though some subsystems are still planned. The goal is to make the execution model explicit early, so that compiler contracts, ModelBridge contracts, IR contracts, backend contracts, and Miova campaigns can be designed consistently.
-
-A Toetra request is not only a DSL compilation request. It is a verification request that combines:
-
-- a `.toetra` property specification;
-- a model artifact or model schema;
-- semantic validation;
-- logical normalization;
-- model-aware constraints;
-- backend preparation;
-- verification execution.
-
----
-
-## End-to-end flow summary
-
-```text
-.toetra source
-    ↓
-CST
-    ↓
-AST
-    ↓
-SemanticValidatedAST
-    ↓
-IR1 structural logical task
-    ↓
-IR1-NNF normalization (planned)
-    ↓
-IR2-CNF/DNF
-    ↓
-Assertion Aggregation
-    ↑
-ModelBridge → ModelSchema → Model Constraints
-    ↓
-Lowering / Minimization
-    ↓
-BackendQuery
-    ↓
-Verification Runtime
-    ↓
-Toetra Result / Diagnostics
-```
-
----
-
-## Complete runtime flow
+## End-to-end sequence
 
 ```mermaid
-flowchart TD
-    S[.toetra Source]
-        --> P[Parser]
+sequenceDiagram
+    actor User
+    participant API as verify()
+    participant Compiler
+    participant Router
+    participant Backend
+    participant Evidence
 
-    P
-        --> CST[CST]
-
-    CST
-        --> B[AST Builder]
-
-    B
-        --> AST[AST]
-
-    AST
-        --> SEM[Semantic Validator]
-
-    SEM
-        --> SAST[SemanticValidatedAST]
-
-    SAST
-        --> IR1[IR1 Translator]
-
-    IR1
-        --> NNF[IR1-NNF Normalizer - planned]
-
-    NNF
-        --> IR2[IR2 Normal Forms]
-
-    MODEL[Model Artifact / Dataset / Optional Schema]
-        --> MB[ModelBridge]
-
-    MB
-        --> MS[ModelSchema]
-
-    MS
-        --> SCHEMASEM[Schema-aware Semantic Checks]
-
-    MS
-        --> MC[Model Constraints]
-
-    IR2
-        --> AGG[Assertion Aggregation]
-
-    MC
-        --> AGG
-
-    SCHEMASEM
-        --> AGG
-
-    AGG
-        --> LOW[Lowering / Minimization]
-
-    LOW
-        --> BQ[BackendQuery]
-
-    BQ
-        --> BE[Backend Execution]
-
-    BE
-        --> RES[Toetra Result / Diagnostics]
+    User->>API: source/path + model/schema
+    API->>API: resolve artifacts and anchors
+    API->>Compiler: compile with ModelSchema
+    Compiler-->>API: VerificationTaskIR2 list
+    loop each property
+        API->>Router: task + numeric/execution context
+        Router-->>API: BackendRoute
+        API->>Backend: run task under policy
+        Backend-->>API: VerificationResult
+        API->>Evidence: task + route + result
+        Evidence-->>API: VerificationReport
+    end
+    API-->>User: VerificationSession
 ```
 
----
+## 1. Load the specification
 
-## Phase 1 — Source parsing
+The runtime accepts source text or a `.toetra` path. A file is decoded as UTF-8,
+and relative model references are resolved from its directory. Non-canonical
+legacy specification extensions are rejected explicitly. The source is parsed
+once at this boundary to obtain the header and anchor
+declarations required for artifact resolution. Compilation later parses the
+same retained source into the formal pipeline.
 
-### Input
+Produced runtime state:
 
-A raw `.toetra` specification.
+- exact source text;
+- optional resolved specification path;
+- base directory;
+- header model reference and target;
+- `ProgramNode` used for anchor validation.
 
-### Output
+## 2. Resolve model metadata
 
-A CST produced by the grammar parser.
+The request must choose one authority:
 
-### Responsibilities
+- `schema=...` supplies an already normalized `ModelSchema`; or
+- model/dataset artifacts are handled by `ModelManager`.
 
-- Accept or reject grammar-level syntax.
-- Preserve source structure for downstream building.
-- Keep parsing concerns separate from semantic concerns.
+Combining a schema with model artifacts is a configuration error. The explicit
+target, header target, and schema output name must agree.
 
-### Failure class
+For artifact-based requests, `ModelManager` loads the estimator, detects its
+framework, introspects it, and builds the normalized schema. The concrete model
+is retained only for replay.
 
-Parser-level errors.
+See the [model-to-schema contract](../contracts/model-to-schema.md) and
+[schema-to-semantic contract](../contracts/schema-to-semantic.md).
 
-### Status
+## 3. Resolve anchors
 
-Implemented / stabilizing.
+Inline anchors are already self-contained. Referenced anchors are resolved
+before formal compilation through:
 
----
+1. an explicit `anchor_resolver`;
+2. otherwise an explicit `anchor_source`;
+3. otherwise a compatible dataset artifact.
 
-## Phase 2 — CST to AST building
+The default DataFrame/CSV resolver requires exactly one row per lookup, projects
+only declared model features, validates values against schema dtypes, and
+records lookup provenance. Missing or ambiguous anchors cannot reach IR2.
 
-### Input
+## 4. Compile each property
 
-Concrete syntax tree.
-
-### Output
-
-Typed Toetra AST.
-
-### Responsibilities
-
-- Convert grammar-specific structures into domain-level AST nodes.
-- Build property nodes, scope nodes, assertion nodes, backend nodes, and primitives.
-- Normalize local syntactic noise.
-- Reject malformed CST structures that should not reach semantic validation.
-
-### Important distinction
-
-The AST is not yet semantically valid.
-
-At this phase, Toetra knows that the source has structure, but not necessarily that variables, scopes, features, model references, or property compatibility are valid.
-
-### Failure class
-
-Builder-level structural errors.
-
-### Status
-
-Implemented / stabilizing.
-
----
-
-## Phase 3 — Semantic validation
-
-### Input
-
-AST.
-
-### Output
-
-SemanticValidatedAST.
-
-### Responsibilities
-
-- Validate the left-hand side scope.
-- Build the semantic execution context.
-- Register semantic symbols.
-- Resolve explicit and implicit entity bindings.
-- Validate logical structure.
-- Validate property/scope compatibility.
-- Attach semantic annotations used by IR and later stages.
-
-### Key artifacts
-
-| Artifact | Role |
-|---|---|
-| `SemanticContext` | Defines scope, variables, default entity, domain, neighborhood, and symbol table. |
-| `SymbolTable` | Resolves semantic variables such as anchors, perturbations, and symbolic variables. |
-| `SemanticAnnotations` | Carries resolved entity, resolved path, symbol, and logical root metadata. |
-
-### Example semantic behavior
-
-In a local robustness scope:
+`run_ir2_with_model_schema(...)` performs:
 
 ```text
-at x in neighborhood(metric=L2, eps=0.1) => age <= 30
+source
+→ CST
+→ ProgramNode
+→ semantic validation with schema and resolved anchors
+→ VerificationTask IR1
+→ model-semantic lowering
+→ NNF normalization
+→ requested model evaluations
+→ model assumptions
+→ VerificationTaskIR2
 ```
 
-An implicit feature access like `age` may be resolved as:
+The original IR1 property is retained separately from the canonical lowered
+formula so reports and replay can speak in source-level terms.
+
+`VerificationTaskIR2` contains the normalized property, typed assumptions,
+verification condition, selected normal form, semantic branch, capability
+requirements, point mappings, model evaluations, diagnostics, and lowering
+evidence.
+
+## 5. Qualify a backend route
+
+For every IR2 task, `BackendRouter` evaluates:
 
 ```text
-x'.age
+IR2 requirements
++ registered backend capabilities
++ numeric compatibility context
++ execution policy
+→ BackendRoute
 ```
 
-because the perturbation is the default entity for local robustness assertions.
+An explicit `using Z3` hint restricts selection; it does not bypass the checks.
+Without a hint, the first registered fully compatible backend is selected. V1
+registers only Z3 by default.
 
-### Failure class
+No route is returned when:
 
-Semantic errors.
+- structural or semantic requirements are unsupported;
+- no numeric rule preserves an executable conclusion;
+- the backend cannot enforce the requested timeout, resource, cancellation, or
+  deterministic controls.
 
-### Status
+## 6. Execute under one policy budget
 
-Implemented / stabilizing.
+`BackendRunnerRegistry` resolves the concrete runner for the selected route.
+`Z3Runner` translates the IR2 task, performs the solver call, and returns a
+backend-neutral `VerificationResult`.
 
----
+The timeout is a total per-property budget that begins before translation. A
+technical backend exception raises a structured execution error and does not
+become a logical report.
 
-## Phase 4 — SemanticValidatedAST to IR1
+Logical status and technical termination are distinct:
 
-### Input
-
-SemanticValidatedAST.
-
-### Output
-
-IR1 verification tasks.
-
-### Responsibilities
-
-- Detach logical representation from DSL syntax.
-- Convert property scopes into `ScopeIR`.
-- Convert assertions into logical IR nodes.
-- Preserve semantic bindings resolved by the semantic layer.
-- Produce backend-independent verification tasks.
-
-### Key artifacts
-
-| Artifact | Role |
+| Logical status | Meaning |
 |---|---|
-| `VerificationTask` | Top-level IR unit representing one property verification task. |
-| `ScopeIR` | Backend-independent representation of the semantic evaluation scope. |
-| `QueryIR` | Logical query attached to the property. |
-| `LogicalIR` | Boolean/logical representation of assertions. |
-| `ProblemIR` | High-level ML problem predicate such as classification equality. |
+| `PROVED` | no counterexample exists under the encoded assumptions |
+| `COUNTEREXAMPLE` | a violating assignment exists |
+| `WITNESS` | a satisfying existential assignment exists |
+| `NO_WITNESS` | no satisfying existential assignment exists |
+| `UNKNOWN` | the backend did not justify a stronger conclusion |
 
-### Failure class
+Technical timeout, resource exhaustion, or cancellation maps to `UNKNOWN` with
+separate backend execution evidence.
 
-IR translation errors.
+## 7. Apply conclusion policies
 
-### Status
+Before a report is created, the runtime applies:
 
-Implemented / needs stabilization.
+1. numeric compatibility policy for the framework/encoder/backend route;
+2. semantic-lowering policy for exact or conservative rewrites.
 
----
+These policies may preserve a result or weaken it to `UNKNOWN`. They never
+promote an unsupported backend result into a proof or witness.
 
-## Phase 5 — IR1-NNF normalization
+## 8. Build report and provenance
 
-### Status
+The provenance context is built once per request from the specification, model,
+dataset, anchors, schema, software identity, and compiler policy. Each property
+report adds task, route, result, and property fingerprints.
 
-Planned / critical. Structural IR1 exists, but full NNF enforcement should not be treated as implemented until the normalizer and golden tests exist.
+`build_verification_report(...)` produces the backend-neutral report used by
+text, HTML, Jupyter, records/DataFrame, and JSON v6 renderers.
 
-### Input
+See the [verification provenance contract](../contracts/verification-provenance.md)
+and [output reporting and replay contract](../contracts/output-reporting-and-replay.md).
 
-IR1 logical tree.
+## 9. Return a session
 
-### Output
+The runtime returns one immutable `VerificationSession` containing:
 
-IR1-NNF.
+- the retained source and resolved artifact paths;
+- the normalized schema and optional concrete model;
+- resolved anchors and provenance;
+- one `VerificationExecution` per property.
 
-### Responsibilities
+Each execution groups its IR2 task, route, raw result, and public report. The
+public session exposes reports and findings rather than private compiler
+artifacts; see the [Python API reference](../api-reference/index.md).
 
-- Eliminate or normalize implication when required.
-- Apply De Morgan transformations.
-- Push negations toward leaves.
-- Produce a negation-normal logical structure.
-- Preserve semantic bindings and traceability.
+## Optional replay
 
-### Guarantees
+Replay begins only from a counterexample or witness finding. A registered
+`ModelRuntimeObserver` evaluates the concrete model for every formal point,
+compares outputs and model quantities, and reevaluates the preserved original
+property.
 
-IR1-NNF should preserve the meaning of the original logical assertion.
+Replay is evidence about one assignment. It remains outside the formal backend
+execution and cannot replace the numeric compatibility contract.
 
-If a transformation cannot preserve strict semantic equivalence, the weaker guarantee must be explicitly recorded. For IR1-NNF, the expected guarantee is semantic equivalence.
+## Failure ownership
 
----
-
-## Phase 6 — IR2 normal forms
-
-### Input
-
-IR1-NNF.
-
-### Output
-
-IR2 normal form.
-
-### Responsibilities
-
-- Select CNF, DNF, or another normal form depending on verification needs.
-- Prepare the logical structure for backend-oriented reasoning.
-- Preserve traceability to original assertions.
-- Represent whether transformations preserve semantic equivalence or only equisatisfiability.
-
-### CNF use cases
-
-CNF is useful when the backend or strategy prefers conjunctions of clauses, such as SAT/SMT-style solving or consistency checking.
-
-### DNF use cases
-
-DNF is useful for scenario exploration, case splitting, counterexample search, and mutation-driven boundary analysis.
-
-### Status
-
-Planned / critical.
-
----
-
-## Phase 7 — ModelBridge schema construction
-
-### Input
-
-A model artifact, dataset path, and optionally an external schema.
-
-### Output
-
-A normalized `ModelSchema`.
-
-### Responsibilities
-
-- Select the appropriate model loader.
-- Load the serialized model.
-- Detect the ML framework.
-- Select the correct introspector.
-- Extract feature, target, task, and framework metadata.
-- Produce a normalized model representation.
-
-### Key artifacts
-
-| Artifact | Role |
+| Failure | Owning boundary |
 |---|---|
-| Model artifact | Serialized ML model, such as pickle/joblib. |
-| Loaded model | Runtime model object. |
-| Framework | Detected ML framework, such as sklearn or XGBoost. |
-| Introspector | Framework-specific metadata extraction component. |
-| `ModelSchema` | Normalized Toetra representation of model metadata. |
-
-### Status
-
-Partially implemented.
-
----
-
-## Phase 8 — Schema-aware semantic checks
-
-### Input
-
-SemanticValidatedAST and `ModelSchema`.
-
-### Output
-
-Schema-aware validation result.
-
-### Responsibilities
-
-- Verify that DSL feature references exist in the model schema.
-- Validate feature types against comparison values and operators.
-- Validate target references.
-- Validate property/problem compatibility with model task type.
-- Prepare model-aware constraints for later stages.
-
-### Example checks
-
-| DSL reference | ModelSchema check |
-|---|---|
-| `age <= 30` | `age` exists and is numeric. |
-| `CLASSIFICATION.EQUAL()` | model task is compatible with classification. |
-| `target` | target exists or is inferable. |
-| neighborhood constraints | perturbable features and distance assumptions are valid. |
-
-### Status
-
-Planned / critical.
-
----
-
-## Phase 9 — Model constraint generation
-
-### Input
-
-`ModelSchema` and optional framework-specific metadata.
-
-### Output
-
-Model constraints.
-
-### Responsibilities
-
-- Convert model metadata into constraints used by the verification problem.
-- Represent input dimensionality constraints.
-- Represent feature type constraints.
-- Represent task-level constraints.
-- Prepare future symbolic model encodings.
-
-### Important note
-
-Model constraints are not the same as semantic checks.
-
-Semantic checks validate whether a DSL property is meaningful with respect to the model schema. Model constraints contribute logical information to the verification problem.
-
-### Status
-
-Planned / critical.
-
----
-
-## Phase 10 — Assertion aggregation
-
-### Input
-
-- IR2 normal form;
-- semantic constraints;
-- model constraints;
-- backend capability constraints when available.
-
-### Output
-
-Aggregated assertion set.
-
-### Responsibilities
-
-- Compose all constraints into a single verification problem.
-- Preserve source traceability.
-- Distinguish user assertions from generated constraints.
-- Track transformation guarantees.
-- Prepare simplification and minimization.
-
-### Aggregation sources
-
-| Source | Example |
-|---|---|
-| User assertions | `x'.age <= 30` |
-| Semantic constraints | `x'` is a perturbation of `x` |
-| Scope constraints | `distance(x, x') <= eps` |
-| Domain constraints | feature belongs to a declared domain |
-| Model constraints | feature exists, dtype constraints, model task constraints |
-| Backend constraints | backend capability preconditions |
-
-### Status
-
-Planned / critical.
-
----
-
-## Phase 11 — Lowering and minimization
-
-### Input
-
-Aggregated assertion set.
-
-### Output
-
-Lowered or minimized query ready for backend encoding.
-
-### Responsibilities
-
-- Simplify redundant logical fragments.
-- Minimize assertion sets where possible.
-- Prepare backend-aware logical structure.
-- Preserve traceability of removed or transformed constraints.
-- Keep the distinction between equivalence and equisatisfiability explicit.
-
-### Examples of transformations
-
-- Remove duplicate clauses.
-- Simplify trivial boolean expressions.
-- Flatten nested conjunctions or disjunctions.
-- Reorder constraints into backend-preferred form.
-- Introduce auxiliary variables if a backend strategy requires it.
-
-### Status
-
-Planned / critical.
-
----
-
-## Phase 12 — Backend query generation
-
-### Input
-
-Lowered or minimized query.
-
-### Output
-
-Backend-specific query artifact.
-
-### Responsibilities
-
-- Encode the logical problem into a backend-specific representation.
-- Preserve mapping between backend expressions and Toetra artifacts.
-- Emit diagnostics when a backend cannot support the query.
-- Respect backend capabilities and limitations.
-
-### Examples
-
-| Backend | Possible artifact |
-|---|---|
-| Z3 | SMT constraints and solver query. |
-| ERAN | Neural network robustness verification query. |
-| Future backend | Backend-specific verification artifact. |
-
-### Status
-
-Planned.
-
----
-
-## Phase 13 — Verification runtime
-
-### Input
-
-Backend query.
-
-### Output
-
-Toetra verification result.
-
-### Responsibilities
-
-- Execute the backend query.
-- Normalize backend-specific results.
-- Return success, failure, counterexample, unsupported case, or diagnostic result.
-- Preserve traces for explanation and debugging.
-
-### Status
-
-Planned.
-
----
-
-## Phase 14 — Miova campaigns
-
-### Input
-
-Toetra artifacts at different layers.
-
-### Output
-
-Mutation campaign results.
-
-### Responsibilities
-
-- Mutate source, AST, semantic, IR, model schema, aggregated assertions, or backend query artifacts.
-- Validate layer contracts.
-- Validate expected failures.
-- Detect unexpected fragility.
-- Explore robustness boundaries.
-
-### Important separation
-
-Miova is not part of the normal verification runtime.
-
-Miova is a validation and exploration layer used to harden Toetra.
-
----
-
-## Runtime failure model
-
-Each phase must own its own failure boundary.
-
-| Phase | Failure type |
-|---|---|
-| Source parsing | Parser error |
-| AST building | Builder / structural error |
-| Semantic validation | Semantic error |
-| IR1 translation | IR translation error |
-| IR1-NNF | Normalization error |
-| IR2 | Normal form transformation error |
-| ModelBridge | Model loading, detection, or introspection error |
-| Schema-aware semantic checks | Model/schema compatibility error |
-| Assertion aggregation | Constraint composition error |
-| Lowering / minimization | Lowering or simplification error |
-| Backend query generation | Backend capability or encoding error |
-| Verification runtime | Backend execution or result normalization error |
-| Miova campaign | Mutation, invariant, or expected-failure mismatch |
-
-Clear failure boundaries are critical because they allow Toetra to explain not only that a request failed, but where and why it failed.
-
----
-
-## End-to-end artifact sequence
-
-| Order | Artifact | Produced by | Consumed by | Status |
-|---:|---|---|---|---|
-| 1 | Source | User | Parser | Implemented |
-| 2 | CST | Parser | Builder | Implemented |
-| 3 | AST | Builder | Semantic Validator | Implemented / stabilizing |
-| 4 | SemanticValidatedAST | Semantic Validator | IR1 Translator | Implemented / stabilizing |
-| 5 | IR1 structural logical task | IR Translator | IR1-NNF Normalizer | Implemented / stabilizing |
-| 6 | IR1-NNF | IR1 Normalizer | IR2 Transformer | Planned / critical |
-| 7 | IR2 | IR2 Transformer | Assertion Aggregator | Planned |
-| 8 | ModelSchema | ModelBridge | Semantic checks / model constraints | Partially implemented |
-| 9 | ModelConstraintIR | Model constraint generator | Assertion Aggregator | Planned |
-| 10 | AggregatedAssertionSet | Assertion Aggregator | Lowering / minimization | Planned |
-| 11 | LoweredQuery | Lowering / minimization | Backend query generator | Planned |
-| 12 | BackendQuery | Backend adapter/compiler | Verification runtime | Planned |
-| 13 | Toetra Result | Runtime | User / diagnostics | Planned |
-
----
-
-## Runtime design principles
-
-### 1. No backend leakage before the backend boundary
-
-Backend-specific encoding must not leak into parser, AST, semantic validation, or early IR layers.
-
-### 2. Semantic resolution must be preserved
-
-IR and later layers must preserve resolved entity and feature information produced by semantic validation.
-
-### 3. ModelBridge is a semantic and constraint bridge
-
-ModelBridge is not only a loader. It participates in schema-aware validation and future constraint generation.
-
-### 4. IR1 and IR2 have different purposes
-
-IR1 normalizes logical structure and negations. IR2 prepares clause-oriented or case-oriented forms such as CNF and DNF.
-
-### 5. Aggregation is explicit
-
-The backend receives a composed verification problem, not isolated DSL fragments.
-
-### 6. Lowering must be traceable
-
-Any simplification or minimization must preserve traceability from backend expressions to Toetra source intent.
-
-### 7. Miova validates boundaries, not normal execution
-
-Miova challenges Toetra artifacts and verifies expected behavior under mutation. It does not replace Toetra verification.
-
----
-
-## Related documents
-
-| Document | Purpose |
-|---|---|
-| `architecture/pipeline-views.md` | Multi-view architecture. |
-| `architecture/status-matrix.md` | Implementation status by subsystem. |
-| `compiler/pipeline.md` | Compiler and logical pipeline. |
-| `model-bridge/overview.md` | ModelBridge lifecycle. |
-| `contracts/compiler-pipeline.md` | Cross-layer compiler contracts. |
-| `contracts/assertion-aggregation.md` | Aggregation contract. |
-| `contracts/lowering-minimization.md` | Lowering and minimization contract. |
-| `contracts/ir-to-backend.md` | Backend boundary contract. |
+| malformed source | parser or builder |
+| invalid binding, type, point, or observable | semantic validation |
+| unsupported model-family meaning | model-semantic lowering |
+| unsupported fitted model equation | model encoder |
+| incompatible task/backend/policy | routing |
+| solver translation or execution failure | backend adapter |
+| unavailable concrete observation | replay |
+| ambiguous public configuration | high-level runtime |

@@ -1,160 +1,90 @@
-# Model Constraints Contract
+# Model constraints contract
 
-> Status: P0 / Planned / Critical  
-> Scope: ModelSchema to model-derived logical constraints  
-> Implementation: Not yet implemented  
-> Audience: ModelBridge authors, backend authors, IR authors
+> **Status:** Implemented for the public affine model routes
+>
+> **Scope:** `ModelSchema` validation and model `AssumptionIR2` generation
 
-## Purpose
+Model-derived knowledge enters Toetra through two boundaries.
 
-The Model Constraints contract defines how ModelBridge information becomes logical constraints used by verification.
+## Schema-semantic boundary
 
-It answers the question:
+`ModelSchema` is used to validate:
 
-```text
-What logical constraints does the model contribute to the verification problem?
-```
+- ordered feature existence and dtype;
+- target/output identity;
+- task and output-observable compatibility;
+- class labels and model family;
+- point inputs required by the property.
 
-ModelBridge is not only a metadata provider. Its schema is the foundation for model-aware semantic validation and future model constraint generation.
+These are semantic checks. They do not become solver formulas.
 
----
+## Model-encoding boundary
 
-## Input
+The model encoder receives:
 
 ```text
 ModelSchema
-+
-optional model encoding strategy
++ requested ModelEvaluationIR identities
++ optional ModelEncodingContext
 ```
 
-The input may include:
+and returns model-tagged `AssumptionIR2` values.
 
-- feature schema;
-- target;
-- task type;
-- framework metadata;
-- model type;
-- backend capability information;
-- symbolic encoding strategy.
+Implemented equations are:
 
----
+- scalar affine output for fitted single-output sklearn `LinearRegression`;
+- affine oriented decision quantity for direct fitted binary sklearn
+  `LogisticRegression`.
 
-## Output
+## Required guarantees
 
-```text
-ModelConstraintSet
-```
+1. Every coefficient, intercept, label orientation, feature order, dtype, and
+   output identity comes from explicit schema or fitted model state.
+2. Exactly one equation is emitted for each requested evaluation.
+3. No unrequested, duplicate, or disconnected equation is emitted.
+4. Model assumptions remain backend-neutral.
+5. Internal model quantities remain distinct from public output observables.
+6. Unsupported model families or incomplete metadata fail explicitly.
+7. Numeric compatibility evidence describes the abstraction used by the
+   equation.
 
-A model constraint set may include:
+## Composition
 
-- feature existence constraints;
-- dtype constraints;
-- input dimensionality constraints;
-- target/output constraints;
-- model task constraints;
-- future symbolic model behavior constraints.
+Model assumptions join domain and anchor assumptions inside
+`VerificationTaskIR2`. The implementation has no `ModelConstraintSet`,
+`ModelConstraintIR`, or `AggregatedAssertionSet` runtime class.
 
----
-
-## Constraint Families
-
-| Constraint Family | Example |
-|---|---|
-| Feature constraints | `age` exists and is numeric. |
-| Input constraints | model expects N input features. |
-| Target constraints | target is `label`. |
-| Task constraints | classification-compatible predicate. |
-| Output constraints | class labels or regression output domain. |
-| Symbolic model constraints | future model encoding for solver backends. |
-
----
-
-## Relationship with Assertion Aggregation
-
-Model constraints are not backend queries by themselves.
-
-They are aggregated with:
-
-- user DSL assertions;
-- semantic constraints;
-- scope constraints;
-- domain constraints;
-- neighborhood constraints;
-- backend capability constraints.
-
-The result is an `AggregatedAssertionSet`.
-
----
-
-## Guarantees
-
-If model constraint generation succeeds:
-
-- constraints are traceable to ModelSchema metadata;
-- constraints are backend-independent unless explicitly marked otherwise;
-- constraints can be aggregated with DSL assertions;
-- unsupported model encodings fail explicitly;
-- no solver execution has occurred yet.
-
----
-
-## Non-Goals
-
-This contract must not:
-
-- verify a property alone;
-- choose CNF/DNF for the full query;
-- minimize all assertions;
-- encode final backend-specific objects unless delegated to backend lowering;
-- silently invent missing model metadata.
-
----
-
-## Failure Modes
-
-Expected failures include:
-
-- missing required feature metadata;
-- unsupported model type for symbolic encoding;
-- unsupported task type;
-- incompatible backend capability;
-- unrepresentable model operation;
-- incomplete schema.
-
----
-
-## Miova Hooks
-
-Miova may mutate:
-
-- feature metadata;
-- model task;
-- target name;
-- model type;
-- framework metadata;
-- generated model constraints.
-
-Expected outcomes:
-
-| Mutation | Expected Boundary |
-|---|---|
-| Schema invalid | ModelBridge or schema-semantic rejection. |
-| Constraint invalid | model-constraints rejection. |
-| Constraint valid but challenging | aggregation/lowering continues. |
+Backend capabilities are not model assumptions; they are checked later by the
+router.
 
 ## Patch 21 Model Quantities and Observable Lowering
 
-Patch 21 separates two contributions that were previously both described as
-"output constraints":
+Patch 21 established a boundary that remains part of the public classification
+contract:
 
-1. **model quantities**, materialized by a ModelBridge encoder from a concrete
-   model artifact, such as an affine latent decision value per evaluation;
-2. **observable lowerings**, defined by a framework-neutral model semantic
-   profile and connecting a public label/probability property to those quantities.
+- model encoders materialize internal model quantities from the fitted model;
+- framework-neutral semantic profiles lower public label and probability
+  observables to constraints over those quantities.
 
-The encoder must not erase the public observable or define DSL vocabulary. The
-backend receives only the canonical constraints after lowering, while reporting
-and provenance retain both the source intention and the generated model
-quantities.
+An encoder must not erase the public observable or define DSL vocabulary. After
+lowering, a backend receives canonical constraints, while reporting and
+provenance retain both the source intent and the generated model quantities.
 
-See [Initial Binary Classification Profile](binary-classification-profile.md).
+See the [binary classification profile](binary-classification-profile.md).
+
+## Failure ownership
+
+| Failure | Owner |
+|---|---|
+| invalid/missing schema metadata | ModelBridge or semantic validation |
+| no semantic profile for a public observable | model-semantic lowerer |
+| no encoder for the model family | encoder factory |
+| malformed evaluation equation | encoder/IR2 guardrail |
+| structurally valid equation unsupported by a backend | router |
+
+## Extension
+
+A new model encoder is not public support by itself. The
+[public extension rule](../public-v1-profile.md#extension-rule) also requires
+semantics, capabilities, numeric policy, execution, reporting, replay, tests,
+documentation, and release validation.

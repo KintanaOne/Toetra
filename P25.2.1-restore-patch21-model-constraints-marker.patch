@@ -1,0 +1,25 @@
+diff --git a/docs/contracts/model-constraints.md b/docs/contracts/model-constraints.md
+--- a/docs/contracts/model-constraints.md
++++ b/docs/contracts/model-constraints.md
+@@ -56,6 +56,21 @@ Model assumptions join domain and anchor assumptions inside
+ Backend capabilities are not model assumptions; they are checked later by the
+ router.
+ 
++## Patch 21 Model Quantities and Observable Lowering
++
++Patch 21 established a boundary that remains part of the public classification
++contract:
++
++- model encoders materialize internal model quantities from the fitted model;
++- framework-neutral semantic profiles lower public label and probability
++  observables to constraints over those quantities.
++
++An encoder must not erase the public observable or define DSL vocabulary. After
++lowering, a backend receives canonical constraints, while reporting and
++provenance retain both the source intent and the generated model quantities.
++
++See the [binary classification profile](binary-classification-profile.md).
++
+ ## Failure ownership
+ 
+ | Failure | Owner |

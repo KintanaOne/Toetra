@@ -1,157 +1,84 @@
-# Assertion Aggregation Contract
+# Assumption composition contract
 
-> Status: P0 / Accepted target contract  
-> Scope: Property formula + domain/model assumptions → verification condition  
-> Audience: IR2 builders, aggregation authors, runner authors and diagnostic authors
+> **Status:** Implemented and accepted
+>
+> **Scope:** property plus typed assumptions to IR2 verification condition
 
 ## Purpose
 
-Aggregation builds the complete logical problem that a backend must solve.
+A user property `P` is not the complete solver condition. `IR2Builder` composes
+it with typed assumptions `Γ` and explicit verification semantics inside
+`VerificationTaskIR2`.
 
-A user property alone is not the complete verification condition.
-
----
+There is no separate `AggregatedAssertionSet` runtime class.
 
 ## Inputs
 
-Aggregation may receive:
+- normalized user property;
+- domain assumptions;
+- resolved anchor assumptions;
+- model assumptions;
+- optional explicitly supplied internal assumptions;
+- universal-refutation or existential-witness semantics;
+- source and lowering provenance.
 
-- normalized user-property formula `P`;
-- domain assumptions `Γdomain`;
-- model assumptions `Γmodel`;
-- neighborhood or future semantic assumptions;
-- quantifier verification semantics;
-- source/provenance metadata.
+Every assumption is an `AssumptionIR2` with a source, NNF formula, optional
+description, and metadata.
 
----
+## Composition
 
-## Source Separation
-
-Every assumption retains a source tag, at least:
-
-```text
-DOMAIN
-MODEL
-NEIGHBORHOOD
-SEMANTIC
-USER
-```
-
-Source separation is required before and after composition for diagnostics, traces and future unsat-core mapping.
-
----
-
-## Universal Composition
-
-For:
-
-```toetra
-forall x0 with domain(...) => P
-```
-
-universal proof by refutation builds:
+Universal:
 
 ```text
-Γdomain(x0)
-AND Γmodel(x0, target)
-AND NOT P(x0, target)
+Γdomain ∧ Γanchor ∧ Γmodel ∧ ¬P
 ```
 
-Expected interpretation:
-
-| Solver outcome | Toetra meaning |
+| Backend outcome | Toetra meaning |
 |---|---|
-| UNSAT | Universal property proved over the admissible domain. |
-| SAT | Counterexample found. |
-| UNKNOWN | Property not proved and no reliable counterexample conclusion. |
+| UNSAT | `PROVED`, subject to compatibility policy |
+| SAT | `COUNTEREXAMPLE` |
+| UNKNOWN/limit | `UNKNOWN` |
 
----
-
-## Existential Composition
-
-For:
-
-```toetra
-exists x0 with domain(...) => P
-```
-
-witness search builds:
+Existential:
 
 ```text
-Γdomain(x0)
-AND Γmodel(x0, target)
-AND P(x0, target)
+Γdomain ∧ Γanchor ∧ Γmodel ∧ P
 ```
 
-Expected interpretation:
-
-| Solver outcome | Toetra meaning |
+| Backend outcome | Toetra meaning |
 |---|---|
-| SAT | Witness found; existential request satisfied. |
-| UNSAT | No admissible witness exists. |
-| UNKNOWN | Existence remains undecided. |
+| SAT | `WITNESS`, subject to compatibility policy |
+| UNSAT | `NO_WITNESS` |
+| UNKNOWN/limit | `UNKNOWN` |
 
-A runner/result model must use semantics-appropriate labels. `SAT` is not always a counterexample.
+## Required separation
 
----
+The completed task must retain:
 
-## Domain Composition
+- normalized property as `spec_formula`;
+- assumptions as typed individual entries;
+- composed executable `verification_condition`;
+- `VerificationSemantics`;
+- source property before model-semantic lowering;
+- assumption and lowering provenance.
 
-Within `Γdomain`:
+## Domain and model rules
 
-- interval lower and upper restrictions are conjoined;
-- finite-set members are disjoined;
-- distinct domain entries are conjoined;
-- arithmetic bound expressions remain scalar expressions;
-- each generated component retains domain-entry provenance.
+- interval lower/upper predicates are conjoined;
+- finite-set members are disjoined and entries are conjoined;
+- open/closed boundaries are preserved;
+- encoders emit exactly one model equation per requested evaluation;
+- assumptions never stand in for backend capability checks.
 
----
+## Vacuity
 
-## Vacuity and Empty-Domain Diagnostics
+An inconsistent `Γ` makes the admissible set empty. The backend runner may issue
+a separate assumptions-only diagnostic within the total execution budget.
+Universal UNSAT caused by inconsistent assumptions must not be described as an
+ordinary non-vacuous proof without that evidence.
 
-An unsatisfiable `Γdomain ∧ Γmodel` can make a universal verification condition unsatisfiable independently of `P`.
+## Failures
 
-Therefore the target aggregation/runtime contract should distinguish:
-
-```text
-property proved over a non-empty admissible set
-```
-
-from:
-
-```text
-verification condition unsatisfiable because the admissible set is empty
-```
-
-At minimum, Toetra should be able to emit a vacuity warning when emptiness is detected. The exact strategy may be a pre-check, diagnostic query or unsat-core analysis.
-
-For existential semantics, an empty admissible set directly means no witness exists.
-
----
-
-## Provenance Invariant
-
-The aggregated condition keeps a trace from every generated atom to:
-
-- source property;
-- source domain entry or model constraint;
-- original scalar expression;
-- normalization/negation step;
-- final backend expression where possible.
-
-Logical grouping may change, but provenance must not be discarded.
-
----
-
-## Aggregation-Owned Failures
-
-Aggregation rejects:
-
-- missing quantifier verification semantics;
-- missing required model assumptions;
-- malformed assumption source tags;
-- assumptions referring to entities absent from the scope;
-- property/domain/model formulas whose scalar requirements conflict internally;
-- a composition path that applies universal negation to existential semantics.
-
-Backend support is checked later unless aggregation itself cannot represent the formula.
+Composition rejects invalid semantics, malformed assumption sources, wrong point
+identities, or a condition that fails IR2 validation. Backend incompatibility is
+owned by routing.

@@ -1,39 +1,27 @@
-# Contracts Overview
+# Contracts overview
 
-> Status: P0 / Active architecture baseline  
-> Scope: Toetra artifact boundaries and verification contracts
-> Implementation: Mixed — implemented, stabilizing and target contracts  
-> Audience: maintainers, contributors, backend authors and Miova campaign authors
+> **Status:** Active contract index for `1.0.0rc3`
+>
+> **Scope:** compiler, model, IR, backend, evidence, and release boundaries
 
-## Purpose
+A contract states what a producer guarantees, what a consumer may rely on, what
+must be preserved, and which layer owns rejection.
 
-Toetra is organized as a sequence of explicit artifact transformations.
-
-A contract answers:
-
-```text
-What must be true before this transformation?
-What must be preserved by it?
-What may the next layer rely on?
-Which layer owns each rejection?
-```
-
-Contracts prevent the compiler from becoming a chain of ad-hoc conversions and make documentation-first changes executable as testable obligations.
-
----
-
-## Contracted Pipeline
+## Contracted pipeline
 
 ```text
 .toetra source
 → CST
-→ AST
-→ SemanticValidatedAST
-→ IR1
-→ IR2 normal forms + assumptions
-→ Aggregated verification condition
-→ BackendQuery
+→ ProgramNode AST
+→ semantically validated AST state
+→ VerificationTask IR1
+→ model-semantic lowering
+→ NNF
+→ VerificationTaskIR2 + assumptions
+→ BackendRoute
+→ backend-private translation
 → VerificationResult
+→ VerificationReport / replay
 ```
 
 ModelBridge contributes:
@@ -41,158 +29,79 @@ ModelBridge contributes:
 ```text
 model artifact
 → ModelSchema
-→ model assumptions
-→ aggregated verification condition
+→ semantic profile + model encoder
+→ model AssumptionIR2 values
 ```
 
----
+The [compiler pipeline contract](compiler-pipeline.md) defines the complete
+artifact progression.
 
-## Language-Evolution Contract
+## Contract categories
 
-The normative cross-layer contract for explicit quantifiers, typed domains and scalar expressions is:
-
-```text
-contracts/quantified-domain-scalar-expressions.md
-```
-
-It consolidates ADR-0013, ADR-0014 and ADR-0015 into boundary-level obligations.
-
-## Point-Binding and Evaluation Contract
-
-The normative target contract for anchors, ordered and nested binders, point-indexed model evaluations, local sugar, multi-point evidence and replay is:
-
-```text
-contracts/point-binding-and-evaluation.md
-```
-
-It operationalizes ADR-0017 across the complete compiler, ModelBridge, backend and runtime pipeline. Until implementation patches land, it is an accepted target contract rather than a claim about current behavior.
-
----
-
-## Model Output and Classification Contracts
-
-The implemented Patch 21 public contracts are:
-
-- [Model Output Observables](model-output-observables.md), separating output ports,
-  model evaluations, public observables, and internal quantities;
-- [Model Semantic Lowering](model-semantic-lowering.md), defining the only boundary
-  where a declarative observable may become model-family-specific constraints;
-- [Initial Binary Classification Profile](binary-classification-profile.md),
-  freezing the first logistic binary route and its decision boundary.
-- [Model Output Reporting and Replay](output-reporting-and-replay.md),
-  preserving source intent, formal reconstruction, observer-based concrete replay,
-  and the current JSON v6 evidence contract.
-
-These contracts are public in `1.0.0rc2` for the direct fitted binary sklearn
-`LogisticRegression` route. They do not generalize support to other classifiers,
-wrappers, thresholds, frameworks, or backends.
-
----
-
-## Numeric Compatibility Contract
-
-The backend-neutral contract for framework/model profiles, ModelBridge encoders, backend numeric profiles, deterministic rule resolution and permitted conclusions is:
-
-- [Numeric Compatibility Registry](numeric-compatibility-registry.md)
-- [Numeric Compatibility Reporting](numeric-compatibility-reporting.md)
-- [Generated Numeric Compatibility Matrices](../generated/numeric-compatibility-matrices.md)
-
-Together they operationalize ADR-0018 without making sklearn or Z3 the architectural abstraction.
-
----
-
-## Verification Provenance Contract
-
-The [Verification Provenance Contract](verification-provenance.md) defines content-addressed artifact evidence, completeness, software/compiler identity and the five fingerprints exported by JSON schema v6.
-
-## Public V1 Contract
-
-The [Public V1 Contract](public-v1-contract.md) freezes the supported Python facade, executable framework/model/backend profile, JSON v6 compatibility rules, result semantics, license alignment and release gates for the Toetra 1.x line.
-
-## Contract Categories
-
-| Category | Main documents | Purpose |
+| Category | Main contracts | Purpose |
 |---|---|---|
-| Syntax | `source-to-cst`, `cst-to-ast`, `ast-contract` | Preserve legal syntax as typed domain objects. |
-| Semantics | `ast-to-semantic`, `schema-to-semantic`, `model-output-observables`, `model-semantic-lowering` | Resolve binding, typed observables, scopes and model meaning. |
-| Logical IR | `semantic-to-ir1`, `ir1-to-ir2` | Preserve meaning while normalizing logic. |
-| Composition | `assertion-aggregation`, `model-constraints`, `binary-classification-profile` | Build the complete verification condition under an explicit model profile. |
-| Backend | `ir-to-backend`, `lowering-minimization` | Check capabilities and produce solver artifacts. |
-| Cross-cutting | `errors`, `type-normalization`, `mutation-boundaries` | Stabilize diagnostics, types and validation campaigns. |
+| Syntax | [source to CST](source-to-cst.md), [CST to AST](cst-to-ast.md), [AST](ast-contract.md) | preserve accepted source as typed structure |
+| Semantics | [AST to semantic](ast-to-semantic.md), [schema to semantic](schema-to-semantic.md), [type normalization](type-normalization.md) | resolve bindings, points, types, and compatibility |
+| Declarative model outputs | [output observables](model-output-observables.md), [model semantic lowering](model-semantic-lowering.md), [binary profile](binary-classification-profile.md) | separate public intent from internal model quantities |
+| Logical IR | [semantic to IR1](semantic-to-ir1.md), [IR1 to IR2](ir1-to-ir2.md), [assumption composition](assertion-aggregation.md) | preserve meaning while normalizing and building the verification condition |
+| ModelBridge | [model to schema](model-to-schema.md), [model constraints](model-constraints.md) | normalize model metadata and encode requested model equations |
+| Numeric/backend | [numeric registry](numeric-compatibility-registry.md), [IR to backend](ir-to-backend.md), [backend execution](backend-execution-contract.md) | qualify and execute a sound backend route |
+| Evidence | [reporting and replay](output-reporting-and-replay.md), [provenance](verification-provenance.md) | retain source meaning, evidence, fingerprints, and concrete observations |
+| Product/release | [public V1](public-v1-contract.md), [repository](repository-contract.md), [release engineering](release-engineering.md) | freeze supported facade, layout, and artifacts |
 
----
+## Implemented versus target contracts
 
-## Required Contract Sections
-
-Every boundary contract should state:
-
-- purpose;
-- input and preconditions;
-- output and postconditions;
-- information-preservation requirements;
-- invariants;
-- non-goals;
-- failure ownership;
-- current implementation gap when relevant;
-- mutation/testing hooks.
-
----
-
-## Preservation Principle
-
-Every transformation must preserve user intent until a documented semantic rewrite occurs.
-
-In particular:
-
-- quantified identifiers are never replaced silently;
-- interval boundary kinds are never reduced to ambiguous booleans;
-- finite sets are never confused with intervals;
-- scalar expressions are never flattened to text;
-- unsupported arithmetic is never approximated silently;
-- domain assumptions retain provenance;
-- `forall` and `exists` never share the same result interpretation accidentally.
-
----
-
-## Current and Target Labels
+Every contract carries a status. Use these terms consistently:
 
 | Label | Meaning |
 |---|---|
-| Implemented | Present and exercised in the current codebase. |
-| Stabilizing | Present but still gaining stricter contracts or diagnostics. |
-| Accepted target | Semantics are decided; implementation may still be pending. |
-| Deferred | Deliberately outside the current implementation scope. |
+| Implemented and accepted | current code and tests exercise the boundary |
+| Stabilizing | boundary exists; non-public internal details may still improve |
+| Accepted target | decision is normative for future work but not current support |
+| Deferred | intentionally outside the V1 route |
+| Superseded | retained only as architectural history |
 
-A target contract is authoritative for planned changes but must not be described as already implemented.
+An accepted target cannot be cited as evidence that a route executes today. The
+[public V1 profile](../public-v1-profile.md) remains authoritative for complete
+end-to-end support.
 
----
+## Preservation principles
 
-## Relationship with Miova
+Across every implemented boundary:
 
-Miova is external to normal verification execution.
+- quantified and point identities remain explicit;
+- interval boundary kinds and finite-set meaning are preserved;
+- scalar expressions are typed rather than flattened to text;
+- model-dependent observables are rewritten only by the semantic-lowering
+  boundary;
+- assumptions remain distinguishable from the source property;
+- unsupported arithmetic or numeric meaning is rejected, not approximated
+  silently;
+- `forall` and `exists` use distinct condition/result semantics;
+- backend-native objects appear only after routing;
+- reports retain source intent even when canonical constraints differ.
 
-It may challenge each artifact boundary and assert:
+## Conceptual versus runtime names
 
-```text
-valid mutation   → accepted and preserved
-invalid mutation → rejected at the owning boundary
-wrong-boundary rejection → contract failure
-silent reinterpretation  → contract failure
-```
+Early contracts and ADRs used design labels such as `SemanticValidatedAST`,
+`AggregatedAssertionSet`, `LoweredQuery`, or `BackendQuery`. In the as-built
+pipeline these correspond respectively to:
 
-## Specification Constant Contract
+| Design label | Implemented representation |
+|---|---|
+| semantic AST | validated `ProgramNode` state plus semantic context |
+| aggregated assertion set | assumptions and verification condition inside `VerificationTaskIR2` |
+| lowered query | model-semantically lowered/normalized task |
+| backend query | adapter-private translation such as `Z3Translation` |
 
-The cross-layer rules for immutable user declarations and bare-name resolution are defined in:
+Current contributor documentation must use the implemented representation when
+describing code.
 
-- [Specification Constants Contract](specification-constants.md)
+## Cross-cutting contracts
 
-This contract is authoritative for AST shape, semantic lookup order, type preservation, provenance and backend treatment.
-
-
-## Backend execution
-
-The [Backend Execution Contract](backend-execution-contract.md) defines portable timeout, resource, cancellation, deterministic execution and termination evidence for every backend adapter.
-
-## Release artifacts
-
-See [Release engineering contract](release-engineering.md).
+- [Specification constants](specification-constants.md)
+- [Point binding and evaluation](point-binding-and-evaluation.md)
+- [Quantified domains and scalar expressions](quantified-domain-scalar-expressions.md)
+- [Errors](errors.md)
+- [Mutation boundaries](mutation-boundaries.md)
+- [Generated numeric compatibility matrices](../generated/numeric-compatibility-matrices.md)
