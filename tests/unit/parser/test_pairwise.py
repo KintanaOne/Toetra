@@ -2,6 +2,8 @@
 
 import pytest
 
+from toetra._compiler.parser.errors import ParserError
+
 from tests.fixtures.properties_samples import (
     INVALID_PAIRWISE_MALFORMED_ABSTRACTOR,
     INVALID_PAIRWISE_MALFORMED_NEIGHBORHOOD,
@@ -101,5 +103,5 @@ INVALID_CASES = [
 @pytest.mark.parametrize("code", INVALID_CASES)
 def test_pairwise_invalid(code):
 
-    with pytest.raises(Exception):
+    with pytest.raises(ParserError):
         parse(code)

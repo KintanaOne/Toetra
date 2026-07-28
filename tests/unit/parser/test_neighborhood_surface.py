@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import pytest
-from lark.exceptions import UnexpectedInput
+from toetra._compiler.parser.errors import ParserError
 from lark import Token
 from toetra._compiler.parser.parser import parse_toetra_code
 from tests.support.parser_points import (
@@ -70,7 +70,7 @@ def test_par_nbh_001_natural_membership_preserves_all_arguments() -> None:
 def test_invalid_natural_neighborhood_surface_is_rejected(
     restriction: str,
 ) -> None:
-    with pytest.raises(UnexpectedInput):
+    with pytest.raises(ParserError):
         parse_toetra_code(
             program(
                 declarations="anchor x0 := { age: 42 }",

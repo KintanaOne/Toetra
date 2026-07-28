@@ -4,7 +4,7 @@ from collections.abc import Callable
 
 import pytest
 from lark import Token, Tree
-from lark.exceptions import UnexpectedInput
+from toetra._compiler.parser.errors import ParserError
 
 from toetra._compiler.parser.parser import parse_toetra_code
 
@@ -149,5 +149,5 @@ def test_quantifier_requires_and_preserves_explicit_identifier(
     ],
 )
 def test_quantifier_without_identifier_is_rejected(source: str) -> None:
-    with pytest.raises(UnexpectedInput):
+    with pytest.raises(ParserError):
         parse_toetra_code(source)

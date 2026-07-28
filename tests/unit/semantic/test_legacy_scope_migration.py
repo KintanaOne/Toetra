@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from toetra._compiler.parser.errors import ParserError
+from toetra._compiler.semantic.errors.errors import SemanticError
 from toetra._compiler.semantic.rules.migration import (
     LEGACY_AT_MESSAGE,
     LEGACY_CHECK_AT_MESSAGE,
@@ -20,7 +20,7 @@ def test_legacy_undeclared_check_at_has_frozen_migration_diagnostic() -> None:
         check_at x0 => target <= 7
     """
 
-    with pytest.raises(ParserError) as caught:
+    with pytest.raises(SemanticError) as caught:
         build_and_validate(source)
 
     assert LEGACY_CHECK_AT_MESSAGE.format(name="x0") in str(caught.value)
@@ -35,7 +35,7 @@ def test_legacy_at_has_frozen_migration_diagnostic() -> None:
         at x0 in neighborhood(L2, eps=0.1) => target <= 7
     """
 
-    with pytest.raises(ParserError) as caught:
+    with pytest.raises(SemanticError) as caught:
         build_and_validate(source)
 
     assert LEGACY_AT_MESSAGE.format(name="x0") in str(caught.value)
@@ -50,7 +50,7 @@ def test_legacy_pairwise_has_frozen_migration_diagnostic() -> None:
         x ~ x' in neighborhood(L2, eps=0.1) => x.a <= 1
     """
 
-    with pytest.raises(ParserError) as caught:
+    with pytest.raises(SemanticError) as caught:
         build_and_validate(source)
 
     assert LEGACY_PAIRWISE_MESSAGE.format(pair="x ~ x'") in str(caught.value)

@@ -6,7 +6,7 @@ from toetra._compiler.ir.ir1.nodes import ModelEvaluationIR, ProblemIR
 from toetra._compiler.ir.ir1.run_ir1 import run_ir
 from toetra._language.vocabulary.functions import EnumFunction
 from toetra._language.vocabulary.problems import EnumProblem
-from toetra._compiler.parser.errors import ParserError
+from toetra._compiler.semantic.errors.errors import SemanticError
 from toetra._compiler.semantic.types.enums import EnumDataType
 from toetra._models.detector.model_framework import EnumModelFramework
 from toetra._models.schema.feature_schema import FeatureSchema
@@ -48,7 +48,7 @@ def test_pair_bc_004_sugar_rejects_contexts_without_exactly_two_points(
     scope: str, count: int
 ) -> None:
     with pytest.raises(
-        ParserError,
+        SemanticError,
         match=rf"requires exactly two visible model-input points, got {count}",
     ):
         run_ir(_source(scope), model_schema=make_binary_logistic_schema())
@@ -67,5 +67,5 @@ def test_pair_bc_004_sugar_rejects_non_classification_output_schema() -> None:
         task="regression",
         output_schema=RegressionOutputSchema(value_dtype=EnumDataType.FLOAT),
     )
-    with pytest.raises(ParserError, match="requires a classification output schema"):
+    with pytest.raises(SemanticError, match="requires a classification output schema"):
         run_ir(_source("forall left, right"), model_schema=schema)

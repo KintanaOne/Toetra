@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from toetra._compiler.parser.errors import ParserError
+from toetra._compiler.semantic.errors.errors import SemanticError
 from toetra._compiler.semantic.core.validator import ToetraValidator
 from toetra._compiler.semantic.runtime.tracer import ValidationTracer
 from tests.support.semantic_anchors import build_program
@@ -10,7 +10,7 @@ from tests.support.semantic_anchors import build_program
 
 def _assert_rejected(source: str, message: str) -> None:
     program = build_program(source)
-    with pytest.raises(ParserError, match=message):
+    with pytest.raises(SemanticError, match=message):
         ToetraValidator().validate(
             program,
             tracer=ValidationTracer(enabled=False),

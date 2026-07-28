@@ -2,6 +2,8 @@
 
 import pytest
 
+from toetra._compiler.parser.errors import ParserError
+
 from tests.fixtures.program_samples import (
     INVALID_HEADER_MISSING_BOTH,
     INVALID_HEADER_MISSING_MODEL,
@@ -64,5 +66,5 @@ INVALID_CASES = [
 @pytest.mark.parametrize("code", INVALID_CASES)
 def test_header_invalid(code):
 
-    with pytest.raises(Exception):
+    with pytest.raises(ParserError):
         parse(code)

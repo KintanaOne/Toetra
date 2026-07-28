@@ -5,7 +5,7 @@ import pytest
 from toetra._compiler.ast.nodes.assertion import ComparisonNode
 from toetra._compiler.ast.nodes.expressions import CheckAtExprNode
 from toetra._compiler.ast.nodes.primitives import TargetRefNode
-from toetra._compiler.parser.errors import ParserError
+from toetra._compiler.semantic.errors.errors import SemanticError
 from toetra._compiler.semantic.context.points import PointEnvironment
 from toetra._compiler.semantic.core.lhs import LHSValidator
 from toetra._compiler.semantic.symbols.point import PointBindingKind, PointSymbol
@@ -39,7 +39,7 @@ def test_low_chk_001_declared_anchor_sets_default_without_quantifier() -> None:
 
 
 def test_low_chk_002_unknown_anchor_is_rejected_when_anchors_are_declared() -> None:
-    with pytest.raises(ParserError, match="unknown anchor 'missing'"):
+    with pytest.raises(SemanticError, match="unknown anchor 'missing'"):
         parse_and_validate(f"""
             model := "model.joblib"
             target := score

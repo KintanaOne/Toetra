@@ -5,7 +5,7 @@ import pytest
 from toetra._compiler.ast.nodes.assertion import ComparisonNode
 from toetra._compiler.ast.nodes.primitives import BinaryArithmeticNode, TargetRefNode
 from toetra._compiler.builder.program import parse_program
-from toetra._compiler.parser.errors import ParserError
+from toetra._compiler.semantic.errors.errors import SemanticError
 from toetra._compiler.parser.parser import parse_toetra_code
 from toetra._compiler.semantic.core.validator import ToetraValidator
 from toetra._compiler.semantic.runtime.tracer import ValidationTracer
@@ -106,7 +106,7 @@ def test_literal_division_by_zero_is_rejected() -> None:
         forall x0 => x0.age / (1 - 1) <= target
         """))
 
-    with pytest.raises(ParserError, match="Literal division by zero"):
+    with pytest.raises(SemanticError, match="Literal division by zero"):
         ToetraValidator().validate(
             program,
             tracer=ValidationTracer(enabled=False),
@@ -123,7 +123,7 @@ def test_non_numeric_arithmetic_is_rejected() -> None:
         forall x0 => x0.region + 1 <= target
         """))
 
-    with pytest.raises(ParserError, match="must be numeric, got string"):
+    with pytest.raises(SemanticError, match="must be numeric, got string"):
         ToetraValidator().validate(
             program,
             tracer=ValidationTracer(enabled=False),
@@ -140,7 +140,7 @@ def test_incompatible_equality_types_are_rejected() -> None:
         forall x0 => x0.active == 1
         """))
 
-    with pytest.raises(ParserError, match="compatible operands"):
+    with pytest.raises(SemanticError, match="compatible operands"):
         ToetraValidator().validate(
             program,
             tracer=ValidationTracer(enabled=False),

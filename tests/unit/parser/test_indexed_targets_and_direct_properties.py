@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import pytest
-from lark.exceptions import UnexpectedInput
+from toetra._compiler.parser.errors import ParserError
 from toetra._compiler.parser.parser import parse_toetra_code
 from tests.support.parser_points import (
     program,
@@ -35,7 +35,7 @@ def test_par_tgt_002_unindexed_target_remains_distinct() -> None:
     ],
 )
 def test_invalid_target_index_surface_is_rejected(target: str) -> None:
-    with pytest.raises(UnexpectedInput):
+    with pytest.raises(ParserError):
         parse_toetra_code(program(body=f"forall x0 => {target} <= 7"))
 
 

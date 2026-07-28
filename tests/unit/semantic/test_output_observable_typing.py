@@ -8,7 +8,7 @@ from toetra._compiler.ast.nodes.outputs import (
     PredictedLabelObservableNode,
 )
 from toetra._compiler.builder.program import parse_program
-from toetra._compiler.parser.errors import ParserError
+from toetra._compiler.semantic.errors.errors import SemanticError
 from toetra._compiler.parser.parser import parse_toetra_code
 from toetra._compiler.semantic.core.validator import ToetraValidator
 from toetra._compiler.semantic.runtime.tracer import ValidationTracer
@@ -117,7 +117,7 @@ def test_sem_obs_006_rejects_arithmetic_and_ordering_on_labels(
     message: str,
     schema: ModelSchema,
 ) -> None:
-    with pytest.raises(ParserError, match=message):
+    with pytest.raises(SemanticError, match=message):
         ToetraValidator().validate(
             _program(assertion),
             tracer=ValidationTracer(enabled=False),

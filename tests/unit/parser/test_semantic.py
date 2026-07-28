@@ -12,6 +12,7 @@ from toetra._compiler.ast.nodes.expressions import (
 )
 from toetra._compiler.ast.nodes.primitives import NameRefNode
 from toetra._compiler.builder.program import parse_program
+from toetra._compiler.parser.errors import ParserError
 from toetra._language.vocabulary.backends import EnumBackend
 from toetra._language.vocabulary.properties import EnumProperty
 from toetra._compiler.parser.parser import parse_toetra_code
@@ -250,11 +251,11 @@ def test_program_with_domain_and_neighborhood():
 
 def test_invalid_multiple_expr():
 
-    with pytest.raises(Exception):
+    with pytest.raises(ParserError):
         parse(INVALID_BODY_MULTIPLE_EXPRESSION)
 
 
 def test_invalid_missing_expr():
 
-    with pytest.raises(Exception):
+    with pytest.raises(ParserError):
         parse(INVALID_BODY_MISSING_EXPRESSION)

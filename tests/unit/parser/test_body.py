@@ -2,6 +2,8 @@
 
 import pytest
 
+from toetra._compiler.parser.errors import ParserError
+
 from tests.fixtures.program_samples import (
     INVALID_BODY_EMPTY,
     INVALID_BODY_INVALID_ASSERTION,
@@ -76,5 +78,5 @@ INVALID_CASES = [
 @pytest.mark.parametrize("code", INVALID_CASES)
 def test_body_invalid(code):
 
-    with pytest.raises(Exception):
+    with pytest.raises(ParserError):
         parse(code)

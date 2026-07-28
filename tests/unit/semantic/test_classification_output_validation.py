@@ -5,7 +5,7 @@ import pytest
 from toetra._compiler.ast.nodes.assertion import ComparisonNode
 from toetra._compiler.ast.nodes.primitives import TargetRefNode
 from toetra._compiler.builder.program import parse_program
-from toetra._compiler.parser.errors import ParserError
+from toetra._compiler.semantic.errors.errors import SemanticError
 from toetra._compiler.parser.parser import parse_toetra_code
 from toetra._compiler.semantic.core.validator import ToetraValidator
 from toetra._compiler.semantic.runtime.tracer import ValidationTracer
@@ -56,7 +56,7 @@ def _program(assertion: str, *, target: str = "MyTarget"):
 
 
 def test_sem_obs_003_rejects_unknown_probability_label() -> None:
-    with pytest.raises(ParserError, match="Unknown classification label 'unknown'"):
+    with pytest.raises(SemanticError, match="Unknown classification label 'unknown'"):
         ToetraValidator().validate(
             _program('target[x0].probability("unknown") >= 0.8'),
             tracer=ValidationTracer(enabled=False),
@@ -66,7 +66,7 @@ def test_sem_obs_003_rejects_unknown_probability_label() -> None:
 
 def test_sem_obs_003_rejects_wrong_typed_probability_label() -> None:
     with pytest.raises(
-        ParserError,
+        SemanticError,
         match="Probability label has incompatible type: expected string, got int",
     ):
         ToetraValidator().validate(
@@ -89,7 +89,7 @@ def test_sem_obs_003_uses_type_safe_label_identity() -> None:
             probability_available=True,
         ),
     )
-    with pytest.raises(ParserError, match="expected bool, got int"):
+    with pytest.raises(SemanticError, match="expected bool, got int"):
         ToetraValidator().validate(
             _program("target[x0].probability(1) >= 0.8"),
             tracer=ValidationTracer(enabled=False),
@@ -99,7 +99,7 @@ def test_sem_obs_003_uses_type_safe_label_identity() -> None:
 
 def test_sem_obs_004_rejects_bare_classification_target_as_ambiguous() -> None:
     with pytest.raises(
-        ParserError,
+        SemanticError,
         match="classification output requires an explicit observable",
     ):
         ToetraValidator().validate(
@@ -143,7 +143,7 @@ def test_sem_obs_007_rejects_classification_observables_on_regression(
     requested: str,
 ) -> None:
     with pytest.raises(
-        ParserError,
+        SemanticError,
         match=rf"Cannot access {requested} on a regression model output",
     ):
         ToetraValidator().validate(
@@ -154,7 +154,7 @@ def test_sem_obs_007_rejects_classification_observables_on_regression(
 
 
 def test_probability_observable_requires_model_probability_capability() -> None:
-    with pytest.raises(ParserError, match="does not expose class probabilities"):
+    with pytest.raises(SemanticError, match="does not expose class probabilities"):
         ToetraValidator().validate(
             _program('target[x0].probability("approved") >= 0.8'),
             tracer=ValidationTracer(enabled=False),
@@ -164,7 +164,7 @@ def test_probability_observable_requires_model_probability_capability() -> None:
 
 def test_output_reference_rejects_header_schema_name_mismatch() -> None:
     with pytest.raises(
-        ParserError,
+        SemanticError,
         match="Declared target does not match the selected model output",
     ):
         ToetraValidator().validate(

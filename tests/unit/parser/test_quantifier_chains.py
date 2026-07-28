@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import pytest
-from lark.exceptions import UnexpectedInput
+from toetra._compiler.parser.errors import ParserError
 from toetra._compiler.parser.parser import parse_toetra_code
 from tests.support.parser_points import (
     direct_trees,
@@ -86,7 +86,7 @@ def test_par_qp_004_indentation_does_not_change_cst_structure() -> None:
     ],
 )
 def test_invalid_quantifier_list_surface_is_rejected(body: str) -> None:
-    with pytest.raises(UnexpectedInput):
+    with pytest.raises(ParserError):
         parse_toetra_code(program(body=body))
 
 
@@ -131,7 +131,7 @@ def test_par_qp_009_where_after_domain_parses() -> None:
 
 
 def test_par_qp_010_where_before_domain_is_rejected() -> None:
-    with pytest.raises(UnexpectedInput):
+    with pytest.raises(ParserError):
         parse_toetra_code(program(body="""
                 forall x0, x1
                 where x1.age >= x0.age

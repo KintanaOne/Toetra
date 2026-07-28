@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 from lark import Tree
-from lark.exceptions import UnexpectedInput
+from toetra._compiler.parser.errors import ParserError
 
 from toetra._compiler.parser.parser import parse_toetra_code
 from tests.support.parser_points import program, single_tree, token_text
@@ -74,7 +74,7 @@ def test_par_obs_003_parses_unindexed_observables(
     ],
 )
 def test_par_obs_004_rejects_invalid_probability_arguments(surface: str) -> None:
-    with pytest.raises(UnexpectedInput):
+    with pytest.raises(ParserError):
         parse_toetra_code(program(body=f"forall x0 => {surface} >= 0.8"))
 
 
@@ -95,5 +95,5 @@ def test_par_obs_004_rejects_invalid_probability_arguments(surface: str) -> None
     ],
 )
 def test_par_obs_005_rejects_internal_model_surfaces(surface: str) -> None:
-    with pytest.raises(UnexpectedInput):
+    with pytest.raises(ParserError):
         parse_toetra_code(program(body=f"forall x0 => {surface} == 0"))

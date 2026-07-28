@@ -2,7 +2,7 @@ from hypothesis import given
 import pytest
 
 from toetra._compiler.builder.program import parse_program
-from toetra._compiler.parser.errors import ParserError
+from toetra._compiler.semantic.errors.errors import SemanticError
 from toetra._compiler.parser.parser import parse_toetra_code
 from toetra._compiler.semantic.core.validator import ToetraValidator
 from toetra._compiler.semantic.runtime.tracer import ValidationTracer
@@ -13,7 +13,7 @@ from tests.property_based.mutations.ast.semantic import apply_semantic_mutations
 def test_semantic_mutations_invalid(program):
     """
     Property-based test ensuring that mutated semantic programs
-    eventually become invalid and raise ParserError.
+    eventually become invalid and raise SemanticError.
     """
 
     try:
@@ -30,10 +30,10 @@ def test_semantic_mutations_invalid(program):
         validator = ToetraValidator()
         tracer = ValidationTracer(enabled=False)
 
-        with pytest.raises(ParserError):
+        with pytest.raises(SemanticError):
             validator.validate(mutated, tracer=tracer)
 
-    except ParserError:
+    except SemanticError:
         # If parsing already fails, we skip the case
         # because invalid input is outside mutation scope
         pytest.skip("Invalid generated program skipped")

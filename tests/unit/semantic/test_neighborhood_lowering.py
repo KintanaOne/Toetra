@@ -7,7 +7,7 @@ import pytest
 from toetra._compiler.ast.nodes.assertion import AndNode, ComparisonNode
 from toetra._compiler.ast.nodes.neighborhood import NeighborhoodMembershipNode
 from toetra._compiler.ast.nodes.primitives import ConstantNode
-from toetra._compiler.parser.errors import ParserError
+from toetra._compiler.semantic.errors.errors import SemanticError
 from toetra._compiler.semantic.context.context import SemanticContext
 from toetra._compiler.semantic.context.points import PointEnvironment
 from toetra._compiler.semantic.context.scope import SemanticScope
@@ -55,17 +55,17 @@ def test_low_nbh_001_linf_expands_over_every_matching_feature() -> None:
 
 
 def test_low_nbh_002_negative_epsilon_is_rejected() -> None:
-    with pytest.raises(ParserError, match="epsilon must be non-negative"):
+    with pytest.raises(SemanticError, match="epsilon must be non-negative"):
         parse_and_validate(_source(eps="-0.1"))
 
 
 def test_low_nbh_003_non_numeric_epsilon_is_rejected() -> None:
-    with pytest.raises(ParserError, match="epsilon must be a numeric constant"):
+    with pytest.raises(SemanticError, match="epsilon must be a numeric constant"):
         parse_and_validate(_source(eps='"small"'))
 
 
 def test_low_nbh_004_unsupported_metric_is_rejected() -> None:
-    with pytest.raises(ParserError, match="supported metric: Linf"):
+    with pytest.raises(SemanticError, match="supported metric: Linf"):
         parse_and_validate(_source(metric="L2"))
 
 

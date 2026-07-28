@@ -4,6 +4,11 @@
 
 ### Changed
 
+- Normalized syntax, CST-to-AST construction, and semantic validation failures
+  at `verify(...)` while preserving their distinct owning stages, source
+  locations, stable codes, remediation hints, and chained private causes.
+- Stopped relabeling semantic validation failures as parser errors and stopped
+  exposing Lark `UnexpectedInput` subclasses from the parser entry point.
 - Accepted the P26 public failure boundary: the three existing error families
   now expose stable diagnostic codes, owning stages, optional remediation and
   source context, while private causes remain available through exception
