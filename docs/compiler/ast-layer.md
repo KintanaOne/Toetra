@@ -30,7 +30,7 @@ AST
     ↓
 Semantic Validation
     ↓
-SemanticValidatedAST
+Validated AST state + semantic context
 ```
 
 The AST sits between parser-specific syntax and semantic interpretation.
@@ -130,11 +130,13 @@ Structural invariants:
 
 The AST preserves user expression structure. Numeric typing, affine classification, and capability checks belong to later layers.
 
-## AST vs SemanticValidatedAST
+## AST before and after semantic validation
 
 The AST is the builder output.
 
-The `SemanticValidatedAST` is not necessarily a separate Python class today. It is the AST after semantic validation has attached or populated semantic metadata.
+The implementation does not define a separate `SemanticValidatedAST` Python
+class. `ToetraValidator` validates and enriches the builder-produced AST and
+supporting semantic contexts in place.
 
 Conceptually:
 
@@ -144,7 +146,7 @@ AST
     + SymbolTable
     + resolved attributes
     + compatibility validation
-    = SemanticValidatedAST
+    = semantically validated AST state
 ```
 
 This distinction matters for documentation and testing.

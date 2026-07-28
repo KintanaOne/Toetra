@@ -1,37 +1,29 @@
-# Runtime Overview
+# Runtime overview
 
-> Status: High-level Z3 runtime implemented  
-> Public facade: `toetra`
-> Internal implementation: `toetra._runtime`, backend routing, execution and reporting
+> **Status:** Implemented for the public V1 routes
+>
+> **Public facade:** `toetra`
+>
+> **Internal ownership:** `toetra._runtime`, routing, reporting, and provenance
 
-## Purpose
-
-The Toetra runtime owns the user-facing execution path from a specification and
-model artifacts to backend-neutral reports.
+The runtime turns one public `verify(...)` request into a completed
+`VerificationSession`.
 
 ```text
-.toetra file or source
-→ model schema construction
-→ AST and semantic validation
-→ IR1
-→ IR2 verification tasks
-→ capability routing
-→ backend runner
-→ VerificationResult
-→ VerificationReport
-→ text / JSON
+source/path + model/schema + optional anchors/policy
+→ resolve inputs
+→ compile one IR2 task per property
+→ route and execute each task
+→ apply compatibility policies
+→ build reports and provenance
+→ return session
 ```
 
-Low-level compiler functions remain available, but a normal user should start
-with:
+## Public entry point
 
 ```python
 from toetra import verify
-```
 
-## High-Level API
-
-```python
 session = verify(
     "policy.toetra",
     model="model.joblib",
@@ -39,104 +31,95 @@ session = verify(
 )
 ```
 
-The runtime can also consume an already normalized schema:
+The runtime can consume an explicit normalized schema instead of model
+artifacts. The two metadata paths are mutually exclusive.
 
-```python
-session = verify(source, schema=model_schema)
-```
+See the complete [public API reference](../api-reference/index.md).
 
-Providing both `schema` and model artifacts is rejected because it would make
-the source of model metadata ambiguous.
+## Per-property execution
 
-When a `.toetra` path is supplied and `model` is omitted, the `model := ...`
-reference from the Toetra header is resolved relative to the specification file.
-The target name defaults to the header target and must match the resulting
-`ModelSchema`. This prevents the property and model assumptions from referring
-to different outputs.
+For each `VerificationTaskIR2`, the runtime stores one private
+`VerificationExecution` containing:
 
-## Verification Session
+- task;
+- selected `BackendRoute`;
+- backend-neutral `VerificationResult`;
+- public `VerificationReport`.
 
-`verify(...)` returns a `VerificationSession` containing one
-`VerificationExecution` per property.
+The session exposes reports and ergonomic findings rather than making those
+private compiler/backend objects part of the root API.
 
-```python
-session.reports
-session.proved
-session.counterexamples
-session.witnesses
-```
+## Runtime registries
 
-The session is also a read-only sequence:
+Two registries have distinct responsibilities:
 
-```python
-first_execution = session[0]
-for execution in session:
-    ...
-```
-
-Convenience properties support scripts and CI jobs:
-
-| Property | Meaning |
+| Registry | Responsibility |
 |---|---|
-| `is_successful` | Every property ended as `PROVED` or `WITNESS` |
-| `has_failures` | A `COUNTEREXAMPLE` or `NO_WITNESS` exists |
-| `has_unknown` | At least one backend returned `UNKNOWN` |
-| `exit_code` | `0` success, `1` failure, `2` inconclusive |
+| `BackendRegistry` | capability profiles used for routing |
+| `BackendRunnerRegistry` | concrete executors used after routing |
 
-## Output Helpers
+The default runtime registers Z3 in both. Advanced injection keywords on
+`verify(...)` support development and integration testing, but their accepted
+types remain private.
+
+## Execution policy
+
+The runtime applies one backend-neutral policy to each property. It covers:
+
+- total timeout;
+- backend work/resource limits;
+- cooperative cancellation;
+- deterministic seed;
+- adapter-specific options.
+
+Routing rejects a backend that cannot enforce a requested control. The policy
+snapshot and technical termination evidence are retained in reports.
+
+## Reports
 
 ```python
 session.print()
 text = session.to_text()
-json_text = session.to_json()
-session.write_artifacts("artifacts/", formats={"json", "html"})
+payload = session.to_json()
+paths = session.write_artifacts("artifacts", formats={"json", "html"})
 ```
 
-All output is produced by `toetra._reporting`. The runtime and backend never format
-terminal or notebook output themselves.
+All renderers consume backend-neutral reports. JSON uses the frozen
+`toetra.verification-report` schema version 6.
 
-## Runtime Registries
-
-The high-level runtime uses two separate registries:
-
-```text
-BackendRegistry
-→ capabilities used by the router
-
-BackendRunnerRegistry
-→ concrete executor used after routing
-```
-
-The default runtime registers Z3 in both. Advanced integrations can inject
-custom registries into `verify(...)` without changing the compiler or reporting
-contracts.
-
-## Current V1 Profile
-
-```text
-numeric affine properties
-+ typed input domains
-+ affine model assumptions
-→ Z3
-→ PROVED / COUNTEREXAMPLE / WITNESS / NO_WITNESS / UNKNOWN
-```
-
-## Finding and Replay Helpers
+## Findings and replay
 
 ```python
 finding = session.first_counterexample
 if finding is not None:
     replay = finding.replay()
-    replay.to_dataframe()
+    frame = replay.to_dataframe()
 ```
 
-Backend numbers are normalized before application code sees them. Input and
-output dictionaries do not expose `_model.*` or require splitting quantified
-feature names manually.
+Replay reconstructs point inputs, invokes the concrete model through a runtime
+observer, compares formal and observed outputs, and reevaluates the preserved
+original property. It is available only when the session retains the required
+model and assignment evidence.
 
-## Remaining Runtime Work
+## Status and process exit
 
-- solver timeout and resource options;
-- persistent trace identifiers;
-- multi-backend execution and comparison;
-- replay adapters for estimators without a conventional `predict(...)` method.
+The five logical statuses are `PROVED`, `COUNTEREXAMPLE`, `WITNESS`,
+`NO_WITNESS`, and `UNKNOWN`.
+
+Session exit semantics are:
+
+| Exit code | Meaning |
+|---|---|
+| `0` | every property is `PROVED` or `WITNESS` |
+| `1` | at least one `COUNTEREXAMPLE` or `NO_WITNESS` |
+| `2` | no logical failure, but at least one `UNKNOWN` |
+
+Exceptions before session completion do not produce an exit code or partial
+session.
+
+## V1 boundary
+
+The runtime is complete for the routes in the
+[public V1 profile](../public-v1-profile.md). Multi-backend comparison, remote
+execution, persistent monitoring, and autonomous orchestration remain post-V1
+directions rather than missing stages in the current request lifecycle.

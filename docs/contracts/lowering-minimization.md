@@ -1,132 +1,57 @@
-# Lowering and Minimization Contract
+# Lowering and normal-form contract
 
-> Status: P0 / Planned / Critical  
-> Scope: AggregatedAssertionSet to LoweredQuery  
-> Implementation: Not yet implemented  
-> Audience: backend authors, optimization authors, solver integration authors
+> **Status:** Implemented lowering; no generic minimizer
+>
+> **Scope:** model-semantic IR1 rewriting and IR2 formula selection
 
-## Purpose
+## Implemented transformations
 
-The Lowering and Minimization contract defines how a complete verification problem is simplified and shaped before backend encoding.
+The current pipeline implements:
 
-It answers the question:
+1. model-semantic lowering from public output observables to canonical
+   model-family constraints;
+2. NNF normalization;
+3. guarded NNF/CNF/DNF selection and conversion.
 
-```text
-How can Toetra reduce the verification problem while preserving correctness?
-```
+It does not produce a `LoweredQuery` object.
 
-This layer is where logical simplification, redundancy elimination and backend-preparation occur.
+## Model-semantic preservation
 
----
+Every observable rewrite must:
 
-## Input
+- use a registered model-family profile;
+- preserve source intent separately;
+- emit deterministic lowering evidence;
+- declare exact or conservative numeric meaning;
+- record permitted conclusions;
+- reject unsupported operators, labels, thresholds, or decision policies.
 
-```text
-AggregatedAssertionSet
-```
+Lowering that introduces Boolean structure occurs before final NNF.
 
-The input contains:
+## Normal-form preservation
 
-- user assertions;
-- semantic constraints;
-- model constraints;
-- scope/domain/neighborhood constraints;
-- origin metadata;
-- preservation metadata.
+NNF conversion eliminates implication and pushes negation to atoms while
+preserving semantics.
 
----
+CNF/DNF conversion may change structure but must preserve logical equivalence,
+atom identity, literal polarity, point identity, and provenance. Conversion
+cost is bounded; uncontrolled expansion is rejected or safely avoided according
+to the build policy.
 
-## Output
+## No generic minimization claim
 
-```text
-LoweredQuery
-```
+`1.0.0rc3` does not promise:
 
-The output is still not a backend-specific query.
+- arbitrary constant/algebraic folding;
+- subsumption or redundant-constraint elimination;
+- dead-branch pruning;
+- solver-independent query minimization;
+- backend-preparation rewrites outside an adapter.
 
-It is backend-preparable.
+Future optimizers require an explicit preservation contract and traceability.
+They are optimizations, not missing correctness steps in the supported V1 route.
 
----
+## Backend boundary
 
-## Transformation Families
-
-| Transformation | Purpose |
-|---|---|
-| Constant folding | Remove trivial boolean expressions. |
-| Duplicate elimination | Remove repeated constraints. |
-| Subsumption | Remove weaker constraints implied by stronger ones. |
-| Dead branch pruning | Remove impossible DNF cases. |
-| Clause simplification | Simplify CNF clauses. |
-| Domain pruning | Remove impossible domain alternatives. |
-| Backend-preparation rewrite | Shape expressions for supported backend capabilities. |
-
----
-
-## Preservation Policy
-
-Each transformation must record its preservation mode:
-
-| Mode | Meaning |
-|---|---|
-| Equivalent | Same truth conditions. |
-| Equisatisfiable | Same satisfiability result. |
-| Conservative | May over-approximate or under-approximate and must be explicit. |
-
-Unsafe minimization is not allowed silently.
-
----
-
-## Guarantees
-
-If lowering/minimization succeeds:
-
-- the query is simpler or better shaped for backend compilation;
-- removed constraints are traceable;
-- preservation metadata exists;
-- backend-independent semantics are still available;
-- the backend boundary may safely consume the result.
-
----
-
-## Non-Goals
-
-This layer must not:
-
-- produce final Z3/ERAN objects directly;
-- execute the backend;
-- drop constraints without trace;
-- change semantics without declaring it;
-- hide unsupported backend requirements.
-
----
-
-## Failure Modes
-
-Expected failures include:
-
-- unsupported minimization pattern;
-- conflicting constraints;
-- transformation losing semantics;
-- invalid aggregation input;
-- impossible backend-preparation rewrite;
-- unsupported preservation mode.
-
----
-
-## Miova Hooks
-
-Miova may mutate:
-
-- aggregated assertion sets;
-- simplification metadata;
-- preservation mode;
-- origin traces;
-- lowered query structures;
-- redundant or contradictory constraints.
-
-Expected outcome:
-
-```text
-Invalid minimization → lowering rejection
-Valid minimization   → BackendQuery generation may continue
-```
+The result remains `VerificationTaskIR2`. Backend-native translation occurs only
+after capability, numeric, and execution-policy qualification.

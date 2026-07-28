@@ -1,175 +1,116 @@
-# Dependencies
+# Dependency direction
 
-> Status: Stabilizing  
-> Scope: Architecture dependency map  
-> Implementation: Partially implemented  
-> V1 backend scope: Z3 only
+> **Status:** As built for `1.0.0rc3`
+>
+> **Scope:** internal package dependencies and forbidden coupling
 
-## Purpose
+Toetra uses one installed package, `toetra`, with a small public facade and
+underscored implementation packages. Dependency direction follows the data flow
+from language definitions to evidence; lower layers do not call the public
+runtime to recover information they should receive explicitly.
 
-This document maps the conceptual and technical dependencies of Toetra.
+## Package direction
 
-It answers four questions:
-
-1. Which dependencies are required for the first functional V1?
-2. Which dependencies are optional development tools?
-3. Which dependencies belong to future or post-V1 extensions?
-4. Which dependencies are external systems rather than part of Toetra itself?
-
-Dependency classification matters because Toetra is intended to remain modular. The first end-to-end path should be achievable without requiring every future backend, runtime, or orchestration capability to exist.
-
----
-
-## Dependency categories
-
-Toetra dependencies are classified into five categories.
-
-| Category | Meaning |
-|---|---|
-| Core V1 | Required to run the minimal end-to-end path. |
-| Stabilizing | Already present or partially present, but still being hardened. |
-| Development | Used for tests, docs, validation, or local development. |
-| Optional | Useful when a feature or framework is available, but not mandatory. |
-| Post-V1 | Explicitly outside the first functional V1. |
-
----
-
-## Core V1 dependencies
-
-The first functional Toetra V1 should require only the components needed for a Z3-backed end-to-end verification path.
-
-| Dependency | Role | Status |
-|---|---|---|
-| Python | Main implementation language. | Core V1 |
-| Lark | Parses `.toetra` source into a CST. | Core V1 |
-| Z3 / z3-solver | Minimal verification backend for V1. | Core V1 |
-| dataclasses / typing | Core data structures for AST, IR, schemas, and contracts. | Core V1 |
-
-The V1 dependency target is intentionally narrow. Toetra should not require ERAN, PyTorch, TensorFlow, or advanced verification engines to prove the first end-to-end path.
-
----
-
-## Compiler dependencies
-
-The compiler pipeline depends on a strict chain of internal artifacts.
-
-```text
-.toetra source
-→ CST
-→ AST
-→ SemanticValidatedAST
-→ IR1-NNF
-→ IR2-CNF/DNF
-→ AggregatedAssertionSet
-→ LoweredQuery
-→ BackendQuery
+```mermaid
+flowchart TD
+    L["_language"] --> C["_compiler"]
+    C --> M["_models semantics / schema"]
+    M --> I["_compiler IR2"]
+    I --> K["_compatibility"]
+    K --> B["_backends"]
+    B --> R["_runtime"]
+    R --> E["_reporting / _provenance"]
 ```
 
-| Internal dependency | Depends on | Produces |
-|---|---|---|
-| Parser | Grammar | CST |
-| Builder | CST + AST node definitions | AST |
-| Semantic Validator | AST + semantic rules | SemanticValidatedAST |
-| IR1 Translator | SemanticValidatedAST | IR1 verification tasks |
-| IR2 Normalizer | IR1 | CNF/DNF-oriented logical forms |
-| Assertion Aggregator | IR2 + semantic/model constraints | AggregatedAssertionSet |
-| Lowering / Minimization | Aggregated assertions + backend capabilities | LoweredQuery |
-| Backend Boundary | LoweredQuery + backend target | BackendQuery |
+The diagram is a responsibility view, not a claim that every package imports
+only the node immediately above it. Shared typed artifacts cross explicit
+boundaries.
 
----
+## Allowed knowledge
 
-## ModelBridge dependencies
-
-ModelBridge is responsible for model loading, framework detection, introspection, and schema production.
-
-| Dependency | Role | Status |
-|---|---|---|
-| joblib | Load `.joblib` serialized models. | Stabilizing |
-| pickle | Load `.pkl` serialized models. | Stabilizing |
-| pandas | Infer feature schema from datasets. | Stabilizing |
-| scikit-learn | Supported model family for V1-oriented schema extraction. | Stabilizing |
-| XGBoost | Optional model family through sklearn-compatible introspection. | Optional |
-| PyTorch | Future model framework. | Post-V1 |
-| TensorFlow | Future model framework. | Post-V1 |
-
-ModelBridge must not force all ML frameworks to be installed. Optional framework support should remain guarded by optional imports or extras.
-
----
-
-## Backend dependencies
-
-Z3 is the minimal backend for the first functional V1.
-
-| Backend | Role | Status |
-|---|---|---|
-| Z3 | Minimal symbolic verification backend. | Core V1 |
-| ERAN | Neural network robustness verification backend. | Post-V1 |
-| Zonotope / Box abstractions | Abstract interpretation strategies. | Post-V1 |
-| Additional solvers | Future backend expansion. | Post-V1 |
-
-The V1 architecture should therefore optimize for a clean `BackendQuery → Z3` path before generalizing to multi-backend orchestration.
-
----
-
-## Testing dependencies
-
-| Dependency | Role | Status |
-|---|---|---|
-| pytest | Unit, contract, regression and integration testing. | Development |
-| Hypothesis | Property-based generation for DSL, AST, IR, and edge cases. | Development |
-| Miova | Mutation campaigns, artifact boundary testing, invariant testing. | Development / external integration |
-| MkDocs | Documentation site generation. | Development |
-| Mermaid | Architecture diagrams in documentation. | Development |
-
-Hypothesis and Miova serve different purposes. Hypothesis generates structured examples; Miova mutates typed artifacts across pipeline boundaries.
-
----
-
-## External systems
-
-These are not Toetra internals.
-
-| External system | Relationship to Toetra |
+| Consumer | May know |
 |---|---|
-| User ML model | Input artifact consumed through ModelBridge. |
-| Dataset / schema | Source of feature metadata and type information. |
-| Z3 solver | First backend execution engine. |
-| CI system | Future execution environment for Toetra checks. |
-| Miova package | External mutation framework integrated for robustness testing. |
+| parser | generated grammar and source text |
+| builder | CST shapes and AST node constructors |
+| semantic validator | AST, language rules, `ModelSchema`, resolved anchors |
+| IR1 translator | validated AST state and semantic annotations |
+| model-semantic lowerer | IR1 output observables and `ModelSchema` |
+| model encoder | `ModelSchema`, requested evaluations, encoding context |
+| IR2 builder | NNF IR1, typed assumptions, build policy |
+| compatibility layer | model/encoder/backend descriptors and IR2 numeric requirements |
+| router | IR2 requirements, backend capabilities, numeric and execution policies |
+| backend translator | routed `VerificationTaskIR2` |
+| report builder | task, route, result, schema, lowering and provenance evidence |
+| replay | report/formal evidence, concrete model, runtime observer |
 
----
+## Forbidden coupling
 
-## V1 dependency rule
+| Forbidden dependency | Reason |
+|---|---|
+| AST or semantic modules importing Z3 | solver objects must not leak into compiler artifacts |
+| IR2 inspecting sklearn/XGBoost estimator objects | framework state belongs to ModelBridge |
+| a backend re-parsing `.toetra` source | backend input is already validated IR2 |
+| a model encoder selecting a point from scope | exact requested evaluations are supplied explicitly |
+| a renderer re-interpreting SAT/UNSAT | status interpretation belongs to the runner and policies |
+| replay changing the formal report status | replay is post-proof evidence |
+| internal code importing through the root facade | private code imports the concrete owning module |
 
-The first V1 should remain minimal:
+## Runtime dependency assembly
+
+`toetra._runtime.api.verify` is the composition root. It creates or receives:
+
+- `ModelSchema` and the optional concrete model;
+- model encoder and numeric compatibility descriptors;
+- `IR2BuildContext`;
+- backend capability and runner registries;
+- execution policy;
+- anchor resolver;
+- provenance context.
+
+The runtime passes these dependencies to the owning layers. Individual
+components do not reach back into the runtime to obtain global state.
+
+## Optional framework dependencies
+
+Framework detection and introspection use guarded imports. Importing `toetra`
+must not require every possible ML framework. A framework adapter may exist as
+internal infrastructure without becoming a built-in public route.
+
+The public V1 distribution requires the dependencies needed by its declared
+sklearn and Z3 paths. Future adapters must preserve clean import behavior and
+must not over-declare support when an optional dependency is absent.
+
+## Backend isolation
+
+IR2 owns backend-neutral requirements and assumptions. Backend-native artifacts
+are created only inside an adapter:
 
 ```text
-Toetra V1 = DSL compiler + ModelBridge schema + IR pipeline + Z3 backend query + verification result
+VerificationTaskIR2
+→ capability/numeric/execution qualification
+→ BackendRoute
+→ backend translator
+→ backend-private translation
+→ VerificationResult
 ```
 
-Everything else should be documented as extension, not as a prerequisite.
+For Z3 the private artifact is `Z3Translation`. Another adapter is free to use a
+different representation; it does not require a repository-wide
+`BackendQuery` class.
 
----
+The governing contracts are:
 
-## Design implications
+- [IR1 to IR2](../contracts/ir1-to-ir2.md);
+- [IR to backend](../contracts/ir-to-backend.md);
+- [backend execution](../contracts/backend-execution-contract.md);
+- [numeric compatibility registry](../contracts/numeric-compatibility-registry.md).
 
-Toetra dependency design should follow these rules:
+## Public facade isolation
 
-1. Keep the compiler independent from optional ML frameworks.
-2. Keep ModelBridge framework support optional when possible.
-3. Keep the Z3 path simple and first-class.
-4. Keep multi-backend orchestration out of the critical V1 path.
-5. Keep Miova as an external testing and mutation layer, not as a runtime dependency.
+`src/toetra/__init__.py` re-exports only the nine supported public names.
+Internal packages do not re-export implementation symbols through package
+initializers. This keeps imports explicit and prevents source layout from
+silently becoming public API.
 
----
-
-## Related documents
-
-- `architecture/overview.md`
-- `architecture/runtime-flow.md`
-- `architecture/c4-container.md`
-- `model-bridge/overview.md`
-- `backends/z3.md`
-- `contracts/ir-to-backend.md`
-- `testing/property-based-testing.md`
-- `miova/overview.md`
+See the [public V1 contract](../contracts/public-v1-contract.md) and
+[repository contract](../contracts/repository-contract.md).

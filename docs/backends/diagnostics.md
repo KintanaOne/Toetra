@@ -1,223 +1,83 @@
-# Backend Diagnostics
+# Backend diagnostics
 
-> Status: Planned / critical for usability  
-> Scope: Backend errors, incompatibility explanations, verification results  
-> Priority: P1
+> **Status:** Implemented across routing, execution evidence, IR2 diagnostics,
+> and public reports
 
-## Purpose
+Toetra separates invalid input, unsupported routes, technical termination, and
+logical conclusions. There is no single public `BackendDiagnostic` class.
+Evidence is carried by the owning boundary.
 
-Backend diagnostics explain what happened during backend selection, query generation, execution, or result interpretation.
+## Diagnostic ownership
 
-They are essential because verification failures can come from very different causes:
-
-- invalid user property;
-- unsupported model type;
-- unsupported backend capability;
-- impossible encoding;
-- solver timeout;
-- inconclusive backend result;
-- real property violation.
-
-Toetra should distinguish these cases clearly.
-
-## Diagnostic philosophy
-
-Toetra diagnostics should be:
-
-| Principle | Meaning |
+| Situation | Owning representation |
 |---|---|
-| Layer-aware | The diagnostic identifies where the problem occurred. |
-| Contract-aware | The violated precondition or invariant is named when possible. |
-| User-readable | The message explains what the user can change. |
-| Machine-readable | Diagnostics can be tested and processed. |
-| Non-silent | Toetra should not silently fallback to another backend without reporting it. |
+| backend not registered | structured backend error |
+| capability mismatch | routing error with incompatibility reasons |
+| numeric route unavailable | routing error with compatibility diagnostics |
+| execution control unsupported | routing error with policy incompatibilities |
+| IR2 structural warning | `IR2Diagnostic` on the task |
+| timeout/resource/cancellation/unknown | `BackendExecutionEvidence` |
+| backend technical exception | `BackendExecutionError` with execution evidence |
+| proof/counterexample/witness/no witness | `VerificationResult`, then `VerificationReport` |
+| conclusion weakened by compatibility | final report status and compatibility evidence |
 
-## Backend diagnostic categories
+## Invalid, unsupported, inconclusive, and violated
 
-| Category | Meaning |
-|---|---|
-| Backend not found | Requested backend is unknown or not registered. |
-| Backend incompatible | Backend exists but cannot support the request. |
-| Capability mismatch | Property/model/query exceeds backend capability. |
-| Encoding failure | Toetra cannot compile the lowered query to backend-native form. |
-| Execution failure | Backend crashed, timed out, or failed externally. |
-| Inconclusive result | Backend returned unknown or could not decide. |
-| Property violation | Backend found a counterexample or failing condition. |
-| Property verified | Backend confirmed the property under assumptions. |
+| Class | Meaning | Runtime behavior |
+|---|---|---|
+| invalid | source, binding, type, model, or configuration contract is broken | exception before backend execution |
+| unsupported | valid request has no compatible model/encoder/backend route | fail-closed exception |
+| inconclusive | compatible backend ran but did not justify a conclusion | report status `UNKNOWN` |
+| violated | universal-refutation query is satisfiable | `COUNTEREXAMPLE` report |
+| verified | universal-refutation query is unsatisfiable | `PROVED` report |
 
-## Suggested diagnostic model
+Existential semantics similarly distinguish `WITNESS` and `NO_WITNESS`.
 
-A future diagnostic structure may look like:
+## Route explanations
 
-```python
-@dataclass(frozen=True)
-class BackendDiagnostic:
-    layer: str
-    backend: str | None
-    code: str
-    severity: str
-    message: str
-    details: dict[str, Any]
-    suggested_fix: str | None = None
-```
+Successful reports retain `route_reason`. It identifies whether the backend was
+explicitly requested or automatically qualified and summarizes the numeric
+compatibility route.
 
-This keeps diagnostics testable and suitable for CLI, CI, reports, and IDE extensions.
+Failed routing messages enumerate the rejected capability or policy dimensions.
+They do not insert artificial logical assumptions or try another backend after
+an explicit choice.
 
-## Suggested diagnostic codes
+## Technical termination evidence
 
-```text
-BACKEND_NOT_FOUND
-BACKEND_UNSUPPORTED_PROPERTY
-BACKEND_UNSUPPORTED_MODEL
-BACKEND_UNSUPPORTED_LOGICAL_FORM
-BACKEND_UNSUPPORTED_CONSTRAINT
-BACKEND_ENCODING_FAILED
-BACKEND_EXECUTION_FAILED
-BACKEND_TIMEOUT
-BACKEND_UNKNOWN_RESULT
-BACKEND_COUNTEREXAMPLE_FOUND
-BACKEND_PROPERTY_VERIFIED
-```
+`BackendExecutionEvidence` records:
 
-## Examples
+- normalized execution status;
+- total duration;
+- immutable policy snapshot;
+- user-readable reason;
+- optional native backend reason.
 
-### Unknown backend
+Technical status remains separate from logical status. For example, a timeout is
+reported as logical `UNKNOWN` plus technical `TIMEOUT`, not as a failed proof.
 
-```text
-BACKEND_NOT_FOUND
-Backend 'foo' is not registered. Available backends: z3, ERAN, box, zonotope.
-```
+## IR2 diagnostics
 
-### Unsupported property
+IR2 guardrails can record structural diagnostics about model-evaluation
+equations and assumptions. These are attached before routing and rendered with
+the verification report when execution remains valid.
 
-```text
-BACKEND_UNSUPPORTED_PROPERTY
-Backend 'z3' does not currently support property 'ROBUSTNESS' for model type 'XGBClassifier'.
-```
+Missing or contradictory information that would make execution unsound is an
+error rather than a warning.
 
-### Unsupported logical form
+## Public handling
 
-```text
-BACKEND_UNSUPPORTED_LOGICAL_FORM
-Backend 'eran' cannot consume DNF queries with nested disjunctions. Try a supported robustness-only assertion form.
-```
+The public API exposes stable report/status types and documented exception
+families. Private backend and compiler exception subclasses may change without
+becoming public imports.
 
-### Encoding failure
+P26 owns improvements to wording, codes, and user guidance. Such changes must
+preserve the boundary distinctions documented here.
 
-```text
-BACKEND_ENCODING_FAILED
-Could not encode feature 'age' because its dtype is missing from ModelSchema.
-```
+## Contracts
 
-### Inconclusive result
-
-```text
-BACKEND_UNKNOWN_RESULT
-Backend 'z3' returned UNKNOWN. The property was not proved or refuted.
-```
-
-## Difference between invalid, unsupported, and violated
-
-These cases must not be confused.
-
-| Case | Meaning |
-|---|---|
-| Invalid | The Toetra specification breaks language or semantic rules. |
-| Unsupported | The specification is valid, but the backend cannot handle it. |
-| Violated | The backend successfully checked the property and found a counterexample. |
-| Inconclusive | The backend ran but could not decide. |
-
-This distinction is critical for CI/CD workflows.
-
-## Relationship with contracts
-
-Backend diagnostics are connected to several contract documents:
-
-| Contract | Diagnostic role |
-|---|---|
-| `errors.md` | Global error taxonomy. |
-| `ir-to-backend.md` | Backend query preconditions. |
-| `type-normalization.md` | Normalized enum/type failures. |
-| `mutation-boundaries.md` | Expected mutated failures. |
-| `model-constraints.md` | Missing or unsupported model constraints. |
-
-## CI behavior
-
-In CI, Toetra should distinguish between:
-
-| Result | CI meaning |
-|---|---|
-| verified | pass |
-| violated | fail |
-| invalid specification | fail fast |
-| unsupported backend | fail or skip depending on configuration |
-| inconclusive | configurable, often fail in strict mode |
-| timeout | configurable, usually fail in strict mode |
-
-## Miova and diagnostics
-
-Miova campaigns should assert not only whether a mutation fails, but how it fails.
-
-For example:
-
-```text
-Mutation: replace backend z3 with unknown backend foo
-Expected: BACKEND_NOT_FOUND
-```
-
-```text
-Mutation: remove dtype from ModelSchema feature
-Expected: BACKEND_ENCODING_FAILED or MODEL_SCHEMA_INVALID
-```
-
-This makes diagnostics part of the contract, not just user-facing text.
-
-## Design invariant
-
-A backend failure without a diagnostic is itself a Toetra failure.
-
----
-
-## Quantified Domain and Arithmetic Diagnostics
-
-Recommended stable diagnostic families:
-
-```text
-PARSER_QUANTIFIER_IDENTIFIER_REQUIRED
-PARSER_DOMAIN_REQUIRES_ENTRY
-PARSER_FINITE_SET_REQUIRES_VALUE
-PARSER_INVALID_INTERVAL_DELIMITER
-
-SEMANTIC_UNBOUND_QUANTIFIED_ENTITY
-SEMANTIC_DOMAIN_SUBJECT_MUST_BE_EXPLICIT
-SEMANTIC_DOMAIN_ENTITY_MISMATCH
-SEMANTIC_DUPLICATE_DOMAIN_SUBJECT
-SEMANTIC_INVALID_INTERVAL_ORDER
-SEMANTIC_EMPTY_INTERVAL
-SEMANTIC_TARGET_NOT_ALLOWED_IN_DOMAIN
-SEMANTIC_NON_NUMERIC_ARITHMETIC
-SEMANTIC_DIVISION_BY_ZERO
-
-BACKEND_UNSUPPORTED_AFFINE_ARITHMETIC
-BACKEND_UNSUPPORTED_NONLINEAR_ARITHMETIC
-BACKEND_UNSUPPORTED_SYMBOLIC_DIVISION
-BACKEND_UNSUPPORTED_FINITE_SET_MEMBERSHIP
-BACKEND_UNSUPPORTED_CATEGORICAL_DOMAIN
-
-VERIFICATION_COUNTEREXAMPLE_FOUND
-VERIFICATION_PROPERTY_VERIFIED
-VERIFICATION_WITNESS_FOUND
-VERIFICATION_NO_WITNESS
-VERIFICATION_VACUOUS_EMPTY_DOMAIN
-VERIFICATION_UNKNOWN
-```
-
-Diagnostic codes are machine-facing contracts. Human messages may improve without changing the code meaning.
-
-A capability diagnostic should identify:
-
-- requested construct;
-- computed IR requirement;
-- selected/requested backend;
-- missing capability;
-- source expression or domain entry when available.
+- [Error boundaries](../contracts/errors.md)
+- [IR to backend](../contracts/ir-to-backend.md)
+- [Backend execution](../contracts/backend-execution-contract.md)
+- [Numeric compatibility reporting](../contracts/numeric-compatibility-reporting.md)
+- [Public API errors](../api-reference/replay-and-errors.md)

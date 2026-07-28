@@ -1,202 +1,69 @@
-# Backend Query
+# Backend translation artifact
 
-> Status: Planned / Critical  
-> Implementation: Not implemented yet  
-> Scope: Final backend-specific verification artifact
+> **Status:** Implemented per adapter
+>
+> **Filename note:** retained for stable links from earlier design documents
 
-## Purpose
+Toetra does not define one generic `BackendQuery` class. The stable internal
+boundary is a validated, routed `VerificationTaskIR2`; each backend adapter
+creates its own native translation after route qualification.
 
-`BackendQuery` is the final artifact produced before Toetra calls a verification backend.
-
-It represents the complete verification problem in a format understood by a specific backend.
-
-Examples may include:
-
-- Z3 expressions,
-- ERAN-compatible robustness queries,
-- future solver-specific artifacts,
-- runtime verification plans.
-
----
-
-## Why BackendQuery Exists
-
-Toetra must remain backend-agnostic for as long as possible.
-
-DSL syntax, semantic validation, IR normalization, model constraints, and assertion aggregation should not directly depend on one solver.
-
-`BackendQuery` is the explicit boundary where backend independence ends.
-
----
-
-## Pipeline Position
+## Shared boundary
 
 ```text
-.toetra
-    ↓
-SemanticValidatedAST
-    ↓
-IR1-NNF
-    ↓
-IR2-CNF/DNF
-    ↓
-AggregatedAssertionSet
-    ↓
-LoweredQuery
-    ↓
-BackendQuery
-    ↓
-Verification Backend
+VerificationTaskIR2
++ BackendRoute
++ BackendExecutionPolicy
+→ registered BackendRunner
 ```
 
----
+The IR2 task already contains the complete verification condition, assumptions,
+requirements, normal form, semantics, and traceable identities. `BackendRoute`
+proves that the selected backend declared compatible structural, numeric, and
+operational capabilities.
 
-## Input Contract
+## Z3 artifact
 
-A backend query should be produced from a lowered and minimized representation.
+The built-in adapter uses:
 
-Input should include:
+```text
+VerificationTaskIR2
+→ Z3Translator.translate(...)
+→ Z3Translation
+→ Z3Runner
+```
 
-- normalized logical structure,
-- model constraints,
-- scope constraints,
-- backend selection,
-- backend capability metadata,
-- traceability metadata,
-- diagnostics from previous layers.
+`Z3Translation` is private to the Z3 adapter. It stores the translated formula
+and symbol information required to reconstruct assignments. Z3 expressions do
+not flow back into IR2 or public reports.
 
----
+## Adapter freedom
 
-## Output Contract
+A future backend may use an object graph, serialized request, native model
+network, or another representation. It must not require the compiler to add a
+solver-specific shared IR.
 
-A `BackendQuery` should include:
+Every adapter must still:
 
-| Field | Role |
+- reject unsupported IR2 requirements;
+- preserve verification semantics and numeric sorts;
+- maintain point/output identity and reverse assignment mapping;
+- obey the backend execution contract;
+- normalize its result into `VerificationResult`;
+- expose no backend object through the public `toetra` facade.
+
+## Error ownership
+
+| Failure | Owner |
 |---|---|
-| backend | Target backend. |
-| query | Backend-specific expression or artifact. |
-| assumptions | Required assumptions. |
-| constraints | Encoded verification constraints. |
-| metadata | Traceability and compilation metadata. |
-| diagnostics | Warnings or known limitations. |
+| no structurally/numerically/operationally compatible backend | router |
+| unsupported node despite claimed capability | translator defect or structured translation error |
+| timeout/resource/cancellation | runner execution evidence |
+| native backend exception | structured backend execution error |
+| public conclusion not permitted by an approximate lowering | post-execution compatibility policy |
 
-Conceptual shape:
+## Contracts
 
-```text
-BackendQuery
-├── backend
-├── query
-├── assumptions
-├── constraints
-├── metadata
-└── diagnostics
-```
-
----
-
-## Backend-Specific Examples
-
-### Z3
-
-A Z3 backend query may contain:
-
-- symbolic variables,
-- model equations or approximations,
-- property constraints,
-- negated property for counterexample search,
-- solver configuration.
-
----
-
-### ERAN
-
-An ERAN-oriented query may contain:
-
-- model representation,
-- perturbation bounds,
-- robustness property,
-- abstract domain selection.
-
----
-
-### Runtime Backend
-
-A runtime verification backend may contain:
-
-- executable checks,
-- monitoring hooks,
-- data capture rules,
-- result interpretation logic.
-
----
-
-## Invariants
-
-A valid `BackendQuery` must satisfy:
-
-| Invariant | Description |
-|---|---|
-| Backend-specific | The artifact is tied to one backend. |
-| Fully lowered | No high-level DSL-only construct should remain unresolved. |
-| Semantically grounded | Query must trace back to validated semantics. |
-| Model-aware | Query must be compatible with model schema and constraints. |
-| Executable or serializable | The backend should be able to consume it. |
-| Diagnostic-rich | Unsupported constructs should be reported clearly. |
-
----
-
-## Relationship with Backend Orchestration
-
-Backend orchestration may happen before, during, or after lowering depending on design.
-
-However, `BackendQuery` is always produced after the backend is known.
-
-The orchestration layer determines:
-
-- which backend is selected,
-- which strategy is used,
-- which capabilities are required,
-- which limitations apply.
-
----
-
-## Relationship with Lowering and Minimization
-
-Lowering prepares the query.
-
-BackendQuery encodes it.
-
-```text
-LoweredQuery → BackendQuery
-```
-
-Lowering should remain as backend-independent as possible.  
-BackendQuery is backend-specific by design.
-
----
-
-## Relationship with Miova
-
-Miova can test backend query generation by mutating:
-
-- lowered constraints,
-- backend capability metadata,
-- model constraints,
-- property constraints,
-- expected unsupported cases.
-
-Expected outcomes include:
-
-- valid backend query,
-- unsupported backend diagnostic,
-- early rejection,
-- contract failure,
-- invalid query prevention.
-
----
-
-## Summary
-
-`BackendQuery` is the final boundary between Toetra's internal formal pipeline and external verification engines.
-
-It must be explicit, traceable, diagnostic-rich, and backend-specific.
+- [IR to backend](../contracts/ir-to-backend.md)
+- [Backend execution](../contracts/backend-execution-contract.md)
+- [Verification provenance](../contracts/verification-provenance.md)

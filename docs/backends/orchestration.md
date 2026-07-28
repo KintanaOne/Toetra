@@ -1,202 +1,96 @@
-# Backend Orchestration
+# Backend routing and orchestration
 
-> Status: Post-V1 / target architecture  
-> Scope: Backend selection, routing, strategy selection, AutoToetra foundation
-> Priority: P1
+> **Status:** Implemented routing; Z3 is the only built-in V1 backend
+>
+> **Scope:** backend qualification and runner selection
 
-## Purpose
+Backend routing answers:
 
-Backend orchestration is the subsystem responsible for choosing how a Toetra verification problem should be executed.
+> Which registered backend can execute this completed IR2 task under the
+> requested numeric and operational contracts?
 
-It answers:
-
-```text
-Given a normalized verification problem, which backend and strategy should Toetra use?
-```
-
-## V1 boundary
-
-Backend orchestration is not required before the Z3 end-to-end path works. V1 should implement a direct and explicit `LoweredQuery → Z3 BackendQuery → Z3 result` path first. Automatic backend selection and AutoToetra belong after that baseline is functional.
-
-## Position in the pipeline
-
-Backend orchestration happens after the query is sufficiently normalized and prepared.
+## Inputs and output
 
 ```text
-IR2
-→ Assertion Aggregation
-→ Lowering / Minimization
-→ LoweredQuery
-→ Backend Orchestration
-→ BackendQuery
-→ VerificationBackend
+VerificationTaskIR2
++ backend registry
++ numeric compatibility context
++ execution policy
+→ BackendRoute
 ```
 
-The orchestrator should not operate on raw AST or DSL syntax.
+`BackendRoute` contains the selected backend, its capabilities, a route reason,
+and the numeric compatibility assessment.
 
-## Inputs
+## Explicit selection
 
-The orchestrator should receive:
+A source-level `using Z3` hint constrains the router to Z3. The requested backend
+must still:
 
-| Input | Description |
-|---|---|
-| `LoweredQuery` | Backend-preparation logical query. |
-| `ModelSchema` or model constraints | Normalized model representation or model-derived constraints. |
-| Property metadata | Property type, problem type, scope, target. |
-| User backend preference | Optional `using z3`; non-Z3 backends are reserved/post-V1. |
-| Backend capabilities | Declared support of each backend. |
-| Runtime constraints | Timeout, exactness, determinism, performance preferences. |
+- be registered;
+- satisfy every `IR2Requirement`;
+- have an executable numeric compatibility rule;
+- enforce the requested execution controls.
 
-## Outputs
+An incompatible explicit backend is rejected. It is never silently replaced.
 
-The orchestrator should produce:
+## Automatic selection
 
-| Output | Description |
-|---|---|
-| `BackendPlan` | Selected backend and strategy. |
-| `BackendQuery` | Backend-specific query artifact, if compilation is included. |
-| `Diagnostic` | Explanation when no backend is suitable. |
-| `ExecutionContext` | Runtime options for backend execution. |
+Without a hint, `BackendRouter` iterates registered capability profiles and
+returns the first route satisfying all checks. The default V1 registry contains
+only Z3, so this is deterministic backend qualification rather than
+multi-backend optimization.
 
-## Manual backend selection
+## Three qualification gates
 
-When a user explicitly selects a backend:
+### Structural and semantic capabilities
 
-```toetra
-[ROBUSTNESS]: forall baseline, candidate => CLASSIFICATION.EQUAL() using z3
-```
+`BackendCapabilities.incompatibilities(...)` checks logical forms, arithmetic,
+sorts, assumptions, quantifier semantics, point-aware evaluations, and
+model-semantic quantities.
 
-Toetra should treat the backend as a user constraint, not as an unconditional instruction.
+### Numeric compatibility
 
-The backend must still be checked against:
+The compatibility registry evaluates the source framework, model encoder,
+property requirements, backend numeric profile, and non-finite-value policy. A
+route can be structurally expressible but numerically non-executable.
 
-- property type;
-- model schema;
-- logical form;
-- required constraint encodings;
-- backend capabilities.
+### Execution policy
 
-If incompatible, Toetra should reject the request early with a diagnostic.
+Execution capabilities are compared with timeout, cancellation, resource,
+deterministic-seed, and backend-option requirements. Unsupported controls fail
+closed.
 
-## Automatic backend selection
+## Runner selection
 
-When no backend is specified, a future Toetra orchestrator may select a backend automatically.
-
-Selection criteria may include:
-
-| Criterion | Example |
-|---|---|
-| Property compatibility | Robustness may prefer neural verification backends. |
-| Model compatibility | Linear models may be encoded into SMT. |
-| Exactness | Exact proof vs approximate guarantee. |
-| Counterexample support | Needed for debugging and boundary analysis. |
-| Runtime cost | Choose cheaper backend when proof power is sufficient. |
-| Observability | Prefer backend with richer diagnostics. |
-
-This is the basis for a future AutoToetra system.
-
-## Strategy selection
-
-Backend orchestration is not only backend selection. It may also select a verification strategy.
-
-Examples:
-
-| Strategy | Purpose |
-|---|---|
-| Direct SMT encoding | Encode query directly into an SMT solver. |
-| Clause-based solving | Use CNF-oriented representation. |
-| Case splitting | Use DNF-oriented representation. |
-| Abstract interpretation | Over-approximate model behavior. |
-| Counterexample search | Prefer exploration over proof. |
-| Runtime monitoring | Observe behavior instead of static proof. |
-
-## Decision flow
-
-```mermaid
-flowchart TD
-    A[LoweredQuery]
-        --> B[Analyze property and constraints]
-
-    C[ModelSchema / ModelConstraints]
-        --> B
-
-    D[User backend preference]
-        --> E[Backend candidate set]
-
-    F[Backend capabilities]
-        --> E
-
-    B --> G[Compatibility check]
-    E --> G
-
-    G -->|compatible| H[Select strategy]
-    G -->|incompatible| I[Diagnostic / Early stop]
-
-    H --> J[BackendPlan]
-    J --> K[BackendQuery]
-```
-
-## Diagnostics-first design
-
-The orchestrator should be able to explain decisions.
-
-Examples:
+Capabilities and executors live in separate registries:
 
 ```text
-Selected backend 'z3' because the query contains linear numeric constraints and no neural-network-specific encoding is required.
+BackendRegistry
+→ route qualification
+
+BackendRunnerRegistry
+→ concrete execution after routing
 ```
 
-```text
-Rejected backend 'eran' because the model framework is sklearn.RandomForestClassifier and no ERAN encoder is available.
-```
+The runtime requires a runner for the selected backend and passes it the same
+IR2 task plus execution policy.
 
-```text
-No backend selected because the query requires categorical domain constraints that no registered backend supports.
-```
+## Not part of V1 orchestration
 
-## Relationship with IR2
+- performance-based backend ranking;
+- concurrent multi-backend execution;
+- voting or result comparison;
+- fallback after a backend times out;
+- automatic abstraction-strategy search;
+- remote/distributed scheduling;
+- AutoToetra decisions.
 
-IR2 influences backend orchestration because different backends may prefer different normal forms.
+These are post-V1 directions and must not be inferred from the existence of the
+router.
 
-| IR2 form | Possible use |
-|---|---|
-| CNF | Clause-oriented solving, SMT/SAT-style verification. |
-| DNF | Case splitting, scenario exploration, counterexample search. |
-| Canonical boolean form | Deduplication, simplification, backend-independent comparison. |
+## Contracts
 
-The orchestrator may request a specific IR2 form or lowering strategy.
-
-## Relationship with lowering/minimization
-
-Lowering and minimization prepare the query before backend compilation.
-
-The orchestrator should not receive redundant, ambiguous, or high-level semantic constructs unless the backend explicitly supports them.
-
-## Relationship with Miova
-
-Miova can challenge backend orchestration by mutating:
-
-- backend names;
-- capability declarations;
-- user backend preferences;
-- query shapes;
-- model framework metadata;
-- strategy selection constraints.
-
-Expected results should include:
-
-- successful backend selection;
-- explicit incompatibility;
-- expected rejection;
-- no silent fallback.
-
-## Non-goals
-
-Backend orchestration should not:
-
-- perform semantic binding;
-- rewrite DSL syntax;
-- infer model schemas;
-- implement solver-specific encodings directly;
-- hide backend incompatibilities.
-
+- [IR to backend](../contracts/ir-to-backend.md)
+- [Numeric compatibility registry](../contracts/numeric-compatibility-registry.md)
+- [Backend execution](../contracts/backend-execution-contract.md)

@@ -25,12 +25,11 @@ The intended flow is:
 
 ```text
 .toetra property
-→ SemanticValidatedAST
+→ semantically validated AST state
 → IR1 / NNF
-→ IR2 if required
-→ AggregatedAssertionSet
-→ LoweredQuery
-→ ERANQuery
+→ VerificationTaskIR2 + assumptions
+→ capability and numeric route qualification
+→ ERAN-private translation artifact
 → ERAN execution
 → VerificationResult
 ```

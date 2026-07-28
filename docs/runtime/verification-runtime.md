@@ -7,7 +7,7 @@
 ```python
 session = verify(
     specification,
-    model=model_or_path,
+    model=optional_model_path,
     dataset=optional_dataset,
     schema=optional_schema,
     anchor_source=optional_source,
@@ -70,6 +70,7 @@ remain decisive.
 
 - a registered runtime observer must support the model/schema pair;
 - point inputs must be reconstructible in `ModelSchema` order;
-- preprocessing remains outside V1 unless already embodied in a future supported encoder;
+- preprocessing reconstruction remains outside V1; inputs are expressed in the
+  transformed feature space consumed by the encoded estimator;
 - alternating quantifiers are rejected before execution;
 - replay is unavailable when required point values or model outputs are incomplete.

@@ -130,8 +130,8 @@ nav:
       - Semantic Layer: compiler/semantic-layer.md
       - IR1 Layer: compiler/ir1-layer.md
       - IR2 Layer: compiler/ir2-layer.md
-      - Assertion Aggregation: compiler/assertion-aggregation.md
-      - Lowering and Minimization: compiler/lowering-minimization.md
+      - Assumptions and Verification Condition: compiler/assertion-aggregation.md
+      - Lowering and Normal Forms: compiler/lowering-minimization.md
       - Backend Boundary: compiler/backend-boundary.md
 
   - ModelBridge:
@@ -140,7 +140,7 @@ nav:
       - Detection: model-bridge/model-detection.md
       - Introspection: model-bridge/model-introspection.md
       - Model Schema: model-bridge/model-schema.md
-      - Model Constraints: model-bridge/model-constraints.md
+      - Model Equations and Schema Constraints: model-bridge/model-constraints.md
       - Supported Frameworks: model-bridge/supported-frameworks.md
 
   - Intermediate Representations:
@@ -150,8 +150,8 @@ nav:
       - Logical IR: ir/logical-ir.md
       - IR1 NNF: ir/ir1-nnf.md
       - IR2 Normal Forms: ir/ir2-normal-forms.md
-      - Aggregated Assertion Set: ir/aggregated-assertion-set.md
-      - Backend Query: ir/backend-query.md
+      - Assumptions and Verification Condition: ir/aggregated-assertion-set.md
+      - Backend Translation: ir/backend-query.md
 
   - Contracts:
       - Overview: contracts/overview.md
@@ -190,7 +190,7 @@ nav:
   - Backends:
       - Overview: backends/overview.md
       - Backend Capabilities: backends/capabilities.md
-      - Backend Orchestration: backends/orchestration.md
+      - Backend Routing: backends/orchestration.md
       - Z3 Backend: backends/z3.md
       - ERAN Backend: backends/eran.md
       - Diagnostics: backends/diagnostics.md

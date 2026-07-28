@@ -1,151 +1,107 @@
-# IR to Backend Contract
+# IR to backend contract
 
-> Status: P0 / Accepted target backend boundary  
-> Scope: Capability-checked IR2/LoweredQuery to BackendQuery  
-> Audience: backend authors, router authors and solver integration authors
+> **Status:** Implemented and accepted
+>
+> **Scope:** capability-checked `VerificationTaskIR2` to backend-private
+> translation
 
-## Purpose
-
-This is the first boundary allowed to create backend-native artifacts.
-
-It answers:
-
-```text
-Can this backend represent every requirement of this verification task exactly?
-```
-
----
+This is the first boundary allowed to create backend-native objects.
 
 ## Inputs
 
 ```text
-VerificationTaskIR2 or LoweredQuery
-+ BackendSelection
-+ BackendCapabilities
-+ model encoding context
+VerificationTaskIR2
++ BackendRegistry
++ NumericCompatibilityContext
++ BackendExecutionPolicy
 ```
 
-The input already contains:
+The IR2 task already contains:
 
-- resolved scalar expressions;
-- normalized logical formula;
-- domain/model assumptions;
-- verification semantics;
+- normalized property and executable verification condition;
+- typed domain, anchor, and model assumptions;
+- verification semantics and actual normal form;
 - explicit requirements;
-- provenance.
+- point/evaluation identities;
+- diagnostics, lowering evidence, and provenance inputs.
 
----
+## Qualification gate
 
-## Compatibility Gate
-
-Backend compilation starts only after:
+Backend translation starts only after:
 
 ```text
 task.requirements ⊆ backend.capabilities
++ numeric route is executable
++ requested execution controls are enforceable
 ```
 
-The gate must distinguish at least:
+The structural gate distinguishes Boolean forms, comparisons, arithmetic
+families, scalar sorts, assumptions, quantifier semantics, point/evaluation
+features, and model-semantic quantities.
 
-- boolean logic;
-- equality and ordered comparisons;
-- affine arithmetic;
-- nonlinear multiplication;
-- symbolic division;
-- required scalar sorts;
-- finite-set membership/equality expansion;
-- symbolic categorical literals;
-- domain assumptions;
-- model assumptions;
-- normal forms;
-- universal-refutation or existential-witness execution semantics.
+The numeric gate distinguishes mathematical expressibility from the soundness
+of the framework/encoder/backend route.
 
-A single `supports_numeric_comparisons` flag is insufficient for the target language.
+The operational gate covers timeout, cancellation, resources, deterministic
+seed, and adapter-specific options.
 
----
+## Route output
 
-## Backend Output
+Successful qualification returns `BackendRoute` with:
 
-A successful compiler produces:
+- selected backend;
+- capability profile;
+- route reason;
+- numeric compatibility assessment.
 
-```text
-BackendQuery
-```
+The route is not a native query.
 
-containing backend-native:
+## Adapter translation
 
-- variable declarations with sorts;
-- scalar expressions;
-- boolean assertions;
-- model constraints;
-- execution semantics metadata;
-- source-to-backend trace mapping.
+The selected runner or translator consumes the routed `VerificationTaskIR2` and
+creates an adapter-private artifact. The built-in Z3 adapter produces
+`Z3Translation`.
 
----
+There is no required shared `BackendQuery` or `LoweredQuery` class. An adapter
+may choose its native representation provided that it satisfies this contract.
 
-## Exactness Rule
+## Exactness rule
 
-The backend compiler must encode the accepted IR exactly under the declared semantics.
-
+Translation must encode the accepted IR exactly under the declared semantics.
 It must not:
 
-- coerce categorical symbols to arbitrary reals without a declared sound encoding;
+- coerce an unsupported sort;
 - replace open bounds with closed bounds;
-- ignore unsupported finite-set members;
-- drop arithmetic terms;
-- linearize symbolic products silently;
-- replace symbolic division with a constant;
-- treat `exists` SAT as a counterexample;
-- invent missing bindings.
+- drop finite-set members, arithmetic terms, or assumptions;
+- linearize nonlinear expressions silently;
+- conflate point or output identities;
+- treat existential SAT as a counterexample;
+- invent a model equation or binding;
+- bypass numeric conclusion restrictions.
 
-An unsupported requirement causes a routing or backend-compilation diagnostic.
+An unsupported requirement is a routing or translation error.
 
----
+## Result boundary
 
-## Sort Mapping
+The runner normalizes native execution into `VerificationResult`, including:
 
-Backend sort mapping is driven by canonical Toetra scalar types.
+- logical status;
+- structured assignments;
+- backend-neutral diagnostics;
+- technical execution evidence.
 
-Examples:
+Backend-native objects do not enter `VerificationReport`.
 
-| Toetra type | Possible Z3 sort |
+## Failure ownership
+
+| Failure | Owner |
 |---|---|
-| INT | `Int` |
-| REAL | `Real` |
-| BOOL | `Bool` |
-| STRING | `String` when supported by the profile |
-| SYMBOLIC_CATEGORY | Enum/datatype/string encoding selected explicitly |
+| unknown requested backend | registry/router |
+| structural capability mismatch | router |
+| non-executable numeric route | compatibility/router |
+| unsupported execution control | router |
+| mismatch between claimed capability and translator | adapter defect/translation error |
+| timeout, resource, cancellation, native error | runner |
 
-The chosen encoding must be recorded in backend metadata.
-
----
-
-## Minimal Z3 Profile
-
-The first complete Z3 profile may remain narrower than the language:
-
-- boolean logic;
-- integer/real comparisons;
-- affine arithmetic;
-- numeric interval assumptions;
-- affine model assumptions;
-- universal refutation;
-- existential witness when runner/result semantics are implemented.
-
-Categorical finite sets, strings, symbolic products or symbolic division remain incompatible until Z3 capabilities and translator support declare them explicitly.
-
----
-
-## Backend-Owned Failures
-
-This boundary owns:
-
-- no registered compatible backend;
-- requested backend lacking a required capability;
-- unsupported scalar sort/encoding;
-- unsupported arithmetic family;
-- missing model encoder;
-- invalid backend-native translation;
-- inability to preserve verification semantics;
-- inconsistent source-to-backend trace mapping.
-
-It does not own syntax, binding or semantic typing errors.
+Syntax, binding, semantic typing, and model-family lowering failures belong to
+earlier boundaries.

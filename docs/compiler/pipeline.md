@@ -1,259 +1,144 @@
-# Compiler Pipeline
+# Compiler pipeline
 
-> Status: P0 / Stabilizing  
-> Scope: Compiler architecture  
-> Implementation: Implemented until semantic validation and IR1, planned beyond IR1  
-> Audience: Toetra maintainers, contributors, backend implementers, Miova campaign authors
+> **Status:** Implemented for `1.0.0rc3`
+>
+> **Scope:** source text through backend-neutral IR2
+>
+> **Audience:** compiler, model-integration, and backend contributors
 
-## Purpose
+The compiler converts `.toetra` source into validated backend-neutral
+verification tasks. Backend selection, solver translation, execution, and
+reporting occur after the compiler boundary.
 
-The Toetra compiler pipeline transforms a `.toetra` specification into progressively more formal, normalized, and backend-preparable representations.
-
-The compiler is not a single parsing step. It is a sequence of explicit artifact transformations, each with its own responsibilities, guarantees, and failure boundaries.
-
-Its target end-to-end path is:
+## Implemented chain
 
 ```text
-.toetra source
-    ↓
-Language definition
-    ↓
-Parser
-    ↓
-CST
-    ↓
-Builder
-    ↓
-AST
-    ↓
-Semantic validation
-    ↓
-SemanticValidatedAST
-    ↓
-IR1 / NNF
-    ↓
-IR2 / CNF-DNF
-    ↓
-Assertion Aggregation
-    ↓
-Lowering / Minimization
-    ↓
-Backend Boundary
-    ↓
-BackendQuery
+source text
+→ Lark CST
+→ ProgramNode AST
+→ semantic validation in place
+→ VerificationTask IR1
+→ model-semantic lowering
+→ NNF-normalized IR1
+→ VerificationTaskIR2
 ```
 
-The current implementation reaches IR1. IR2, assertion aggregation, lowering, minimization, and backend query production are planned but architecturally required for the first true end-to-end Toetra verification query.
+The model-aware entry point additionally supplies:
 
----
+```text
+ModelSchema
+→ schema-aware validation
+→ semantic profile selection
+→ requested model evaluations
+→ encoded model assumptions
+→ VerificationTaskIR2
+```
 
-## Architectural Intent
+## Stage contract
 
-Toetra follows a progressive formalization model.
-
-Each layer receives an artifact from the previous layer and produces a stronger representation:
-
-| Layer | Input | Output | Strength Added |
+| Stage | Input | Output | Does not own |
 |---|---|---|---|
-| Language | Vocabulary and grammar definitions | DSL syntax rules | Expressive boundary |
-| Parser | Raw `.toetra` source | CST | Syntax structure |
-| Builder | CST | AST | Typed domain structure |
-| Semantic | AST | SemanticValidatedAST | Scope, binding, compatibility |
-| IR1 | SemanticValidatedAST | IR1 task/query | Logical normalization, NNF |
-| IR2 | IR1 | IR2 normal form | CNF/DNF and clause/case preparation |
-| Aggregation | IR2 + model constraints | AggregatedAssertionSet | Global verification problem |
-| Lowering | AggregatedAssertionSet | LoweredQuery | Simplification and backend preparation |
-| Backend Boundary | LoweredQuery | BackendQuery | Backend-specific executable form |
+| parser | UTF-8 source | Lark CST | semantic meaning |
+| builder | CST | typed AST | name binding or model compatibility |
+| semantic validator | AST, optional schema/anchors | validated AST state | logical normal forms |
+| IR1 translator | validated AST | `VerificationTask` | model-family observable meaning |
+| semantic lowerer | IR1 + schema | canonical IR1 + evidence | fitted coefficient extraction |
+| NNF normalizer | lowered IR1 | NNF IR1 | CNF/DNF selection |
+| IR2 builder | NNF IR1 + assumptions + policy | `VerificationTaskIR2` | backend-native objects |
 
----
+## Source, CST, and AST
 
-## Current Implementation Status
+The EBNF under `src/toetra/_language/grammar` is the syntax source of truth. The
+generated Lark grammar is derived and must not be edited manually.
 
-| Stage | Status | Notes |
-|---|---|---|
-| Language vocabulary | Implemented / needs cleanup | Grammar and enum vocabulary exist; normalization rules need stabilization. |
-| Parser | Implemented | Lark parser produces CST from `.toetra` source. |
-| Builder | Implemented / stabilizing | CST is converted into Toetra AST nodes. |
-| AST | Implemented / stabilizing | Most domain nodes exist; semantic attachment policy needs harmonization. |
-| Semantic validation | Implemented / stabilizing | LHS validation, binding, logic validation and compatibility checks exist. |
-| IR1 | Implemented / stabilizing | `VerificationTask`, `ScopeIR`, `QueryIR`, logical IR nodes exist. |
-| IR1-NNF | Planned / critical | De Morgan and NNF belong to this planned IR1 subphase. |
-| IR2 | Planned / critical | CNF/DNF and normal-form selection. |
-| Assertion aggregation | Planned / critical | Combines DSL assertions, semantic constraints and model constraints. |
-| Lowering / minimization | Planned / critical | Simplifies and prepares backend-oriented expressions. |
-| BackendQuery | Planned / critical | First executable solver/backend artifact. |
+`parse_toetra_code(...)` rejects invalid grammar and returns a CST.
+`parse_program(...)` fully translates that CST into nodes beneath
+`toetra._compiler.ast`. No Lark `Tree` should survive in the AST.
 
----
+## Semantic validation
 
-## Compiler Inputs
+`ToetraValidator.validate(...)` establishes:
 
-The compiler consumes a `.toetra` specification.
+- scope and binder correctness;
+- point visibility and anchor resolution;
+- symbol and specification-constant resolution;
+- feature and output-observable typing;
+- schema-aware target and feature compatibility;
+- valid property, restriction, and logical structure.
 
-A Toetra specification may include:
+Validation enriches the AST and semantic contexts used by IR translation. The
+code does not define a separate `SemanticValidatedAST` class.
 
-- model declaration;
-- target declaration;
-- optional dataset declaration;
-- one or more property sections;
-- property scopes;
-- assertions;
-- optional backend hints.
+## IR1
 
-The compiler itself does not directly load the ML model. Model loading and model introspection belong to ModelBridge. The compiler and ModelBridge converge later through schema-aware semantic validation, model constraints, and assertion aggregation.
+`IRTranslator` emits one `VerificationTask` per property. Each task retains:
 
----
+- property type and optional backend hint;
+- `ScopeIR`, ordered binders, points, domains, and restrictions;
+- backend-neutral scalar/logical query;
+- public output-observable intent when model-family meaning is still required.
 
-## Compiler Outputs
+IR1 contains no Z3 object and no raw framework estimator.
 
-The final target output of the compiler-side pipeline is not the AST and not IR1.
+## Model-semantic lowering
 
-The target output is a backend-preparable verification problem:
+`ModelSemanticLowerer` selects a profile from `ModelSchema.model_family`.
+Regression scalar output is already canonical. Binary classification label and
+probability observables lower into oriented-decision constraints with structured
+evidence.
 
-```text
-BackendQuery
-```
+A supported task cannot retain unresolved model-dependent observables. The
+generic no-schema path rejects them instead of guessing.
 
-A `BackendQuery` is expected to be produced after:
+Lowering occurs before final NNF because a rewrite may introduce Boolean
+structure.
 
-1. DSL source has been parsed;
-2. AST has been built;
-3. semantic references have been resolved;
-4. IR1 has normalized logical negation;
-5. IR2 has selected CNF/DNF or another normal form;
-6. DSL assertions have been aggregated;
-7. ModelBridge-derived model constraints have been integrated;
-8. lowering and minimization have prepared the query for backend encoding.
+## NNF and IR2
 
----
+`NNFNormalizer` eliminates implication, applies De Morgan rules, and confines
+negation to atomic predicates.
 
-## Layer Isolation Principle
+`IR2Builder` then:
 
-Each compiler layer must avoid leaking internal implementation details into adjacent layers.
+1. encodes domain and anchor assumptions;
+2. collects supplied model assumptions;
+3. constructs the verification condition;
+4. selects or preserves NNF/CNF/DNF under guardrails;
+5. records point mappings, evaluation identities, and quantifier structure;
+6. derives `IR2Requirements`;
+7. validates and diagnoses the completed task.
 
-Examples:
+The output `VerificationTaskIR2` contains both the source property formula and
+the executable condition. There is no later compiler object named
+`AggregatedAssertionSet` or `LoweredQuery`.
 
-| Forbidden Leak | Correct Boundary |
-|---|---|
-| Parser-specific Lark `Tree` inside AST | Builder must fully translate CST into AST nodes. |
-| Raw AST attribute names inside IR | IR must use semantic resolution when available. |
-| Backend-specific Z3 objects inside IR1 | Backend objects must appear only after backend lowering. |
-| Model framework objects inside semantic validation | Semantic validation should consume `ModelSchema`, not raw sklearn/XGBoost objects. |
+## Compiler outputs
 
----
+The high-level compiler output is a list of `VerificationTaskIR2` objects, one
+per property. Each task is ready for capability and numeric qualification, but
+not yet tied to a backend implementation.
 
-## Semantic Preservation
+The backend creates its native translation after routing. For Z3 this is a
+private `Z3Translation`, not a generic compiler `BackendQuery`.
 
-Every transformation after parsing must preserve the intended meaning of the user specification.
+## Preservation and failure
 
-This does not mean every transformation must preserve the same syntax. It means the logical meaning must remain stable or any relaxation must be explicit.
+Every transition must either preserve the declared semantics or fail at its
+own boundary. In particular:
 
-Toetra distinguishes:
+- open/closed domain bounds remain exact;
+- ordered point identities remain distinct;
+- universal and existential semantics are explicit;
+- approximate logistic thresholds retain directed bounds and permitted
+  conclusions;
+- unsupported arithmetic, model meaning, or backend capability is rejected,
+  never silently approximated.
 
-| Preservation Type | Meaning |
-|---|---|
-| Syntactic preservation | Same or equivalent source shape. |
-| Structural preservation | Same AST/IR organization. |
-| Semantic preservation | Same logical meaning. |
-| Equisatisfiability | Same satisfiability status, not necessarily same formula shape. |
-| Backend preservation | Same backend-level verification result. |
+## Related contracts
 
-IR2 transformations may sometimes preserve strict logical equivalence and sometimes only equisatisfiability, depending on the transformation strategy used.
-
----
-
-## Relation to ModelBridge
-
-The compiler pipeline expresses and normalizes user verification intent.
-
-ModelBridge represents the target ML model and its schema.
-
-They converge at two major points:
-
-1. **Schema-aware semantic validation**  
-   Toetra checks that DSL properties reference model-compatible features, targets and task types.
-
-2. **Assertion aggregation**  
-   Toetra combines DSL assertions with model-derived constraints to produce a complete verification problem.
-
----
-
-## Relation to Miova
-
-Miova is not part of the normal runtime compiler path.
-
-Miova is used to challenge the compiler path by mutating artifacts and checking contracts between layers.
-
-Potential Miova mutation boundaries include:
-
-```text
-Source
-CST
-AST
-SemanticValidatedAST
-IR1
-IR2
-AggregatedAssertionSet
-BackendQuery
-```
-
-For each boundary, Toetra should define:
-
-- valid mutations;
-- invalid mutations;
-- expected failures;
-- invariant checks;
-- contract checks;
-- semantic preservation expectations.
-
----
-
-## Target End-to-End Flow
-
-```mermaid
-flowchart TD
-    A[.toetra source]
-        --> B[Parser]
-        --> C[CST]
-        --> D[Builder]
-        --> E[AST]
-        --> F[Semantic Validation]
-        --> G[SemanticValidatedAST]
-        --> H[IR1 / NNF]
-        --> I[IR2 / CNF-DNF]
-        --> J[Assertion Aggregation]
-        --> K[Lowering / Minimization]
-        --> L[Backend Boundary]
-        --> M[BackendQuery]
-
-    MB[ModelBridge / ModelSchema]
-        --> F
-    MB
-        --> J
-```
-
----
-
-## Open Questions
-
-| Question | Why It Matters |
-|---|---|
-| Should IR1 be named `IR1` or `IR1-NNF` in code? | Keep structural IR1 named `IR1`; implement NNF as an explicit IR1 subphase/invariant once the pass exists. |
-| Should IR2 choose CNF/DNF automatically or explicitly? | This affects backend orchestration and diagnostics. |
-| Is lowering backend-independent or backend-aware? | Determines whether it belongs before or inside backend compilers. |
-| What is the exact shape of `AggregatedAssertionSet`? | This is the future central verification artifact. |
-| What is the first backend target: Z3 only or Z3-compatible abstraction? | This determines the first backend boundary contract. |
-
----
-
-## Related Documents
-
-- `compiler/language-layer.md`
-- `compiler/parser-layer.md`
-- `compiler/builder-layer.md`
-- `compiler/ast-layer.md`
-- `compiler/semantic-layer.md`
-- `compiler/ir1-layer.md`
-- `compiler/ir2-layer.md`
-- `compiler/assertion-aggregation.md`
-- `compiler/lowering-minimization.md`
-- `compiler/backend-boundary.md`
+- [Compiler pipeline](../contracts/compiler-pipeline.md)
+- [AST contract](../contracts/ast-contract.md)
+- [AST to semantic](../contracts/ast-to-semantic.md)
+- [Semantic to IR1](../contracts/semantic-to-ir1.md)
+- [Model semantic lowering](../contracts/model-semantic-lowering.md)
+- [IR1 to IR2](../contracts/ir1-to-ir2.md)

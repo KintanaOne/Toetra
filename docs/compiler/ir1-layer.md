@@ -1,7 +1,7 @@
 # IR1 Layer
 
 > Status: P21.4 / Implemented / Stabilizing  
-> Scope: SemanticValidatedAST to IR1  
+> Scope: Semantically validated AST state to IR1
 > Implementation: VerificationTask and logical IR tree  
 > Audience: IR authors, backend authors, testing authors
 
@@ -22,7 +22,7 @@ IR1 is not yet a backend query. It is the first formal logical layer after seman
 ## Position in the Pipeline
 
 ```text
-SemanticValidatedAST
+Validated ProgramNode + semantic context
     ↓
 IR1
     ↓

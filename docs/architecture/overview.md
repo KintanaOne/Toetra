@@ -1,424 +1,181 @@
-# Architecture Overview
+# Architecture overview
 
-> Status: P0 documentation baseline  
-> Scope: Current and target Toetra architecture
-> Implementation state: Partially implemented, with planned end-to-end logical verification pipeline
+> **Status:** As built for `1.0.0rc3`
+>
+> **Audience:** maintainers, contributors, backend authors, and reviewers
+>
+> **Stability:** internal implementation; only the root `toetra` facade is public
 
-Toetra is designed as an end-to-end behavioral verification architecture for machine learning systems.
+Toetra is a staged compiler and verification runtime for declarative behavioral
+properties of machine-learning models. The implementation keeps source syntax,
+model-family meaning, formal verification conditions, backend execution, and
+user-facing evidence in separate layers.
 
-It starts from a user-defined `.toetra` specification and a model artifact, then progressively transforms them into a backend-specific verification query.
-
-The architecture is intentionally layered so that each stage has a clear responsibility, artifact boundary, validation rule, and future mutation-testing surface.
-
-## Architectural intent
-
-Toetra exists to bridge the gap between human-expressed ML behavioral requirements and formal or semi-formal verification backends.
-
-It does this through a progressive pipeline:
-
-```text
-User intent
-    ↓
-DSL specification
-    ↓
-Compiler artifacts
-    ↓
-Semantic validation
-    ↓
-Logical IR
-    ↓
-Model-aware constraint integration
-    ↓
-Backend-specific verification
-```
-
-The key architectural principle is that user intent should not be lowered directly to a solver.
-
-Instead, Toetra introduces explicit intermediate artifacts that make the transformation inspectable, testable, and extensible.
-
-## High-level architecture
-
-```mermaid
-flowchart TD
-    U[User]
-        --> S[.toetra Specification]
-
-    M[Serialized ML Model]
-        --> MB[ModelBridge]
-
-    D[Dataset / External Schema]
-        --> MB
-
-    S
-        --> C[DSL Compiler Pipeline]
-
-    C
-        --> SV[SemanticValidatedAST]
-
-    SV
-        --> IR1[IR1 / NNF]
-
-    IR1
-        --> IR2[IR2 / CNF-DNF]
-
-    MB
-        --> MS[ModelSchema]
-
-    MS
-        --> MC[Model Constraints]
-
-    IR2
-        --> AGG[Assertion Aggregation]
-
-    MC
-        --> AGG
-
-    AGG
-        --> LOW[Lowering / Minimization]
-
-    LOW
-        --> BQ[Backend Query]
-
-    BQ
-        --> BE[Verification Backend]
-
-    BE
-        --> R[Result / Diagnostics]
-
-    MI[Miova]
-        -. challenges .-> S
-    MI
-        -. mutates .-> C
-    MI
-        -. mutates .-> IR1
-    MI
-        -. mutates .-> IR2
-    MI
-        -. mutates .-> AGG
-```
-
-## Primary pipelines
-
-Toetra has two primary input pipelines that converge before backend lowering.
-
-### 1. DSL Compiler Pipeline
-
-The DSL compiler pipeline transforms a `.toetra` source file into semantically validated logical artifacts.
+The executable V1 path is:
 
 ```text
 .toetra source
-    ↓
-CST
-    ↓
-AST
-    ↓
-SemanticValidatedAST
-    ↓
-IR1 / NNF
-    ↓
-IR2 / CNF-DNF
+→ CST
+→ ProgramNode AST
+→ semantic validation in place
+→ VerificationTask (IR1)
+→ model-semantic lowering + evidence
+→ NNF normalization
+→ VerificationTaskIR2 + typed assumptions
+→ capability, numeric, and execution-policy routing
+→ backend translation and execution
+→ VerificationResult
+→ VerificationReport + provenance
+→ VerificationSession and optional concrete replay
 ```
 
-This pipeline answers:
+This page describes that implementation. It does not widen the
+[public V1 profile](../public-v1-profile.md) or make any `toetra._*` module a
+supported import.
 
-> What does the user want to verify?
+## System boundaries
 
-Current implementation status:
-
-- source parsing exists,
-- CST generation exists,
-- AST builder exists,
-- semantic validation exists,
-- IR1 exists,
-- IR1 is being shaped around logical normalization such as De Morgan and NNF,
-- IR2 CNF/DNF is planned.
-
-### 2. ModelBridge Pipeline
-
-The ModelBridge pipeline transforms a model artifact and optional dataset/schema into a normalized model representation.
-
-```text
-model artifact
-    ↓
-loader
-    ↓
-loaded model
-    ↓
-framework detector
-    ↓
-introspector
-    ↓
-ModelSchema
-    ↓
-model constraints
+```mermaid
+flowchart TD
+    U["Public API: verify()"] --> C["Compiler and semantic validation"]
+    C --> M["Model semantics and ModelBridge"]
+    M --> I["IR2 verification task"]
+    I --> B["Routing and backend execution"]
+    B --> R["Reports, provenance, and replay"]
 ```
 
-This pipeline answers:
-
-> What model is being verified, and what can be known about its features, task, target, and framework?
-
-Current implementation status:
-
-- model loaders exist for pickle/joblib/json-like paths,
-- framework detection exists for sklearn and XGBoost foundations,
-- introspection exists for sklearn and XGBoost-style models,
-- `ModelSchema` and `FeatureSchema` exist,
-- model constraint generation is planned.
-
-## Convergence point
-
-The DSL pipeline and ModelBridge pipeline converge at the model-aware verification preparation stage.
-
-```text
-IR2 Normal Forms
-    +
-Model Constraints
-    +
-Semantic Constraints
-    ↓
-Aggregated Assertion Set
-```
-
-This convergence is one of the most important parts of the architecture.
-
-Toetra should not merely check whether a `.toetra` property is syntactically valid. It should eventually check whether that property is meaningful for the actual target model.
-
-Examples:
-
-- referenced features should exist in the model schema,
-- constants should be compatible with feature types,
-- problem functions should match the model task,
-- robustness neighborhoods should match model input dimensions,
-- backend selection should respect model and property constraints.
-
-## Logical verification pipeline
-
-After semantic validation, Toetra enters the logical verification pipeline.
-
-```text
-SemanticValidatedAST
-    ↓
-IR1 / NNF
-    ↓
-IR2 / CNF-DNF
-    ↓
-Assertion Aggregation
-    ↓
-Lowering / Minimization
-    ↓
-Backend Query
-```
-
-### IR1 / NNF
-
-IR1 is the first backend-independent logical representation.
-
-It should preserve semantic resolution while normalizing logical structure.
-
-Responsibilities include:
-
-- representing verification tasks,
-- representing semantic scopes,
-- representing logical expressions,
-- preserving resolved entity bindings,
-- applying De Morgan transformations,
-- pushing negations toward leaves,
-- producing or enforcing Negation Normal Form.
-
-### IR2 / CNF-DNF
-
-IR2 is planned as the next logical layer.
-
-It is responsible for selecting and producing normal forms according to verification needs.
-
-CNF may be useful for:
-
-- SAT/SMT-like solving,
-- global consistency constraints,
-- conjunction of clauses,
-- backend-oriented symbolic encoding.
-
-DNF may be useful for:
-
-- scenario exploration,
-- case splitting,
-- counterexample search,
-- mutation-driven boundary exploration.
-
-IR2 should document whether each transformation preserves strict semantic equivalence or only equisatisfiability.
-
-### Assertion Aggregation
-
-Assertion aggregation combines multiple sources of constraints:
-
-- user DSL assertions,
-- semantic constraints from scopes, domains, neighborhoods, and bindings,
-- model-derived constraints from ModelBridge,
-- backend capability constraints,
-- optional strategy constraints.
-
-The output is an `AggregatedAssertionSet` or equivalent artifact.
-
-### Lowering / Minimization
-
-Lowering and minimization prepare aggregated assertions for backend-specific query generation.
-
-Responsibilities include:
-
-- simplification,
-- redundancy elimination,
-- symbolic preparation,
-- backend-aware but not yet backend-specific rewriting,
-- traceability of removed, merged, or transformed constraints.
-
-### Backend Query
-
-The backend query is the first artifact that belongs to a specific backend.
-
-Before this boundary, Toetra should remain as backend-agnostic as possible.
-
-## Semantic layer
-
-The semantic layer is the meaning boundary of the compiler.
-
-It is responsible for:
-
-- validating the left-hand side of properties,
-- building semantic contexts,
-- registering variables in a symbol table,
-- resolving explicit and implicit attributes,
-- validating logical expressions,
-- checking problem/function compatibility,
-- checking property/scope compatibility,
-- attaching semantic annotations to downstream artifacts.
-
-The semantic layer is also where future ModelSchema-aware validation will be integrated.
-
-## Specification Constants and Name Resolution
-
-Specification constants are program-level immutable values declared in the `.toetra` header.
-
-```toetra
-max_risk := 0.20
-minimum_income := 25000.0
-```
-
-They participate in the compiler as a separate symbol kind:
-
-```text
-header declaration
-→ SpecificationConstantDeclarationNode
-→ program-level symbol registration
-→ context-aware NameRef resolution
-→ typed constant IR with provenance
-```
-
-The raw AST preserves a bare scalar name as `NameRefNode`. The semantic layer resolves it according to context:
-
-- in assertions: specification constant first, otherwise implicit feature;
-- in domain bounds: specification constant first, while features must remain explicit;
-- in finite sets: specification constant first, otherwise symbolic categorical literal.
-
-An explicitly qualified reference always denotes a feature. Specification constants are lowered as known literal values, not backend solver variables.
-
-This design keeps the DSL concise while preserving deterministic compiler semantics.
-
-## Backend-agnostic design
-
-Toetra separates:
-
-- DSL syntax,
-- user intent,
-- semantic meaning,
-- logical representation,
-- model metadata,
-- backend preparation,
-- backend-specific encoding.
-
-This separation allows Toetra to support multiple backends over time without tying the DSL or semantic layer to one solver.
-
-## Miova as external validation layer
-
-Miova is external to the normal verification runtime.
-
-It is used to challenge Toetra itself.
-
-Miova can mutate artifacts at several boundaries:
-
-```text
-source
-CST
-AST
-SemanticValidatedAST
-IR1
-IR2
-AggregatedAssertionSet
-BackendQuery
-ModelSchema
-```
-
-Its role is to test:
-
-- contracts,
-- invariants,
-- expected failures,
-- robustness of transformations,
-- rejection of invalid artifacts,
-- preservation of valid semantics when expected.
-
-Miova therefore supports Toetra's engineering quality, but does not replace Toetra's verification backends.
-
-## Current architecture vs target architecture
-
-Toetra documentation must always distinguish current implementation from target architecture.
-
-| Area | Current | Target |
+| Boundary | Owned responsibility | Current artifact |
 |---|---|---|
-| DSL parser | Implemented | Stable parser with clean grammar boundaries. |
-| AST builder | Implemented / stabilizing | Strict AST contracts and no accidental dynamic fields. |
-| Semantic validation | Implemented / stabilizing | ModelSchema-aware semantic validation. |
-| IR1 | Implemented / stabilizing | Stable NNF-oriented logical layer. |
-| IR2 | Planned | CNF/DNF selection and transformation layer. |
-| ModelBridge | Partially implemented | Full schema and model-constraint generation. |
-| Aggregation | Planned | Combined verification problem. |
-| Lowering | Planned | Simplified backend-preparation artifact. |
-| Backend query | Planned | Backend-specific executable query. |
-| Runtime | Planned | Execute and report verification results. |
-| Monitoring | Research direction | Runtime behavioral observation. |
-| Miova | External / planned integration | Mutation campaigns over Toetra artifacts. |
+| Public runtime | Resolve files, model/schema inputs, anchors, policies, and session lifecycle | `VerificationSession` |
+| Language and compiler | Parse, build, bind, type, and translate source intent | `ProgramNode`, then `VerificationTask` |
+| Model semantics | Rewrite typed output observables into canonical model-family quantities | lowered `VerificationTask` plus evidence |
+| ModelBridge | Normalize model metadata and encode equations for requested evaluations | `ModelSchema`, `AssumptionIR2` |
+| IR2 | Build the property formula, assumptions, verification condition, requirements, and diagnostics | `VerificationTaskIR2` |
+| Backend routing | Check structural capabilities, numeric compatibility, and execution controls | `BackendRoute` |
+| Backend adapter | Translate an accepted IR2 task and execute it | backend-private translation, then `VerificationResult` |
+| Evidence | Build stable reports, provenance fingerprints, renderings, and replay views | `VerificationReport`, `CounterexampleReplay` |
 
-## Architectural risks
+## Compiler path
 
-The main risks to control are:
+The parser produces a Lark concrete syntax tree. The builder converts it into a
+typed `ProgramNode` tree. `ToetraValidator` validates that AST in place and
+records semantic resolution through contexts, symbols, point bindings, types,
+and annotations. There is no separate `SemanticValidatedAST` runtime class.
 
-1. **Overclaiming future layers**  
-   Planned components should be documented, but clearly labeled.
+`IRTranslator` then creates one backend-neutral `VerificationTask` per property.
+IR1 retains the public observable and source meaning until the selected
+model-family semantic profile performs any required rewrite. Final NNF
+normalization happens after that rewrite because label equality and probability
+predicates can introduce Boolean structure.
 
-2. **Backend leakage**  
-   Backend-specific logic should not contaminate parser, AST, or semantic layers.
+The governing boundaries are:
 
-3. **Semantic loss between layers**  
-   Resolved bindings must be preserved from semantic validation into IR.
+- [compiler pipeline contract](../contracts/compiler-pipeline.md);
+- [AST to semantic contract](../contracts/ast-to-semantic.md);
+- [semantic to IR1 contract](../contracts/semantic-to-ir1.md);
+- [model-semantic lowering contract](../contracts/model-semantic-lowering.md);
+- [IR1 to IR2 contract](../contracts/ir1-to-ir2.md).
 
-4. **Grammar / enum drift**  
-   Vocabulary, generated grammar, and runtime enums must remain aligned.
+## Model path
 
-5. **ModelBridge underuse**  
-   ModelBridge should not remain a passive metadata extractor; it must become part of model-aware validation and constraint generation.
+`verify(...)` accepts either a normalized `ModelSchema` or model artifacts from
+which `ModelManager` builds one. Supplying both is rejected. The schema is used
+during semantic validation and to select:
 
-6. **Unclear mutation boundaries**  
-   Miova integration requires explicit artifacts and expected outcomes.
+1. a model-family semantic profile for public output observables;
+2. a model encoder for concrete model equations;
+3. a numeric compatibility descriptor;
+4. a runtime observer for replay.
 
-## Documentation policy
+The encoder receives the exact `(model, point, output)` evaluations discovered
+from the lowered property. It emits one typed model assumption per requested
+evaluation. It does not inspect a scope and guess a point.
 
-Every Toetra architecture document should include:
+The public V1 routes are direct fitted sklearn `LinearRegression` and binary
+`LogisticRegression`. Detection or introspection infrastructure for another
+framework is not an executable-support claim.
 
-- current implementation state,
-- target architecture,
-- responsibilities,
-- artifacts,
-- invariants,
-- failure modes,
-- open questions.
+## IR2 and assumption composition
 
-This prevents the documentation from becoming either too vague or too tied to temporary implementation details.
+`IR2Builder` receives an NNF-normalized IR1 task and typed assumptions. It:
+
+1. encodes anchor and domain assumptions;
+2. collects those with model assumptions;
+3. preserves the normalized source property as `spec_formula`;
+4. builds the verification condition required by the quantifier semantics;
+5. selects NNF, CNF, or DNF under the configured cost guardrails;
+6. derives backend requirements, point mappings, and model evaluations;
+7. validates the completed `VerificationTaskIR2`.
+
+For universal refutation the executable condition is conceptually
+`Γ ∧ ¬P`; for existential witness search it is `Γ ∧ P`. The assumptions remain
+separately typed and traceable inside the task. There is no
+`AggregatedAssertionSet` or `LoweredQuery` runtime type.
+
+## Routing and backend execution
+
+`BackendRouter` does not translate formulas. It chooses a registered backend
+only after three checks agree:
+
+- the backend capabilities satisfy `IR2Requirements`;
+- the registered numeric compatibility rule permits the route;
+- the backend can enforce the requested execution policy.
+
+The selected `BackendRoute` records the backend, capabilities, reason, and
+numeric assessment. The runtime then obtains the corresponding runner from
+`BackendRunnerRegistry`.
+
+For V1, `Z3Runner` asks `Z3Translator` to create a backend-private
+`Z3Translation`, executes the solver under one total policy budget, and returns
+a backend-neutral `VerificationResult`. No generic `BackendQuery` class crosses
+this boundary.
+
+See the [IR to backend contract](../contracts/ir-to-backend.md) and
+[backend execution contract](../contracts/backend-execution-contract.md).
+
+## Reports, provenance, and replay
+
+The runtime applies numeric and semantic-lowering conclusion policies before
+report construction. `build_verification_report(...)` then combines the IR2
+task, route, result, schema, lowering evidence, and provenance context.
+
+Reports are backend-neutral and serializable. They retain:
+
+- the original source-level property;
+- assumptions and backend assignments;
+- route and execution evidence;
+- numeric compatibility and lowering evidence;
+- model-evaluation views;
+- content and route fingerprints.
+
+Replay is deliberately separate from proof. It executes the concrete model for
+one formal witness or counterexample and compares the observed values with the
+formal evidence. Replay can detect a mismatch; it cannot upgrade an exact-real
+abstraction into a bit-exact global proof of framework execution.
+
+See the
+[reporting and replay contract](../contracts/output-reporting-and-replay.md) and
+[verification provenance contract](../contracts/verification-provenance.md).
+
+## Source ownership
+
+| Source path | Responsibility |
+|---|---|
+| `src/toetra/_language` | EBNF source, generated grammar, and vocabulary |
+| `src/toetra/_compiler/{parser,builder,ast,semantic}` | Source structure, binding, typing, and semantic validation |
+| `src/toetra/_compiler/ir/ir1` | Backend-neutral declarative intent |
+| `src/toetra/_models/semantics` | Model-family semantic lowering and evidence |
+| `src/toetra/_compiler/ir/{normalization,ir2}` | NNF, assumptions, verification conditions, normal forms, and requirements |
+| `src/toetra/_models/{loader,detector,introspector,schema,encoder}` | ModelBridge |
+| `src/toetra/_compatibility` | Numeric route qualification and conclusion policy |
+| `src/toetra/_backends` | Backend capabilities, routing, translation, and execution |
+| `src/toetra/_runtime` | High-level orchestration, sessions, anchors, and replay |
+| `src/toetra/_reporting`, `src/toetra/_provenance` | Reports, renderers, and reproducibility evidence |
+
+## V1 exclusions
+
+The architecture contains extension points, but V1 does not execute multiclass,
+multi-output, nonlinear, tree, ensemble, neural-network, symbolic-preprocessing,
+categorical-reasoning, alternating-quantifier, or non-Z3 routes. The
+[status matrix](status-matrix.md) separates implemented infrastructure from
+publicly executable behavior.

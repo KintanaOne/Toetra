@@ -1,199 +1,127 @@
-# Intermediate Representations Overview
+# Intermediate representations overview
 
-> Status: Stabilizing  
-> Implementation: Implemented until IR1; IR2, aggregation, lowering, and backend query are planned  
-> Scope: Logical verification pipeline
+> **Status:** Implemented for `1.0.0rc3`
+>
+> **Scope:** IR1, model-semantic lowering, NNF, and IR2
 
-## Purpose
-
-Intermediate Representations, or IRs, are the internal logical representations used by Toetra after DSL parsing and semantic validation.
-
-Their purpose is to progressively transform user intent from a domain-specific property expression into a backend-preparable verification problem.
-
-Toetra does not directly send DSL assertions to a solver or verification backend. Instead, it progressively formalizes them through several layers:
+Toetra uses two backend-neutral intermediate-representation layers:
 
 ```text
-SemanticValidatedAST
-    ↓
-IR1 — normalized logical representation
-    ↓
-IR2 — backend-preparation normal forms
-    ↓
-AggregatedAssertionSet
-    ↓
-LoweredQuery
-    ↓
-BackendQuery
+validated ProgramNode
+→ VerificationTask (IR1)
+→ model-semantic lowering
+→ NNF VerificationTask
+→ VerificationTaskIR2
+→ backend routing
 ```
 
-This layered approach keeps DSL syntax, semantic validation, logical normalization, model constraints, and backend encoding separated.
+Backend-native translations are adapter-private and are not a third shared IR.
 
----
+## IR1: declarative intent
 
-## Why IRs Matter
+IR1 retains the property as a backend-independent task:
 
-The DSL captures what the user wants to verify.
-
-The IR pipeline defines how Toetra turns that intent into a formal verification problem.
-
-IRs are necessary because Toetra must support several concerns at once:
-
-| Concern | Why it matters |
-|---|---|
-| DSL independence | Backends should not depend on source syntax. |
-| Semantic preservation | Logical meaning must survive transformations. |
-| Normalization | Logical expressions need canonical forms. |
-| Backend preparation | Different solvers may require different encodings. |
-| Model integration | ModelBridge-derived constraints must be composed with DSL assertions. |
-| Mutation testing | Miova must be able to challenge each representation boundary. |
-
----
-
-## IR Pipeline
-
-### SemanticValidatedAST
-
-The semantic layer resolves variables, scopes, implicit entities, property compatibility, and logical correctness.
-
-It produces an AST enriched with semantic annotations.
-
-This is not yet an IR, but it is the required input for IR translation.
-
----
-
-### IR1
-
-IR1 is the first backend-independent logical representation.
-
-It currently represents verification tasks composed of:
-
-- property type,
-- scope representation,
-- logical query,
+- `VerificationTask`;
+- `ScopeIR`, domains, points, restrictions, and binders;
+- `QueryIR`;
+- logical and scalar nodes;
+- `ModelEvaluationIR` identities;
+- public output-observable expressions;
 - optional backend hint.
-
-IR1 is responsible for early logical normalization, including implication handling, De Morgan transformations, and Negation Normal Form where applicable.
 
 IR1 answers:
 
-```text
-What is the normalized logical task to verify?
-```
+> What typed logical property did the user declare?
 
----
+Model-dependent observables can remain in IR1 because their meaning depends on
+the normalized model family. No solver or framework estimator object is
+permitted.
 
-### IR2
+## Model-semantic lowering
 
-IR2 is the planned layer responsible for clause-oriented or case-oriented normal forms.
+The schema-aware path rewrites supported output observables into canonical IR1
+constraints. The result is still a `VerificationTask`, accompanied by lowering
+evidence.
 
-It may produce:
+This step answers:
 
-- CNF for conjunction-of-clauses reasoning,
-- DNF for scenario splitting or counterexample exploration,
-- other canonical forms required by backend strategy selection.
+> What mathematical relation represents this public observable for the selected
+> model family?
+
+It precedes final NNF because a rewrite can introduce conjunctions,
+disjunctions, or strict/non-strict decision boundaries.
+
+## NNF invariant
+
+`NNFNormalizer` produces IR1 in negation normal form:
+
+- implication is eliminated;
+- negation occurs only above atomic predicates;
+- point, model-evaluation, and source meaning are preserved.
+
+NNF is an invariant of the task passed to `IR2Builder`, not a distinct top-level
+task class.
+
+## IR2: executable backend-neutral task
+
+`VerificationTaskIR2` contains:
+
+- normalized source property as `spec_formula`;
+- typed `AssumptionIR2` values;
+- executable verification condition;
+- actual `NormalFormKind`;
+- `VerificationSemantics`;
+- `IR2Requirements`;
+- point mappings and model evaluations;
+- quantifier structure;
+- diagnostics and metadata;
+- lowering evidence and original source formula.
 
 IR2 answers:
 
-```text
-Which logical form is best suited for the verification strategy?
-```
+> What complete, qualified logical condition must a backend execute?
 
----
+Formula variants are explicit:
 
-### AggregatedAssertionSet
+- `NNFFormulaIR2`;
+- `CNFFormulaIR2`;
+- `DNFFormulaIR2`.
 
-The aggregation layer combines multiple sources of constraints:
+## Assumption composition
 
-- user DSL assertions,
-- semantic constraints,
-- scope constraints,
-- neighborhood constraints,
-- domain constraints,
-- model constraints derived from ModelBridge,
-- backend capability constraints when needed.
+Domain, anchor, and model constraints are represented as typed assumptions
+inside `VerificationTaskIR2`. The task also contains the composed verification
+condition. There is no separate `AggregatedAssertionSet`.
 
-It answers:
+For universal refutation the condition is `Γ ∧ ¬P`; for existential witness
+search it is `Γ ∧ P`.
 
-```text
-What is the complete verification problem?
-```
+## Backend boundary
 
----
+The router consumes IR2 requirements and produces a `BackendRoute`. The selected
+adapter then creates a backend-private native translation. Z3 uses
+`Z3Translation`.
 
-### LoweredQuery
+There is no shared `LoweredQuery` or `BackendQuery` Python type in the current
+pipeline. Those names in older design records describe conceptual stages, not
+runtime artifacts.
 
-The lowering and minimization layer simplifies and prepares the aggregated assertion set.
+## Layer invariants
 
-It may perform:
-
-- redundancy elimination,
-- logical simplification,
-- constraint minimization,
-- backend-aware preparation,
-- trace-preserving transformations.
-
-It answers:
-
-```text
-What is the smallest or most suitable backend-preparable query?
-```
-
----
-
-### BackendQuery
-
-BackendQuery is the final backend-specific artifact sent to a verification engine.
-
-Examples may include:
-
-- a Z3 formula,
-- an ERAN-compatible robustness query,
-- a future backend-specific verification artifact.
-
-It answers:
-
-```text
-What exactly is sent to the backend?
-```
-
----
-
-## Current Implementation Status
-
-| Representation | Status | Guarantee |
+| Layer | Must preserve | Must exclude |
 |---|---|---|
-| Semantic annotations | implemented | Exact points, types, restrictions and model-evaluation identities. |
-| VerificationTask / IR1 | implemented | Point-aware scalar logic, ordered binders, point-owned domains and provenance. |
-| ScopeIR | implemented | Structured points/binders/restriction with compatibility-only legacy projections. |
-| IR1 NNF | implemented | Logical normalization preserves point and evaluation metadata. |
-| IR2 NNF/CNF/DNF | implemented | Normal forms, requirements, assumptions, point mappings and quantifier profile. |
-| Assertion aggregation | implemented | Domains, anchors, model equations and verification body combine with provenance. |
-| Backend query | implemented for Z3 | Structured point identities become distinct solver symbols with reverse mappings. |
-| Reporting/replay contract | implemented | Grouped evidence and real-model replay retain all points/evaluations. |
+| IR1 | source intent, point identity, types, observable identity | Lark nodes, backend objects |
+| lowered IR1 | source trace, canonical model-family meaning, evidence | unresolved supported observables |
+| NNF IR1 | semantic equivalence and atom identity | implication, non-leaf negation |
+| IR2 | assumptions, semantics, requirements, provenance | framework estimators, backend API objects |
+| backend translation | all accepted IR2 meaning | unsupported/coerced requirements |
 
-## Design Principle
+## Related documents
 
-Toetra treats IRs as architectural contracts.
-
-Each IR layer must define:
-
-- its accepted inputs,
-- its produced outputs,
-- its invariants,
-- its semantic preservation guarantees,
-- its relationship to previous and next layers,
-- its mutation boundaries.
-
-This ensures that the logical verification pipeline can evolve without collapsing into a single unstructured compiler pass.
-
----
-
-## Related Documents
-
-- [Verification Task](verification-task.md)
+- [Verification task](verification-task.md)
 - [Scope IR](scope-ir.md)
 - [Logical IR](logical-ir.md)
 - [IR1 NNF](ir1-nnf.md)
-- [IR2 Normal Forms](ir2-normal-forms.md)
-- [Aggregated Assertion Set](aggregated-assertion-set.md)
-- [Backend Query](backend-query.md)
+- [IR2 normal forms](ir2-normal-forms.md)
+- [Assumptions and verification condition](aggregated-assertion-set.md)
+- [Backend translation](backend-query.md)

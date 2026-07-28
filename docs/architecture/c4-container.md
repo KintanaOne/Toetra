@@ -1,229 +1,77 @@
-# C4 Container View
+# C4 container view
 
-> Status: Stabilizing  
-> Scope: Major Toetra containers
-> Implementation: Current + target  
-> V1 backend scope: Z3 only
+> **Status:** As built for `1.0.0rc3`
+>
+> **Level:** logical containers inside the installed Python distribution
 
-## Purpose
-
-This document describes the major containers that compose Toetra.
-
-It answers:
-
-```text
-What are the main executable or logical subsystems inside Toetra?
-```
-
-In this documentation, “container” means a major runtime or architectural unit, not necessarily a Docker container.
-
----
-
-## Container diagram
+Toetra is distributed as one Python package. The containers below are logical
+ownership boundaries, not independently deployed services.
 
 ```mermaid
 flowchart TD
-    User[User]
-        --> CLI[CLI / API Layer]
-
-    CLI
-        --> Compiler[DSL Compiler]
-
-    CLI
-        --> MB[ModelBridge]
-
-    Compiler
-        --> IR[Logical Verification Pipeline]
-
-    MB
-        --> IR
-
-    IR
-        --> BackendBoundary[Backend Boundary]
-
-    BackendBoundary
-        --> Z3Runtime[Z3 Runtime Adapter]
-
-    Z3Runtime
-        --> Z3[Z3 Solver]
-
-    Z3Runtime
-        --> Result[Verification Result / Diagnostics]
-
-    Miova[Miova]
-        -. mutation campaigns .-> Compiler
-    Miova
-        -. mutation campaigns .-> IR
-    Miova
-        -. schema mutations .-> MB
+    A["Public facade"] --> R["Runtime composition"]
+    R --> C["Compiler"]
+    R --> M["ModelBridge"]
+    C --> I["IR2"]
+    M --> I
+    I --> B["Compatibility and backends"]
+    B --> E["Reporting and provenance"]
+    R --> E
 ```
-
----
 
 ## Containers
 
-| Container | Responsibility | Status |
+| Container | Source | Responsibility |
 |---|---|---|
-| CLI / API Layer | Entry point for compiling or verifying Toetra specifications. | Planned / stabilizing |
-| DSL Compiler | Parses, builds, validates and translates `.toetra` source. | Implemented until IR1 / stabilizing |
-| ModelBridge | Loads and introspects ML models into `ModelSchema`. | Partially implemented |
-| Logical Verification Pipeline | IR1, IR2, aggregation, lowering and backend query preparation. | Partially implemented / planned |
-| Backend Boundary | Converts lowered queries into backend-specific artifacts. | Planned / critical |
-| Z3 Runtime Adapter | Executes V1 backend queries against Z3. | Planned / critical |
-| Verification Result / Diagnostics | Normalized output of verification execution. | Planned |
-| Miova Integration | External mutation and contract validation layer. | Planned integration |
+| Public facade | `src/toetra/__init__.py` | stable user imports |
+| Runtime composition | `src/toetra/_runtime` | resolve request inputs, orchestrate properties, return sessions, replay |
+| Language/compiler | `src/toetra/_language`, `src/toetra/_compiler` | grammar, AST, semantics, IR1, NNF, IR2 |
+| ModelBridge | `src/toetra/_models` | loading, schema, semantic profiles, encoders, runtime observers |
+| Numeric compatibility | `src/toetra/_compatibility` | qualify framework/encoder/backend numeric meaning and permitted conclusions |
+| Backend adapters | `src/toetra/_backends` | capabilities, routing, translation, solver execution |
+| Evidence | `src/toetra/_reporting`, `src/toetra/_provenance` | reports, renderers, fingerprints |
+| Installed examples | `src/toetra/examples` | packaged resource lookup |
 
----
+## Main interactions
 
-## Container responsibilities
-
-### CLI / API Layer
-
-The CLI/API layer should orchestrate the end-to-end path.
-
-Responsibilities:
-
-- accept `.toetra` files;
-- accept model and dataset/schema inputs;
-- trigger compiler pipeline;
-- trigger ModelBridge;
-- execute the Z3-backed verification runtime;
-- expose diagnostics.
-
-The CLI/API layer should not contain semantic logic. It should orchestrate existing services.
-
----
-
-### DSL Compiler
-
-The DSL Compiler transforms a user specification into semantically validated logical representations.
+### Request composition
 
 ```text
-.toetra → CST → AST → SemanticValidatedAST → IR1
+public verify(...)
+→ runtime input resolution
+→ compiler + ModelBridge
+→ IR2 tasks
+→ route and runner
+→ reports
+→ public session
 ```
 
-Responsibilities:
+### Compiler/ModelBridge convergence
 
-- parsing;
-- AST construction;
-- scope validation;
-- binding resolution;
-- property compatibility validation;
-- IR1 generation.
+The compiler receives `ModelSchema` during semantic validation. Model semantics
+lower public observables before final NNF. The model encoder then emits
+`AssumptionIR2` values only for evaluations discovered in the lowered property.
+IR2 owns the final verification condition.
 
----
+### Backend boundary
 
-### ModelBridge
+The router receives completed IR2 tasks and returns a `BackendRoute`. The
+runtime runner registry maps that route to a concrete executor. Backend-native
+objects stay inside the adapter.
 
-ModelBridge transforms model artifacts into normalized model metadata.
+### Evidence boundary
 
-```text
-model artifact → loader → detector → introspector → ModelSchema
-```
+The report builder receives task, route, result, schema, and provenance context.
+Renderers consume `VerificationReport`; they do not inspect Z3. Replay consumes
+formal evidence and a concrete model through a runtime-observer protocol.
 
-Responsibilities:
+## Deployment statement
 
-- model loading;
-- framework detection;
-- feature extraction;
-- task detection;
-- target/schema normalization;
-- future model constraint generation.
+`1.0.0rc3` is a local library/runtime. It does not ship a server, remote worker,
+monitoring daemon, distributed scheduler, or multi-service control plane.
 
----
+## Stability statement
 
-### Logical Verification Pipeline
-
-The Logical Verification Pipeline progressively prepares the verification problem.
-
-```text
-IR1-NNF
-→ IR2-CNF/DNF
-→ AggregatedAssertionSet
-→ LoweredQuery
-→ BackendQuery
-```
-
-Responsibilities:
-
-- De Morgan / NNF normalization in IR1;
-- CNF/DNF selection in IR2;
-- assertion aggregation;
-- integration of model-derived constraints;
-- simplification and minimization;
-- backend query preparation.
-
----
-
-### Backend Boundary
-
-The Backend Boundary isolates the rest of Toetra from backend-specific details.
-
-V1 target:
-
-```text
-LoweredQuery → Z3 BackendQuery
-```
-
-Responsibilities:
-
-- backend-specific encoding;
-- backend capability checks;
-- backend diagnostics;
-- no direct access to raw DSL or AST.
-
----
-
-### Z3 Runtime Adapter
-
-The Z3 Runtime Adapter executes the minimal V1 backend path.
-
-Responsibilities:
-
-- create Z3 variables and constraints;
-- submit solver queries;
-- interpret solver result;
-- normalize results and diagnostics.
-
----
-
-### Miova Integration
-
-Miova is not part of the normal runtime verification path.
-
-It is used to:
-
-- mutate Toetra artifacts;
-- validate layer contracts;
-- test expected failures;
-- run invariant checks;
-- explore robustness boundaries.
-
----
-
-## V1 container path
-
-The minimal V1 execution path is:
-
-```text
-CLI/API
-→ DSL Compiler
-→ ModelBridge
-→ Logical Verification Pipeline
-→ Backend Boundary
-→ Z3 Runtime Adapter
-→ Verification Result
-```
-
-Multi-backend orchestration, ERAN, runtime monitoring and advanced backend capability routing are post-V1 concerns.
-
----
-
-## Related documents
-
-- `architecture/c4-context.md`
-- `compiler/pipeline.md`
-- `model-bridge/overview.md`
-- `ir/overview.md`
-- `runtime/verification-runtime.md`
-- `backends/z3.md`
+Only the public facade is versioned as public API. Logical container boundaries
+are documented for contributors and can evolve under the accepted contracts
+without exposing their Python types at the package root.

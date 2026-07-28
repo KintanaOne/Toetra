@@ -1,205 +1,98 @@
-# Assertion Aggregation
+# Assumptions and verification-condition composition
 
-> Status: P0 / Planned / Critical  
-> Scope: Combining DSL assertions, semantic constraints, and model constraints  
-> Implementation: Not yet implemented  
-> Audience: backend authors, IR authors, ModelBridge authors, verification designers
+> **Status:** Implemented in IR2
+>
+> **Scope:** typed assumptions and the executable verification condition
 
-## Purpose
-
-Assertion aggregation is the planned layer that combines all constraints required to form a complete verification problem.
-
-It answers the question:
-
-```text
-What is the full logical problem that the backend must verify?
-```
-
-The backend should not receive isolated DSL assertions only. It should receive an aggregated verification problem.
-
----
-
-## Position in the Pipeline
-
-```text
-IR2 / CNF-DNF
-    +
-Semantic constraints
-    +
-ModelBridge-derived constraints
-    ↓
-Assertion Aggregation
-    ↓
-AggregatedAssertionSet
-```
-
----
-
-## Why Aggregation Exists
-
-A Toetra property is not only its RHS assertion.
-
-A complete verification query may involve:
-
-- user assertions;
-- scope constraints;
-- neighborhood constraints;
-- domain constraints;
-- quantifier constraints;
-- model feature constraints;
-- model task constraints;
-- target constraints;
-- backend capability constraints.
-
-Aggregation is the layer where these constraints become a single verification problem.
-
----
+Older design material called this concern “assertion aggregation”. The current
+implementation does not create an `AggregatedAssertionSet` object. Composition
+is owned by `IR2Builder`, and its result is stored directly in
+`VerificationTaskIR2`.
 
 ## Inputs
 
-Assertion aggregation may consume:
-
-| Input | Origin | Example |
+| Input | Producer | IR2 source tag |
 |---|---|---|
-| User assertions | Toetra Specification Language / IR2 | `x'.age <= 30` |
-| Scope constraints | Semantic layer | `x'` is perturbation of `x` |
-| Neighborhood constraints | LHS / semantic context | `distance(x, x') <= eps` |
-| Domain constraints | LHS / domain | `x.category in {A, B}` |
-| Model schema constraints | ModelBridge | feature exists and has dtype |
-| Model behavior constraints | future model encoding | model output relation |
-| Backend capability constraints | backend registry | unsupported predicate rejection |
+| normalized public property | NNF-normalized IR1 | `spec_formula` |
+| typed domain restrictions | `DomainAssumptionEncoder` | `DOMAIN` |
+| resolved inline/reference anchors | `AnchorAssumptionEncoder` | anchor/provenance metadata |
+| fitted model equations | selected model encoder | `MODEL` |
+| explicitly supplied global assumptions | internal caller | declared source |
 
----
+Every assumption is an `AssumptionIR2` containing a backend-neutral NNF formula,
+source, optional description, and metadata.
 
-## Output
+## Composition
 
-The output should be an explicit artifact:
+`AssumptionCollector` validates and freezes the supplied assumptions.
+`VerificationConditionBuilder` then combines them with the property according to
+`VerificationSemantics`.
 
 ```text
-AggregatedAssertionSet
+Γ = domain assumptions ∧ anchor assumptions ∧ model assumptions
 ```
 
-A future `AggregatedAssertionSet` may contain:
-
-- property identifier;
-- normalized logical assertions;
-- semantic constraints;
-- model constraints;
-- scope constraints;
-- preservation metadata;
-- traceability links;
-- backend hint;
-- diagnostics context.
-
----
-
-## Aggregation Semantics
-
-Aggregation must define how constraints are composed.
-
-Common composition rules:
-
-| Constraint Type | Composition |
+| Semantics | Condition |
 |---|---|
-| Required assumptions | conjunction |
-| Alternative cases | disjunction |
-| Domain restrictions | conjunction |
-| Model input constraints | conjunction |
-| Backend unsupported constraints | diagnostic / early stop |
-| Counterexample search branches | disjunction or case split |
+| `UNIVERSAL_REFUTATION` | `Γ ∧ ¬P` |
+| `EXISTENTIAL_WITNESS` | `Γ ∧ P` |
 
----
+The result is retained in `VerificationTaskIR2.verification_condition`; the
+original normalized property remains separately available as `spec_formula`.
 
-## Example
+## Why assumptions remain explicit
 
-A user property:
+Keeping `task.assumptions` separate from the executable condition supports:
 
-```toetra
-[ROBUSTNESS]: forall baseline, candidate => CLASSIFICATION.EQUAL()
-```
+- assumption-consistency diagnostics;
+- source and model provenance;
+- backend capability analysis;
+- report counts and explanations;
+- replay and debugging;
+- prevention of vacuous proofs caused by an empty admissible set.
 
-May produce an aggregated problem containing:
+The Z3 runner may translate assumptions alone to diagnose inconsistency, subject
+to the remaining execution budget.
 
-```text
-User intent:
-    CLASSIFICATION.EQUAL()
+## Model equations
 
-Scope constraints:
-    x is anchor
-    x' is perturbation
+Model encoders receive the exact evaluation identities found in the property.
+They emit one equation for each requested evaluation and none for unreferenced
+points. IR2 guardrails diagnose missing, duplicate, unrequested, or disconnected
+equations.
 
-Neighborhood constraints:
-    L2(x, x') <= 0.1
-
-Model constraints:
-    x and x' must match model input schema
-    model task must be classification
-
-Target constraint:
-    target exists and is compatible
-```
-
----
-
-## Guarantees
-
-Assertion aggregation must guarantee:
-
-- all required constraints are explicit;
-- no semantic constraint is silently dropped;
-- model constraints are represented separately from user assertions;
-- traceability is preserved;
-- backend-incompatible constraints are diagnosed;
-- aggregation does not execute verification;
-- aggregation does not encode backend-specific solver objects.
-
----
-
-## Non-Goals
-
-Aggregation must not:
-
-- parse source code;
-- build AST nodes;
-- perform model loading;
-- select final backend implementation;
-- call Z3 directly;
-- hide minimization decisions.
-
----
-
-## Relation to ModelBridge
-
-ModelBridge provides normalized model information.
-
-Aggregation uses ModelBridge outputs to include model-side constraints.
-
-ModelBridge itself should not aggregate DSL assertions. It should provide the schema and model-derived facts needed by this layer.
-
----
-
-## Relation to Lowering / Minimization
-
-Aggregation creates the complete problem.
-
-Lowering and minimization optimize or simplify that problem before backend-specific encoding.
-
-Therefore:
+This is the implemented convergence between the compiler and ModelBridge:
 
 ```text
-Aggregation = completeness
-Lowering/minimization = preparation and simplification
+requested ModelEvaluationIR
++ ModelSchema
+→ model AssumptionIR2
+→ VerificationTaskIR2
 ```
 
----
+## Backend relationship
 
-## Relation to Miova
+Assumption composition is backend-neutral. Z3 translation happens later, after
+the router confirms that the selected backend supports every requirement
+introduced by the property and assumptions.
 
-Miova can mutate aggregated assertion sets to test:
+No capability constraint is inserted as a logical assumption. Unsupported
+capability is a routing failure, not part of `Γ`.
 
-- missing constraint detection;
-- duplicated constraint handling;
-- invalid model constraint handling;
-- traceability preservation;
-- expected backend rejection;
-- robustness of minimization inputs.
+## Invariants
+
+1. The property and assumptions remain distinguishable.
+2. Every assumption has a declared source.
+3. Open and closed domain bounds are preserved.
+4. Model assumptions use exact requested point/output identities.
+5. Universal and existential semantics select different conditions.
+6. No backend object enters `VerificationTaskIR2`.
+7. Assumption inconsistency cannot be reported as an ordinary property proof
+   without diagnostic evidence.
+
+## Related contracts
+
+- [Assertion aggregation contract](../contracts/assertion-aggregation.md)
+- [Typed domains as assumptions](../contracts/quantified-domain-scalar-expressions.md)
+- [Model constraints](../contracts/model-constraints.md)
+- [IR1 to IR2](../contracts/ir1-to-ir2.md)

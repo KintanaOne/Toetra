@@ -1,51 +1,97 @@
-# ModelBridge Overview
+# ModelBridge overview
 
-> Status: Implemented for sklearn numeric affine regression
+> **Status:** Implemented for the public sklearn affine routes
+>
+> **Scope:** model artifacts, schema, formal encoding, and replay observation
 
-ModelBridge connects a real model artifact to backend-neutral constraints without leaking framework-specific objects into the compiler.
+ModelBridge prevents framework-specific estimators from leaking into compiler
+IR. It provides four related but distinct services.
 
-## Boundary
+## Services
 
-```text
-model artifact + optional dataset/schema
-  → framework detection and introspection
-  → ModelSchema
-  → requested ModelEvaluation identities from IR2
-  → one model constraint per evaluation
-```
+| Service | Output | Consumer |
+|---|---|---|
+| load/detect/introspect | `ModelSchema` plus optional concrete model | semantic validation and runtime |
+| model-family semantics | lowered IR1 task plus evidence | NNF/IR2 |
+| formal encoder | model `AssumptionIR2` values | IR2 builder |
+| runtime observer | concrete `ModelObservation` | replay |
 
-The bridge does not choose a point from a semantic scope. It receives the exact evaluations requested by the compiled property.
-
-## Schema authority
-
-An explicit schema is authoritative. Otherwise, sklearn `feature_names_in_` is the ordered input contract when available. A dataset supplies compatible dtypes and may also serve as the runtime anchor lookup source, but lookup/provenance columns are not promoted to features.
-
-Preprocessing reconstruction remains outside V1. Anchors and domains are expressed in the transformed feature space consumed by the encoded estimator.
-
-## Per-point affine encoding
-
-For each distinct evaluation `(model, point, target)`, `LinearRegression` emits:
+## Artifact path
 
 ```text
-target[point] = intercept + Σ coefficient_i * point.feature_i
+model artifact + optional dataset + target
+→ loader
+→ framework detector
+→ introspector
+→ ModelSchema
 ```
 
-Coefficients and intercept are shared across evaluations. Input and output symbols remain distinct per point.
+`verify(...)` can instead receive an explicit normalized schema. The two paths
+are mutually exclusive to preserve one metadata authority.
 
-The encoder validates that every requested evaluation has exactly one equation and that no duplicate, disconnected, or unrequested equation crosses the boundary.
+`ModelSchema` carries ordered features, output name/type, framework, task,
+model family, and output profile. It is used while validating feature names,
+types, target references, and output observables.
 
-## Implemented profile
+## Model-semantic path
 
-- sklearn `LinearRegression`;
-- scalar numeric output;
-- numeric transformed features;
-- one or more point evaluations of the same model;
-- replay through a framework-neutral runtime observer; the sklearn observer normalizes `predict`, `predict_proba`, and `decision_function` when required by the typed output profile.
+Public classification observables require model-family meaning:
 
-## Outside V1
+```text
+IR1 public observable + ModelSchema
+→ semantic profile
+→ canonical model-quantity constraint + lowering evidence
+```
 
-- arbitrary preprocessing pipelines;
-- multi-output estimators;
-- trees, ensembles, neural networks, and nonlinear model families;
-- categorical/tensor model inputs;
+The direct binary-logistic profile uses an internal oriented decision value.
+That quantity never becomes DSL syntax or a public model output.
+
+## Formal-encoding path
+
+The compiler discovers exact model-evaluation identities from the lowered
+property. The encoder factory receives those identities and emits one equation
+per requested `(model, point, output)`:
+
+```text
+ModelSchema + requested evaluations
+→ affine AssumptionIR2 values
+```
+
+Regression encodes `target[point] = intercept + Σ weightᵢ·featureᵢ`.
+Binary logistic regression encodes the corresponding oriented decision
+quantity. Coefficients are shared, but symbols remain distinct per point.
+
+## Replay path
+
+A framework-neutral runtime-observer registry executes the retained concrete
+model after formal verification. The sklearn observer normalizes:
+
+- `predict` for scalar regression or predicted labels;
+- `predict_proba` for label-keyed probabilities;
+- `decision_function` for the binary logistic technical quantity.
+
+Replay does not participate in backend proof or route selection.
+
+## Implemented public profile
+
+- fitted single-output sklearn `LinearRegression`;
+- direct fitted binary sklearn `LogisticRegression`;
+- finite numeric transformed features;
+- one output;
+- one or more exact point evaluations;
+- Z3 execution;
+- point-aware reporting and concrete replay.
+
+## Boundaries outside V1
+
+- preprocessing reconstruction;
+- multiclass and multi-output models;
+- wrappers, calibrators, or custom decision thresholds;
+- trees, ensembles, neural networks, and nonlinear encoders;
+- categorical/tensor symbolic inputs;
 - several model artifacts in one property.
+
+Internal detection or introspection code for another framework is not an
+end-to-end support claim. See
+[supported frameworks](supported-frameworks.md) and the
+[public V1 profile](../public-v1-profile.md).

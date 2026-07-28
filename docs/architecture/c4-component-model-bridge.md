@@ -1,226 +1,91 @@
-# C4 Component View — ModelBridge
+# C4 component view — ModelBridge
 
-> Status: Stabilizing  
-> Scope: ModelBridge component architecture  
-> Implementation: Partially implemented  
-> V1 backend scope: Z3 only
+> **Status:** As built for `1.0.0rc3`
+>
+> **Scope:** `toetra._models`
 
-## Purpose
-
-This document decomposes ModelBridge into internal components.
-
-It answers:
-
-```text
-How does Toetra understand an ML model before verifying properties against it?
-```
-
-ModelBridge provides the normalized model representation required by semantic validation, model-aware constraints, and backend lowering.
-
----
-
-## Component diagram
+ModelBridge converts framework-specific estimator state into four
+framework-neutral views used at different boundaries: schema, model-family
+semantics, formal assumptions, and concrete replay observations.
 
 ```mermaid
 flowchart TD
-    ModelPath[Model Path]
-        --> LoaderFactory[LoaderFactory]
-
-    LoaderFactory
-        --> Loader[Model Loader]
-
-    Loader
-        --> LoadedModel[Loaded Model]
-
-    LoadedModel
-        --> Detector[ModelDetector]
-
-    Detector
-        --> Framework[EnumModelFramework]
-
-    Framework
-        --> IntrospectorFactory[IntrospectorFactory]
-
-    LoadedModel
-        --> IntrospectorFactory
-
-    Dataset[Dataset Path / External Schema]
-        --> IntrospectorFactory
-
-    IntrospectorFactory
-        --> Introspector[Framework Introspector]
-
-    Introspector
-        --> Schema[ModelSchema]
-
-    Schema
-        --> Semantic[Schema-aware Semantic Validation]
-
-    Schema
-        --> Constraints[Future ModelConstraintIR]
+    A["Model artifact"] --> M["ModelManager"]
+    M --> S["ModelSchema"]
+    S --> P["Semantic profile"]
+    S --> E["Model encoder"]
+    S --> O["Runtime observer"]
 ```
-
----
 
 ## Components
 
-| Component | Responsibility | Status |
+| Component | Responsibility | V1 use |
 |---|---|---|
-| ModelManager | Orchestrates the full ModelBridge pipeline. | Implemented / stabilizing |
-| LoaderFactory | Selects loader from file extension. | Implemented |
-| Model Loader | Loads serialized model artifacts. | Implemented for pkl/joblib/json path |
-| ModelDetector | Detects ML framework from loaded model type. | Implemented for sklearn/XGBoost |
-| IntrospectorFactory | Selects framework-specific introspector. | Implemented for sklearn/XGBoost |
-| Framework Introspector | Extracts normalized model metadata. | Partially implemented |
-| ModelSchema | Normalized bridge representation. | Implemented / stabilizing |
-| ModelConstraint Generator | Produces model-side logical constraints. | Planned |
+| loader factory | choose a serializer loader and deserialize the artifact | pickle/joblib path used by supported sklearn artifacts |
+| framework detector | classify the loaded estimator | sklearn |
+| introspector factory | extract normalized feature/output metadata | supported sklearn estimators |
+| `ModelManager` | orchestrate load, detect, introspect, and schema construction | default artifact-based `verify(...)` path |
+| `ModelSchema` | framework-neutral feature, output, task, and family contract | semantic validation, encoder selection, replay |
+| semantic registry | select model-family meaning for public observables | regression identity and binary logistic profile |
+| encoder factory | select and invoke formal model equation encoder | linear and direct binary logistic affine equations |
+| runtime observer | normalize concrete `predict`, `predict_proba`, and `decision_function` outputs | replay |
 
----
-
-## ModelBridge artifact flow
+## Artifact flow
 
 ```text
-model_path
-→ LoaderFactory
-→ ModelLoader
-→ loaded_model
-→ ModelDetector
-→ EnumModelFramework
-→ IntrospectorFactory
-→ FrameworkIntrospector
-→ ModelSchema
-→ schema-aware semantic validation
-→ future ModelConstraintIR
+artifact + optional dataset + target
+→ loaded estimator
+→ detected framework
+→ normalized ModelSchema
 ```
 
----
+An explicit `ModelSchema` can enter the runtime directly and bypass artifact
+loading. It is authoritative for compilation, but replay requires a compatible
+concrete model.
 
-## ModelManager
-
-`ModelManager` is the orchestration entry point.
-
-Responsibilities:
-
-- receive the model path;
-- receive optional dataset/schema;
-- select a loader;
-- load the model;
-- detect framework;
-- select introspector;
-- produce a normalized `ModelSchema`.
-
-The ModelManager should remain a coordinator. It should not contain framework-specific introspection logic.
-
----
-
-## LoaderFactory and loaders
-
-The loader layer isolates serialization formats.
-
-Expected supported formats for early V1:
-
-- `.pkl`;
-- `.joblib`;
-- optional `.json` if the format has a clear semantic meaning.
-
-The loader layer should only deserialize. It should not infer semantics.
-
----
-
-## ModelDetector
-
-The detector identifies the framework family of a loaded model.
-
-Initial framework support:
-
-- scikit-learn;
-- XGBoost through sklearn-compatible APIs.
-
-Post-V1 framework support may include:
-
-- PyTorch;
-- TensorFlow;
-- ONNX;
-- other model formats.
-
----
-
-## Introspectors
-
-An introspector extracts normalized information from a loaded model.
-
-Responsibilities:
-
-- infer task type;
-- infer or consume feature schema;
-- extract target metadata;
-- expose framework-specific metadata;
-- produce a `ModelSchema`.
-
-Introspectors are framework-specific, but their output must be framework-normalized.
-
----
-
-## ModelSchema
-
-`ModelSchema` is the key bridge artifact between the ML model and Toetra semantics.
-
-It contains:
-
-- framework identity;
-- model type;
-- features;
-- target;
-- task;
-- framework-specific metadata.
-
-Target usage:
+For formal encoding:
 
 ```text
 ModelSchema
-→ feature-aware semantic validation
-→ model constraint generation
-→ backend lowering support
++ requested ModelEvaluationIR identities
++ optional encoding context
+→ tuple[AssumptionIR2, ...]
 ```
 
----
+For concrete replay:
 
-## Future ModelConstraintIR
+```text
+ModelSchema
++ concrete model
++ ordered point inputs
+→ ModelObservation
+```
 
-ModelBridge should eventually produce or support model-side constraints.
+## Separation of concerns
 
-Examples:
+- Introspection describes a model; it does not define proof semantics.
+- A semantic profile rewrites public observables; it does not extract fitted
+  coefficients.
+- An encoder creates formal equations; it does not choose the property point.
+- A runtime observer executes the model; it does not change formal status.
+- Numeric compatibility is decided outside ModelBridge from explicit
+  descriptors.
 
-- feature existence constraints;
-- feature dtype constraints;
-- input dimensionality constraints;
-- task compatibility constraints;
-- symbolic model encoding constraints;
-- prediction output constraints.
+## Implemented V1 profile
 
-These constraints will feed the assertion aggregation layer.
+| Model | Schema/semantics | Encoder | Replay |
+|---|---|---|---|
+| sklearn `LinearRegression` | scalar regression | affine output equation | `predict` |
+| direct binary sklearn `LogisticRegression` | typed labels/probabilities and oriented decision policy | affine oriented-decision equation | `predict`, `predict_proba`, `decision_function` |
 
----
+XGBoost-related detection or introspection code is internal groundwork only. It
+has no complete encoder, backend, reporting, replay, and release-tested public
+route in V1.
 
-## V1 scope
+## Contracts
 
-For V1, ModelBridge should focus on:
-
-1. loading a minimal supported model format;
-2. detecting sklearn/XGBoost-like models;
-3. producing reliable `ModelSchema`;
-4. enabling schema-aware semantic validation;
-5. supporting Z3-oriented backend preparation.
-
-ModelBridge does not need to support every ML framework before V1.
-
----
-
-## Related documents
-
-- `model-bridge/overview.md`
-- `model-bridge/model-schema.md`
-- `model-bridge/model-constraints.md`
-- `contracts/model-to-schema.md`
-- `contracts/schema-to-semantic.md`
-- `contracts/model-constraints.md`
+- [Model to schema](../contracts/model-to-schema.md)
+- [Schema to semantic](../contracts/schema-to-semantic.md)
+- [Model semantic lowering](../contracts/model-semantic-lowering.md)
+- [Model constraints](../contracts/model-constraints.md)
+- [Output reporting and replay](../contracts/output-reporting-and-replay.md)
