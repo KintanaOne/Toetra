@@ -15,11 +15,14 @@ from toetra._compatibility.policy import (
 )
 from toetra._compatibility.registry import NumericCompatibilityRegistry
 from toetra._compiler.ast.nodes.program import ProgramNode
+from toetra._compiler.builder.errors import BuilderError
 from toetra._compiler.builder.program import parse_program
 from toetra._compiler.ir.ir2.context import IR2BuildContext
 from toetra._compiler.ir.ir2.enums import NormalFormKind
 from toetra._compiler.ir.ir2.run_ir2 import run_ir2_with_model_schema
+from toetra._compiler.parser.errors import ParserError
 from toetra._compiler.parser.parser import parse_toetra_code
+from toetra._compiler.semantic.errors.errors import SemanticError
 from toetra._provenance.builder import build_provenance_context
 from toetra._reporting.builder import build_verification_report
 from toetra._runtime.anchors import (
@@ -99,6 +102,60 @@ def verify(
     timeout/resource/cancellation contract to every property in the session.
     """
 
+    try:
+        return _verify(
+            specification,
+            model=model,
+            dataset=dataset,
+            target=target,
+            schema=schema,
+            model_context=model_context,
+            model_encoder_factory=model_encoder_factory,
+            ir2_context=ir2_context,
+            backend_registry=backend_registry,
+            numeric_compatibility_registry=numeric_compatibility_registry,
+            runner_registry=runner_registry,
+            execution_policy=execution_policy,
+            anchor_source=anchor_source,
+            anchor_resolver=anchor_resolver,
+        )
+    except ParserError as error:
+        raise _public_compiler_error(
+            error,
+            stage="syntax",
+            path=_diagnostic_specification_path(specification),
+        ) from error
+    except BuilderError as error:
+        raise _public_compiler_error(
+            error,
+            stage="builder",
+            path=_diagnostic_specification_path(specification),
+        ) from error
+    except SemanticError as error:
+        raise _public_compiler_error(
+            error,
+            stage="semantic",
+            path=_diagnostic_specification_path(specification),
+        ) from error
+
+
+def _verify(
+    specification: str | Path,
+    *,
+    model: str | Path | None,
+    dataset: str | Path | None,
+    target: str | None,
+    schema: ModelSchema | None,
+    model_context: ModelEncodingContext | None,
+    model_encoder_factory: ModelEncoderFactory | None,
+    ir2_context: IR2BuildContext | None,
+    backend_registry: BackendRegistry | None,
+    numeric_compatibility_registry: NumericCompatibilityRegistry | None,
+    runner_registry: BackendRunnerRegistry | None,
+    execution_policy: BackendExecutionPolicy | None,
+    anchor_source: AnchorSource | None,
+    anchor_resolver: AnchorResolver | None,
+) -> VerificationSession:
     loaded = _load_specification(specification)
     resolved = _resolve_model(
         loaded,
@@ -197,6 +254,34 @@ def verify(
         anchor_resolutions=resolved_anchors,
         provenance=provenance_context,
     )
+
+
+def _public_compiler_error(
+    error: ParserError | BuilderError | SemanticError,
+    *,
+    stage: str,
+    path: str | None,
+) -> VerificationConfigurationError:
+    return VerificationConfigurationError(
+        error.message,
+        code=error.code,
+        stage=stage,
+        hint=error.hint,
+        path=path,
+        line=error.line,
+        column=error.column,
+    )
+
+
+def _diagnostic_specification_path(specification: str | Path) -> str | None:
+    if isinstance(specification, Path):
+        return str(specification)
+    if "\n" in specification or "\r" in specification:
+        return None
+    candidate = Path(specification)
+    if candidate.suffix.lower() == ".toetra":
+        return str(candidate)
+    return None
 
 
 def _load_specification(specification: str | Path) -> _LoadedSpecification:

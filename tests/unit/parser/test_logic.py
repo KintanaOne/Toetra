@@ -11,6 +11,7 @@ from toetra._compiler.ast.nodes.assertion import (
     ProblemNode,
 )
 from toetra._compiler.builder.program import parse_program
+from toetra._compiler.parser.errors import ParserError
 from toetra._language.vocabulary.problems import EnumProblem
 from toetra._compiler.parser.parser import parse_toetra_code
 
@@ -189,10 +190,10 @@ def test_logic_nested_implication():
 
 
 def test_invalid_logic_syntax():
-    with pytest.raises(Exception):
+    with pytest.raises(ParserError):
         build(INVALID_LOGIC_SYNTAX)
 
 
 def test_invalid_parentheses():
-    with pytest.raises(Exception):
+    with pytest.raises(ParserError):
         build(INVALID_PARENTHESES)

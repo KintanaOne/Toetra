@@ -2,6 +2,8 @@
 
 import pytest
 
+from toetra._compiler.parser.errors import ParserError
+
 from tests.fixtures.properties_samples import (
     # VALID
     VALID_CHECK_AT_WITH_COMPLEX_ASSERTION,
@@ -64,5 +66,5 @@ INVALID_CASES = [
 @pytest.mark.parametrize("code", INVALID_CASES)
 def test_check_at_invalid(code):
 
-    with pytest.raises(Exception):
+    with pytest.raises(ParserError):
         parse(code)

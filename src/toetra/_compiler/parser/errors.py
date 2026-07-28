@@ -1,14 +1,23 @@
-# errors.py
-
-# ───────────────────────────────
-# General Errors
-# ───────────────────────────────
-
-
 class ParserError(Exception):
-    """General Toetra parsing error"""
+    """Structured syntax failure owned by the source-to-CST boundary."""
 
-    pass
+    default_code = "PARSER_INVALID_SYNTAX"
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        code: str | None = None,
+        hint: str | None = None,
+        line: int | None = None,
+        column: int | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.message = message
+        self.code = code or self.default_code
+        self.hint = hint
+        self.line = line
+        self.column = column
 
 
 class ParserHeaderError(ParserError):

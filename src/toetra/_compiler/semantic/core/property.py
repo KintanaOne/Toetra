@@ -250,9 +250,11 @@ class PropertyValidator:
         except SemanticError as e:
 
             raise InvalidPropertyError(
-                message=f"Property '{prop.type}' invalid: {e}",
+                message=f"Property '{prop.type}' invalid: {e.message}",
                 node=prop,
                 context="PropertyValidator",
+                code=e.code,
+                hint=e.hint,
             ) from e
 
         self.tracer.log(f"✔ Property '{prop.type}' validated")

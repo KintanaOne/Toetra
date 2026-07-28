@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import pytest
-from lark.exceptions import UnexpectedInput
+from toetra._compiler.parser.errors import ParserError
 from toetra._compiler.parser.parser import parse_toetra_code
 from tests.support.parser_points import (
     direct_trees,
@@ -83,7 +83,7 @@ def test_par_anchor_003_trailing_comma_is_accepted() -> None:
     ],
 )
 def test_invalid_inline_anchor_surface_is_rejected(declaration: str) -> None:
-    with pytest.raises(UnexpectedInput):
+    with pytest.raises(ParserError):
         parse_toetra_code(program(declarations=declaration, body="target <= 7"))
 
 
@@ -113,5 +113,5 @@ def test_par_anchor_009_anchor_after_first_property_is_rejected() -> None:
     anchor x0 := { age: 42 }
     """
 
-    with pytest.raises(UnexpectedInput):
+    with pytest.raises(ParserError):
         parse_toetra_code(source)

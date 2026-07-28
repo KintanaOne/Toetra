@@ -4,7 +4,7 @@ import pytest
 
 from toetra._compiler.ast.nodes.assertion import ComparisonNode
 from toetra._compiler.ast.nodes.primitives import BinaryArithmeticNode, TargetRefNode
-from toetra._compiler.parser.errors import ParserError
+from toetra._compiler.semantic.errors.errors import SemanticError
 from toetra._compiler.semantic.context.restrictions import RestrictionOrigin
 from toetra._compiler.semantic.context.scope import SemanticScope
 from toetra._compiler.semantic.symbols.point import PointBindingKind
@@ -48,13 +48,13 @@ def test_low_at_001_lowers_to_fresh_universal_candidate_and_restriction() -> Non
 
 
 def test_low_at_002_undeclared_anchor_is_rejected() -> None:
-    with pytest.raises(ParserError, match="undeclared anchor 'x0'"):
+    with pytest.raises(SemanticError, match="undeclared anchor 'x0'"):
         parse_and_validate(_source(anchors=""))
 
 
 def test_low_at_003_candidate_collision_is_rejected() -> None:
     anchors = inline_anchor("x0") + inline_anchor("x1")
-    with pytest.raises(ParserError, match="collides with a visible point"):
+    with pytest.raises(SemanticError, match="collides with a visible point"):
         parse_and_validate(_source(anchors=anchors))
 
 

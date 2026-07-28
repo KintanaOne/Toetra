@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from toetra._compiler.parser.errors import ParserError
+from toetra._compiler.semantic.errors.errors import SemanticError
 from toetra._compiler.semantic.context.scope import SemanticScope
 from tests.support.semantic_points import (
     build_and_validate,
@@ -25,7 +25,7 @@ def test_fairness_accepts_explicit_two_point_quantifier_environment() -> None:
 
 
 def test_fairness_rejects_a_single_visible_point_without_scope_enum_gating() -> None:
-    with pytest.raises(ParserError, match="requires at least two visible points"):
+    with pytest.raises(SemanticError, match="requires at least two visible points"):
         build_and_validate("""
             model := "model.joblib"
             target := score

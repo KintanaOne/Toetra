@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from toetra._compiler.builder.program import parse_program
-from toetra._compiler.parser.errors import ParserError
+from toetra._compiler.semantic.errors.errors import SemanticError
 from toetra._compiler.parser.parser import parse_toetra_code
 from toetra._compiler.semantic.core.specification_constants import (
     SPECIFICATION_CONSTANT_KIND,
@@ -59,7 +59,7 @@ def test_duplicate_specification_constant_is_rejected() -> None:
         """))
 
     with pytest.raises(
-        ParserError,
+        SemanticError,
         match="Duplicate specification constant 'threshold'",
     ):
         ToetraValidator().validate(program, tracer=ValidationTracer(enabled=False))
@@ -76,5 +76,5 @@ def test_scope_variable_collision_is_rejected() -> None:
         forall applicant => target <= 1
         """))
 
-    with pytest.raises(ParserError, match="collides with a scope variable"):
+    with pytest.raises(SemanticError, match="collides with a scope variable"):
         ToetraValidator().validate(program, tracer=ValidationTracer(enabled=False))

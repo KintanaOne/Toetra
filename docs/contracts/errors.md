@@ -76,6 +76,27 @@ Internal structured diagnostics should additionally expose when available:
 
 ---
 
+## Implemented compiler normalization
+
+P26.1 implements the public boundary for the first three compiler transitions:
+
+| Internal owner | Public class from `verify(...)` | `stage` | Stable codes |
+|---|---|---|---|
+| source → CST | `VerificationConfigurationError` | `syntax` | `PARSER_INVALID_SYNTAX`, `PARSER_UNEXPECTED_CHARACTER`, `PARSER_UNEXPECTED_TOKEN`, `PARSER_UNEXPECTED_END_OF_INPUT` |
+| CST → AST | `VerificationConfigurationError` | `builder` | `BUILDER_INVALID_STRUCTURE` plus compatible specific builder codes |
+| AST → semantic state | `VerificationConfigurationError` | `semantic` | `SEMANTIC_INVALID`, `SEMANTIC_INVALID_PROPERTY`, `SEMANTIC_UNBOUND_VARIABLE`, `SEMANTIC_TYPE_MISMATCH`, `SEMANTIC_INVALID_OPERATOR`, `SEMANTIC_INCOMPATIBLE_FUNCTION`, `SEMANTIC_INVALID_ARITHMETIC`, `SEMANTIC_INVALID_DOMAIN`, `SEMANTIC_INVALID_OUTPUT_OBSERVABLE` |
+
+The parser converts Lark failures at its own boundary. Semantic validators
+propagate `SemanticError` and its subclasses; they never relabel them as
+`ParserError`. Unexpected implementation exceptions remain internal failures
+instead of being presented as invalid user input.
+
+Source location is one-based. Syntax failures use the parser location.
+Semantic failures use the nearest reliable AST `SourceSpan`; Toetra leaves the
+location unset rather than inventing a narrower span.
+
+---
+
 ## Recommended Diagnostic Codes
 
 Exact exception class names remain implementation choices, but stable diagnostics should cover:

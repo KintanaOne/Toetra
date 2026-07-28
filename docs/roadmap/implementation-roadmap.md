@@ -52,9 +52,10 @@ failure, capability rejection, backend failure, and a logical result such as
 
 P26.0 accepted the public failure classification and structured diagnostic
 contract in
-[ADR-0029](../adr/ADR-0029-public-verification-failure-boundary.md). Compiler,
-model, routing, and backend translation remain implementation steps within
-P26.
+[ADR-0029](../adr/ADR-0029-public-verification-failure-boundary.md). P26.1
+normalizes syntax, builder, and semantic failures while preserving their
+internal ownership. Model, artifact, compatibility, routing, and backend
+translation remain implementation steps within P26.
 
 ### P27 — Release readiness
 

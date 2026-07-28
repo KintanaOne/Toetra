@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from lark import Tree
 import pytest
-from lark.exceptions import UnexpectedInput
+from toetra._compiler.parser.errors import ParserError
 from toetra._compiler.parser.parser import parse_toetra_code
 from tests.support.parser_points import (
     program,
@@ -79,7 +79,7 @@ def test_par_ref_004_duplicate_key_is_preserved_for_semantic_rejection() -> None
     ],
 )
 def test_unsupported_reference_argument_surface_is_rejected(binding: str) -> None:
-    with pytest.raises(UnexpectedInput):
+    with pytest.raises(ParserError):
         parse_toetra_code(
             program(
                 declarations=f"anchor x0 := {binding}",

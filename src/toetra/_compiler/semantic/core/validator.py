@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from toetra._compiler.ast.nodes.program import ProgramNode
 from toetra._compiler.builder.program import parse_program
-from toetra._compiler.parser.errors import ParserError
 from toetra._compiler.parser.parser import parse_toetra_code
+from toetra._compiler.semantic.errors.errors import InvalidPropertyError
 from toetra._compiler.semantic.runtime.tracer import ValidationTracer
 
 from toetra._compiler.semantic.core.anchors import AnchorValidator
@@ -35,34 +35,27 @@ class ToetraValidator:
 
         self.tracer.log(f"Validating ToetraValidator: {program}")
 
-        try:
-            model_target = program.header.target
-            model_identity = program.header.model
-            if not model_identity:
-                raise ParserError(
-                    "Cannot validate a Toetra program without a declared model identity"
-                )
-            specification_constants = collect_specification_constants(program.header)
-            global_points = AnchorValidator(
+        model_target = program.header.target
+        model_identity = program.header.model
+        if not model_identity:
+            raise InvalidPropertyError(
+                "Cannot validate a Toetra program without a declared model identity"
+            )
+        specification_constants = collect_specification_constants(program.header)
+        global_points = AnchorValidator(
+            model_schema=model_schema,
+            resolved_anchors=resolved_anchors,
+        ).validate(program.anchors)
+
+        for prop in program.body:
+            PropertyValidator(tracer=self.tracer).validate(
+                prop,
                 model_schema=model_schema,
-                resolved_anchors=resolved_anchors,
-            ).validate(program.anchors)
-
-            for prop in program.body:
-                PropertyValidator(tracer=self.tracer).validate(
-                    prop,
-                    model_schema=model_schema,
-                    model_target=model_target,
-                    model_identity=model_identity,
-                    specification_constants=specification_constants,
-                    global_points=global_points,
-                )
-
-        except ParserError:
-            raise
-
-        except Exception as e:
-            raise ParserError(str(e)) from e
+                model_target=model_target,
+                model_identity=model_identity,
+                specification_constants=specification_constants,
+                global_points=global_points,
+            )
 
         return True
 

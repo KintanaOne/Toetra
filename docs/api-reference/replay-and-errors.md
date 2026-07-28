@@ -126,14 +126,19 @@ Message wording may improve. Callers that need stable branching use `code`.
 When Toetra normalizes a private compiler, model, or backend failure, its
 original exception remains available through `error.__cause__`.
 
-P26 introduces normalization incrementally. Until its compiler and runtime
-translation steps are complete, some private or third-party failures may still
-cross `verify(...)` directly.
+Syntax, CST-to-AST construction, and semantic-validation failures are
+normalized by `verify(...)` as `VerificationConfigurationError` while
+retaining `syntax`, `builder`, or `semantic` ownership. Model, compatibility,
+routing, and backend normalization continues in later P26 steps; failures from
+those still-unfinished boundaries may still cross `verify(...)` directly.
 
 ### `VerificationConfigurationError`
 
 Raised when runtime inputs are ambiguous or inconsistent, including:
 
+- malformed specification syntax;
+- a CST shape that cannot be represented as a Toetra AST;
+- invalid binding, typing, domain, property, or output-observable semantics;
 - mixing `schema` with `model` or `dataset`;
 - target disagreement between arguments, schema and specification;
 - providing both `anchor_source` and `anchor_resolver`;

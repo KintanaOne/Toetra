@@ -5,7 +5,7 @@ import pytest
 from toetra._backends.z3_backend.runner import VerificationStatus, Z3Runner
 from toetra._backends.z3_backend.translator import Z3Translator
 from toetra._compiler.ir.ir2.run_ir2 import run_ir2_with_model_schema
-from toetra._compiler.parser.errors import ParserError
+from toetra._compiler.semantic.errors.errors import SemanticError
 from tests.support.backend_tasks import (
     build_task,
     linear_schema,
@@ -46,7 +46,7 @@ def test_be_nbh_001_linf_lowering_reaches_complete_multi_point_query() -> None:
 
 
 def test_be_nbh_002_unsupported_metric_is_rejected_before_backend_execution() -> None:
-    with pytest.raises(ParserError, match="supported metric: Linf"):
+    with pytest.raises(SemanticError, match="supported metric: Linf"):
         run_ir2_with_model_schema(
             """
             model := "linear.joblib"

@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from toetra._compiler.builder.program import parse_program
-from toetra._compiler.parser.errors import ParserError
+from toetra._compiler.semantic.errors.errors import SemanticError
 from toetra._compiler.parser.parser import parse_toetra_code
 from toetra._compiler.semantic.core.validator import ToetraValidator
 from toetra._compiler.semantic.runtime.tracer import ValidationTracer
@@ -31,7 +31,7 @@ def _schema() -> ModelSchema:
 
 def _assert_rejected(source: str, message: str) -> None:
     program = parse_program(parse_toetra_code(source))
-    with pytest.raises(ParserError, match=message):
+    with pytest.raises(SemanticError, match=message):
         ToetraValidator().validate(
             program,
             tracer=ValidationTracer(enabled=False),

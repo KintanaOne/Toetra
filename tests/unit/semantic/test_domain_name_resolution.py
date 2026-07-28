@@ -14,7 +14,7 @@ from toetra._compiler.ast.nodes.primitives import (
     ConstantNode,
 )
 from toetra._compiler.builder.program import parse_program
-from toetra._compiler.parser.errors import ParserError
+from toetra._compiler.semantic.errors.errors import SemanticError
 from toetra._compiler.parser.parser import parse_toetra_code
 from toetra._compiler.semantic.core.validator import ToetraValidator
 from toetra._compiler.semantic.runtime.tracer import ValidationTracer
@@ -68,7 +68,7 @@ def test_unknown_bare_domain_bound_is_rejected() -> None:
         """))
 
     with pytest.raises(
-        ParserError,
+        SemanticError,
         match="Unknown specification constant 'minimum_income' in domain bound",
     ):
         ToetraValidator().validate(program, tracer=ValidationTracer(enabled=False))
