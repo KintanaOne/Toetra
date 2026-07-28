@@ -35,7 +35,11 @@ from toetra._runtime.backends import (
     BackendRunnerRegistry,
     create_default_backend_runner_registry,
 )
-from toetra._runtime.errors import AnchorResolutionError, VerificationConfigurationError
+from toetra._runtime.errors import (
+    AnchorResolutionError,
+    VerificationConfigurationError,
+    VerificationRuntimeError,
+)
 from toetra._runtime.session import VerificationExecution, VerificationSession
 from toetra._compiler.semantic.core.anchors import AnchorValidator
 from toetra._compiler.semantic.symbols.point import (
@@ -44,6 +48,23 @@ from toetra._compiler.semantic.symbols.point import (
     frozen_mapping,
 )
 from toetra._models.compatibility import framework_model_descriptor
+from toetra._models.errors.base import ModelError
+from toetra._models.errors.detection import (
+    ModelDetectionError,
+    UnsupportedModelError,
+)
+from toetra._models.errors.introspection import (
+    MissingFeatureMetadataError,
+    ModelIntrospectionError,
+    ReferenceDatasetError,
+    UnsupportedIntrospectorError,
+)
+from toetra._models.errors.loading import (
+    ModelDeserializationError,
+    ModelFileNotFoundError,
+    ModelLoadingError,
+    UnsupportedModelFormatError,
+)
 from toetra._models.encoder.context import ModelEncodingContext
 from toetra._models.encoder.factory import ModelEncoderFactory
 from toetra._models.encoder.profile import model_encoder_descriptor
@@ -288,9 +309,32 @@ def _load_specification(specification: str | Path) -> _LoadedSpecification:
     path = _specification_path(specification)
     if path is not None:
         if not path.is_file():
-            raise FileNotFoundError(f"Toetra specification not found: {path}")
+            raise VerificationConfigurationError(
+                f"Toetra specification not found: {path}",
+                code="SPECIFICATION_NOT_FOUND",
+                stage="configuration",
+                hint="Check the specification path and ensure the file exists.",
+                path=str(path),
+            )
         resolved_path = path.resolve()
-        source = resolved_path.read_text(encoding="utf-8")
+        try:
+            source = resolved_path.read_text(encoding="utf-8")
+        except UnicodeError as error:
+            raise VerificationConfigurationError(
+                f"Toetra specification is not valid UTF-8: {path}",
+                code="SPECIFICATION_ENCODING_INVALID",
+                stage="configuration",
+                hint="Save the specification as UTF-8 and try again.",
+                path=str(path),
+            ) from error
+        except OSError as error:
+            raise VerificationConfigurationError(
+                f"Failed to read Toetra specification: {path}",
+                code="SPECIFICATION_READ_FAILED",
+                stage="configuration",
+                hint="Check the specification path and read permissions.",
+                path=str(path),
+            ) from error
         base_directory = resolved_path.parent
     else:
         source = str(specification)
@@ -367,18 +411,40 @@ def _resolve_model(
         else _resolve_header_model_path(loaded)
     )
     if not model_path.is_file():
-        raise FileNotFoundError(f"Serialized model not found: {model_path}")
+        raise VerificationConfigurationError(
+            f"Serialized model not found: {model_path}",
+            code="MODEL_ARTIFACT_NOT_FOUND",
+            stage="model",
+            hint=(
+                "Check model=... or the model path in the Toetra header. "
+                "Header paths are relative to the specification file."
+            ),
+            path=str(model_path),
+        )
 
     dataset_path = _resolve_explicit_path(dataset) if dataset is not None else None
     if dataset_path is not None and not dataset_path.is_file():
-        raise FileNotFoundError(f"Reference dataset not found: {dataset_path}")
+        raise VerificationConfigurationError(
+            f"Reference dataset not found: {dataset_path}",
+            code="MODEL_DATASET_NOT_FOUND",
+            stage="model",
+            hint="Check dataset=... and ensure the CSV artifact exists.",
+            path=str(dataset_path),
+        )
 
     manager = ModelManager(
         model_path=model_path,
         dataset_path=dataset_path,
         output_name=resolved_target,
     )
-    resolved_schema = manager.build_schema()
+    try:
+        resolved_schema = manager.build_schema()
+    except ModelError as error:
+        raise _public_model_error(
+            error,
+            model_path=model_path,
+            dataset_path=dataset_path,
+        ) from error
     return _ResolvedModel(
         schema=resolved_schema,
         model=manager.model,
@@ -396,6 +462,119 @@ def _resolve_header_model_path(loaded: _LoadedSpecification) -> Path:
 
 def _resolve_explicit_path(value: str | Path) -> Path:
     return Path(value).expanduser()
+
+
+def _public_model_error(
+    error: ModelError,
+    *,
+    model_path: Path,
+    dataset_path: Path | None,
+) -> VerificationRuntimeError:
+    model_artifact_path = str(model_path)
+    dataset_artifact_path = str(dataset_path) if dataset_path is not None else None
+
+    if isinstance(error, UnsupportedModelFormatError):
+        return VerificationConfigurationError(
+            str(error),
+            code="MODEL_ARTIFACT_FORMAT_UNSUPPORTED",
+            stage="model",
+            hint=(
+                "Use a supported serialized model artifact. The built-in V1 "
+                "routes accept fitted sklearn models serialized as .joblib or .pkl."
+            ),
+            path=model_artifact_path,
+        )
+    if isinstance(error, ModelFileNotFoundError):
+        return VerificationConfigurationError(
+            f"Serialized model not found: {model_path}",
+            code="MODEL_ARTIFACT_NOT_FOUND",
+            stage="model",
+            hint="Check the model artifact path and try again.",
+            path=model_artifact_path,
+        )
+    if isinstance(error, ModelDeserializationError):
+        return VerificationConfigurationError(
+            str(error),
+            code="MODEL_ARTIFACT_DESERIALIZATION_FAILED",
+            stage="model",
+            hint=(
+                "Recreate the model artifact with compatible Python and "
+                "framework versions, then try again."
+            ),
+            path=model_artifact_path,
+        )
+    if isinstance(error, ModelLoadingError):
+        return VerificationConfigurationError(
+            str(error),
+            code="MODEL_ARTIFACT_INVALID",
+            stage="model",
+            hint="Check the serialized model artifact and its format.",
+            path=model_artifact_path,
+        )
+    if isinstance(error, ReferenceDatasetError):
+        return VerificationConfigurationError(
+            str(error),
+            code="MODEL_DATASET_READ_FAILED",
+            stage="model",
+            hint="Provide a readable UTF-8 CSV reference dataset.",
+            path=dataset_artifact_path,
+        )
+    if isinstance(error, MissingFeatureMetadataError):
+        return VerificationConfigurationError(
+            str(error),
+            code="MODEL_FEATURE_METADATA_REQUIRED",
+            stage="model",
+            hint=(
+                "Pass dataset=... with the model input columns, or provide "
+                "an explicit schema=... instead of artifact introspection."
+            ),
+            path=dataset_artifact_path or model_artifact_path,
+        )
+    if isinstance(error, UnsupportedModelError):
+        return VerificationRuntimeError(
+            str(error),
+            code="MODEL_TYPE_UNSUPPORTED",
+            stage="model",
+            hint=(
+                "Use a model family listed in the public V1 profile or add a "
+                "complete framework, model-schema, and encoder integration."
+            ),
+            path=model_artifact_path,
+        )
+    if isinstance(error, UnsupportedIntrospectorError):
+        return VerificationRuntimeError(
+            str(error),
+            code="MODEL_FRAMEWORK_UNSUPPORTED",
+            stage="model",
+            hint=(
+                "Use a framework adapter listed in the public V1 profile or "
+                "register a complete framework integration."
+            ),
+            path=model_artifact_path,
+        )
+    if isinstance(error, ModelDetectionError):
+        return VerificationRuntimeError(
+            str(error),
+            code="MODEL_DETECTION_FAILED",
+            stage="model",
+            hint="Check that the artifact contains a supported fitted model.",
+            path=model_artifact_path,
+        )
+    if isinstance(error, ModelIntrospectionError):
+        return VerificationRuntimeError(
+            str(error),
+            code="MODEL_INTROSPECTION_FAILED",
+            stage="model",
+            hint="Check the model and reference dataset metadata.",
+            path=dataset_artifact_path or model_artifact_path,
+        )
+    return VerificationRuntimeError(
+        str(error),
+        code="MODEL_PROCESSING_FAILED",
+        stage="model",
+        hint="Inspect the chained model-layer cause for diagnostic details.",
+        path=model_artifact_path,
+    )
 
 
 def _validate_target_contract(header_target: str, schema_target: str) -> None:

@@ -70,8 +70,29 @@ def test_verify_requires_runner_for_selected_backend() -> None:
 
 
 def test_verify_treats_missing_toetra_string_as_a_file_path() -> None:
-    with pytest.raises(FileNotFoundError, match="Toetra specification"):
+    with pytest.raises(VerificationConfigurationError) as caught:
         verify("missing.toetra", schema=_schema())
+
+    error = caught.value
+    assert error.code == "SPECIFICATION_NOT_FOUND"
+    assert error.stage == "configuration"
+    assert error.path == "missing.toetra"
+    assert error.hint is not None
+
+
+def test_verify_reports_invalid_specification_encoding(tmp_path: Path) -> None:
+    path = tmp_path / "invalid.toetra"
+    path.write_bytes(b"\xff")
+
+    with pytest.raises(VerificationConfigurationError) as caught:
+        verify(path, schema=_schema())
+
+    error = caught.value
+    assert error.code == "SPECIFICATION_ENCODING_INVALID"
+    assert error.stage == "configuration"
+    assert error.path == str(path)
+    assert error.hint is not None
+    assert isinstance(error.__cause__, UnicodeDecodeError)
 
 
 @pytest.mark.parametrize("specification", ["legacy.forml", Path("legacy.forml")])

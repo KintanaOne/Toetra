@@ -97,6 +97,26 @@ location unset rather than inventing a narrower span.
 
 ---
 
+## Implemented artifact and model normalization
+
+P26.2 normalizes specification artifacts and the model-loading bridge:
+
+| Internal owner | Public class from `verify(...)` | `stage` | Stable codes |
+|---|---|---|---|
+| specification file | `VerificationConfigurationError` | `configuration` | `SPECIFICATION_NOT_FOUND`, `SPECIFICATION_ENCODING_INVALID`, `SPECIFICATION_READ_FAILED` |
+| model and dataset artifacts | `VerificationConfigurationError` | `model` | `MODEL_ARTIFACT_NOT_FOUND`, `MODEL_ARTIFACT_FORMAT_UNSUPPORTED`, `MODEL_ARTIFACT_DESERIALIZATION_FAILED`, `MODEL_ARTIFACT_INVALID`, `MODEL_DATASET_NOT_FOUND`, `MODEL_DATASET_READ_FAILED`, `MODEL_FEATURE_METADATA_REQUIRED` |
+| loaded but unsupported model integration | `VerificationRuntimeError` | `model` | `MODEL_TYPE_UNSUPPORTED`, `MODEL_FRAMEWORK_UNSUPPORTED` |
+| model detection or introspection failure | `VerificationRuntimeError` | `model` | `MODEL_DETECTION_FAILED`, `MODEL_INTROSPECTION_FAILED`, `MODEL_PROCESSING_FAILED` |
+
+An absent, unreadable, or incoherent artifact is invalid input. A model that
+loads correctly but has no complete Toetra integration is instead a valid but
+unsupported route. Both retain the original private cause when one exists.
+
+Encoder, model-semantic, compatibility, routing, and backend failures remain
+owned by later P26 steps.
+
+---
+
 ## Recommended Diagnostic Codes
 
 Exact exception class names remain implementation choices, but stable diagnostics should cover:

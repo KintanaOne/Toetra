@@ -4,6 +4,9 @@
 
 ### Changed
 
+- Normalized specification, model, and reference-dataset artifact failures at
+  `verify(...)`, distinguishing invalid inputs from loaded but unsupported
+  model integrations while preserving stable diagnostics and private causes.
 - Normalized syntax, CST-to-AST construction, and semantic validation failures
   at `verify(...)` while preserving their distinct owning stages, source
   locations, stable codes, remediation hints, and chained private causes.

@@ -54,8 +54,11 @@ P26.0 accepted the public failure classification and structured diagnostic
 contract in
 [ADR-0029](../adr/ADR-0029-public-verification-failure-boundary.md). P26.1
 normalizes syntax, builder, and semantic failures while preserving their
-internal ownership. Model, artifact, compatibility, routing, and backend
-translation remain implementation steps within P26.
+internal ownership. P26.2 normalizes specification, model, and reference-dataset
+artifacts plus model detection and introspection, while distinguishing invalid
+artifacts from loaded but unsupported model integrations. Encoder,
+model-semantic, compatibility, routing, and backend translation remain
+implementation steps within P26.
 
 ### P27 — Release readiness
 
