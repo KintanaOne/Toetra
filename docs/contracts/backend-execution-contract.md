@@ -20,7 +20,11 @@ IR2 capability check
 A backend can understand the IR2 task and still be rejected because it cannot
 enforce the requested operational policy.
 
-## Public policy
+## Advanced internal interface
+
+The execution-policy types are an internal extension interface, not part of the
+nine-symbol public facade. Imports from `toetra._*` carry no V1 compatibility
+guarantee.
 
 ```python
 from toetra._backends.execution import (

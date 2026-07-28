@@ -11,7 +11,7 @@
   documentation roadmaps, and replaced stale active planning with the remaining
   UX, release, and post-V1 questions.
 - Froze the post-P24 repository contract, added exact source-to-distribution
-  package inventory checks, and introduced repository, demo, and aggregate P24
+  package inventory checks, and introduced durable repository and demo
   validation gates.
 - Split binary-classification semantic lowering into a stable profile facade
   plus focused logical, label, probability, pairwise, and shared support
