@@ -26,11 +26,12 @@ Which diagnostics require stable codes, source spans, remediation hints, model
 context, or capability evidence? Message wording may improve, but callers must
 not be encouraged to parse prose.
 
-### Solver execution defaults
+### Solver execution controls
 
-What timeout and cancellation defaults should the public workflow use? Which
-resource limits are enforceable enough to report as guarantees, and which must
-remain best-effort evidence?
+The runtime already enforces a 30,000 ms default backend timeout. The advanced
+internal execution policy can opt out with `timeout_ms=None`. Which cancellation
+and resource-limit controls are enforceable enough to report as guarantees, and
+which must remain best-effort evidence?
 
 ### Report consistency
 
