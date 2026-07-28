@@ -128,6 +128,8 @@ Exit criteria:
 
 ### P25.4 — Language reference consolidation
 
+Status: Complete
+
 Organize the language documentation around three distinct questions: what
 parses, what has accepted meaning, and what executes through the public V1
 routes.

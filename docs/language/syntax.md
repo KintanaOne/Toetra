@@ -1,485 +1,437 @@
 # Syntax
 
-> Status: Stabilizing
-> Scope: User-facing Toetra syntax
-> Priority: P1
-> Audience: Toetra users, test authors, documentation readers
+> Status: Accepted syntax for `1.0.0rc3`
+> Scope: User-facing `.toetra` source
+> Audience: users, test authors, and language contributors
 
-## Purpose
+## Reading this page
 
-This document describes the user-facing syntax of Toetra specifications.
+This page answers “what parses and builds an AST?” It does not by itself promise
+semantic validity or public execution. See
+[Language support levels](support-levels.md) for those boundaries.
 
-It focuses on how to write `.toetra` files, not on how the compiler internally represents them.
+## Program structure
 
-A Toetra specification describes behavioral properties that a machine learning model should satisfy.
+A file contains a header and at least one property:
 
----
+```toetra
+model := "linear.joblib"
+target := score
 
-## Minimal Program
+[BOUND]:
+forall applicant
+=> target[applicant] <= 7 using Z3
+```
 
-A minimal Toetra program declares a model, a target, and at least one property:
+Whitespace and newlines may separate grammar elements. Canonical examples use
+one declaration per line and multiline scopes for readability.
+
+Line comments begin with `#`. Triple-single-quoted blocks are ignored as block
+comments.
+
+## Header
+
+Declarations appear in this order:
+
+1. required `model`;
+2. required `target`;
+3. optional `dataset`;
+4. zero or more specification constants;
+5. zero or more anchors.
+
+### Model, target, and dataset
 
 ```toetra
 model := "model.joblib"
-target := prediction
-
-[BOUND]: check_at x => score >= 0
+target := risk_score
+dataset := "observations.csv"
 ```
 
-This program means:
-
-```text
-For the model declared in the header, evaluate a BOUND property at point x and assert that score is greater than or equal to zero.
-```
-
----
-
-## Header Syntax
-
-The header provides global inputs to the verification pipeline.
-
-```toetra
-model := "model.joblib"
-target := prediction
-```
-
-Optional declarations may include a dataset and specification constants:
-
-```toetra
-dataset := "data.csv"
-
-max_risk := 0.20
-minimum_income := 25000.0
-strict_mode := true
-region_name := "EU"
-```
-
-### Header Fields
-
-| Field | Required | Example | Meaning |
-|---|---:|---|---|
-| `model` | yes | `model := "model.joblib"` | Model artifact to verify. |
-| `target` | yes | `target := prediction` | Output or target of interest. |
-| `dataset` | no | `dataset := "data.csv"` | Dataset used for schema inference. |
-| specification constants | no | `max_risk := 0.20` | Reusable immutable scalar values. |
+`model` and `dataset` accept a quoted string or identifier. Canonical paths are
+quoted. `target` accepts one identifier.
 
 ### Specification constants
 
-A specification constant uses the declaration form:
-
 ```toetra
-identifier := scalar_literal
+maximum_risk := 0.20
+minimum_income := 25000
+strict_mode := true
+region := "EU"
 ```
 
-Canonical formatting places one declaration on each line. Initial values are integer, real, boolean or quoted-string literals. Declarations are global to the specification, immutable and must appear before the first property.
-
-```toetra
-max_risk := 0.20
-max_ratio := 0.35
-
-[LOGIC]:
-forall applicant
-    => target <= max_risk
-       AND applicant.debt <= max_ratio * applicant.income
-```
-
-In assertions, a bare name resolves first to a matching specification constant, otherwise to an implicit feature. An explicitly qualified name always denotes a feature:
-
-```toetra
-max_risk := 0.20
-
-[LOGIC]:
-forall applicant
-    => applicant.max_risk <= max_risk
-```
-
-See [Specification Constants](specification-constants.md).
-
----
-
-## Property Syntax
-
-A property follows this shape:
-
-```toetra
-[PROPERTY_TYPE]: scope => assertion using backend
-```
-
-The backend is optional.
-
-Examples:
-
-```toetra
-[ROBUSTNESS]: at x in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUAL()
-
-[BOUND]: check_at x => score >= 0
-
-[MONOTONICITY]: x ~ x' in neighborhood(metric=L1, eps=1.0) => x'.score >= x.score
-```
-
----
-
-## Property Type Syntax
-
-Property types are written between brackets:
-
-```toetra
-[ROBUSTNESS]
-[BOUND]
-[FAIRNESS]
-[MONOTONICITY]
-[STABILITY]
-[LOGIC]
-```
-
-The property type describes the user intent.
-
-It does not alone define the full verification problem. The scope and assertion complete the property.
-
----
-
-## Scope Syntax
-
-### `check_at`
-
-Pointwise evaluation:
-
-```toetra
-[BOUND]: check_at x => score >= 0
-```
-
-Meaning:
+The right-hand side is one signed number, Boolean, or quoted string literal.
+Derived declarations do not parse:
 
 ```text
-Evaluate the property at one point x.
+annual_limit := monthly_limit * 12
 ```
 
----
+Semicolons between declarations are accepted, but one declaration per line is
+the canonical style.
 
-### `at`
+### Inline anchors
 
-Local evaluation around an anchor:
+An inline anchor declares one concrete point:
 
 ```toetra
-[ROBUSTNESS]: at x in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUAL()
+anchor customer := {
+    age: 42,
+    income: 58000.0
+}
 ```
 
-Meaning:
+Feature names are unqualified inside the anchor. Values are signed numbers,
+Booleans, or quoted strings. The block must not be empty.
 
-```text
-Evaluate robustness around anchor x using a perturbation x'.
-```
+### Referenced anchors
 
-Implicit feature references are resolved against `x'` by default.
-
----
-
-### Pairwise
-
-Pairwise relation between two variables:
+A referenced anchor selects one row from an external source:
 
 ```toetra
-[FAIRNESS]: x ~ x' in neighborhood(metric=L2, eps=0.1) => score == score
-```
-
-The intended pairwise syntax is:
-
-```text
-x ~ x'
-```
-
-The semantic layer interprets:
-
-| Variable | Role |
-|---|---|
-| `x` | anchor |
-| `x'` | perturbation / paired point |
-
----
-
-### Quantifiers
-
-Quantified evaluation introduces an explicitly named symbolic input variable:
-
-```toetra
-[BOUND]: forall x0 => target >= 0
-```
-
-```toetra
-[BOUND]: exists candidate => candidate.score > 0
-```
-
-Word and Unicode forms normalize to the same internal quantifier values:
-
-```text
-forall x0
-∀ x0
-exists x0
-∃ x0
-```
-
-The identifier is mandatory and must be preserved across the compiler pipeline. Explicit input references in the domain or assertion must resolve to that identifier. Implicit feature references use it as the default entity. `target` remains a model-output reference and does not need to repeat the input identifier.
-
-See [Quantified Variable Bindings](quantified-bindings.md) for the normative binding rules.
-
----
-
-## Neighborhood Syntax
-
-Neighborhoods define perturbation spaces.
-
-```toetra
-in neighborhood(metric=L2, eps=0.1)
-```
-
-Examples:
-
-```toetra
-in neighborhood(metric=L1, eps=1.0)
-in neighborhood(metric=L2, eps=0.1)
-in neighborhood(metric=Linf, eps=0.05)
-```
-
-The most important argument is usually:
-
-| Argument | Meaning |
-|---|---|
-| `eps` | Perturbation radius or tolerance. |
-
----
-
-## Domain Syntax
-
-Domains restrict admissible input valuations.
-
-```toetra
-with domain(
-    x0.a: [0.0, 3.0],
-    x0.b: {obj1, obj2},
-    x0.c: ]0.0, 3.0],
-    x0.d: {0.0, 7.0},
-    x0.e: ]0.0, 3.0[
+anchor customer := ref(
+    key = "customer_id",
+    value = "C-1842"
 )
 ```
 
-A domain entry has the shape:
+The grammar preserves the arguments. Semantic validation requires one usable
+`key` and one usable `value`; the runtime resolves the row from the configured
+anchor source or eligible dataset fallback.
+
+## Properties
+
+The general shape is:
 
 ```text
-qualified_attribute : domain_constraint
+[PROPERTY]: [scope =>] assertion [using backend]
 ```
 
-The subject must be explicit:
+The recognized property labels are:
+
+```text
+ROBUSTNESS
+STABILITY
+FAIRNESS
+MONOTONICITY
+BOUND
+LOGIC
+```
+
+The grammar also recognizes an unknown all-uppercase label so semantic
+validation can issue a deliberate error. That parser behavior does not create
+an extension mechanism.
+
+### Scoped property
 
 ```toetra
-x0.age: [18, 65]
+[LOGIC]:
+forall applicant
+=> applicant.age >= 18 -> target[applicant] <= 0.20 using Z3
 ```
 
-This is invalid:
+### Direct assertion property
+
+A property may omit a scope when its point references are already available:
 
 ```toetra
-age: [18, 65]
+anchor applicant := { age: 42, income: 58000.0 }
+
+[BOUND]:
+target[applicant] <= 0.20 using Z3
 ```
 
-### Interval forms
+Semantic validation still requires every feature and model evaluation to have
+an unambiguous point.
 
-| Syntax | Lower bound | Upper bound |
+## Point scopes
+
+### Quantified points
+
+```toetra
+[BOUND]:
+forall applicant
+=> target[applicant] <= 1
+```
+
+```toetra
+[LOGIC]:
+exists applicant
+=> target[applicant] >= 0.8
+```
+
+Several same-kind points may share one clause:
+
+```toetra
+forall lower, higher
+```
+
+Ordered clauses also parse:
+
+```toetra
+forall baseline
+exists candidate
+```
+
+The ordered chain is preserved. Alternation is outside the built-in V1 backend
+capabilities even though it parses and has a structured representation.
+
+Unicode `∀` and `∃` are accepted aliases for `forall` and `exists`.
+
+### Domain attachment
+
+A quantified scope may attach one domain:
+
+```toetra
+forall applicant
+with domain(
+    applicant.age: [18, 65]
+)
+=> target[applicant] <= 1
+```
+
+### Restrictions
+
+One `where` restriction may follow a quantified scope:
+
+```toetra
+forall lower, higher
+where higher.income >= lower.income
+=> target[higher] >= target[lower]
+```
+
+A neighborhood restriction has an explicit candidate and anchor:
+
+```toetra
+forall candidate
+where candidate in neighborhood(
+    of = baseline,
+    metric = Linf,
+    eps = 0.1
+)
+=> target[candidate] <= target[baseline] + 0.02
+```
+
+The referenced anchor must already be visible.
+
+### `check_at`
+
+`check_at` selects a declared concrete anchor:
+
+```toetra
+anchor applicant := { age: 42, income: 58000.0 }
+
+[BOUND]:
+check_at applicant
+=> target <= 1
+```
+
+An undeclared `check_at` name still parses so Toetra can produce a stable
+migration diagnostic. It is not semantically valid.
+
+### `at` local sugar
+
+The current local form declares one symbolic candidate around an anchor:
+
+```toetra
+anchor baseline := { income: 50000.0 }
+
+[ROBUSTNESS]:
+at baseline with candidate in neighborhood(
+    metric = Linf,
+    eps = 0.1
+)
+=> target[candidate] - target[baseline] <= 0.02
+```
+
+It desugars to an explicit universal candidate with a neighborhood restriction.
+Older `at name in neighborhood(...)` and pairwise `x ~ x'` forms are
+diagnostic-only legacy syntax.
+
+## Domains
+
+Each domain entry has an explicitly qualified feature subject:
+
+```toetra
+with domain(
+    applicant.age: [18, 65],
+    applicant.debt_ratio: ]0.0, 1.0],
+    applicant.score: [0.0, 1.0[,
+    applicant.margin: ]0.0, 1.0[,
+    applicant.segment_id: {1, 2, 3}
+)
+```
+
+### Interval delimiters
+
+| Form | Lower endpoint | Upper endpoint |
 |---|---|---|
 | `[a, b]` | closed | closed |
 | `]a, b]` | open | closed |
 | `[a, b[` | closed | open |
 | `]a, b[` | open | open |
 
-Bounds may be arithmetic expressions and may reference specification constants:
+Parenthesis interval notation is not part of the language.
+
+Bounds are scalar expressions:
 
 ```toetra
-tolerance := 1.0
-minimum_b := 0.0
-maximum_b := 10.0
-
 with domain(
-    x0.a: [x0.b - tolerance, x0.b + tolerance],
-    x0.b: [minimum_b, maximum_b]
+    candidate.income: [baseline.income - 1000, baseline.income + 1000]
 )
 ```
 
-All input-feature references inside a domain are explicit. Bare names in bounds may denote declared specification constants. `target` is not permitted in a domain bound.
+The grammar accepts this tree; semantic validation requires numeric bounds,
+exact point bindings, and no `target` reference.
 
 ### Finite sets
 
 ```toetra
-x0.segment: {obj1, obj2}
-x0.level: {0.0, 7.0}
+applicant.level: {1, 2, 3}
+applicant.region: {EU, US}
+applicant.channel: {"web", "branch"}
 ```
 
-Curly braces always denote a finite discrete set. Finite-set members remain literals; arithmetic members are not part of this patch.
+Unquoted identifiers in a finite set are symbolic literals. Their accepted
+meaning does not imply that the built-in Z3 V1 route can encode categorical
+features.
 
-### Binding and composition
+## Scalar expressions
 
-Every domain reference must resolve to a variable introduced by the enclosing scope. Entries are conjoined and interpreted simultaneously rather than evaluated in declaration order.
+Leaves are:
 
-See [Domains](domains.md) and [Arithmetic Expressions](arithmetic-expressions.md).
+- numeric, Boolean, and string literals;
+- specification constants and feature names;
+- qualified features such as `applicant.income`;
+- model evaluations and output observables;
+- parenthesized scalar expressions.
 
-## Assertion Syntax
-
-Assertions are logical predicates built from comparisons and problem-level predicates.
-
-### Comparisons
-
-The general comparison form is:
+Numeric arithmetic operators are:
 
 ```text
-scalar_expression comparison_operator scalar_expression
+unary +  unary -
+*  /
++  -
 ```
 
 Examples:
 
 ```toetra
-target >= 0
-x0.age == 42
-x0.a + x0.b <= 7
-2 * target >= x0.a - 1
+2 * applicant.income - applicant.debt
+(target[applicant] - baseline_score) / 2
 ```
 
-Supported comparison operators:
+Arithmetic syntax is broader than the public affine execution profile.
+
+## Comparisons and Boolean assertions
+
+Comparison operators are:
 
 ```text
-== != < <= > >=
+==  !=  <  <=  >  >=
 ```
 
-### Arithmetic expressions
-
-Arithmetic operators:
+Boolean operators are:
 
 ```text
-unary +  unary -  *  /  +  -
+not / NOT
+and / AND
+or  / OR
+->
 ```
 
 Example:
 
 ```toetra
-2 * x0.a + x0.b <= target
+(applicant.age >= 18 and target[applicant] <= 0.20)
+or applicant.manual_review == true
 ```
 
-The initial verification profile is affine: multiplication by a constant and division by a non-zero constant are supported. Symbolic products and symbolic denominators require future capabilities.
+Precedence from strongest to weakest is:
 
-### Boolean composition
+1. scalar parentheses;
+2. unary arithmetic;
+3. multiplication and division;
+4. addition and subtraction;
+5. comparison;
+6. `not`;
+7. `and`;
+8. `or`;
+9. `->`.
+
+Implication is right-associative. Chained comparisons do not parse; write:
 
 ```toetra
-x0.a >= 0 AND x0.b <= 1
-x0.segment == "A" OR x0.segment == "B"
-NOT target < 0
+0 <= applicant.score and applicant.score <= 1
 ```
 
-### Logical implication
+## Model outputs
+
+### Regression
 
 ```toetra
-x0.age >= 18 -> target >= 0.5
+target[applicant] <= 0.20
 ```
 
-### Parentheses
+When exactly one default point is eligible:
 
 ```toetra
-(x0.a + x0.b <= 7 AND target >= 0) OR target == -1
+target <= 0.20
 ```
 
-### Invalid chained comparison
+### Binary classification
 
 ```toetra
-0 <= x0.a <= 3
+target[applicant].label == "approved"
+target[applicant].probability("approved") >= 0.80
 ```
 
-Write instead:
+The label argument is a signed number, Boolean, or quoted string literal.
+Unknown observable names do not parse.
+
+## Problem predicates
+
+Problem/function syntax has this shape:
 
 ```toetra
-0 <= x0.a AND x0.a <= 3
+CLASSIFICATION.EQUAL()
 ```
 
-### Problem predicates
+The grammar recognizes the vocabulary listed in [Vocabulary](vocabulary.md).
+Only combinations named by the public profile are V1 executable.
+`CLASSIFICATION.EQUAL()` is public sugar for predicted-label equality across
+exactly two visible binary model evaluations.
+
+## Backend syntax
 
 ```toetra
-[ROBUSTNESS]: forall baseline, candidate => CLASSIFICATION.EQUAL()
-REGRESSION.BETWEEN()
+using Z3
+using z3
 ```
 
-Problem predicates are boolean leaves. The executable binary sugar requires exactly two visible model-input points.
+An explicit backend is required, not a hint. Backend argument syntax is parsed,
+but no DSL backend argument is part of the public V1 profile unless a backend
+contract documents it.
 
-See [Assertions](assertions.md) and [Arithmetic Expressions](arithmetic-expressions.md).
+ERAN, zonotope, and box spellings are reserved syntax and are rejected as V1
+execution requests.
 
-## Backend Syntax
+## Canonical formatting
 
-A property can optionally specify a backend:
+- Quote artifact and dataset paths.
+- Put declarations before properties.
+- Use lowercase Boolean operators in new examples.
+- Use explicit point indices in multi-point assertions.
+- Use `Z3` consistently in public examples.
+- Put each domain entry and neighborhood argument on its own line.
+- Prefer explicit `forall`/`exists` and `where` forms in contracts; use `at` and
+  `check_at` in user guides where their preconditions are clear.
 
-```toetra
-[ROBUSTNESS]: at x in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUAL() using z3
-```
+## Related pages
 
-With arguments:
-
-```toetra
-using z3(timeout=30)
-```
-
-The backend syntax is a request or hint. The backend boundary still validates compatibility before execution.
-
----
-
-## Recommended Formatting Style
-
-Recommended style for readability:
-
-```toetra
-model := "model.joblib"
-target := prediction
-dataset := "data.csv"
-
-[ROBUSTNESS]: at x in neighborhood(metric=L2, eps=0.1)
-  => CLASSIFICATION.EQUAL()
-  using z3
-
-[BOUND]: check_at x
-  => score >= 0 AND score <= 1
-```
-
-This style is not necessarily required by the parser, but it improves readability and documentation consistency.
-
----
-
-## Invalid Syntax Examples
-
-### Missing header
-
-```toetra
-[BOUND]: check_at x => score >= 0
-```
-
-Invalid because `model` and `target` are missing.
-
-### Missing assertion
-
-```toetra
-[BOUND]: check_at x =>
-```
-
-Invalid because the property has no RHS assertion.
-
-### Invalid pairwise form
-
-```toetra
-[FAIRNESS]: x ~ y in neighborhood(metric=L2, eps=0.1) => score == score
-```
-
-The semantic layer expects the right variable to be the primed version of the left variable, such as `x'`.
-
----
-
-## Related Documents
-
+- [Language support levels](support-levels.md)
 - [Grammar](grammar.md)
-- [Properties](properties.md)
 - [Scopes](scopes.md)
 - [Domains](domains.md)
-- [Quantified Variable Bindings](quantified-bindings.md)
 - [Assertions](assertions.md)
-- [Arithmetic Expressions](arithmetic-expressions.md)
-- [Backends Syntax](backends.md)
-- [Examples](examples.md)
+- [Model output observables](model-output-observables.md)
+- [Invalid examples](invalid-examples.md)

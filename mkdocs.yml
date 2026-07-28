@@ -105,6 +105,7 @@ nav:
 
   - Language:
       - Overview: language/overview.md
+      - Support Levels: language/support-levels.md
       - Grammar: language/grammar.md
       - Vocabulary: language/vocabulary.md
       - Syntax: language/syntax.md

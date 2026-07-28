@@ -168,7 +168,9 @@ at customer with perturbed in neighborhood(
 => target[perturbed] <= target[customer] + 0.02 using Z3
 ```
 
-This is deterministic sugar for a fresh universal candidate plus a natural neighborhood restriction. The explicit form and sugar use the same semantic, IR, ModelBridge, backend, reporting, and replay pipeline.
+This is deterministic sugar for a fresh universal candidate plus a natural
+neighborhood restriction. The explicit form and sugar use the same semantic,
+IR, model-semantic lowering, backend, reporting, and replay pipeline.
 
 ## Legacy migration
 

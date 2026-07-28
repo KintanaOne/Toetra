@@ -1,259 +1,188 @@
 # Properties
 
-> Status: Stabilizing  
-> Scope: Property types and their intended semantics  
-> Priority: P1  
-> Audience: DSL users, semantic layer contributors, verification backend authors
+> Status: Accepted semantics for `1.0.0rc3`
+> Scope: Property labels, scopes, and assertions
+> Audience: users, semantic contributors, and backend authors
 
-## Purpose
+## Core rule
 
-A Toetra property expresses a behavioral guarantee that a model should satisfy.
-
-Every property combines:
+A property is a labelled verification request:
 
 ```text
-property type
-+ evaluation scope
+property label
++ point context
++ assumptions and restrictions
 + assertion
-+ optional backend selection
++ optional required backend
 ```
 
-Example:
+The assertion and point context determine the logical formula. A label records
+user intent and enables targeted validation; it does not inject hidden
+mathematics.
+
+## Structure
+
+Scoped form:
 
 ```toetra
-[ROBUSTNESS]: at x in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUAL()
+[BOUND]:
+forall applicant
+with domain(
+    applicant.income: [0.0, 100000.0]
+)
+=> target[applicant] <= 1 using Z3
 ```
 
-This expresses a robustness intent evaluated around an anchor point `x`.
-
----
-
-## Property Structure
-
-A property section has the following shape:
+Direct form with a declared anchor:
 
 ```toetra
-[PROPERTY_TYPE]: scope => assertion using backend
+anchor applicant := { income: 50000.0 }
+
+[BOUND]:
+target[applicant] <= 1 using Z3
 ```
 
-The backend is optional.
+## Recognized labels
 
-| Element | Role |
-|---|---|
-| `PROPERTY_TYPE` | Declares the kind of behavioral guarantee. |
-| `scope` | Defines where the property is evaluated. |
-| `assertion` | Defines what must hold. |
-| `backend` | Optional verification backend request. |
-
----
-
-## Supported Property Types
-
-### `ROBUSTNESS`
-
-Robustness properties express that model behavior should remain stable under controlled perturbations.
-
-Example:
-
-```toetra
-[ROBUSTNESS]: at x in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUAL()
-```
-
-Typical scopes:
-
-| Scope | Status |
-|---|---|
-| `at` | supported |
-| `check_at` | supported |
-| quantifier | supported |
-
-Typical future backend requirements:
-
-- model constraints,
-- perturbation constraints,
-- output equivalence constraints,
-- solver or verifier encoding.
-
----
-
-### `STABILITY`
-
-Stability properties express that model behavior should remain consistent under controlled conditions.
-
-Example:
-
-```toetra
-[STABILITY]: at x in neighborhood(metric=L2, eps=0.05) => REGRESSION.BETWEEN()
-```
-
-Stability is close to robustness, but may be used for broader behavioral persistence guarantees.
-
-Typical scopes:
-
-| Scope | Status |
-|---|---|
-| `at` | supported |
-| quantifier | supported |
-
----
-
-### `FAIRNESS`
-
-Fairness properties express behavioral constraints between points, groups, or comparable situations.
-
-Example:
-
-```toetra
-[FAIRNESS]: x ~ x' in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUITY()
-```
-
-Typical scope:
-
-| Scope | Status |
-|---|---|
-| pairwise | supported |
-
-Fairness will likely require ModelBridge and domain-aware constraints to become fully meaningful.
-
----
-
-### `MONOTONICITY`
-
-Monotonicity properties express that outputs should move in a consistent direction when a feature or condition changes.
-
-Example:
-
-```toetra
-[MONOTONICITY]: x ~ x' in neighborhood(metric=L1, eps=1.0) => REGRESSION.INCREASING()
-```
-
-Typical scopes:
-
-| Scope | Status |
-|---|---|
-| pairwise | supported |
-| quantifier | supported |
-
-Monotonicity is a strong candidate for IR2 and backend-specific lowering because it often requires comparing two symbolic states. Attribute-to-attribute monotonicity forms such as `x'.score >= x.score` should remain marked as planned until the comparison AST supports right-hand-side attributes.
-
----
-
-### `BOUND`
-
-Bound properties express that a feature, score, probability, or output must remain within a range.
-
-Examples:
-
-```toetra
-[BOUND]: check_at x => score >= 0
-```
-
-```toetra
-[BOUND]: check_at x => score >= 0 AND score <= 1
-```
-
-Typical scopes:
-
-| Scope | Status |
-|---|---|
-| `check_at` | supported |
-| quantifier | supported |
-
----
-
-### `LOGIC`
-
-Logic properties express general logical assertions.
-
-Example:
-
-```toetra
-[LOGIC]: check_at x => (age >= 18 AND score >= 0.5) -> approved == true
-```
-
-`LOGIC` is useful for testing the compiler and expressing backend-independent logical relationships.
-
-Its exact semantic compatibility rules should be stabilized before public freeze.
-
----
-
-## Property and Scope Compatibility
-
-Not every property type is compatible with every scope.
-
-Current semantic compatibility should be documented as:
-
-| Property | Supported Scopes |
-|---|---|
-| `ROBUSTNESS` | `local`, `pointwise`, `quantifier` |
-| `STABILITY` | `local`, `quantifier` |
-| `FAIRNESS` | `pairwise` |
-| `MONOTONICITY` | `pairwise`, `quantifier` |
-| `BOUND` | `pointwise`, `quantifier` |
-| `LOGIC` | to define |
-
-This compatibility is not a grammar concern. It is enforced by semantic validation.
-
----
-
-## Property and Problem Predicates
-
-Some properties use problem-level predicates:
-
-```toetra
-[ROBUSTNESS]: forall baseline, candidate => CLASSIFICATION.EQUAL()
-REGRESSION.BETWEEN()
-```
-
-For the executable binary profile, `CLASSIFICATION.EQUAL()` requires exactly two visible model-input points and is sugar for explicit label equality.
-
-These predicates must be validated against:
-
-- the declared or inferred ML task,
-- the model schema,
-- the property type,
-- the backend capability.
-
-Current compatibility examples:
-
-| Problem | Compatible Functions |
-|---|---|
-| `CLASSIFICATION` | `EQUAL`, `EQUITY`, `BETWEEN` |
-| `REGRESSION` | `EQUAL`, `INCREASING`, `DECREASING`, `BETWEEN` |
-
----
-
-## Current vs Target Semantics
-
-| Layer | Current Role | Target Role |
+| Label | Intended use | Required explicit content |
 |---|---|---|
-| Grammar | Accept property syntax. | Stable public DSL. |
-| Builder | Build `PropertyNode`. | Fully canonical AST property nodes. |
-| Semantic layer | Validate scope and compatibility. | Model-aware property validation. |
-| IR1 | Represent backend-independent logical task. | NNF-normalized task representation. |
-| IR2 | implemented / stabilizing | NNF/CNF/DNF, assumptions, requirements and verification conditions. |
-| Backend lowering | implemented for Z3 affine profile | Capability-checked numeric-affine translation and execution. |
+| `ROBUSTNESS` | bounded change or neighborhood behavior | points, perturbation restriction, and stability assertion |
+| `STABILITY` | output consistency under stated conditions | points/conditions and comparison assertion |
+| `FAIRNESS` | relational behavior across points | at least two visible points and the intended relation |
+| `MONOTONICITY` | ordered change between points | ordering restriction and output relation |
+| `BOUND` | lower or upper output/property limit | point context and bound assertion |
+| `LOGIC` | general typed logical rule | complete Boolean assertion |
 
----
+All six labels are recognized by the language and may reach the Z3 route when
+the model, points, domains, arithmetic, observables, and numeric policy satisfy
+the public profile. The label alone does not make a route public.
 
-## Testing Requirements
+## Scope ownership
 
-Each property type should have:
+A property may introduce symbolic points with `forall` or `exists`, select a
+declared anchor with `check_at`, use local `at` sugar, or reference already
+visible anchors directly.
 
-- at least one valid grammar sample,
-- at least one valid semantic sample,
-- at least one invalid scope sample,
-- at least one golden IR1 sample,
-- future IR2 samples,
-- future backend query samples,
-- Hypothesis strategies,
-- Miova mutation scenarios.
+Semantic validation establishes:
 
----
+- the ordered point environment;
+- one default point only when unambiguous;
+- exact feature and target bindings;
+- domain ownership;
+- restriction visibility;
+- one model evaluation identity per `(model, point, target)`.
 
-## Related Documents
+Multi-point assertions should use explicit point qualification.
 
+## Universal and existential meaning
+
+For domain/model assumptions `Γ` and property assertion `P`:
+
+```text
+forall: search Γ ∧ ¬P for a counterexample
+exists: search Γ ∧ P for a witness
+```
+
+This difference is preserved through IR2, reporting, and status interpretation.
+Homogeneous universal or existential chains are public V1. Alternating chains
+are represented but capability-rejected.
+
+## Relational properties
+
+### Monotonicity
+
+```toetra
+[MONOTONICITY]:
+forall lower, higher
+with domain(
+    lower.income: [0.0, 100000.0],
+    higher.income: [0.0, 100000.0]
+)
+where higher.income >= lower.income
+=> target[higher] >= target[lower] using Z3
+```
+
+The label does not infer which feature is ordered or which direction is
+monotone; the restriction and assertion state both.
+
+### Fairness
+
+`FAIRNESS` requires at least two visible points:
+
+```toetra
+[FAIRNESS]:
+forall first, second
+=> target[first] == target[second] using Z3
+```
+
+Whether this formula is a valid fairness claim for a concrete use case depends
+on the domain and protected-attribute policy supplied by the author. Toetra
+does not invent those assumptions.
+
+### Robustness
+
+```toetra
+anchor baseline := { income: 50000.0 }
+
+[ROBUSTNESS]:
+forall candidate
+where candidate in neighborhood(
+    of = baseline,
+    metric = Linf,
+    eps = 0.1
+)
+=> target[candidate] - target[baseline] <= 0.02 using Z3
+```
+
+The neighborhood is an explicit assumption. The assertion states the behavior
+that must remain stable.
+
+## Problem predicates
+
+Problem predicates are Boolean assertion leaves:
+
+```toetra
+CLASSIFICATION.EQUAL()
+```
+
+In public V1, this predicate is semantic sugar for predicted-label equality
+across exactly two visible evaluations of a binary classification model. It
+does not mean regression equality and is rejected without the required point
+and output context.
+
+Other problem/function words recognized by the grammar are not public execution
+claims. See [Vocabulary](vocabulary.md).
+
+## Property labels and backend selection
+
+Every recognized property label is semantically compatible with Z3 in V1, but
+route qualification still checks the complete IR2 requirements. A request may
+therefore fail because of:
+
+- an unsupported model or encoder;
+- categorical or nonlinear requirements;
+- quantifier alternation;
+- an unsupported output observable;
+- incompatible numeric policy;
+- an explicitly requested unregistered backend.
+
+That is a capability rejection, not an unknown property.
+
+## Invalid property cases
+
+- unknown or malformed property label;
+- `FAIRNESS` with fewer than two visible points;
+- ambiguous feature or target shorthand;
+- assertion with a non-Boolean root;
+- incompatible problem/function combination;
+- invalid output observable for the model schema;
+- explicit backend outside the V1 support set.
+
+## Related pages
+
+- [Language support levels](support-levels.md)
 - [Scopes](scopes.md)
 - [Assertions](assertions.md)
-- [Vocabulary](vocabulary.md)
-- [Examples](examples.md)
+- [Model output observables](model-output-observables.md)
+- [Backends syntax](backends.md)
+- [Backend execution contract](../contracts/backend-execution-contract.md)

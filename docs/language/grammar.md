@@ -1,346 +1,233 @@
 # Grammar
 
-> Status: Implemented / needs cleanup  
-> Scope: Source language grammar  
-> Priority: P1  
-> Audience: compiler contributors, DSL maintainers, test authors
+> Status: Implemented and generation-checked in `1.0.0rc3`
+> Scope: Source recognition and CST structure
+> Audience: language and parser contributors
 
-## Purpose
+## Authoritative files
 
-The grammar defines the accepted surface syntax of Toetra programs.
-
-It is the first formal boundary of the compiler pipeline:
+The maintained grammar source is:
 
 ```text
-.toetra source
-→ parser
-→ CST
+src/toetra/_language/grammar/toetra_grammar.ebnf
 ```
 
-The grammar is currently expressed in EBNF and generated or maintained as a Lark grammar.
-
-The grammar is responsible for syntax only. It must not perform semantic interpretation such as feature existence checks, model compatibility, scope compatibility, or backend capability matching.
-
----
-
-## Program Structure
-
-A Toetra program contains:
+The parser consumes the generated Lark grammar:
 
 ```text
-header body
+src/toetra/_language/grammar/toetra_grammar.lark
 ```
 
-The header declares the model and target:
+`tests/unit/parser/test_grammar_generation.py` regenerates the Lark text from
+the EBNF and requires byte-for-byte equality with the committed file. Edit the
+EBNF and vocabulary sources, regenerate, and commit both files together.
 
-```toetra
-model := "model.joblib"
-target := prediction
-```
+## Grammar boundary
 
-The body contains one or more property sections:
+The grammar establishes only that source text has a recognized structure. It
+does not establish:
 
-```toetra
-[ROBUSTNESS]: forall baseline, candidate => CLASSIFICATION.EQUAL()
-```
+- exact point binding;
+- model feature existence or type;
+- interval satisfiability;
+- specification-constant name resolution;
+- output-observable compatibility;
+- arithmetic capability;
+- model encoder availability;
+- backend support.
 
----
+Those decisions belong to semantic validation and route qualification. See
+[Language support levels](support-levels.md).
 
-## Header Grammar
+## Program structure
 
-The intended header shape is:
-
-```ebnf
-header = padding,
-         model_declaration,
-         padding,
-         target_declaration,
-         padding,
-         [ dataset_declaration, padding ],
-         { specification_constant_declaration, padding } ;
-```
-
-### Required declarations
-
-| Declaration | Example | Status |
-|---|---|---|
-| `model` | `model := "model.joblib"` | implemented |
-| `target` | `target := prediction` | implemented |
-
-### Optional declarations
-
-| Declaration | Example | Status |
-|---|---|---|
-| `dataset` | `dataset := "data.csv"` | grammar-level support |
-| specification constant | `max_risk := 0.20` | target grammar contract |
-
----
-
-### Specification-constant declarations
-
-The target declaration grammar is:
-
-```ebnf
-specification_constant_declaration = identifier, ":=", scalar_literal ;
-
-scalar_literal = signed_numeric_literal
-               | boolean_literal
-               | string_literal ;
-```
-
-A specification constant is a header declaration, not an assignment statement. The initial grammar accepts literal right-hand sides only. Derived expressions such as `annual_limit := monthly_limit * 12` remain outside the initial profile.
-
-The parser preserves an unqualified identifier in a scalar expression without deciding whether it denotes a specification constant or an implicit feature. That decision belongs to semantic name resolution.
-
-## Property Grammar
-
-A property section has the following shape:
-
-```ebnf
-property_section = property, [ backend ] ;
-property = "[", property_type, "]", ":", property_expr, property_imply, assertion ;
-property_imply = "=>" ;
-```
-
-Example:
-
-```toetra
-[BOUND]: check_at x => score >= 0
-```
-
-Each property contains:
-
-| Part | Example | Meaning |
-|---|---|---|
-| Property type | `[ROBUSTNESS]` | High-level verification intent. |
-| Scope | `at x ...` | Where the property is evaluated. |
-| Implication | `=>` | Separates scope from assertion. |
-| Assertion | `score >= 0` | What must hold. |
-| Backend | `using z3` | Optional backend hint or selection. |
-
----
-
-## Scope Grammar
-
-The current grammar supports four major scope forms:
-
-```ebnf
-property_expr = quantifier_expr | at_expr | check_expr | pairwise_expr ;
-```
-
-The target quantified-scope grammar is:
-
-```ebnf
-quantifier_expr = quantifier, identifier, [ domain ] ;
-quantifier      = "forall" | "exists" | "∀" | "∃" ;
-```
-
-The identifier is syntactically mandatory. The grammar only preserves it in the CST; matching explicit references against that declaration is a semantic responsibility.
-
-Target AST shape:
+The current structural shape is:
 
 ```text
-QuantifierExprNode(quantifier, variable, domain)
+program
+  = header property+
+
+header
+  = model_declaration
+    target_declaration
+    dataset_declaration?
+    specification_constant_declaration*
+    anchor_declaration*
+
+property
+  = "[" property_type "]" ":"
+    (property_scope "=>")?
+    assertion
+    backend?
 ```
 
-The current implementation satisfies this initial contract and is regression-locked by parser, builder and semantic tests.
+This notation is explanatory. The committed EBNF is the exact source.
 
-| Scope | Example | Meaning |
-|---|---|---|
-| `at` | `at x in neighborhood(metric=L2, eps=0.1)` | Local evaluation around an anchor. |
-| `check_at` | `check_at x` | Pointwise evaluation. |
-| `pairwise` | `x ~ x' in neighborhood(metric=L2, eps=0.1)` | Relation between anchor and perturbation. |
-| quantifier | `forall x0 with domain(...)` | Symbolic evaluation over an explicitly named variable. |
-
----
-
-## Domain Grammar
-
-The target typed-domain grammar is:
-
-```ebnf
-domain = "with", "domain", "(", domain_entry,
-         { ",", domain_entry }, [ "," ], ")" ;
-
-domain_entry = domain_subject, ":", domain_constraint ;
-domain_subject = qualified_attribute ;
-domain_constraint = interval_domain | finite_set_domain ;
-
-interval_domain = closed_closed_interval
-                | open_closed_interval
-                | closed_open_interval
-                | open_open_interval ;
-
-closed_closed_interval = "[", arithmetic_expression, ",", arithmetic_expression, "]" ;
-open_closed_interval   = "]", arithmetic_expression, ",", arithmetic_expression, "]" ;
-closed_open_interval   = "[", arithmetic_expression, ",", arithmetic_expression, "[" ;
-open_open_interval     = "]", arithmetic_expression, ",", arithmetic_expression, "[" ;
-
-finite_set_domain = "{", domain_literal,
-                    { ",", domain_literal }, "}" ;
-
-domain_literal = numeric_literal
-               | boolean_literal
-               | string_literal
-               | symbolic_literal ;
-```
-
-Grammar-level decisions:
-
-- `domain` is a protected keyword, not a generic identifier;
-- a domain contains at least one entry;
-- domain subjects are explicitly qualified attributes;
-- input references inside arithmetic bounds are also explicitly qualified;
-- a trailing comma is accepted;
-- empty finite sets are rejected syntactically;
-- interval boundaries preserve all four bracket combinations;
-- interval bounds may contain arithmetic expressions;
-- finite-set members remain literals in this language slice.
-
-The grammar preserves syntax. It does not validate entity binding, numeric typing, interval satisfiability, division by zero, target usage in a domain, or backend capability.
-
-## Assertion Grammar
-
-The target assertion grammar separates scalar expressions from boolean expressions.
-
-```ebnf
-comparison_expr = scalar_expression,
-                  comparison_operation,
-                  scalar_expression ;
-
-scalar_expression = additive_expression ;
-
-additive_expression = multiplicative_expression,
-                      { ("+" | "-"), multiplicative_expression } ;
-
-multiplicative_expression = unary_expression,
-                            { ("*" | "/"), unary_expression } ;
-
-unary_expression = [ "+" | "-" ], scalar_primary ;
-
-scalar_primary = numeric_literal
-               | boolean_literal
-               | string_literal
-               | qualified_attribute
-               | bare_name
-               | "target"
-               | "(", scalar_expression, ")" ;
-
-bare_name = identifier ;
-
-assertion = logic_imply ;
-logic_imply = logic_or | logic_or, "->", logic_imply ;
-logic_or = logic_and, { "OR", logic_and } ;
-logic_and = logic_not, { "AND", logic_not } ;
-logic_not = [ "NOT" ], logical_atom ;
-logical_atom = comparison_expr
-             | problem_expr
-             | "(", assertion, ")" ;
-```
-
-Normative consequences:
-
-- comparisons accept expressions on both sides;
-- `target` is a scalar leaf distinct from an input attribute;
-- a bare name remains unresolved in the CST and may later become a specification-constant reference or an implicit feature;
-- arithmetic precedence is encoded structurally;
-- comparison operators are non-associative;
-- chained comparisons are invalid;
-- boolean operators compose predicates, not numeric values;
-- problem predicates remain boolean leaves and are not arithmetic operands.
-
-The grammar may represent multiplication or division that exceeds the initial affine verification profile. Semantic requirement analysis and backend routing decide whether such an expression is supported.
-
-The previous `logic_expr = attribute logic_operation value` form is superseded. Boolean operators belong only to the logical assertion tree.
-
-## Operator Casing
-
-The grammar currently mixes:
+## Declarations
 
 ```text
-AND : "and"
-OR  : "or"
-NOT : "not"
+model_declaration   = "model" ":=" quoted_identifier
+target_declaration  = "target" ":=" identifier
+dataset_declaration = "dataset" ":=" quoted_identifier
+
+specification_constant_declaration
+  = identifier ":=" signed_number_or_boolean_or_string
+
+anchor_declaration
+  = "anchor" identifier ":=" (inline_anchor | anchor_ref)
 ```
 
-with assertion rules using uppercase literals:
+Specification constants accept literals only. Anchor blocks require at least
+one entry. Reference argument presence and uniqueness are semantic concerns.
 
-```ebnf
-logic_or  = logic_or "OR" logic_and ;
-logic_and = logic_and "AND" logic_not ;
-logic_not = "NOT" atom ;
-```
-
-This must be stabilized before public DSL freeze.
-
-Recommended options:
-
-| Option | Description | Recommendation |
-|---|---|---|
-| Uppercase canonical | Users write `AND`, `OR`, `NOT`. | Good for formal DSL style. |
-| Lowercase canonical | Users write `and`, `or`, `not`. | Good for Python-like readability. |
-| Case-insensitive | Both are accepted. | Flexible but must be tested carefully. |
-
-Recommended P1 decision:
+## Point scopes
 
 ```text
-Accept case-insensitive logical operators, normalize internally to uppercase enum names.
+property_scope
+  = quantifier_expr
+  | at_expr
+  | check_expr
+  | legacy_pairwise_expr
+
+quantifier_expr
+  = quantifier identifier ("," identifier)*
+    (quantifier_clause)*
+    domain?
+    where_clause?
 ```
 
----
+The grammar preserves ordered quantifier clauses. It does not decide whether a
+backend supports alternation.
 
-## Grammar Responsibilities
+Legacy `at` and pairwise shapes remain parseable only so semantic validation can
+emit stable migration diagnostics. They are not part of the supported core.
 
-The grammar should guarantee:
+## Domains
 
-- source can be parsed or rejected deterministically;
-- parse tree contains enough structure for AST building;
-- operator precedence is syntactically encoded;
-- comments and whitespace do not affect meaning;
-- property sections are separable;
-- optional backend syntax is attached to the relevant property.
+```text
+domain
+  = "with" "domain" "(" domain_entry ("," domain_entry)* ","? ")"
 
-The grammar should not guarantee:
+domain_entry
+  = attribute ":" (interval_domain | finite_set_domain)
+```
 
-- feature existence;
-- model compatibility;
-- property/scope compatibility;
-- backend support;
-- type compatibility;
-- logical satisfiability.
+Intervals use the four bracket combinations `[a,b]`, `]a,b]`, `[a,b[`, and
+`]a,b[`. Bounds are scalar expressions. Finite sets contain one or more values
+or symbolic literals.
 
-Those belong to later compiler stages.
+The parser preserves delimiters and tree structure. Semantic validation decides
+whether subjects are explicitly bound, bounds are numeric and non-empty, and
+set members match the feature type.
 
----
+## Scalar and Boolean grammar
 
-## Grammar Testing
+```text
+scalar_expression
+  = additive_expression
 
-Grammar tests should include:
+additive_expression
+  = multiplicative_expression (("+" | "-") multiplicative_expression)*
 
-| Test Category | Purpose |
-|---|---|
-| Minimal valid programs | Ensure basic parseability. |
-| Full valid programs | Cover all syntax branches. |
-| Invalid syntax samples | Ensure correct parse failure. |
-| Operator precedence samples | Validate logical and arithmetic tree structure. |
-| Specification-constant samples | Cover scalar literal declarations, multiple declarations, reserved names and malformed right-hand sides. |
-| Arithmetic samples | Cover unary/binary precedence, symmetric comparisons, interval bounds, and chained-comparison rejection. |
-| Scope samples | Cover `at`, `check_at`, `pairwise`, `forall <identifier>`, and `exists <identifier>`. |
-| Domain samples | Cover four interval forms, finite sets, symbolic literals, trailing commas, and malformed domains. |
-| Backend samples | Cover backend names and arguments. |
-| Hypothesis-generated syntax | Discover grammar edge cases. |
-| Fuzzed syntax | Challenge parser robustness. |
+multiplicative_expression
+  = unary_expression (("*" | "/") unary_expression)*
 
----
+unary_expression
+  = ("+" | "-") unary_expression
+  | scalar_primary
 
-## Related Documents
+comparison
+  = scalar_expression comparison_operator scalar_expression
+```
+
+Boolean precedence is encoded by separate recursive rules:
+
+```text
+atom
+→ not
+→ and
+→ or
+→ implication
+```
+
+Implication is right-associative. Comparisons are atoms and cannot be chained.
+Arithmetic capability is deliberately not enforced by the grammar.
+
+## Output references
+
+```text
+model_output_ref
+  = "target" ("[" identifier "]")?
+
+output_observable
+  = model_output_ref "." (
+      "label"
+      | "probability" "(" class_label_literal ")"
+    )
+```
+
+The parser distinguishes a model-output reference from a feature attribute.
+Schema-aware semantic validation later distinguishes regression and
+classification meaning.
+
+## Lexical rules
+
+### Identifiers
+
+Identifiers use the common-name shape:
+
+```text
+[A-Za-z_][A-Za-z0-9_]*
+```
+
+Reserved words have lexer priority and use word boundaries so names such as
+`target_score` are not split into `target` plus a suffix.
+
+### Casing
+
+- property, problem, and function vocabulary is uppercase;
+- `forall`, `exists`, protected words, and `using` are lowercase;
+- Boolean operators accept lowercase and uppercase forms;
+- `Z3` and `z3` are both accepted;
+- the metric spelling is `Linf`, not `LINF`.
+
+### Comments
+
+```text
+# line comment
+''' block comment '''
+```
+
+Both are discarded before CST construction.
+
+## Regeneration
+
+From the repository root:
+
+```bash
+python -m toetra._language.tools.generator
+python -m pytest tests/unit/parser/test_grammar_generation.py
+```
+
+The generator and grammar package are private implementation surfaces. The
+commands are contributor workflows, not public Python API.
+
+## Required test layers
+
+A grammar change is incomplete without:
+
+1. positive and negative parser tests;
+2. AST-builder coverage for every new tree shape;
+3. semantic tests proving accepted and rejected meanings;
+4. IR and backend capability tests when execution changes;
+5. language reference and public-profile updates when support changes.
+
+Parser tests alone may establish accepted syntax, never public execution.
+
+## Related pages
 
 - [Syntax](syntax.md)
 - [Vocabulary](vocabulary.md)
-- [Assertions](assertions.md)
-- [Scopes](scopes.md)
-- [Quantified Variable Bindings](quantified-bindings.md)
-- [Domains](domains.md)
-- [Arithmetic Expressions](arithmetic-expressions.md)
-- [Specification Constants](specification-constants.md)
-- [Examples](examples.md)
+- [Language support levels](support-levels.md)
+- [Parser layer](../compiler/parser-layer.md)
+- [CST to AST contract](../contracts/cst-to-ast.md)

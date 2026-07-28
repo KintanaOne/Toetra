@@ -1,277 +1,219 @@
 # Assertions
 
-> Status: Target contract accepted for documentation-first implementation  
-> Scope: RHS logical expressions  
-> Priority: P0  
-> Audience: DSL users, AST/IR authors, semantic validators, backend authors, test authors
+> Status: Accepted syntax and semantics in `1.0.0rc3`
+> Scope: Boolean property expressions
+> Audience: users, semantic contributors, and backend authors
 
 ## Purpose
 
-Assertions define what must hold within a property scope:
+An assertion states what must hold in a property context:
 
 ```toetra
-[PROPERTY]: scope => assertion
+[LOGIC]:
+forall applicant
+=> applicant.age >= 18 -> target[applicant] <= 0.20
 ```
 
-They compile through logical CST, AST, semantic validation, IR1, IR2, and the final verification condition.
+It is a Boolean tree built from comparisons, problem predicates, Boolean
+operators, and parentheses.
 
----
-
-## Assertion Categories
-
-| Category | Example | Purpose |
-|---|---|---|
-| Comparison | `target <= 7` | Atomic predicate. |
-| Arithmetic comparison | `2 * x0.a + x0.b <= target` | Relate numeric expressions. |
-| Boolean composition | `a >= 0 AND b <= 1` | Combine predicates. |
-| Negation | `NOT age < 18` | Negate a predicate. |
-| Logical implication | `age >= 18 -> target >= 0.5` | Conditional rule. |
-| Parentheses | `(a >= 0 AND b <= 1) OR target == 0` | Control precedence. |
-| Problem predicate | `forall baseline, candidate => CLASSIFICATION.EQUAL()` | Binary predicted-label equality sugar. |
-
----
-
-## Atomic Comparisons
-
-The normative comparison shape is:
+## Atomic comparisons
 
 ```text
-scalar_expression comparison_operator scalar_expression
+scalar expression
+comparison operator
+scalar expression
 ```
 
 Examples:
 
 ```toetra
-target >= 0
-x0.age == 42
-x0.segment != "A"
-x0.a + x0.b <= 7
-2 * target >= x0.a - 1
+target[applicant] <= 0.20
+applicant.age >= 18
+applicant.segment == "A"
+2 * applicant.income - applicant.debt >= 0
+target[applicant].label != "rejected"
 ```
 
-The previous restricted shape `attribute comparison_operator constant` is superseded.
-
-Conceptual AST:
+Comparison operators:
 
 ```text
-ComparisonNode(
-    left=ScalarExpressionNode(...),
-    op=EnumComparisonOperator,
-    right=ScalarExpressionNode(...),
-)
+==  !=  <  <=  >  >=
 ```
 
-Conceptual IR1:
+Ordering requires numeric operands. Equality and inequality require compatible
+scalar types. Predicted labels support equality and inequality only.
 
-```text
-ComparisonIR(
-    left=ScalarIR(...),
-    op=EnumComparisonOperator,
-    right=ScalarIR(...),
-)
-```
+## Name and point resolution
 
----
-
-## Scalar Expressions
-
-Comparison operands may contain literals, specification constants, explicit or implicit input features, `target`, unary arithmetic, binary arithmetic, and parentheses.
-
-Arithmetic typing and profile restrictions are defined in [Arithmetic Expressions](arithmetic-expressions.md).
-
----
-
-## Attribute and Target References
-
-Input features can be explicit:
+Explicit feature:
 
 ```toetra
-x0.age >= 18
+applicant.age >= 18
 ```
 
-or implicit:
+Implicit feature with one default point:
 
 ```toetra
 age >= 18
 ```
 
-Example:
+The second form resolves to `applicant.age` only when exactly one eligible
+default point exists. Toetra never guesses in a multi-point context.
+
+Model evaluation:
 
 ```toetra
-[LOGIC]: forall x0 => age + 1 <= target
+target[applicant]
 ```
 
-resolves conceptually to:
-
-```text
-x0.age + 1 <= _model.<declared-target>
-```
-
-`target` is a model-output reference, not an input feature.
-
----
-
-## Specification-Constant References
-
-Specification constants may appear anywhere a compatible scalar literal could appear:
+Short output reference:
 
 ```toetra
-max_risk := 0.20
-max_ratio := 0.35
+target
+```
+
+The short form is accepted only when one default point is unambiguous.
+
+## Specification constants
+
+In scalar-expression position, a bare name resolves in this order:
+
+1. matching specification constant;
+2. implicit feature of the unique default point;
+3. unbound-name error.
+
+```toetra
+maximum_risk := 0.20
 
 [LOGIC]:
 forall applicant
-    => target <= max_risk
-       AND applicant.debt <= max_ratio * applicant.income
+=> applicant.maximum_risk <= maximum_risk
 ```
 
-Bare-name resolution in assertions is:
+The qualified left side is a feature. The bare right side is the constant.
 
-1. matching specification constant;
-2. otherwise implicit feature of the scope's default entity;
-3. otherwise unbound-name error.
-
-Explicit qualification bypasses this ambiguity:
+## Boolean composition
 
 ```toetra
-threshold := 7
-
-[LOGIC]: forall x0 => x0.threshold <= threshold
+applicant.age >= 18 and target[applicant] <= 0.20
+not applicant.manual_review == true
+applicant.segment == "A" or applicant.segment == "B"
+applicant.age >= 18 -> target[applicant] <= 0.20
 ```
 
-The left side denotes a feature; the right side denotes the specification constant. See [Specification Constants](specification-constants.md).
+Lowercase and uppercase `and`, `or`, and `not` are accepted. New examples use
+lowercase.
 
-## Comparison Typing
+Precedence from strongest to weakest:
 
-| Operator family | Operand requirement |
-|---|---|
-| `<`, `<=`, `>`, `>=` | Compatible ordered scalar types; numeric in the initial profile. |
-| `==`, `!=` | Compatible scalar types. |
+1. scalar parentheses and arithmetic;
+2. comparison;
+3. `not`;
+4. `and`;
+5. `or`;
+6. implication `->`.
 
-Valid:
+Implication is right-associative.
 
-```toetra
-x0.a + 1 <= target
-x0.segment == "A"
-x0.enabled != false
-```
-
-Invalid:
-
-```toetra
-x0.segment + 1 <= 2
-x0.enabled < true
-```
-
----
-
-## Boolean Composition
-
-Boolean operators compose complete predicates.
-
-```toetra
-x0.a >= 0 AND x0.b <= 1
-x0.segment == "A" OR x0.segment == "B"
-NOT target < 0
-x0.age >= 18 -> target >= 0.5
-```
-
-A scalar expression is not a predicate by itself:
-
-```toetra
-x0.a + x0.b AND target <= 7
-```
-
-is invalid.
-
----
-
-## Operator Precedence
-
-From strongest to weakest:
+A numeric expression is not a predicate:
 
 ```text
-parenthesized scalar expression
-unary arithmetic + and -
-multiplication and division
-addition and subtraction
-comparison
-NOT
-AND
-OR
-logical implication
+applicant.income + applicant.savings and target <= 1
 ```
 
-Logical implication is right-associative. Comparisons are non-associative, so chained comparisons are rejected.
+## Problem predicates
 
----
-
-## Problem Predicates
-
-Problem predicates remain boolean leaves:
+Problem predicates are Boolean leaves:
 
 ```toetra
-[ROBUSTNESS]: forall baseline, candidate => CLASSIFICATION.EQUAL()
-REGRESSION.BETWEEN()
+CLASSIFICATION.EQUAL()
 ```
 
-They cannot participate directly in arithmetic.
+In public V1, `CLASSIFICATION.EQUAL()` is sugar for predicted-label equality
+across exactly two visible binary model evaluations. Other recognized
+problem/function spellings are not public execution promises.
 
----
+## Regression and classification assertions
 
-## Logical Normalization
-
-A comparison containing arithmetic remains one atomic predicate. NNF, CNF, and DNF passes may negate or invert the comparison but do not distribute through its arithmetic tree.
-
-Example:
+Regression:
 
 ```toetra
-NOT (x0.a + x0.b <= target OR target < 0)
+target[applicant] <= 0.20
+target[candidate] - target[baseline] <= 0.02
 ```
 
-NNF shape:
+Binary classification:
+
+```toetra
+target[applicant].label == "approved"
+target[applicant].probability("approved") >= 0.80
+target[first].label == target[second].label
+```
+
+The binary route excludes probability equality, probability arithmetic,
+thresholds exactly `0` or `1`, and label ordering.
+
+## Universal and existential interpretation
+
+The assertion tree `P` is preserved while scope semantics determine the query:
 
 ```text
-NOT(x0.a + x0.b <= target)
-AND
-NOT(target < 0)
+forall → Γdomain ∧ Γmodel ∧ ¬P
+exists → Γdomain ∧ Γmodel ∧ P
 ```
 
----
+A backend SAT result therefore means a counterexample for `forall` and a
+witness for `exists`.
 
-## Initial Verification Profile
+## Logical normalization
 
-The first end-to-end profile supports addition, subtraction, unary signs, multiplication by a numeric constant, and division by a non-zero numeric constant.
+NNF treats each complete comparison or problem predicate as an atom. It moves
+negations through Boolean structure without rewriting the inside of scalar
+arithmetic.
 
-Nonlinear symbolic products and symbolic denominators require a stronger capability and must never be approximated silently.
+For example:
 
----
+```toetra
+not (
+    applicant.income <= 0
+    or target[applicant] < 0
+)
+```
 
-## Failure Boundaries
+normalizes logically to the conjunction of the negated comparisons while
+preserving their scalar trees and provenance.
 
-| Failure | Expected boundary |
+## V1 execution boundary
+
+The built-in V1 route supports assertions whose complete requirements fit:
+
+- finite numeric model inputs;
+- affine scalar arithmetic;
+- supported regression or binary-classification observables;
+- Boolean `not`, `and`, `or`, and implication;
+- homogeneous quantified point contexts;
+- Z3 capability and numeric qualification.
+
+A valid assertion may still be capability-rejected when it contains nonlinear
+arithmetic, categorical solver requirements, alternating quantifiers, or an
+unsupported observable.
+
+## Failure ownership
+
+| Failure | Boundary |
 |---|---|
-| malformed expression | parser |
-| chained comparison | parser or AST contract |
-| unbound explicit entity | semantic binding |
-| incompatible arithmetic types | semantic type validation |
-| division by zero constant | semantic arithmetic validation |
-| unsupported nonlinear requirement | capability routing |
-| backend encoding mismatch | backend compilation |
+| malformed expression or chained comparison | parser |
+| ambiguous or unknown point/name | semantic binding |
+| incompatible comparison/arithmetic types | semantic scalar typing |
+| invalid problem/function context | semantic problem validation |
+| unsupported expression requirements | route qualification |
+| translation/execution failure after qualification | backend adapter |
 
----
+## Related pages
 
-## Testing Requirements
-
-Required tests include expression-to-expression comparisons, precedence, unary operators, implicit and explicit binding, type errors, division by zero, nonlinear capability rejection, logical normalization preservation, and Z3 translation of the affine profile.
-
----
-
-## Related Documents
-
-- [Arithmetic Expressions](arithmetic-expressions.md)
-- [Grammar](grammar.md)
-- [Syntax](syntax.md)
-- [Domains](domains.md)
-- [IR1 NNF](../ir/ir1-nnf.md)
-- [Semantic to IR1 Contract](../contracts/semantic-to-ir1.md)
+- [Language support levels](support-levels.md)
+- [Arithmetic expressions](arithmetic-expressions.md)
+- [Model output observables](model-output-observables.md)
+- [Properties](properties.md)
+- [NNF](../compiler/lowering-minimization.md)

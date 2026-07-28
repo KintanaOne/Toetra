@@ -1,463 +1,389 @@
-# Invalid and Unsupported Examples
+# Invalid and unsupported examples
 
-> Status: Accepted diagnostic baseline  
-> Scope: Explicit quantified bindings, typed domains, scalar arithmetic and specification constants
+> Status: Current boundary taxonomy for `1.0.0rc3`
+> Scope: Syntax errors, semantic errors, capability rejections, and outcomes
+> Audience: users, test authors, and diagnostic maintainers
 
-## Purpose
-
-This document distinguishes invalid source, invalid semantics, unsupported backend requests and genuine verification outcomes.
-
-```text
-invalid syntax ≠ invalid semantics ≠ unsupported capability ≠ violated property
-```
-
-Every example has a stable identifier suitable for tests and diagnostics. Every `toetra` block below is a complete program. Tests must send the complete program to the public parser/compiler entry point so that failures occur at the documented boundary.
-
----
-
-## Syntax Rejections
-
-### SYN-Q-001 — Missing Quantified Identifier
-
-```toetra
-model := "demo.joblib"
-target := score
-
-[LOGIC]: forall => target <= 7
-```
-
-Expected boundary: `Source → CST`.
+## Core distinction
 
 ```text
-PARSER_QUANTIFIER_IDENTIFIER_REQUIRED
+invalid syntax
+≠ invalid semantics
+≠ unsupported public route
+≠ property not satisfied
 ```
 
-### SYN-DOM-001 — Empty Domain Block
+This page freezes failure ownership, not final error wording. P26 may improve
+messages without moving a failure to the wrong layer.
 
-```toetra
-model := "demo.joblib"
-target := score
+Invalid programs use `text` fences deliberately: they are documentation
+fixtures for rejection, not executable examples.
 
-[LOGIC]: forall x0 with domain() => target <= 7
-```
+## Syntax rejections
 
-Expected boundary: parser.
+### Missing quantified identifier
 
 ```text
-PARSER_DOMAIN_REQUIRES_ENTRY
-```
-
-### SYN-DOM-002 — Empty Finite Set
-
-```toetra
-model := "demo.joblib"
+model := "linear.joblib"
 target := score
 
 [LOGIC]:
-forall x0
-    with domain(x0.region: {})
-    => target <= 7
+forall
+=> target <= 7
 ```
 
-Expected boundary: parser.
+Expected boundary: parser. `forall` and `exists` require an explicit identifier.
+
+### Empty domain
 
 ```text
-PARSER_FINITE_SET_REQUIRES_VALUE
-```
-
-### SYN-DOM-003 — Unsupported Parenthesis Interval Notation
-
-```toetra
-model := "demo.joblib"
+model := "linear.joblib"
 target := score
 
 [LOGIC]:
-forall x0
-    with domain(x0.age: (18, 65])
-    => target <= 7
+forall point
+with domain()
+=> target[point] <= 7
 ```
 
-Expected boundary: parser.
+Expected boundary: parser. A domain contains at least one entry.
 
-Toetra uses bracket-only French interval notation:
+### Empty finite set
 
 ```text
-[a, b]   ]a, b]   [a, b[   ]a, b[
+model := "linear.joblib"
+target := score
+
+[LOGIC]:
+forall point
+with domain(
+    point.level: {}
+)
+=> target[point] <= 7
 ```
+
+Expected boundary: parser. A finite set contains at least one member.
+
+### Parenthesis interval notation
 
 ```text
-PARSER_INVALID_INTERVAL_DELIMITER
+point.age: (18, 65]
 ```
 
-### SYN-SPC-001 — Non-Literal Declaration Value
+Expected boundary: parser. Toetra uses `[a,b]`, `]a,b]`, `[a,b[`, or `]a,b[`.
 
-```toetra
-model := "demo.joblib"
+### Derived specification constant
+
+```text
+model := "linear.joblib"
 target := score
 
 monthly_limit := 100
 annual_limit := monthly_limit * 12
 
-[LOGIC]: forall x0 => target <= annual_limit
+[LOGIC]:
+forall point
+=> target[point] <= annual_limit
 ```
 
-Expected boundary: parser under the initial specification-constant profile.
+Expected boundary: parser. Header constants accept scalar literals only.
+
+### Unknown output observable
 
 ```text
-PARSER_SPECIFICATION_CONSTANT_LITERAL_REQUIRED
+target[point].logit >= 0
 ```
 
-Derived declaration expressions are reserved for a later language extension.
+Expected boundary: parser. Internal model quantities are not DSL observables.
 
----
+## Semantic rejections
 
-## Semantic Rejections
+These forms have recognizable structure but invalid meaning.
 
-### SEM-BIND-001 — Mismatched Quantified Entity
+### Unknown explicit point
 
-```toetra
-model := "demo.joblib"
+```text
+model := "linear.joblib"
 target := score
 
-[BOUND]: forall x0 => candidate.age >= 18
+[BOUND]:
+forall point
+=> other.age >= 18
 ```
 
-Expected boundary: semantic binding.
+Expected boundary: semantic binding. Toetra must not alias `other` to `point`.
+
+### Implicit domain subject
 
 ```text
-SEMANTIC_UNBOUND_QUANTIFIED_ENTITY
-```
-
-The compiler must not alias `candidate` to `x0` merely because only one variable is declared.
-
-### SEM-DOM-001 — Implicit Domain Subject
-
-```toetra
-model := "demo.joblib"
+model := "linear.joblib"
 target := score
 
 [LOGIC]:
-forall x0
-    with domain(age: [18, 65])
-    => target >= 0
+forall point
+with domain(
+    age: [18, 65]
+)
+=> target[point] >= 0
+```
+
+Expected boundary: semantic domain validation. Domain subjects are explicitly
+qualified; write `point.age`.
+
+### Duplicate domain subject
+
+```text
+model := "linear.joblib"
+target := score
+
+[LOGIC]:
+forall point
+with domain(
+    point.age: [18, 65],
+    point.age: {21, 42}
+)
+=> target[point] >= 0
 ```
 
 Expected boundary: semantic domain validation.
 
+### Reversed or empty interval
+
 ```text
-SEMANTIC_DOMAIN_SUBJECT_MUST_BE_EXPLICIT
+point.age: [65, 18]
+point.age: ]18, 18[
 ```
 
-Assertions may use an implicit default entity. Domain subjects may not.
+Expected boundary: semantic domain validation when constant bounds make the
+contradiction decidable.
 
-### SEM-DOM-002 — Subject Bound to Another Entity
+### Target used in a domain
 
-```toetra
-model := "demo.joblib"
+```text
+with domain(
+    point.age: [0, target]
+)
+```
+
+Expected boundary: semantic domain validation. A domain restricts inputs, not
+model outputs.
+
+### Ambiguous shorthand
+
+```text
+model := "linear.joblib"
 target := score
 
 [LOGIC]:
-forall x0
-    with domain(y.age: [18, 65])
-    => target >= 0
+forall first, second
+=> target <= 1
+```
+
+Expected boundary: semantic binding. With two eligible points, write
+`target[first]` or `target[second]`.
+
+### Undeclared `check_at`
+
+```text
+model := "linear.joblib"
+target := score
+
+[BOUND]:
+check_at point
+=> target <= 1
+```
+
+Expected boundary: semantic migration validation. Declare `anchor point := ...`
+before selecting it.
+
+### Legacy local or pairwise scope
+
+```text
+[ROBUSTNESS]:
+at point in neighborhood(L2, eps=0.1)
+=> target <= 1
 ```
 
 ```text
-SEMANTIC_DOMAIN_ENTITY_MISMATCH
+[FAIRNESS]:
+first ~ second in neighborhood(L2, eps=0.1)
+=> target <= 1
 ```
 
-### SEM-DOM-003 — Duplicate Domain Subject
+Expected boundary: semantic migration validation. Use declared anchors,
+explicit point binders, `where` restrictions, or current `at ... with ...`
+sugar.
 
-```toetra
-model := "demo.joblib"
-target := score
+### Non-numeric arithmetic
 
-[LOGIC]:
-forall x0
-    with domain(
-        x0.age: [18, 65],
-        x0.age: {21, 42}
-    )
-    => target >= 0
+```text
+point.region + 1 <= target[point]
+```
+
+Expected boundary: semantic type validation when `region` is string or
+categorical.
+
+### Constant division by zero
+
+```text
+point.income / (1 - 1) <= target[point]
+```
+
+Expected boundary: semantic arithmetic validation.
+
+### Duplicate constant or point collision
+
+```text
+maximum := 1
+maximum := 2
 ```
 
 ```text
-SEMANTIC_DUPLICATE_DOMAIN_SUBJECT
-```
-
-### SEM-DOM-004 — Reversed Numeric Interval
-
-```toetra
-model := "demo.joblib"
-target := score
-
-[LOGIC]:
-forall x0
-    with domain(x0.age: [65, 18])
-    => target >= 0
-```
-
-```text
-SEMANTIC_INVALID_INTERVAL_ORDER
-```
-
-### SEM-DOM-005 — Empty Open Interval
-
-```toetra
-model := "demo.joblib"
-target := score
-
-[LOGIC]:
-forall x0
-    with domain(x0.age: ]18, 18[)
-    => target >= 0
-```
-
-The `[` closes the interval and the final `)` closes `domain(...)`. The syntax is valid, but the represented interval is empty.
-
-```text
-SEMANTIC_EMPTY_INTERVAL
-```
-
-### SEM-DOM-006 — Target in Domain Bound
-
-```toetra
-model := "demo.joblib"
-target := score
-
-[LOGIC]:
-forall x0
-    with domain(x0.a: [0, target])
-    => target >= 0
-```
-
-```text
-SEMANTIC_TARGET_NOT_ALLOWED_IN_DOMAIN
-```
-
-### SEM-ARI-001 — Non-Numeric Arithmetic
-
-```toetra
-model := "demo.joblib"
-target := score
-
-[LOGIC]: forall x0 => x0.region + 1 <= target
-```
-
-Assuming `region` is categorical/string-valued:
-
-```text
-SEMANTIC_NON_NUMERIC_ARITHMETIC
-```
-
-### SEM-ARI-002 — Literal Division by Zero
-
-```toetra
-model := "demo.joblib"
-target := score
-
-[LOGIC]: forall x0 => x0.a / 0 <= target
-```
-
-```text
-SEMANTIC_DIVISION_BY_ZERO
-```
-
-### SEM-SPC-001 — Duplicate Specification Constant
-
-```toetra
-model := "demo.joblib"
-target := score
-
-max_risk := 0.20
-max_risk := 0.30
-
-[LOGIC]: forall x0 => target <= max_risk
-```
-
-```text
-SEMANTIC_DUPLICATE_SPECIFICATION_CONSTANT
-```
-
-### SEM-SPC-002 — Scope Variable Collision
-
-```toetra
-model := "demo.joblib"
-target := score
-
 applicant := 7
-
 [LOGIC]: forall applicant => target <= 1
 ```
 
+Expected boundary: semantic constant registration.
+
+### Classification output without observable
+
 ```text
-SEMANTIC_SPECIFICATION_CONSTANT_SCOPE_COLLISION
+model := "binary.joblib"
+target := decision
+
+[LOGIC]:
+forall applicant
+=> target[applicant] >= 0
 ```
 
-Toetra rejects this collision rather than silently shadowing either declaration.
+Expected boundary: schema-aware semantic validation. A classification model
+requires `.label` or `.probability(label)`.
 
-### SEM-SPC-003 — Incompatible Constant Use
+### Invalid label operation
 
-```toetra
-model := "demo.joblib"
+```text
+target[applicant].label > "approved"
+target[applicant].label + 1 == "approved"
+```
+
+Expected boundary: semantic output-observable typing. Labels support equality
+and inequality, not ordering or arithmetic.
+
+### Invalid `CLASSIFICATION.EQUAL()` context
+
+```text
+[ROBUSTNESS]:
+forall applicant
+=> CLASSIFICATION.EQUAL()
+```
+
+Expected boundary: semantic problem validation. The sugar requires exactly two
+visible binary model evaluations.
+
+### Reserved backend
+
+```text
+model := "linear.joblib"
 target := score
 
-max_score := "high"
-
-[LOGIC]: forall x0 => target <= max_score
+[BOUND]:
+forall point
+=> target[point] <= 1 using ERAN
 ```
 
-Assuming a numeric target:
+Expected boundary: semantic backend validation. ERAN is reserved syntax, not a
+V1 backend.
 
-```text
-SEMANTIC_INCOMPATIBLE_SPECIFICATION_CONSTANT_TYPE
-```
+## Valid language, unsupported built-in route
 
-### SEM-SPC-004 — Bare Domain Feature Is Not Implicit
+These requests may pass parsing and semantic validation. They fail capability
+or profile qualification without approximation.
+
+### Nonlinear multiplication
 
 ```toetra
-model := "demo.joblib"
+model := "linear.joblib"
 target := score
 
 [LOGIC]:
-forall x0
-    with domain(
-        x0.a: [b - 1, b + 1]
-    )
-    => target >= 0
+forall point
+=> point.a * point.b <= target[point] using Z3
 ```
 
-When no specification constant named `b` exists:
+Reason: nonlinear arithmetic exceeds the built-in affine profile.
 
-```text
-SEMANTIC_UNBOUND_DOMAIN_NAME
-```
-
-Domain bounds do not fall back to implicit feature resolution. Write `x0.b` explicitly.
-
-### SEM-SPC-005 — Reserved Specification-Constant Name
+### Symbolic denominator
 
 ```toetra
-model := "demo.joblib"
-target := score
-
-domain := 7
-
-[LOGIC]: forall x0 => target <= 7
-```
-
-Depending on tokenization, this may be rejected at the parser boundary; otherwise semantic registration must reject it. The canonical diagnostic family is:
-
-```text
-SPECIFICATION_CONSTANT_RESERVED_NAME
-```
-
----
-
-## Valid but Backend-Unsupported Requests
-
-These complete programs must pass parser, builder and semantic validation before capability matching rejects them.
-
-### UNSUP-ARI-001 — Symbolic Product
-
-```toetra
-model := "demo.joblib"
-target := score
-
-[LOGIC]: forall x0 => x0.a * x0.b <= target using Z3
-```
-
-For an affine-only backend profile:
-
-```text
-BACKEND_UNSUPPORTED_NONLINEAR_ARITHMETIC
-```
-
-### UNSUP-ARI-002 — Symbolic Denominator
-
-```toetra
-model := "demo.joblib"
-target := score
-
-[LOGIC]: forall x0 => x0.a / x0.b <= target using Z3
-```
-
-```text
-requires_symbolic_division = true
-BACKEND_UNSUPPORTED_SYMBOLIC_DIVISION
-```
-
-### UNSUP-DOM-001 — Symbolic Categories Without Encoding Capability
-
-```toetra
-model := "demo.joblib"
+model := "linear.joblib"
 target := score
 
 [LOGIC]:
-forall x0
-    with domain(x0.region: {EU, US})
-    => target <= 7
-    using Z3
+forall point
+=> point.a / point.b <= target[point] using Z3
 ```
 
-```text
-BACKEND_UNSUPPORTED_CATEGORICAL_DOMAIN
-```
+Reason: symbolic division exceeds the built-in affine profile.
 
-### UNSUP-SPC-001 — String Constant Reaches Numeric-Only Categorical Backend
+### Categorical finite set
 
 ```toetra
-model := "demo.joblib"
+model := "model.joblib"
 target := score
 
-preferred_region := "EU"
+[LOGIC]:
+forall point
+with domain(
+    point.region: {EU, US}
+)
+=> target[point] <= 1 using Z3
+```
+
+Reason: the built-in V1 Z3 route has no public categorical sort/encoding.
+
+### Alternating quantifiers
+
+```toetra
+model := "linear.joblib"
+target := score
 
 [LOGIC]:
-forall x0
-    with domain(x0.region: {preferred_region, US})
-    => target <= 7
-    using Z3
+forall baseline
+exists candidate
+=> target[candidate] >= target[baseline] using Z3
 ```
 
-The language and semantic layers accept the request. A backend without string/categorical encoding reports:
+Reason: the ordered chain is represented, but the built-in V1 route supports
+homogeneous chains only.
 
-```text
-BACKEND_UNSUPPORTED_CATEGORICAL_DOMAIN
-```
+### Unsupported model profile
 
----
+A syntactically and semantically valid property can still fail before routing
+when the fitted artifact is a tree, ensemble, neural network, multiclass
+classifier, sklearn `Pipeline`, calibrated wrapper, or other model excluded by
+the public profile. That is model/profile rejection, not a language error.
 
-## Verification Outcomes Are Not Compilation Failures
+## Verification outcomes are not compilation failures
 
-### Universal SAT
+After the request compiles and routes:
 
-For universal refutation, `Γ ∧ ¬P = SAT` means `COUNTEREXAMPLE`.
+| Scope | Backend result | Public status |
+|---|---|---|
+| universal refutation | SAT | `COUNTEREXAMPLE` |
+| universal refutation | UNSAT | `PROVED`, subject to numeric and vacuity policy |
+| existential witness search | SAT | `WITNESS` |
+| existential witness search | UNSAT | `NO_WITNESS`, subject to numeric policy |
+| either | inconclusive execution | `UNKNOWN` |
 
-### Universal UNSAT
+An empty or inconsistent admissible domain can make a universal verification
+vacuous. Reports preserve the vacuity diagnostic rather than treating it as a
+parser, semantic, or backend capability failure.
 
-`Γ ∧ ¬P = UNSAT` means `VERIFIED`, subject to non-vacuity checks.
+## Related pages
 
-### Existential SAT
-
-`Γ ∧ P = SAT` means `WITNESS`.
-
-### Existential UNSAT
-
-`Γ ∧ P = UNSAT` means `NO_WITNESS`.
-
-### Empty Admissible Domain
-
-A universal property can appear proved because `Γdomain ∧ Γmodel` is unsatisfiable. Toetra should emit:
-
-```text
-VERIFICATION_VACUOUS_EMPTY_DOMAIN
-```
-
-## Related Documents
-
-- [Normative Examples](examples.md)
-- [Specification Constants](specification-constants.md)
+- [Language support levels](support-levels.md)
+- [Language examples](examples.md)
 - [Domains](domains.md)
-- [Arithmetic Expressions](arithmetic-expressions.md)
-- [Backend Diagnostics](../backends/diagnostics.md)
-- [Language Evolution Test Matrix](../testing/language-evolution-test-matrix.md)
+- [Arithmetic expressions](arithmetic-expressions.md)
+- [Model output observables](model-output-observables.md)
+- [Backend diagnostics](../backends/diagnostics.md)

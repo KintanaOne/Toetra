@@ -1,280 +1,217 @@
-# Language Overview
+# Language overview
 
-> Status: Stabilizing  
-> Scope: Public DSL surface  
-> Priority: P1  
-> Audience: Toetra users, compiler contributors, test authors
+> Status: Current for `1.0.0rc3`
+> Scope: Public Toetra Specification Language surface
+> Audience: users, compiler contributors, and reviewers
 
 ## Purpose
 
-The Toetra language is a domain-specific language for expressing behavioral properties over machine learning systems.
+The Toetra Specification Language expresses behavioral properties over machine
+learning models. Users describe model inputs, points, admissible domains, model
+outputs, and assertions without writing framework calls, solver variables, or
+backend-native formulas.
 
-Its role is to let a user describe what a model should satisfy, without directly writing solver constraints, backend-specific queries, or framework-specific model encodings.
+A `.toetra` file is the human-facing input to the verification pipeline. It is
+not itself a model format or proof backend.
 
-A Toetra specification connects three concerns:
+## Read support correctly
 
-1. **The model under verification** — declared in the header.
-2. **The target or output of interest** — declared in the header.
-3. **Reusable specification constants** — optional immutable values naming business thresholds.
-4. **The properties to verify** — expressed as scoped assertions.
+Toetra deliberately separates three questions:
 
-The language is intentionally designed to be compiled through a sequence of progressively more formal representations:
+1. Does the source parse?
+2. Does it have accepted meaning for the bound points and model schema?
+3. Does a released V1 route execute it?
 
-```text
-.toetra source
-→ CST
-→ AST
-→ SemanticValidatedAST
-→ IR1 / NNF
-→ IR2 / CNF-DNF
-→ AggregatedAssertionSet
-→ LoweredQuery
-→ BackendQuery
-```
+Read [Language support levels](support-levels.md) before treating any grammar
+construct as supported. The [Public V1 profile](../public-v1-profile.md) is the
+source of truth for executable framework/model/backend combinations.
 
-The DSL is therefore not the verification backend. It is the human-facing entry point of the Toetra verification pipeline.
+## Program shape
 
----
-
-## Design Goals
-
-The Toetra language aims to provide:
-
-| Goal | Meaning |
-|---|---|
-| Readability | Properties should be understandable by ML engineers and verification engineers. |
-| Formal structure | Every expression must compile into structured AST and IR artifacts. |
-| Explicit scope | Each property must define where it is evaluated. |
-| Backend independence | The DSL should not encode backend-specific constraints directly. |
-| Semantic binding | Specification constants, implicit features and explicit variables must be resolved before IR lowering. |
-| Mutation testability | Language artifacts must be suitable for Miova and Hypothesis campaigns. |
-
----
-
-## Current Language Shape
-
-A Toetra program currently contains:
-
-```text
-header
-body
-```
-
-The header declares at least:
+A program contains a header followed by one or more properties:
 
 ```toetra
-model := "model.joblib"
-target := prediction
-```
+model := "linear.joblib"
+target := score
 
-The header may also declare reusable immutable specification constants:
+maximum_score := 7.0
 
-```toetra
-max_risk := 0.20
-minimum_income := 25000.0
-```
-
-The body contains one or more property sections:
-
-```toetra
-[ROBUSTNESS]: forall baseline, candidate => CLASSIFICATION.EQUAL()
-```
-
-A property has:
-
-| Element | Role |
-|---|---|
-| Property type | Describes the verification intent, such as `ROBUSTNESS`, `BOUND`, `FAIRNESS`. |
-| Scope | Defines where the property is evaluated, such as `at`, `check_at`, `pairwise`, or `forall`. |
-| Domain | Optionally restricts admissible input valuations with typed intervals or finite sets. |
-| Assertion | Defines what must hold in that scope. |
-| Optional backend | Suggests or selects a verification backend. |
-
----
-
-## Specification Constants
-
-Specification constants name immutable scalar values used by domains and assertions:
-
-```toetra
-max_risk := 0.20
-max_ratio := 0.35
-
-[LOGIC]:
+[BOUND]:
 forall applicant
-    => target <= max_risk
-       AND applicant.debt <= max_ratio * applicant.income
+with domain(
+    applicant.income: [0.0, 100000.0]
+)
+=> target[applicant] <= maximum_score using Z3
 ```
 
-Bare identifiers remain user-friendly. In assertions, a name resolves first to a matching specification constant and otherwise to an implicit feature of the scope's default entity. Explicitly qualified references such as `applicant.max_risk` always denote features. Domain subjects and feature references inside domain bounds remain explicit, while constants may be used by bare name.
+The header declares:
 
-See [Specification Constants](specification-constants.md).
+- one model artifact;
+- one target identity;
+- an optional dataset;
+- optional immutable specification constants;
+- optional inline or referenced anchors.
 
-## Typed Domains
+Each property contains:
 
-A typed domain restricts the admissible values of explicitly qualified input features:
+- a property label;
+- an optional point scope;
+- optional domains or restrictions owned by that scope;
+- one Boolean assertion;
+- an optional backend selection.
+
+## Core language concepts
+
+### Points and evaluations
+
+Symbolic points are introduced by `forall` or `exists`. Concrete points are
+declared as anchors. Brackets on `target` select the input point used for one
+model evaluation:
 
 ```toetra
-[LOGIC]:
-forall x0
-    with domain(
-        x0.a: [0.0, 3.0],
-        x0.b: {obj1, obj2},
-        x0.c: ]0.0, 3.0[
-    )
-    => target <= 7
+target[baseline]
+target[candidate]
 ```
 
-Domain entries are assumptions over model inputs. They are not model-output assertions.
+They do not select an output index. When exactly one eligible default point is
+visible, the short form `target` denotes its evaluation.
 
-The language distinguishes:
+### Domains
 
-- closed and open numeric interval bounds;
-- finite discrete sets;
-- quoted strings and symbolic categorical literals;
-- domain subjects from assertion expressions.
-
-Domain subjects are always explicit (`x0.a`) so semantic validation can verify that their entity is declared by the enclosing scope. The complete normative contract is defined in [Domains](domains.md).
-
----
-
-## Arithmetic Expressions
-
-Toetra comparisons accept expressions on both sides:
-
-```toetra
-2 * x0.a + x0.b <= target
-```
-
-Arithmetic expressions may also define interval bounds:
+Domains constrain explicitly qualified input features:
 
 ```toetra
 with domain(
-    x0.a: [x0.b - 1.0, x0.b + 1.0]
+    applicant.age: [18, 65],
+    applicant.segment_id: {1, 2, 3}
 )
 ```
 
-The public language supports a structured arithmetic tree. The first end-to-end verification profile is affine: addition, subtraction, unary signs, multiplication by a constant, and division by a non-zero constant.
+The four interval bracket combinations preserve open and closed endpoints.
+Finite sets preserve discrete membership. A domain is an assumption over model
+inputs, never an assertion over the model output.
 
-Logical normal forms treat each comparison as an atom and do not rewrite inside arithmetic subexpressions. See [Arithmetic Expressions](arithmetic-expressions.md).
+### Assertions
 
-## Language vs Semantics
-
-The Toetra language defines syntax. The semantic layer defines meaning.
-
-For example:
+Assertions combine typed scalar comparisons:
 
 ```toetra
-[ROBUSTNESS]: at x in neighborhood(metric=L2, eps=0.1) => age <= 30
+2 * applicant.income - applicant.debt >= 0
+target[applicant] <= maximum_score
 ```
 
-The raw DSL contains an implicit feature access:
+with Boolean operators:
+
+```toetra
+and
+or
+not
+->
+```
+
+Uppercase `AND`, `OR`, and `NOT` are also accepted. Arithmetic trees are typed
+and classified before route selection. The built-in V1 route supports the
+numeric-affine subset; broader parsed arithmetic is never silently linearized.
+
+### Model output observables
+
+Regression uses the scalar model evaluation:
+
+```toetra
+target[applicant]
+```
+
+Binary classification exposes declarative user-facing observables:
+
+```toetra
+target[applicant].label
+target[applicant].probability("approved")
+```
+
+Framework implementation details such as logits, class indices, or
+`decision_function` are not DSL observables.
+
+### Specification constants
+
+Header constants name immutable scalar values:
+
+```toetra
+maximum_risk := 0.20
+minimum_income := 25000.0
+region := "EU"
+```
+
+They are resolved before lowering and never become mutable runtime variables.
+
+### Backend declarations
+
+An explicit declaration is a required backend selection:
+
+```toetra
+using Z3
+```
+
+If no backend is written, the router selects the first registered backend whose
+capabilities satisfy the verification task. The built-in V1 registry contains
+only Z3. Other names recognized by the grammar are reserved and do not imply
+execution support.
+
+## As-built compilation path
+
+The current implementation follows this path:
 
 ```text
-age
+source
+→ CST
+→ AST
+→ semantic validation
+→ IR1
+→ model-semantic lowering
+→ NNF
+→ IR2 plus assumptions and requirements
+→ route qualification
+→ backend translation and execution
+→ report, provenance, and replay
 ```
 
-The semantic layer resolves it using the scope:
+The language layer owns source structure. Semantic validation owns bindings,
+types, point identities, and model-output meaning. Backends receive qualified
+IR2 tasks and do not repair invalid language semantics.
 
-```text
-x'.age
-```
+## Public V1 boundary
 
-This distinction is critical:
+The public V1 routes are intentionally narrow:
 
-- The language does not need users to write every internal variable explicitly.
-- The semantic layer must make all bindings explicit before IR translation.
-- IR layers must consume resolved semantic information, not raw syntax guesses.
+- fitted single-output scikit-learn `LinearRegression`;
+- direct fitted binary scikit-learn `LogisticRegression`;
+- finite transformed numeric inputs;
+- homogeneous universal or existential point bindings;
+- numeric domains and affine arithmetic;
+- the built-in Z3 backend;
+- structured reports, provenance, and concrete replay.
 
----
+The exact inclusions and exclusions live in the
+[Public V1 profile](../public-v1-profile.md). Internal code, vocabulary, or
+parser recognition cannot widen that profile.
 
-## Relationship with ModelBridge
+## Reference map
 
-The language can reference features and task-level predicates, but it does not know by itself whether these references exist in the actual model or dataset.
+| Need | Page |
+|---|---|
+| Interpret support claims | [Language support levels](support-levels.md) |
+| See the complete user syntax | [Syntax](syntax.md) |
+| Inspect grammar ownership and precedence | [Grammar](grammar.md) |
+| Review recognized words and reserved names | [Vocabulary](vocabulary.md) |
+| Bind points and concrete anchors | [Scopes](scopes.md) |
+| Understand multi-point evaluation identity | [Points, anchors, and evaluations](points-anchors-and-evaluations.md) |
+| Constrain inputs | [Domains](domains.md) |
+| Write predicates | [Assertions](assertions.md) |
+| Write scalar arithmetic | [Arithmetic expressions](arithmetic-expressions.md) |
+| Select regression or classification output views | [Model output observables](model-output-observables.md) |
+| Reuse thresholds and literals | [Specification constants](specification-constants.md) |
+| Understand property labels | [Properties](properties.md) |
+| Select a backend | [Backends syntax](backends.md) |
+| Compare accepted and rejected forms | [Examples](examples.md) and [Invalid examples](invalid-examples.md) |
 
-ModelBridge provides a normalized `ModelSchema` used to connect DSL references with model metadata.
-
-The target architecture uses the language and ModelBridge together:
-
-```text
-.toetra source
-+ ModelSchema
-→ schema-aware semantic validation
-→ model-aware constraints
-→ backend-ready verification query
-```
-
-This means the language is only one side of the end-to-end verification problem. The other side is the model representation.
-
----
-
-## Relationship with Miova and Hypothesis
-
-The Toetra language should be testable through:
-
-- grammar-level samples,
-- parser tests,
-- AST builder tests,
-- semantic contract tests,
-- property-based generation with Hypothesis,
-- intelligent fuzzing,
-- Miova artifact mutations.
-
-Language documentation must therefore describe not only valid syntax, but also expected invalid forms and boundary cases.
-
----
-
-## Current Status
-
-| Area | Status | Notes |
-|---|---|---|
-| Header syntax | implemented | `model`, one scalar `target`, optional dataset/schema inputs and specification constants. |
-| Property sections | implemented | Direct assertions, ordered binders, domains, restrictions and optional backend. |
-| Point bindings and sugar | implemented | Inline/referenced anchors, `check_at`, new `at`, indexed targets and stable legacy diagnostics. |
-| Typed domains | implemented | Explicit point subjects, open/closed intervals, finite sets and arithmetic bounds. |
-| Specification constants | implemented | Immutable typed declarations with deterministic name resolution. |
-| Assertions | implemented | Scalar arithmetic, comparisons, boolean logic and supported predicates. |
-| Quantifiers | implemented / capability-gated | Homogeneous chains execute; alternation is represented and rejected by current Z3 capabilities. |
-| Model-aware validation | implemented | `ModelSchema` controls point feature names and types. |
-| Backend syntax | implemented | Z3 is the executable V1 backend; other names do not imply support. |
-
-## Related Documents
-
-- [Grammar](grammar.md)
-- [Vocabulary](vocabulary.md)
-- [Syntax](syntax.md)
-- [Properties](properties.md)
-- [Scopes](scopes.md)
-- [Domains](domains.md)
-- [Specification Constants](specification-constants.md)
-- [Assertions](assertions.md)
-- [Arithmetic Expressions](arithmetic-expressions.md)
-- [Specification Constants](specification-constants.md)
-- [Backends Syntax](backends.md)
-- [Examples](examples.md)
-
----
-
-## Documentation-First Language Baseline
-
-The accepted language evolution is defined by:
-
-- explicit quantified bindings: `forall <identifier>` and `exists <identifier>`;
-- typed domains with bracket-only open/closed interval notation;
-- finite sets with numeric or symbolic members;
-- scalar expression comparisons;
-- specification constants with user-friendly bare-name resolution;
-- exact semantic binding and capability-driven backend rejection.
-
-The normative behavioral references are:
-
-- [Normative Examples](examples.md)
-- [Invalid and Unsupported Examples](invalid-examples.md)
-- [Quantified Bindings](quantified-bindings.md)
-- [Domains](domains.md)
-- [Specification Constants](specification-constants.md)
-- [Arithmetic Expressions](arithmetic-expressions.md)
-- [Specification Constants](specification-constants.md)
-- [Language Evolution Test Matrix](../testing/language-evolution-test-matrix.md)
-
-Implementation must follow these documents rather than infer intended behavior from the current code snapshot.
+For internal compiler ownership, use the
+[as-built architecture](../architecture/overview.md) and accepted contracts.

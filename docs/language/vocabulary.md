@@ -1,360 +1,222 @@
 # Vocabulary
 
-> Status: Implemented / needs normalization  
-> Scope: Official Toetra language vocabulary
-> Priority: P1  
-> Audience: DSL users, compiler contributors, semantic layer maintainers
+> Status: Current vocabulary for `1.0.0rc3`
+> Scope: Recognized language words and their support level
+> Audience: users, semantic maintainers, and language contributors
 
-## Purpose
+## Interpretation
 
-The vocabulary defines the official words, categories, enums, and symbolic values accepted by the Toetra language.
+Vocabulary recognition is not an execution promise. The tables distinguish:
 
-It acts as a bridge between:
+- **recognized**: represented by the grammar and AST builder;
+- **defined**: accepted semantic rules exist for the relevant use;
+- **public V1**: an end-to-end route in the public profile supports it.
+
+See [Language support levels](support-levels.md).
+
+## Property labels
+
+| Label | User intent | Current meaning |
+|---|---|---|
+| `ROBUSTNESS` | behavior under bounded perturbation | recognized and defined by its explicit scope/assertion |
+| `STABILITY` | controlled output stability | recognized and defined by its explicit scope/assertion |
+| `FAIRNESS` | relational behavior between points | requires at least two visible points |
+| `MONOTONICITY` | ordered behavior between points | recognized and defined by its explicit restriction/assertion |
+| `BOUND` | upper, lower, or interval constraint | recognized and defined by its assertion |
+| `LOGIC` | general logical property | recognized and defined by its assertion |
+
+The label classifies intent; it does not insert an undocumented formula.
+Unknown uppercase labels may parse for diagnostic purposes but fail semantic
+normalization.
+
+## Point vocabulary
+
+| Word | Meaning | V1 boundary |
+|---|---|---|
+| `forall`, `∀` | universal symbolic point binder | homogeneous chains executable |
+| `exists`, `∃` | existential symbolic point binder | homogeneous chains executable |
+| `anchor` | concrete named point declaration | executable for supported numeric schemas |
+| `ref` | external-row anchor binding | requires runtime resolution |
+| `check_at` | select one declared anchor | executable when the anchor resolves |
+| `at ... with ... in neighborhood` | local universal-candidate sugar | executable for the supported neighborhood profile |
+| `where` | relation restricting a quantified context | executable when its requirements are supported |
+| `domain` | admissible input constraints | numeric-affine V1 subset |
+
+Ordered alternating quantifiers are recognized and represented but
+capability-rejected by the built-in V1 route.
+
+## Problem and function vocabulary
+
+Recognized problem names:
 
 ```text
-DSL tokens
-→ AST enum values
-→ semantic compatibility rules
-→ IR artifacts
-→ backend lowering
+CLASSIFICATION
+PREDICTION
+REGRESSION
+CLUSTERING
+ANOMALY_DETECTION
+REINFORCEMENT_LEARNING
 ```
 
-Vocabulary normalization is critical because mismatches between raw strings, grammar token names, enum names, and enum values can create fragile compiler behavior.
-
----
-
-## Property Types
-
-Property types describe what kind of behavioral guarantee is being expressed.
-
-| Property | Meaning | Current Status |
-|---|---|---|
-| `ROBUSTNESS` | Stability under perturbation or neighborhood changes. | implemented |
-| `STABILITY` | Output or behavior stability under controlled conditions. | implemented |
-| `FAIRNESS` | Pairwise or group-aware behavioral constraints. | implemented |
-| `MONOTONICITY` | Output behavior should evolve monotonically with some feature or condition. | implemented |
-| `BOUND` | Value or output must remain within a bound. | implemented |
-| `LOGIC` | General logical property. | grammar-level support |
-
-Property types are later checked against scope compatibility rules.
-
-Example:
-
-```toetra
-[ROBUSTNESS]: at x in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUAL()
-```
-
----
-
-## Problem Types
-
-Problem types describe the ML task or semantic problem being referenced by a property.
-
-| Problem | Meaning | Current Status |
-|---|---|---|
-| `CLASSIFICATION` | Classification task vocabulary. | public binary profile in `1.0.0rc2` |
-| `PREDICTION` | Generic prediction task. | grammar-level support |
-| `REGRESSION` | Regression task. | implemented |
-| `CLUSTERING` | Clustering task. | partial semantic support |
-| `ANOMALY_DETECTION` | Anomaly detection task. | grammar-level support |
-| `REINFORCEMENT_LEARNING` | RL task. | grammar-level support |
-
-Problem types appear in problem-level predicates:
-
-```toetra
-[ROBUSTNESS]: forall baseline, candidate => CLASSIFICATION.EQUAL()
-REGRESSION.BETWEEN()
-```
-
----
-
-## Functions
-
-Functions describe semantic operations attached to problem predicates.
-
-| Function | Example | Intended Meaning |
-|---|---|---|
-| `EQUAL` | `forall baseline, candidate => CLASSIFICATION.EQUAL()` | Equality of two binary predicted labels. |
-| `EQUITY` | `CLASSIFICATION.EQUITY()` | Equity/fairness-oriented equality. |
-| `BETWEEN` | `REGRESSION.BETWEEN()` | Output lies in an interval. |
-| `INCREASING` | `REGRESSION.INCREASING()` | Monotonic increase. |
-| `DECREASING` | `REGRESSION.DECREASING()` | Monotonic decrease. |
-
-Function compatibility depends on the problem type.
-
-For example:
-
-| Problem | Compatible Functions |
-|---|---|
-| `CLASSIFICATION` | `EQUAL` executable for exactly two binary label evaluations; other functions remain vocabulary-only |
-| `REGRESSION` | `EQUAL`, `INCREASING`, `DECREASING`, `BETWEEN` |
-| `CLUSTERING` | currently empty / to define |
-
----
-
-## Scopes and Quantifiers
-
-Toetra supports multiple ways to define where a property is evaluated.
-
-| Vocabulary | Example | Semantic Scope |
-|---|---|---|
-| `at` | `at x` | local |
-| `check_at` | `check_at x` | pointwise |
-| pairwise token | `x ~ x'` | pairwise |
-| `forall` / `∀` | `forall x0 with domain(...)` | quantifier |
-| `exists` / `∃` | `exists x0 with domain(...)` | quantifier |
-
-Quantifier tokens should be normalized before semantic validation.
-
-Recommended internal normalized values:
+Recognized function names:
 
 ```text
-forall
-exists
+EQUAL
+EQUITY
+BETWEEN
+INCREASING
+DECREASING
 ```
 
-Accepted user-facing forms include a mandatory identifier:
+Grammar recognition does not make every Cartesian product meaningful. Semantic
+compatibility rejects unknown combinations. In the public V1 profile,
+`CLASSIFICATION.EQUAL()` is the supported problem predicate: it denotes
+predicted-label equality over exactly two visible binary model evaluations.
+Other problem/function spellings must not be presented as executable unless the
+public profile is extended.
 
-```text
-forall x0
-exists x0
-∀ x0
-∃ x0
-```
+## Model output vocabulary
 
-The tokens normalize to `forall` or `exists`, while the declared identifier remains a separate preserved binding. See [Quantified Variable Bindings](quantified-bindings.md).
-
----
-
-## Specification Constants and Names
-
-A header declaration such as:
-
-```toetra
-max_risk := 0.20
-```
-
-defines an immutable **specification constant**. The public vocabulary must not describe these declarations as mutable variables or runtime parameters.
-
-A bare identifier in a scalar-expression position is a context-sensitive name. Semantic resolution uses the following priority in assertions:
-
-```text
-specification constant
-→ implicit feature of the default entity
-→ unbound-name error
-```
-
-An explicitly qualified name such as `applicant.max_risk` always denotes a feature. `target` remains a reserved model-output reference.
-
-In domain bounds, bare names may resolve to specification constants, but feature references remain explicitly qualified. In finite-set member position, a matching specification constant has priority; otherwise the identifier remains a symbolic categorical literal.
-
-Recommended semantic name kinds include:
-
-```text
-SPECIFICATION_CONSTANT
-SCOPE_VARIABLE
-FEATURE
-MODEL_OUTPUT
-SYMBOLIC_LITERAL
-```
-
-See [Specification Constants](specification-constants.md).
-
-## Model Output Observables
-
-`target` names the output port declared by the specification header. Patch 21
-separates that port from the scalar observable selected from an evaluation.
-
-| Vocabulary | Meaning | Target status |
+| Form | Meaning | Public V1 route |
 |---|---|---|
-| `target[x0]` | scalar regression value evaluated at `x0` | implemented for the regression V1 profile |
-| `target[x0].label` | predicted classification label | accepted Patch 21 target |
-| `target[x0].probability(label)` | class probability estimate for a named label | accepted Patch 21 target |
+| `target[point]` | scalar regression evaluation | single-output `LinearRegression` |
+| `target[point].label` | predicted classification label | direct binary `LogisticRegression` |
+| `target[point].probability(label)` | class probability estimate for one label | direct binary `LogisticRegression` |
 
-The following terms are deliberately not public DSL observables:
+`target` names the output declared in the header. The bracket selects an input
+point, not an output index.
+
+These are intentionally not DSL observables:
 
 ```text
 logit
 decision_function
+predict
 predict_proba
 classes_
 score
+Z3 symbol
 ```
 
-They may appear in technical lowering evidence, but the language remains
-framework- and backend-independent. See [Model Output Observables](model-output-observables.md).
+Technical evidence may mention internal quantities without making them writable
+language constructs.
 
----
+## Domain vocabulary
 
-## Domain Vocabulary
+| Form | Meaning |
+|---|---|
+| `[a, b]` | closed lower and upper endpoints |
+| `]a, b]` | open lower, closed upper |
+| `[a, b[` | closed lower, open upper |
+| `]a, b[` | open lower and upper |
+| `{a, b}` | finite discrete set |
+| `EU` in a finite set | symbolic categorical literal |
+| `"EU"` | string literal |
 
-| Vocabulary | Example | Meaning |
-|---|---|---|
-| `with domain` | `with domain(x0.age: [18, 65])` | Introduces input admissibility constraints. |
-| `[` on lower side | `[0, 1]` | Closed lower boundary. |
-| `]` on lower side | `]0, 1]` | Open lower boundary. |
-| `]` on upper side | `[0, 1]` | Closed upper boundary. |
-| `[` on upper side | `[0, 1[` | Open upper boundary. |
-| `{...}` | `{EU, US}` | Finite discrete set. |
-| symbolic literal | `EU` | Unquoted categorical value inside a finite set. |
-
-Recommended canonical internal values:
-
-```text
-EnumBoundaryKind.OPEN
-EnumBoundaryKind.CLOSED
-```
-
-The same bracket glyph has a different role depending on whether it appears on the lower or upper side. The AST must preserve the resulting boundary kind rather than relying on raw characters downstream.
-
-`domain` should be reserved as a keyword. Unquoted identifiers inside finite sets should be represented as symbolic literals, not input-variable references.
-
----
+Domain subjects are explicitly qualified features. Bare names in interval
+bounds may resolve to specification constants; feature references in bounds
+remain explicit.
 
 ## Metrics
 
-Metrics define perturbation neighborhoods.
-
-| Metric | Example | Meaning |
-|---|---|---|
-| `L1` | `metric=L1` | Manhattan distance. |
-| `L2` | `metric=L2` | Euclidean distance. |
-| `Linf` | `metric=Linf` | Infinity norm. |
-
-Example:
-
-```toetra
-at x in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUAL()
-```
-
-Metric values should be normalized so that grammar strings, enum values, and semantic values are consistent.
-
----
-
-## Logical Operators
-
-Logical operators compose assertions.
-
-| Operator | Meaning | Recommended Canonical Form |
-|---|---|---|
-| `AND` | conjunction | `AND` |
-| `OR` | disjunction | `OR` |
-| `NOT` | negation | `NOT` |
-| `->` | implication | `IMPLY` internally |
-
-The language may choose to accept lowercase forms, but internal representation should normalize operators.
-
----
-
-## Comparison Operators
-
-Comparison operators define atomic predicates.
-
-| Operator | Meaning |
-|---|---|
-| `==` | equal |
-| `!=` | not equal |
-| `<` | less than |
-| `<=` | less than or equal |
-| `>` | greater than |
-| `>=` | greater than or equal |
-
-Example:
-
-```toetra
-age >= 18
-score <= 1.0
-```
-
----
-
-## Arithmetic Operators
-
-| Operator | Canonical enum intent | Meaning |
-|---|---|---|
-| `+` | `ADD` or unary `POS` | Addition or unary identity. |
-| `-` | `SUB` or unary `NEG` | Subtraction or unary negation. |
-| `*` | `MUL` | Multiplication. |
-| `/` | `DIV` | Division. |
-
-Recommended internal vocabularies:
+The grammar recognizes:
 
 ```text
-EnumArithmeticOperator.ADD
-EnumArithmeticOperator.SUB
-EnumArithmeticOperator.MUL
-EnumArithmeticOperator.DIV
-EnumUnaryArithmeticOperator.POS
-EnumUnaryArithmeticOperator.NEG
+L1
+L2
+Linf
 ```
 
-Specification constants may appear as numeric operands after semantic resolution. The same surface token may have unary or binary meaning according to CST position. The builder must normalize it into the corresponding canonical enum.
+Recognition preserves user intent. The public built-in neighborhood route is
+the numeric-affine `Linf` profile documented by the public profile and point
+contracts. `L1` and `L2` must not be inferred to be executable from their
+presence in the grammar.
 
-The initial verification profile permits only affine multiplication/division shapes. This is a capability rule, not a token-normalization rule.
+## Operators
 
-## Backends
-
-Current grammar-level backend names include:
-
-| Backend | Status |
-|---|---|
-| `z3` / `Z3` | implemented numeric-affine backend profile |
-| `eran` / `ERAN` | planned backend |
-| `zonotope` / `ZONOTOPE` | planned abstraction/backend mode |
-| `box` / `BOX` | planned abstraction/backend mode |
-
-Backends should be normalized at the AST or semantic boundary.
-
-Recommended internal representation:
+### Comparison
 
 ```text
-EnumBackend.Z3
-EnumBackend.ERAN
-EnumBackend.ZONOTOPE
-EnumBackend.BOX
+==  !=  <  <=  >  >=
 ```
 
----
+Ordering requires numeric operands. Equality requires compatible scalar types.
+Predicted labels accept equality and inequality, not ordering.
 
-## Normalization Rules
-
-The vocabulary layer should converge toward a single rule:
+### Arithmetic
 
 ```text
-User-facing strings may be flexible.
-Internal compiler values must be canonical.
++  -  *  /
+unary +  unary -
 ```
 
-Recommended canonicalization boundaries:
+All operators build structured scalar trees. Semantic analysis classifies them
+as affine, nonlinear, or symbolic division. The built-in V1 route supports the
+affine class only.
 
-| Boundary | Responsibility |
+### Boolean
+
+```text
+and / AND
+or  / OR
+not / NOT
+->
+```
+
+The internal canonical values are lowercase `and`, `or`, `not`, and `->`.
+Although `xor` exists in a low-level token map, it is not part of the supported
+Boolean AST/IR contract and must not be used in user examples.
+
+## Literal vocabulary
+
+| Family | Examples |
 |---|---|
-| Parser | Preserve syntactic tokens. |
-| Builder | Convert tokens into AST values and enums. |
-| Semantic validation | Normalize and validate compatibility. |
-| IR translation | Consume canonical enum values only. |
-| Backend lowering | Consume backend-safe normalized values only. |
+| integer or real | `7`, `-0.1`, `2.5` |
+| Boolean | `true`, `false`, `True`, `False` |
+| quoted string | `"approved"`, `"EU"` |
+| symbolic finite-set member | `EU`, `US` |
 
----
+Specification-constant and anchor declarations accept scalar literals, not
+arbitrary expressions.
 
-## Known Stabilization Items
+## Backend vocabulary
 
-| Item | Issue | Recommended Fix |
+| Spelling | Recognition | Meaning |
 |---|---|---|
-| Quantifier vocabulary | Token names and enum values may diverge. | Normalize to `forall` / `exists`. |
-| Metric enum values | Quoted values can leak into enum values. | Store clean values such as `L1`, `L2`, `Linf`. |
-| Backend enum names | Mixed lowercase/uppercase enum members. | Use canonical uppercase enum names. |
-| Logical casing | Lowercase tokens vs uppercase grammar literals. | Accept flexible syntax, normalize internally. |
-| Problem/function validation | Must compare enums, not raw strings. | Use a shared enum normalization helper. |
-| Arithmetic operators | Unary and binary tokens reuse `+` and `-`. | Normalize by AST role into explicit unary/binary enums. |
+| `Z3`, `z3` | accepted | public built-in backend |
+| `ERAN`, `eran` | reserved | rejected as a V1 backend |
+| `ZONOTOPE`, `zonotope` | reserved | rejected as a V1 backend |
+| `BOX`, `box` | reserved | rejected as a V1 backend |
 
----
+An explicit backend is required. Omitting `using ...` permits capability-based
+selection from the registered runtime backends; the built-in V1 registry
+contains only Z3.
 
-## Related Documents
+## Protected words
 
-- [Grammar](grammar.md)
+The language reserves words that introduce declarations, scopes, domains,
+restrictions, neighborhoods, and backends, including:
+
+```text
+model target dataset anchor ref
+forall exists at check_at
+with domain where in neighborhood
+using true false
+```
+
+Protected-word matching uses token boundaries. A longer identifier such as
+`target_score` remains an identifier.
+
+## Normalization boundary
+
+The lexer and builder normalize equivalent spellings into enum-like internal
+values while preserving source locations and declared point names. Normalizing
+a token never authorizes a semantic combination or a backend route.
+
+## Related pages
+
 - [Syntax](syntax.md)
 - [Properties](properties.md)
-- [Assertions](assertions.md)
-- [Arithmetic Expressions](arithmetic-expressions.md)
-- [Backends Syntax](backends.md)
+- [Model output observables](model-output-observables.md)
+- [Backends syntax](backends.md)
+- [Public V1 profile](../public-v1-profile.md)

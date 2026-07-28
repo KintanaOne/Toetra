@@ -36,7 +36,9 @@ Indentation is optional and never determines meaning.
 
 ## Binding rules
 
-Each binder introduces one exact `PointSymbol` and one lexical frame. Toetra preserves the source identifier through semantic validation, IR1, IR2, ModelBridge, backend symbols, reports, and replay.
+Each binder introduces one exact `PointSymbol` and one lexical frame. Toetra
+preserves the source identifier through semantic validation, IR1, IR2,
+model-semantic lowering, backend symbols, reports, and replay.
 
 - duplicate names in one list are rejected;
 - shadowing is rejected in V1;

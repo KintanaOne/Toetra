@@ -1,73 +1,108 @@
-# Model Output Observables
+# Model output observables
 
-> Status: P21.2 syntax and AST implemented — semantic execution pending
-> Scope: declarative references to regression and classification outputs
+> Status: Public and executable since `1.0.0rc2`; current in `1.0.0rc3`
+> Scope: Declarative regression and binary-classification output views
+> Audience: users, semantic contributors, and model-encoder authors
 
-## Purpose
+## Output identity and evaluation
 
-Toetra properties describe what must hold for a model output. They do not call
-framework methods and do not expose backend variables.
+The header declares one output identity:
 
-The `target` keyword names the output port declared by the specification header.
-An observable selects the user-relevant value of that output at a point.
-
-## Scalar regression
-
-The existing scalar regression form remains unchanged:
-
-```text
-target[x0] <= 0.20
+```toetra
+target := decision
 ```
 
-When exactly one point is eligible, the short form remains valid:
+`target[point]` evaluates that output for one model-input point. The bracket
+selects the point, not an output index.
 
-```text
-target <= 0.20
+When exactly one eligible point is visible, `target` is shorthand for its
+evaluation. Multi-point properties require an explicit index.
+
+## Regression value
+
+The scalar regression observable is the evaluation itself:
+
+```toetra
+target[applicant] <= 0.20
 ```
+
+The public V1 route supports this form for a fitted single-output scikit-learn
+`LinearRegression` with finite transformed numeric inputs.
 
 ## Predicted label
 
-A classification property selects the predicted label explicitly:
+Classification selects the user-facing label explicitly:
 
-```text
+```toetra
 target[x0].label == "approved"
 ```
 
-The label is written as the domain value known to the model schema. Users do not
-refer to a class index or to the internal order of framework classes.
+The literal denotes a model label, not a framework class index. Supported label
+comparisons are:
+
+```text
+label == literal
+label != literal
+label == other_label_observable
+label != other_label_observable
+```
+
+Ordering and arithmetic on labels are semantic errors.
 
 ## Class probability estimate
 
-A classification property may select the probability estimate associated with a
-named label:
-
-```text
+```toetra
 target[x0].probability("approved") >= 0.80
 ```
 
-The word `probability` means the class probability estimate exposed by the model
-semantic profile. It does not assert that the estimator is statistically
-calibrated.
+`probability(label)` denotes the class probability estimate defined by the
+recognized model semantic profile. It does not claim statistical calibration.
 
-## Native decision threshold versus property threshold
+The public binary route supports order comparisons against thresholds strictly
+inside `(0, 1)`. It excludes:
 
-The initial binary logistic profile uses its native decision policy:
+- probability `==` and `!=`;
+- thresholds exactly `0` or `1`;
+- probability arithmetic;
+- probability-to-probability comparisons;
+- multiclass probability semantics.
+
+## Native decision threshold and property threshold
+
+The direct binary logistic profile uses:
 
 ```text
 positive-class probability > 0.5  → positive label
 positive-class probability <= 0.5 → negative label
 ```
 
-A threshold written in a property is a separate requirement:
+The strictness is normative: equality at `0.5` selects the negative label.
 
-```text
+A threshold written by the user is a separate property:
+
+```toetra
 target[x0].probability("approved") >= 0.80
 ```
 
-A point may therefore have label `"approved"` while violating the stronger
-probability requirement.
+A point can therefore have predicted label `"approved"` while failing the
+stronger `0.80` requirement.
 
-## User-facing vocabulary boundary
+## `CLASSIFICATION.EQUAL()`
+
+```toetra
+model := "binary.joblib"
+target := decision
+
+[ROBUSTNESS]:
+forall baseline, candidate
+=> CLASSIFICATION.EQUAL() using Z3
+```
+
+The predicate is sugar for predicted-label equality across exactly two visible
+binary evaluations. Semantic validation rejects any other point count or
+incompatible output schema.
+
+## User-facing boundary
 
 The following concepts are intentionally not DSL observables:
 
@@ -82,61 +117,42 @@ latent score
 Z3 symbol
 ```
 
-Toetra may explain internal transformations involving such concepts in technical
-evidence, but users specify labels and probabilities.
+Reports may expose selected internal quantities as technical lowering evidence.
+That evidence does not make them writable source-language expressions.
 
-## Point rules
+## Schema-aware validation
 
-Output observables follow the existing point-binding contract:
+Before model lowering, semantic validation checks:
 
-```text
-target[x0].label
-target[x1].probability("approved")
-```
+- regression versus classification output kind;
+- explicit observable requirement for classification;
+- point visibility and unambiguous shorthand;
+- label literal type and membership in the model schema;
+- allowed ordering, equality, and arithmetic operations;
+- exactly two evaluations for `CLASSIFICATION.EQUAL()`.
 
-The point may be omitted only when exactly one eligible default point exists:
+An unknown label or invalid observable fails before backend execution.
 
-```text
-target.label == "approved"
-target.probability("approved") >= 0.80
-```
+## Public execution boundary
 
-No multi-point property receives an implicit point selection.
+Classification observables are public only for the direct fitted binary
+scikit-learn `LogisticRegression` route named in the
+[Public V1 profile](../public-v1-profile.md). The route preserves:
 
-## Target initial comparison profile
+- requested observable and label;
+- native and property thresholds;
+- model semantic profile;
+- probability-lowering evidence;
+- numeric compatibility and permitted conclusions;
+- concrete label, probability, decision-value, and original-property replay.
 
-| Observable | Initial comparisons |
-|---|---|
-| predicted label against a literal | `==`, `!=` |
-| class probability against a threshold in `(0, 1)` | `<`, `<=`, `>`, `>=` |
-| predicted label between two points | `==`, `!=`, after the one-point route is stable |
+It does not include multiclass models, calibrated/custom-threshold wrappers, or
+sklearn preprocessing pipelines.
 
-Initially deferred:
+## Related pages
 
-- ordering comparisons on labels;
-- probability equality and inequality;
-- probability thresholds exactly zero or one;
-- arithmetic over probabilities;
-- direct access to internal decision values;
-- multiclass-specific relations.
-
-## Diagnostics
-
-A classification output referenced without an observable must produce a targeted
-diagnostic such as:
-
-```text
-A classification output requires an explicit observable:
-target[x0].label or target[x0].probability(label).
-```
-
-An unknown label must be rejected at semantic validation, before ModelBridge or
-backend execution.
-
-## Current implementation status
-
-These forms are public and executable in `1.0.0rc2` for the direct fitted binary
-sklearn `LogisticRegression` profile. Binding validates labels and capabilities,
-IR1 preserves the declarative observable, model-semantic lowering creates
-auditable internal constraints, Z3 executes the route, and reports/replay
-reconstruct the user-facing label and probabilities.
+- [Language support levels](support-levels.md)
+- [Public V1 profile](../public-v1-profile.md)
+- [Binary classification profile](../contracts/binary-classification-profile.md)
+- [Model output observables contract](../contracts/model-output-observables.md)
+- [Assertions](assertions.md)
