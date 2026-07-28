@@ -11,6 +11,10 @@ beneath `toetra._*` is private and may evolve unless another contract explicitly
 marks a surface public. The nine exported names and their supported use are
 documented in the [public Python API reference](../api-reference/index.md).
 
+The three exported error families expose stable diagnostic codes and owning
+stages. Normalization preserves private causes without promoting private
+exception classes into the compatibility surface.
+
 The EBNF is the language source of truth; the generated Lark grammar is never
 edited directly.
 

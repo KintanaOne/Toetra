@@ -108,11 +108,27 @@ from toetra import VerificationRuntimeError, verify
 try:
     session = verify("policy.toetra", model="model.joblib")
 except VerificationRuntimeError as error:
-    print(f"Toetra runtime failure: {error}")
+    print(f"{error.code} at {error.stage}: {error}")
 ```
 
-It does not wrap every parser, semantic, filesystem, deserialization or
-third-party error in `1.0.0rc3`.
+All three public error families expose:
+
+| Attribute | Meaning |
+|---|---|
+| `message` | human-readable summary, also returned by `str(error)` |
+| `code` | stable programmatic diagnostic identifier |
+| `stage` | owning failure stage |
+| `hint` | optional remediation |
+| `path` | optional source or artifact path |
+| `line`, `column` | optional one-based source location |
+
+Message wording may improve. Callers that need stable branching use `code`.
+When Toetra normalizes a private compiler, model, or backend failure, its
+original exception remains available through `error.__cause__`.
+
+P26 introduces normalization incrementally. Until its compiler and runtime
+translation steps are complete, some private or third-party failures may still
+cross `verify(...)` directly.
 
 ### `VerificationConfigurationError`
 

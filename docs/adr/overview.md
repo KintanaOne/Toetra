@@ -32,7 +32,9 @@ The goal of the ADR section is to make explicit:
 - why model-family semantic lowering is explicit and auditable,
 - why the first binary-classification profile is deliberately constrained,
 - why Toetra is the single canonical product, package and language identity,
-- and why installable code uses a `src`-based single-package layout.
+- why installable code uses a `src`-based single-package layout,
+- and why public verification failures are normalized without erasing their
+  owning internal boundary.
 
 ## ADR format
 
@@ -80,6 +82,7 @@ Impact on Toetra
 | ADR-0026 | Extend the public V1 profile with binary classification |
 | ADR-0027 | Adopt Toetra as the canonical product identity |
 | ADR-0028 | Adopt a `src`-based single-package layout |
+| ADR-0029 | Normalize public verification failures without erasing ownership |
 
 ## Decision status vocabulary
 

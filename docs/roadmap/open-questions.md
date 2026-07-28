@@ -11,21 +11,6 @@ the [implementation status matrix](../architecture/status-matrix.md).
 
 ## Before `1.0.0`
 
-### Public error boundary
-
-Which parser, semantic, model-loading, routing, backend, and runtime exceptions
-should cross `toetra.verify(...)` unchanged, and which should be normalized into
-the three public error families?
-
-The answer must preserve actionable causes without exposing private exception
-classes as compatibility promises.
-
-### Diagnostic identity and context
-
-Which diagnostics require stable codes, source spans, remediation hints, model
-context, or capability evidence? Message wording may improve, but callers must
-not be encouraged to parse prose.
-
 ### Solver execution controls
 
 The runtime already enforces a 30,000 ms default backend timeout. The advanced
@@ -98,6 +83,8 @@ The following are no longer open:
 - point identity, anchors, homogeneous binders, reporting, and replay;
 - the `src/toetra` package layout and nine-name public facade;
 - separation of syntax acceptance, semantic validity, and executable support;
+- public normalization into the three existing error families while retaining
+  stable diagnostic codes, owning stages, optional context, and chained causes;
 - ownership boundaries for model families, framework adapters, and backends;
 - canonical, CI-checked public documentation snippets.
 
