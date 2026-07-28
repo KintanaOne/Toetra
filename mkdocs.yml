@@ -59,7 +59,10 @@ markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite
-  - pymdownx.snippets
+  - pymdownx.snippets:
+      base_path:
+        - .
+      check_paths: true
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid
@@ -212,6 +215,7 @@ nav:
       - Hypothesis Integration: miova/hypothesis-integration.md
 
   - Development:
+      - Documentation Snippets: development/documentation-snippets.md
       - Repository Layout: development/repository-layout.md
       - Extension Architecture: development/extensions.md
       - Add a Model Family: development/adding-model-family.md

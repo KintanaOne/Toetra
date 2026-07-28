@@ -168,15 +168,7 @@ the input order; the assertion states the required output order.
 Classification: **public V1 binary-classification route shape**
 
 ```toetra
-model := "binary.joblib"
-target := decision
-
-[LOGIC]:
-forall applicant
-with domain(
-    applicant.income: [3.0, 6.0]
-)
-=> target[applicant].probability("yes") >= 0.80 using Z3
+--8<-- "docs/snippets/binary-probability.toetra"
 ```
 
 The route additionally requires a direct fitted binary scikit-learn

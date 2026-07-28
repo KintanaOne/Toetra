@@ -1,0 +1,33 @@
+schema_version = 1
+
+[[snippet]]
+id = "regression-bound"
+path = "docs/snippets/regression-bound.toetra"
+language = "toetra"
+check = "toetra-parse"
+include_in = []
+copy_in = [
+  "README.md",
+  "docs/getting-started/first-property.md",
+]
+
+[[snippet]]
+id = "binary-probability"
+path = "docs/snippets/binary-probability.toetra"
+language = "toetra"
+check = "toetra-parse"
+include_in = [
+  "docs/language/examples.md",
+]
+copy_in = [
+  "README.md",
+  "docs/getting-started/first-property.md",
+]
+
+[[snippet]]
+id = "verify-session"
+path = "docs/snippets/verify-session.py"
+language = "python"
+check = "python-compile"
+include_in = ["docs/api-reference/verify.md"]
+copy_in = ["README.md"]

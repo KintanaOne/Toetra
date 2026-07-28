@@ -2,6 +2,7 @@
 
 Create `policy.toetra`:
 
+<!-- toetra-doc-snippet: regression-bound -->
 ```toetra
 model := "affine_score.joblib"
 target := score
@@ -10,9 +11,8 @@ maximum_score := 7.0
 
 [BOUND]:
 forall x0
-    with domain(x0.a: [0.0, 3.0])
-    => target <= maximum_score
-    using Z3
+with domain(x0.a: [0.0, 3.0])
+=> target <= maximum_score using Z3
 ```
 
 This property asks whether the extracted affine model output is at most `7.0` for
@@ -41,6 +41,7 @@ numeric scope explicitly.
 
 ## First binary-classification property
 
+<!-- toetra-doc-snippet: binary-probability -->
 ```toetra
 model := "binary_decision.joblib"
 target := decision
@@ -48,13 +49,10 @@ target := decision
 [LOGIC]:
 forall applicant
 with domain(applicant.income: [3.0, 6.0])
-=> target[applicant].label == "yes" using Z3
-
-[LOGIC]:
-exists applicant
-with domain(applicant.income: [3.0, 6.0])
 => target[applicant].probability("yes") >= 0.80 using Z3
 ```
 
 The user never writes the logistic decision value. Toetra records the lowering,
-numeric policy, and concrete sklearn replay in the resulting evidence.
+numeric policy, and concrete sklearn replay in the resulting evidence. The
+language reference contains additional label and existential-probability
+examples.

@@ -144,6 +144,8 @@ Exit criteria:
 
 ### P25.5 — Executable documentation
 
+Status: Complete
+
 Make public snippets checkable and reuse canonical examples where practical.
 Integrate drift detection into an existing durable documentation or CI gate.
 
