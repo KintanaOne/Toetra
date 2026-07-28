@@ -110,6 +110,8 @@ Exit criteria:
 
 ### P25.3 — Extension guides
 
+Status: Complete
+
 Create separate contributor paths for adding a model family, a framework
 adapter, and a backend. Each path must identify the required schema, semantics,
 capabilities, numeric policy, execution, reporting, replay, and test work.

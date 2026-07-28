@@ -146,5 +146,5 @@ The remaining keywords customize internal pipeline stages:
 
 They support Toetra development and integration testing, but their accepted
 types live beneath `toetra._*`. P25.1 documents that boundary without making
-those types public. Contributor extension procedures are defined separately in
-P25.3.
+those types public. Contributor procedures for built-in integrations begin at
+the [extension architecture](../development/extensions.md).

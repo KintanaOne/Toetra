@@ -43,6 +43,16 @@ without appearing to describe pending work.
 
 ADRs and contracts remain authoritative regardless of roadmap location.
 
+## Extension guides
+
+Built-in extension work starts from the
+[extension architecture](extensions.md), then follows the dedicated path for a
+[model family](adding-model-family.md), a
+[framework adapter](adding-framework-adapter.md), or a
+[backend](adding-backend.md). The paths are separate because mathematical model
+meaning, framework integration, and backend execution have different owners and
+soundness obligations.
+
 ## Frozen boundary
 
 P24.6 freezes this layout for P25–P27. The executable invariants and change
