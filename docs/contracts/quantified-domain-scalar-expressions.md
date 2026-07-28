@@ -1,6 +1,6 @@
 # Quantified Domains and Scalar Expressions — Cross-Layer Contract
 
-> Status: Accepted target contract  
+> Status: Implemented and accepted
 > Scope: DSL, CST, AST, semantic validation, IR1, IR2, aggregation and backend boundary  
 > Implementation state: Documentation-first; implementation must conform incrementally  
 > Related ADRs: ADR-0013, ADR-0014, ADR-0015

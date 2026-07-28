@@ -327,9 +327,9 @@ Each example must retain:
 - a route caveat whenever execution depends on model/runtime inputs;
 - no backend or model claim broader than the public profile.
 
-P25.5 selects canonical examples for automated parsing or execution. Until
-then, release demos and existing parser/semantic/end-to-end tests remain the
-executable evidence.
+Selected canonical examples are parsed or compiled by `make snippets-check`.
+Release demos and parser, semantic, and end-to-end tests remain the executable
+evidence for the wider example set.
 
 ## Related pages
 

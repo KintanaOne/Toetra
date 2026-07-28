@@ -1,6 +1,6 @@
 # Unit Tests
 
-> Status: P0 — required  
+> Status: Implemented and required
 > Implementation: partially implemented  
 > Scope: isolated functions, small classes, local invariants
 

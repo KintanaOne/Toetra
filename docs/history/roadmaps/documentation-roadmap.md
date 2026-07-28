@@ -1,6 +1,6 @@
-# P25 documentation roadmap
+# P25 — Documentation roadmap
 
-> **Status:** Active
+> **Status:** Complete — documentation frozen on 2026-07-28
 >
 > **Baseline:** `1.0.0rc3` after P24 repository freeze
 >
@@ -21,10 +21,10 @@ automation belongs to P27.
 
 When documents disagree, resolve the conflict in this order:
 
-1. [`public-v1-profile.md`](../public-v1-profile.md) defines the executable
+1. [`public-v1-profile.md`](../../public-v1-profile.md) defines the executable
    routes and exclusions exposed as Toetra V1.
 2. `src/toetra/__init__.py` and the
-   [public V1 contract](../contracts/public-v1-contract.md) define the supported
+   [public V1 contract](../../contracts/public-v1-contract.md) define the supported
    Python facade.
 3. Accepted contracts and ADRs define normative guarantees and architectural
    decisions. They cannot silently widen the public V1 profile.
@@ -158,6 +158,8 @@ Exit criteria:
 
 ### P25.6 — Consolidation and freeze
 
+Status: Complete
+
 Review navigation, links, status labels, duplicated concepts, terminology, and
 historical placement. Archive the completed P25 plan once the documentation is
 frozen.
@@ -169,6 +171,14 @@ Exit criteria:
   contracts, or as-built pipeline;
 - completed planning material lives under `docs/history/roadmaps/`;
 - all durable quality and release gates pass from a clean checkout.
+
+Completion record:
+
+- the public reference, as-built architecture, extension guides, and language
+  reference use the `1.0.0rc3` implementation as their baseline;
+- selected public examples are canonical and checked by `make snippets-check`;
+- stale active planning was moved to history or replaced by current planning;
+- this roadmap is historical evidence and no longer defines pending work.
 
 ## Patch delivery contract
 

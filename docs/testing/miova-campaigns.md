@@ -1,6 +1,6 @@
 # Miova Campaigns
 
-> Status: P0 — planned / critical  
+> Status: Planned external integration
 > Implementation: external integration planned  
 > Scope: mutation-driven validation of Toetra artifacts
 

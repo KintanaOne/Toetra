@@ -1,6 +1,6 @@
 # Type and Vocabulary Normalization Contract
 
-> Status: P0 / Accepted target normalization  
+> Status: Implemented and accepted normalization
 > Scope: Vocabulary, scalar types, literal kinds and operator families  
 > Audience: parser, builder, semantic, IR and ModelBridge maintainers
 

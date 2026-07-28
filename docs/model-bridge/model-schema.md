@@ -1,171 +1,100 @@
 # ModelSchema
 
-> Status: implemented / stabilizing  
-> Scope: normalized model representation  
-> Priority: P0
+> **Status:** As built for `1.0.0rc3`
+>
+> **Scope:** private normalized model boundary used by semantic validation,
+> formal encoding, compatibility routing, and replay
 
-## Purpose
+`ModelSchema` separates compiler logic from framework objects. A loader and
+introspector may inspect sklearn state, but downstream stages receive normalized
+feature, output, task, and compatibility information.
 
-`ModelSchema` is the normalized Toetra representation of a machine learning model interface.
+## Implemented structure
 
-It acts as the bridge between:
-
-- ML framework objects;
-- DSL semantic validation;
-- model constraint generation;
-- backend lowering.
-
-## Why ModelSchema Exists
-
-A machine learning framework object is not a stable compiler artifact.
-
-Toetra needs a representation that is:
-
-- normalized;
-- framework-independent;
-- serializable in principle;
-- usable by semantic validation;
-- usable by lowering stages;
-- independent from direct framework APIs.
-
-`ModelSchema` provides that boundary.
-
-## Conceptual Structure
-
-```text
-ModelSchema
-├── framework
-├── model_type
-├── features
-│   ├── feature name
-│   ├── dtype
-│   └── nullable
-├── target
-├── task
-└── metadata
-```
-
-## Current Fields
-
-| Field | Meaning | Status |
+| Field | Type shape | Meaning |
 |---|---|---|
-| `framework` | Detected framework identity. | implemented |
-| `model_type` | Runtime model class name. | implemented |
-| `features` | Mapping of feature names to `FeatureSchema`. | implemented |
-| `target` | Target column or target identifier. | implemented / stabilizing |
-| `task` | Classification, regression, or unknown. | implemented / stabilizing |
-| `metadata` | Optional framework-specific metadata. | implemented |
+| `framework` | `EnumModelFramework` | detected framework identity |
+| `model_type` | `str` | concrete estimator class name |
+| `features` | `dict[str, FeatureSchema]` | ordered normalized inputs |
+| `output_name` | `str` | selected output-port name |
+| `task` | `str` | regression, classification, or unknown task |
+| `output_schema` | `ModelOutputSchema` | typed output and available observables |
+| `metadata` | `dict[str, Any]` | optional adapter-specific evidence |
+| `compatibility` | descriptor or `None` | framework/model numeric contract used by routing |
 
-## FeatureSchema
+The concise `output` property returns `output_schema`.
 
-Each feature is represented by a `FeatureSchema`.
+## Feature schema
 
-```text
-FeatureSchema
-├── name
-├── dtype
-└── nullable
-```
+Each `FeatureSchema` records:
 
 | Field | Meaning |
 |---|---|
-| `name` | Feature name as used by the model or dataset. |
-| `dtype` | Toetra semantic data type. |
-| `nullable` | Whether missing values are present or allowed. |
+| `name` | stable feature name |
+| `dtype` | normalized Toetra semantic datatype |
+| `nullable` | whether the feature permits missing values |
+| `source_dtype` | optional original framework/dataset dtype |
 
-## Semantic Type Vocabulary
+Semantic validation uses this information to reject unknown features and
+type-incompatible expressions before model encoding or backend execution.
 
-Feature dtypes should use Toetra semantic data types.
+## Typed outputs
 
-Current vocabulary:
+`ModelOutputSchema` has three implemented variants:
 
-| Type | Meaning |
+| Variant | Public observables |
 |---|---|
-| `INT` | Integer-like feature. |
-| `FLOAT` | Floating-point feature. |
-| `BOOL` | Boolean feature. |
-| `STRING` | String or categorical-like feature. |
-| `NoneType` | Null-like value. |
+| `RegressionOutputSchema` | one scalar regression value |
+| `ClassificationOutputSchema` | predicted label and, when available, class probability |
+| `UnknownOutputSchema` | no public observable |
 
-## Role in Semantic Validation
+The binary classification schema preserves canonical negative/positive label
+orientation and a recognized decision policy. The initial logistic profile uses
+strict positive probability `> 0.5`; equality belongs to the negative label.
+That policy is model-family meaning, not free-form metadata.
 
-`ModelSchema` allows Toetra to move from internal DSL validation to model-aware validation.
-
-Without `ModelSchema`, Toetra can resolve that a feature reference belongs to a semantic entity such as `x'`.
-
-With `ModelSchema`, Toetra can additionally check whether the feature exists and whether its type is compatible with the logical assertion.
-
-Example:
+## Pipeline ownership
 
 ```text
-x'.age <= 30
+model artifact + optional dataset
+→ loader → detector → introspector
+→ ModelSchema
+→ semantic validation
+→ model-family semantic lowering
+→ formal encoder assumptions
+→ capability and numeric-compatibility routing
 ```
 
-Schema-aware validation should verify:
-
-```text
-age exists in ModelSchema.features
-age dtype is numeric
-<= is compatible with numeric values
-```
-
-## Role in Model Constraints
-
-`ModelSchema` is also the source for future model-derived constraints.
-
-Examples:
-
-```text
-feature existence
-feature dtype
-feature nullability
-input dimensionality
-task compatibility
-target compatibility
-framework metadata
-```
-
-Schema facts are used during semantic validation. Formal model equations are
-emitted separately as typed IR2 assumptions.
-
-## Role in Backend Lowering
-
-Backend translation does not consume raw framework model objects.
-
-Instead, the lowering process should consume:
-
-```text
-VerificationTaskIR2 + routed backend capabilities
-```
-
-This keeps the compiler pipeline independent from framework APIs.
+The schema does not contain solver expressions and the backend does not consume
+the raw framework model. A retained concrete model is used separately by the
+runtime observer for replay.
 
 ## Invariants
 
-1. `ModelSchema` must be backend-independent.
-2. `ModelSchema` must be framework-normalized.
-3. Feature names must be stable string keys.
-4. Feature dtypes must use Toetra semantic vocabulary.
-5. Framework-specific metadata must remain optional.
-6. Absence of optional metadata must not break generic validation.
-7. The schema must be safe to pass across compiler stages.
+If schema construction succeeds:
 
-## Target Guarantees
+1. the output name is non-empty;
+2. the task and typed output kind agree;
+3. feature names and semantic dtypes are normalized;
+4. classification labels are unique JSON-compatible scalar values;
+5. a binary decision policy has exactly two consistently oriented labels;
+6. probability observability agrees with the recognized decision policy;
+7. framework-specific metadata does not become generic semantic authority;
+8. compatibility evidence remains explicit rather than inferred by a backend.
 
-Target guarantees for the stabilized ModelSchema boundary:
+## Compatibility projections
 
-| Guarantee | Meaning |
-|---|---|
-| Feature completeness | Every model input feature is represented. |
-| Target coherence | The target is explicit and compatible with the declared task. |
-| Type coherence | All features have normalized semantic dtypes. |
-| Metadata isolation | Framework-specific details do not leak into generic compiler stages. |
-| Backend readiness | The schema contains enough information to support model constraints and lowering. |
+`target`, `target_dtype`, and `target_source_dtype` remain read-only internal
+projections of the typed output source of truth. They exist for migrated
+internal callers and do not define a second model-output contract.
 
-## Open Questions
+## Stability boundary
 
-- Should `target` be mandatory or inferred only in development mode?
-- Should categorical domains be represented in `FeatureSchema`?
-- Should feature bounds be represented directly in the schema?
-- Should metadata be split into `runtime_metadata` and `verification_metadata`?
-- Should the schema become serializable as a standalone Toetra artifact?
+`ModelSchema`, its enum types, output variants, and registries live below
+`toetra._*`. They are contributor interfaces inside the repository, not public
+Python API. Normal callers should provide a supported model artifact to
+`toetra.verify(...)`.
+
+See the [ModelBridge overview](overview.md), the
+[model-to-schema contract](../contracts/model-to-schema.md), and the
+[public V1 profile](../public-v1-profile.md).

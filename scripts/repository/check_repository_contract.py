@@ -47,15 +47,16 @@ EXPECTED_DEMO_DIRECTORIES = {
 }
 EXPECTED_SCRIPT_DIRECTORIES = {"ci", "docs", "release", "repository"}
 EXPECTED_ACTIVE_ROADMAPS = {
-    "documentation-roadmap.md",
     "implementation-roadmap.md",
     "open-questions.md",
 }
 EXPECTED_COMPLETED_ROADMAPS = {
     "binary-classification-implementation-roadmap.md",
+    "documentation-roadmap.md",
     "point-binding-evaluation-implementation-roadmap.md",
     "repository-final-polish-roadmap.md",
     "toetra-identity-migration-roadmap.md",
+    "v1-implementation-roadmap.md",
 }
 FORBIDDEN_ROOT_PATHS = {
     "dsl",

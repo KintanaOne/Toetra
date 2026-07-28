@@ -1,6 +1,6 @@
 # Mutation Boundaries Contract
 
-> Status: P0 / Planned / Critical  
+> Status: Planned external Miova integration
 > Scope: How Miova challenges Toetra artifacts
 > Implementation: external Miova integration planned for Toetra
 > Audience: Miova authors, Toetra maintainers, test authors
@@ -47,9 +47,9 @@ Miova explores whether those contracts hold under controlled mutations.
 | IR1 | `VerificationTask`, `LogicalIR` | inject invalid negation, mutate operator |
 | IR2 | normal forms | break CNF/DNF invariant |
 | ModelSchema | model representation | remove feature, change dtype |
-| Aggregation | assertion set | remove constraint family |
-| Lowering | lowered query | remove trace, unsafe simplification |
-| BackendQuery | backend artifact | unsupported solver node |
+| Assumption composition | `VerificationTaskIR2` | remove a domain or model assumption |
+| Model-semantic lowering | lowered `VerificationTask` | remove evidence or alter an observable rewrite |
+| Backend translation | adapter-private object | inject an unsupported native solver node |
 
 ---
 
@@ -94,8 +94,8 @@ Examples of invariants Miova can test:
 | IR1 NNF has negations only above atoms | IR1 |
 | IR2 CNF/DNF structure is valid | IR2 |
 | ModelSchema features have dtype | ModelBridge |
-| Aggregated assertions preserve origins | Aggregation |
-| LoweredQuery preserves traceability | Lowering |
+| IR2 assumptions preserve origins and roles | Assumption composition |
+| model-semantic lowering preserves source observables and evidence | Lowering |
 
 ---
 
@@ -133,5 +133,5 @@ Initial Toetra Miova campaigns should include:
 3. Semantic binding mutation campaign.
 4. IR1 logical mutation campaign.
 5. ModelSchema mutation campaign.
-6. AggregatedAssertionSet mutation campaign once implemented.
-7. Backend boundary mutation campaign once backend queries exist.
+6. IR2 assumption-composition mutation campaign.
+7. Adapter-private backend-translation mutation campaign.

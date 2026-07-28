@@ -17,7 +17,9 @@ It defines:
 - cross-layer semantic equivalences;
 - end-to-end evidence requirements.
 
-This document does not redefine patch sequencing. The accepted mapping from gates and case IDs to implementation patches is maintained in `roadmap/point-binding-evaluation-implementation-roadmap.md`.
+This document does not redefine patch sequencing. The delivered mapping from
+gates and case IDs to implementation patches is preserved in the
+[historical point-binding roadmap](../history/roadmaps/point-binding-evaluation-implementation-roadmap.md).
 
 ## Complete-program rule
 
@@ -518,7 +520,7 @@ The chantier is complete only when:
 - ADR-0017 — First-Class Points, Lexical Bindings, and Point-Indexed Model Evaluations
 - `language/points-anchors-and-evaluations.md`
 - `contracts/point-binding-and-evaluation.md`
-- `roadmap/point-binding-evaluation-implementation-roadmap.md`
+- [Historical point-binding roadmap](../history/roadmaps/point-binding-evaluation-implementation-roadmap.md)
 
 ## Completion record
 

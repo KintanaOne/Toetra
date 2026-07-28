@@ -269,11 +269,12 @@ nav:
 
   - Roadmap:
       - Implementation Roadmap: roadmap/implementation-roadmap.md
-      - Documentation Roadmap: roadmap/documentation-roadmap.md
       - Open Questions: roadmap/open-questions.md
 
   - History:
       - Completed Roadmaps: history/roadmaps/index.md
+      - V1 Implementation: history/roadmaps/v1-implementation-roadmap.md
+      - Documentation Freeze: history/roadmaps/documentation-roadmap.md
       - Repository Final Polish: history/roadmaps/repository-final-polish-roadmap.md
       - Point Binding and Evaluation: history/roadmaps/point-binding-evaluation-implementation-roadmap.md
       - Binary Classification: history/roadmaps/binary-classification-implementation-roadmap.md

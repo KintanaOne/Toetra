@@ -1,6 +1,6 @@
 # CST to AST Contract
 
-> Status: P0 / Accepted target contract  
+> Status: Implemented and accepted
 > Scope: Concrete Syntax Tree to typed Toetra AST
 > Audience: builder maintainers, AST maintainers and mutation authors
 

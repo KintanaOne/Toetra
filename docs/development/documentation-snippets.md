@@ -4,8 +4,8 @@
 >
 > Scope: selected public Python and Toetra examples
 
-P25.5 makes a small, deliberate set of public examples executable
-documentation. The objective is not to treat every fenced block as a program:
+The executable-documentation contract makes a small, deliberate set of public
+examples machine-checked. The objective is not to treat every fenced block as a program:
 the repository also contains grammar fragments, output samples, pseudocode,
 future syntax, and intentionally invalid examples.
 
@@ -78,7 +78,7 @@ make docs-check
 ```
 
 `make ci` already includes `docs-check`, so drift cannot pass the normal CI
-boundary. No release-phase or P25-specific target is required.
+boundary. No release-phase-specific target is required.
 
 The checker:
 

@@ -1,6 +1,6 @@
 # Language Layer
 
-> Status: P0 / Stabilizing  
+> Status: Implemented / stabilizing
 > Scope: DSL vocabulary and grammar boundary  
 > Implementation: Implemented, needs normalization cleanup  
 > Audience: DSL maintainers, compiler contributors, test authors

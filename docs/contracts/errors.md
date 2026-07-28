@@ -1,6 +1,6 @@
 # Error Boundaries Contract
 
-> Status: P0 / Accepted target taxonomy  
+> Status: Accepted internal taxonomy; public normalization remains in P26
 > Scope: Failure ownership across the language and verification pipeline  
 > Audience: maintainers, diagnostic authors, testers and Miova campaign authors
 

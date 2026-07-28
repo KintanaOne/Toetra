@@ -1,15 +1,16 @@
 # Getting started
 
 Toetra V1 verifies declared behavioral properties of a narrow numeric-affine ML
-profile. Begin with the self-contained demo, then replace its temporary artifacts
-with your own fitted `LinearRegression`, reference dataset, and `.toetra` policy.
+profile. Begin with a self-contained demo, then replace its temporary artifacts
+with a supported fitted model, reference dataset, and `.toetra` policy.
 
 ## Requirements
 
 - Python 3.11 or 3.12
 - finite transformed numeric features
-- fitted single-output scikit-learn `LinearRegression`
-- one numeric target
+- fitted single-output scikit-learn `LinearRegression`, or direct fitted binary
+  `LogisticRegression`
+- one regression or binary-classification output
 
 ## Fastest path
 
@@ -18,8 +19,13 @@ python -m pip install -r requirements-dev.txt
 make demo-quickstart
 ```
 
-The demo exercises the public `toetra.verify` API and prints a universal result and
-an existential result.
+The quickstart exercises the public regression route. The classification demo
+covers label proof, counterexample replay, probability witnessing, and pairwise
+label equality:
+
+```bash
+make demo-classification
+```
 
 ## Reading order
 

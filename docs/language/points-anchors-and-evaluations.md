@@ -2,7 +2,6 @@
 
 > Status: Implemented normative language specification  
 > Scope: Point declarations, quantifier binding, restrictions, target indexing, and user-facing scope sugar  
-> Priority: P0  
 > Audience: DSL users, compiler contributors, backend authors, runtime authors, test authors
 
 ## Purpose

@@ -42,6 +42,6 @@ Normal user code imports only from `toetra`. The former top-level `dsl` and
 carry no compatibility guarantee.
 
 See the [repository contract](../contracts/repository-contract.md) for the
-package, test, demo, documentation, and automation boundaries frozen before
-P25. Release validation deliberately keeps `ci`, demonstrations, distribution,
-and review-bundle reproducibility as explicit gates.
+frozen package, test, demo, documentation, and automation boundaries. Release
+validation deliberately keeps `ci`, demonstrations, distribution, and
+review-bundle reproducibility as explicit gates.

@@ -138,8 +138,8 @@ make review-bundle-check
 ```
 
 Run the four gates explicitly from a clean checkout. They are the durable
-quality, demonstration, distribution, and review-bundle boundaries used after
-P24. The frozen repository structure is documented in the
+quality, demonstration, distribution, and review-bundle boundaries. The frozen
+repository structure is documented in the
 [repository contract](docs/contracts/repository-contract.md).
 
 ## License

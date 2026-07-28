@@ -1,6 +1,6 @@
 # AST Layer
 
-> Status: P0 / Implemented / Stabilizing  
+> Status: Implemented / stabilizing
 > Scope: Toetra domain syntax representation
 > Implementation: dataclass-based AST nodes  
 > Audience: compiler contributors, semantic validators, Miova mutation authors

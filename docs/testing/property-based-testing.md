@@ -1,6 +1,6 @@
 # Property-Based Testing
 
-> Status: P0 — required testing layer  
+> Status: Infrastructure implemented; coverage remains incremental
 > Implementation: planned / partially started through Hypothesis-oriented design  
 > Scope: generated Toetra specifications, compiler contracts, semantic invariants, IR normalization, and regression discovery
 

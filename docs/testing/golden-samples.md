@@ -1,7 +1,7 @@
 
 # Golden Samples
 
-> Status: P0 — required  
+> Status: Implemented and required
 > Scope: Stable source examples and normalized expected artifacts
 
 ## Purpose

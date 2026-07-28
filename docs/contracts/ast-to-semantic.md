@@ -1,6 +1,6 @@
 # AST to SemanticValidatedAST Contract
 
-> Status: P0 / Accepted target semantics  
+> Status: Implemented and accepted semantics
 > Scope: Scope construction, binding, typing and semantic validation  
 > Audience: semantic maintainers, compiler authors and diagnostic authors
 

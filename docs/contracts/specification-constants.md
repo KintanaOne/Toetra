@@ -1,8 +1,7 @@
 # Specification Constants Contract
 
-> Status: Accepted target contract — implementation pending  
+> Status: Implemented and accepted
 > Scope: Source declaration through backend encoding  
-> Priority: P0
 
 ## Purpose
 

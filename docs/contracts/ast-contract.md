@@ -1,6 +1,6 @@
 # AST Contract
 
-> Status: P0 / Accepted target structure
+> Status: Implemented and accepted structure
 > Scope: Raw typed Toetra syntax before semantic validation
 > Audience: AST maintainers, semantic validators and mutation authors
 
