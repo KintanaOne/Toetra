@@ -4,14 +4,12 @@
 specification.
 
 ```python
-from toetra import VerificationSession, verify
-
-session: VerificationSession = verify(
-    "policy.toetra",
-    model="model.joblib",
-    dataset="reference.csv",
-)
+--8<-- "docs/snippets/verify-session.py"
 ```
+
+This block is sourced from the checked
+[`verify-session.py`](../snippets/verify-session.py) example. It uses only the
+public `toetra` facade.
 
 ## Signature
 

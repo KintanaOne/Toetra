@@ -43,18 +43,22 @@ make ci-local
 
 ## Regression property
 
+<!-- toetra-doc-snippet: regression-bound -->
 ```toetra
 model := "affine_score.joblib"
 target := score
 
+maximum_score := 7.0
+
 [BOUND]:
 forall x0
 with domain(x0.a: [0.0, 3.0])
-=> target <= 7.0 using Z3
+=> target <= maximum_score using Z3
 ```
 
 ## Binary-classification property
 
+<!-- toetra-doc-snippet: binary-probability -->
 ```toetra
 model := "binary_decision.joblib"
 target := decision
@@ -80,6 +84,7 @@ probability witness, and pairwise label equality.
 
 ## Python API
 
+<!-- toetra-doc-snippet: verify-session -->
 ```python
 from toetra import verify
 
