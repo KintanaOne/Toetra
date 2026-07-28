@@ -4,7 +4,10 @@ from sklearn.linear_model import LinearRegression
 
 from toetra._compiler.semantic.types.enums import EnumDataType
 from toetra._models.detector.model_framework import EnumModelFramework
-from toetra._models.errors.introspection import MissingFeatureMetadataError
+from toetra._models.errors.introspection import (
+    MissingFeatureMetadataError,
+    ReferenceDatasetError,
+)
 from toetra._models.introspector.sklearn_introspector import SklearnIntrospector
 from toetra._models.schema.feature_schema import FeatureSchema
 from toetra._models.schema.model_schema import ModelSchema
@@ -149,3 +152,19 @@ def test_sklearn_introspector_raises_when_no_dataset_or_schema_is_available():
             schema=None,
             target_name="MyTarget",
         ).introspect()
+
+
+def test_sklearn_introspector_owns_invalid_reference_dataset(tmp_path):
+    dataset = tmp_path / "empty.csv"
+    dataset.write_text("", encoding="utf-8")
+    model = LinearRegression()
+
+    with pytest.raises(ReferenceDatasetError) as caught:
+        SklearnIntrospector(
+            model=model,
+            source_path=dataset,
+            target_name="target",
+        ).introspect()
+
+    assert str(dataset) in str(caught.value)
+    assert isinstance(caught.value.__cause__, pd.errors.EmptyDataError)

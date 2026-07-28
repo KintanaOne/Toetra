@@ -9,5 +9,9 @@ class MissingFeatureMetadataError(ModelIntrospectionError):
     pass
 
 
+class ReferenceDatasetError(ModelIntrospectionError):
+    """Raised when the reference dataset cannot be read as a CSV artifact."""
+
+
 class UnsupportedIntrospectorError(ModelIntrospectionError):
     pass

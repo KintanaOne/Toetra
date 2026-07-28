@@ -23,7 +23,10 @@ from toetra._models.schema.output_schema import (
     UnknownOutputSchema,
 )
 
-from toetra._models.errors.introspection import MissingFeatureMetadataError
+from toetra._models.errors.introspection import (
+    MissingFeatureMetadataError,
+    ReferenceDatasetError,
+)
 from toetra._models.families import (
     BINARY_LOGISTIC_AFFINE_MODEL_FAMILY,
     BINARY_LOGISTIC_AFFINE_SEMANTIC_PROFILE_ID,
@@ -96,7 +99,7 @@ class SklearnIntrospector(BaseIntrospector):
                 "or an explicit input schema."
             )
 
-        data = pd.read_csv(self.source_path)
+        data = self._read_source_data()
         feature_names = self._model_feature_names()
         if feature_names is None:
             target = self._detect_target()
@@ -203,7 +206,7 @@ class SklearnIntrospector(BaseIntrospector):
         if self.source_path is None:
             return None
 
-        data = pd.read_csv(self.source_path)
+        data = self._read_source_data()
         if target not in data.columns:
             return None
 
@@ -322,10 +325,26 @@ class SklearnIntrospector(BaseIntrospector):
         if self.source_path is None:
             return None
 
-        data = pd.read_csv(self.source_path)
+        data = self._read_source_data()
         if target not in data.columns:
             return None
         return str(data[target].dtype)
+
+    def _read_source_data(self) -> pd.DataFrame:
+        """Read the reference CSV while retaining model-layer ownership."""
+
+        assert self.source_path is not None
+        try:
+            return pd.read_csv(self.source_path)
+        except (
+            OSError,
+            UnicodeError,
+            pd.errors.EmptyDataError,
+            pd.errors.ParserError,
+        ) as error:
+            raise ReferenceDatasetError(
+                f"Failed to read reference dataset: {self.source_path}"
+            ) from error
 
     def _compatibility_descriptor(
         self,

@@ -126,11 +126,13 @@ Message wording may improve. Callers that need stable branching use `code`.
 When Toetra normalizes a private compiler, model, or backend failure, its
 original exception remains available through `error.__cause__`.
 
-Syntax, CST-to-AST construction, and semantic-validation failures are
-normalized by `verify(...)` as `VerificationConfigurationError` while
-retaining `syntax`, `builder`, or `semantic` ownership. Model, compatibility,
-routing, and backend normalization continues in later P26 steps; failures from
-those still-unfinished boundaries may still cross `verify(...)` directly.
+Syntax, CST-to-AST construction, semantic-validation, specification-artifact,
+model-loading, and model-introspection failures are normalized by `verify(...)`
+while retaining their owning stage. A loaded model without a supported Toetra
+integration is a `VerificationRuntimeError` with `stage == "model"` rather than
+an invalid artifact. Encoder, model-semantic, compatibility, routing, and
+backend normalization continues in later P26 steps; failures from those
+still-unfinished boundaries may still cross `verify(...)` directly.
 
 ### `VerificationConfigurationError`
 
@@ -139,12 +141,19 @@ Raised when runtime inputs are ambiguous or inconsistent, including:
 - malformed specification syntax;
 - a CST shape that cannot be represented as a Toetra AST;
 - invalid binding, typing, domain, property, or output-observable semantics;
+- missing, unreadable, or non-UTF-8 specification files;
+- missing, unreadable, unsupported-format, or non-deserializable model artifacts;
+- missing or unreadable reference datasets and missing feature metadata;
 - mixing `schema` with `model` or `dataset`;
 - target disagreement between arguments, schema and specification;
 - providing both `anchor_source` and `anchor_resolver`;
 - using a retired specification extension.
 
 It inherits from both `VerificationRuntimeError` and `ValueError`.
+
+Loaded artifacts whose model type or framework has no complete Toetra
+integration raise `VerificationRuntimeError`, because the request is meaningful
+but unsupported rather than malformed.
 
 ### `ReplayUnavailableError`
 
