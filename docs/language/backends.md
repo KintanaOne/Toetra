@@ -1,238 +1,129 @@
-# Backends Syntax
+# Backend syntax
 
-> Status: Syntax implemented / Z3-only V1 target  
-> Scope: User-facing backend syntax  
-> Priority: P1  
-> Audience: Toetra users, backend contributors, compiler maintainers
+> Status: Accepted syntax; Z3-only built-in V1 execution
+> Scope: Backend declarations in `.toetra` properties
+> Audience: users and backend contributors
 
-## Purpose
+## Syntax
 
-Toetra allows properties to optionally specify a backend.
-
-The backend syntax is part of the language surface, but backend execution is not handled directly by the language layer.
-
-The DSL may express:
+A backend declaration follows the assertion:
 
 ```toetra
-using z3
+[BOUND]:
+forall applicant
+=> target[applicant] <= 1 using Z3
 ```
 
-but the backend boundary later decides whether the query can actually be lowered and executed by that backend.
+Both `Z3` and `z3` normalize to the same backend identity.
 
----
+The grammar also accepts optional argument syntax:
 
-## Basic Syntax
-
-Backend syntax appears after a property:
-
-```toetra
-[BOUND]: check_at x => score >= 0 using z3
+```text
+using backend(name=value)
 ```
 
-With arguments:
+No DSL backend argument belongs to the public V1 profile unless the backend
+contract explicitly documents its meaning. Parser acceptance alone is not an
+execution guarantee.
 
-```toetra
-[ROBUSTNESS]: forall baseline, candidate => CLASSIFICATION.EQUAL() using z3(timeout=30)
+## Selection semantics
+
+An explicit backend is a requirement:
+
+```text
+task declares backend
+→ router must use that backend
+→ absence or incompatibility is an error
 ```
 
----
+Toetra does not silently fall back to another backend.
 
-## Supported Backend Names
+When a property omits `using ...`, the router selects the first registered
+backend whose capabilities and numeric profile satisfy the IR2 task. The
+built-in V1 registry contains only Z3, so omission does not currently introduce
+a second built-in behavior.
 
-Current grammar-level backend names include reserved names, but the V1 execution target is Z3 only:
+## Recognized names
 
-| Backend Syntax | Intended Backend / Mode | Status |
+| Source spelling | Grammar status | V1 execution status |
 |---|---|---|
-| `z3` / `Z3` | SMT backend | implemented numeric-affine V1 profile |
-| `eran` / `ERAN` | Neural network verification backend | reserved / post-V1 |
-| `zonotope` / `ZONOTOPE` | Abstract domain / backend mode | reserved / post-V1 |
-| `box` / `BOX` | Abstract domain / backend mode | reserved / post-V1 |
+| `Z3`, `z3` | accepted | public built-in backend |
+| `ERAN`, `eran` | reserved | semantic rejection |
+| `ZONOTOPE`, `zonotope` | reserved | semantic rejection |
+| `BOX`, `box` | reserved | semantic rejection |
 
-Backend names should be normalized internally.
+Reserved names exist to preserve vocabulary and produce deliberate diagnostics.
+They do not announce bundled adapters, algorithms, or post-V1 delivery dates.
 
-Recommended canonical enum names:
+## Qualification boundary
 
-```text
-Z3
-ERAN
-ZONOTOPE
-BOX
-```
-
----
-
-## Backend Arguments
-
-Backends may accept optional arguments:
-
-```toetra
-using z3(timeout=30)
-# post-V1 example only:
-# using eran(domain="zonotope")
-```
-
-Arguments are parsed as key/value pairs.
-
-The language layer should not validate backend-specific semantics deeply. It should preserve arguments for backend capability validation.
-
-## V1 backend rule
-
-For the first functional V1, `z3` / `Z3` is the only backend that should be treated as an execution target. Other backend names may remain in vocabulary as reserved syntax, but documentation and tests must not imply that ERAN, zonotope, or box execution is implemented.
-
----
-
-## Backend Hint vs Backend Selection
-
-A backend declaration can be interpreted in two possible ways:
-
-| Interpretation | Meaning |
-|---|---|
-| Backend hint | User suggests a preferred backend, but Toetra may select another compatible backend. |
-| Backend selection | User requires this backend; incompatible requests fail. |
-
-Recommended target behavior:
+Backend syntax reaches execution only after:
 
 ```text
-Explicit backend declarations are treated as required unless a future configuration allows fallback.
+AST backend declaration
+→ semantic backend validation
+→ IR1 and IR2 preservation
+→ model-semantic lowering
+→ requirement extraction
+→ capability and numeric qualification
+→ backend translation and execution
 ```
 
-This should be clarified in backend orchestration documentation.
+The Z3 route can still reject a syntactically and semantically valid request
+when its requirements are outside the public profile, for example:
 
----
+- symbolic multiplication or division;
+- categorical/string solver requirements;
+- alternating quantifiers;
+- unavailable model equations;
+- unsupported output-observable lowering;
+- incompatible numeric compatibility or conclusion policy.
 
-## Backend Boundary
+Such a rejection must be explicit. The backend must never approximate an
+unsupported language construct silently.
 
-The backend syntax does not mean the property is immediately executable.
+## Failure cases
 
-The full path is:
+### Unknown spelling
 
 ```text
-DSL backend declaration
-→ AST BackendNode
-→ semantic/backend compatibility check
-→ IR backend field
-→ backend capability matching
-→ backend query lowering
-→ execution
+using unknown_backend
 ```
 
-A backend may reject a property because:
+This fails parsing because the name is not in the recognized backend
+vocabulary.
 
-- the property type is unsupported,
-- the model framework is unsupported,
-- the logical form is unsupported,
-- the required ModelBridge constraints are unavailable,
-- the backend cannot handle the scope type,
-- the backend does not support the requested metric or domain.
-
----
-
-## Backend and ModelBridge
-
-ModelBridge does not replace the backend.
-
-ModelBridge provides normalized information about the model:
+### Reserved backend
 
 ```text
-model artifact
-→ loaded model
-→ framework detection
-→ model introspection
-→ ModelSchema
+using ERAN
 ```
 
-The backend consumes logical and model-aware constraints after aggregation and lowering.
+This parses, then fails V1 semantic backend validation.
 
-Conceptually:
+### Registered but incompatible backend
 
-```text
-IR2
-+ Model Constraints
-→ AggregatedAssertionSet
-→ LoweredQuery
-→ BackendQuery
-```
+For an injected/private registry extension, routing fails if the selected
+backend does not satisfy the IR2 requirements or numeric policy. Internal
+registration does not make the route public.
 
----
+### Technical backend failure
 
-## Backend and IR2
+Translation errors, timeout, resource exhaustion, cancellation, and native
+`unknown` outcomes belong to backend execution. Reports preserve these
+diagnostics separately from language compilation failures.
 
-Backend selection may depend on the normal form required.
+## Public support rule
 
-Examples:
+A new backend becomes public only after its capabilities, numeric profile,
+translation, execution controls, reporting, replay, tests, distribution, and
+public-profile entry agree. See [Adding a backend](../development/adding-backend.md).
 
-| Backend Need | Possible IR2 Form |
-|---|---|
-| SAT/SMT-style solving | CNF-like structure |
-| scenario exploration | DNF-like structure |
-| abstract interpretation | backend-specific abstract constraints |
-| counterexample search | minimized query or case split |
+## Related pages
 
-The backend syntax therefore does not fully determine the lowering strategy. It only participates in backend orchestration.
-
----
-
-## Error Cases
-
-### Unknown backend
-
-```toetra
-[BOUND]: check_at x => score >= 0 using unknown_backend
-```
-
-Expected result:
-
-```text
-Parser or builder rejects the backend if not in grammar.
-```
-
-### Unsupported backend-property pair
-
-```toetra
-[FAIRNESS]: x ~ x' in neighborhood(metric=L2, eps=0.1) => CLASSIFICATION.EQUITY() using box
-```
-
-Expected result:
-
-```text
-Backend capability validation rejects the request if unsupported.
-```
-
-### Unsupported backend argument
-
-```toetra
-[BOUND]: check_at x => score >= 0 using z3(non_existing_option=true)
-```
-
-Expected result:
-
-```text
-Backend argument validation rejects or warns, depending on the backend policy.
-```
-
----
-
-## Testing Requirements
-
-Backend syntax tests should include:
-
-- backend without arguments,
-- backend with one argument,
-- backend with multiple arguments,
-- lowercase and uppercase names,
-- unsupported backend names,
-- malformed backend calls,
-- backend compatibility tests,
-- backend argument validation tests,
-- Miova mutations of backend names and arguments,
-- Hypothesis generation of backend configurations.
-
----
-
-## Related Documents
-
-- [Backends Overview](../backends/overview.md)
-- [Backend Capabilities](../backends/capabilities.md)
-- [Backend Orchestration](../backends/orchestration.md)
-- [Backend Boundary](../compiler/backend-boundary.md)
-- [IR to Backend Contract](../contracts/ir-to-backend.md)
+- [Language support levels](support-levels.md)
+- [Public V1 profile](../public-v1-profile.md)
+- [Backend overview](../backends/overview.md)
+- [Backend capabilities](../backends/capabilities.md)
+- [Backend orchestration](../backends/orchestration.md)
+- [IR to backend contract](../contracts/ir-to-backend.md)

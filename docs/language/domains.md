@@ -1,728 +1,240 @@
 # Domains
 
-> Status: Target language contract — implementation pending  
-> Scope: Typed input-domain restrictions attached to Toetra scopes
-> Priority: P0  
-> Audience: DSL users, parser authors, semantic maintainers, IR authors, backend authors, test authors
+> Status: Accepted syntax and semantics in `1.0.0rc3`
+> Scope: Typed input assumptions attached to quantified points
+> Audience: users, semantic contributors, and backend authors
 
 ## Purpose
 
-A domain restricts the admissible valuations of input features introduced by a property scope.
-
-The target syntax is:
-
-```toetra
-with domain(
-    x0.a: [0.0, 3.0],
-    x0.b: {obj1, obj2},
-    x0.c: ]0.0, 3.0],
-    x0.d: {0.0, 7.0},
-    x0.e: ]0.0, 3.0[
-)
-```
-
-A domain is not an assertion about the model output. It contributes input assumptions to the verification problem.
-
----
-
-## Core Decisions
-
-The initial typed-domain language follows these rules:
-
-1. `domain` is a protected keyword.
-2. Every domain entry has the form `qualified_attribute : constraint`.
-3. Domain subjects are explicitly qualified, such as `x0.age`.
-4. The subject entity must be declared by the enclosing scope.
-5. Interval notation uses only square-bracket glyphs, including French-style open bounds.
-6. Curly braces always denote a finite discrete set.
-7. Multiple entries in one domain are combined by logical conjunction.
-8. Duplicate subjects in the same domain are rejected.
-9. Interval bounds may be numeric arithmetic expressions.
-10. Every input-feature reference inside a bound is explicitly qualified; bare specification constants are allowed.
-11. `target` cannot be used as a domain subject or bound expression.
-
----
-
-## Placement
-
-A domain appears after the scope declaration and before the property implication token:
+A domain restricts admissible model inputs:
 
 ```toetra
 [BOUND]:
-forall x0
-    with domain(
-        x0.age: [18, 65]
-    )
-    => target >= 0
-```
-
-For the initial quantified form, the scope introduces `x0` and the domain restricts the admissible valuations of `x0`.
-
-The typed domain representation is designed so that it can later be attached to other scopes that declare compatible variables. Backend support remains capability-dependent.
-
----
-
-## Domain Entries
-
-A domain contains one or more comma-separated entries:
-
-```toetra
+forall applicant
 with domain(
-    x0.age: [18, 65],
-    x0.region: {EU, US},
-    x0.active: {true}
+    applicant.age: [18, 65],
+    applicant.segment_id: {1, 2, 3}
 )
+=> target[applicant] <= 1
 ```
 
-A trailing comma is allowed:
+Domain entries are assumptions over input features. They are not assertions
+about `target`.
 
-```toetra
-with domain(
-    x0.age: [18, 65],
-    x0.region: {EU, US},
-)
+## Placement and ownership
+
+One domain may follow a quantified point chain and precede an optional `where`
+restriction:
+
+```text
+quantifier clauses
+→ domain
+→ where restriction
+→ =>
+→ assertion
 ```
 
-An empty domain is invalid:
+Every domain subject is explicitly qualified:
 
 ```toetra
-with domain()
+applicant.age: [18, 65]
 ```
 
-Each entry is interpreted as a constraint over one input feature.
+Semantic validation requires:
 
----
+- the point to be visible in the enclosing scope;
+- the feature to exist when a model schema is available;
+- no duplicate `(point, feature)` subject;
+- one interval or finite-set constraint per entry.
 
-## Explicit Domain Subjects
+This is invalid even when one default point exists:
 
-Domain subjects must use an explicit entity-qualified attribute:
-
-```toetra
-x0.age: [18, 65]
-```
-
-The shorthand below is intentionally not accepted inside a domain:
-
-```toetra
+```text
 age: [18, 65]
 ```
 
-Assertions may still use implicit feature references because the semantic context provides a default entity. Domains require explicit subjects to keep binding, diagnostics, and future multi-variable scopes unambiguous.
+Implicit feature resolution is available in assertions, not domain subjects.
 
-For:
+## Numeric intervals
 
-```toetra
-forall x0
-```
+Toetra uses square-bracket glyphs for all four endpoint combinations:
 
-this domain entry is valid:
-
-```toetra
-x0.age: [18, 65]
-```
-
-and this one is invalid:
-
-```toetra
-x1.age: [18, 65]
-```
-
-The mismatch must fail at semantic binding or domain validation. Toetra must not silently alias `x1` to `x0`.
-
----
-
-## Numeric Intervals
-
-Intervals restrict a numeric feature between a lower and an upper bound.
-
-### Closed interval
-
-```toetra
-x0.a: [0.0, 3.0]
-```
-
-Meaning:
-
-```text
-x0.a >= 0.0 AND x0.a <= 3.0
-```
-
-### Open lower bound, closed upper bound
-
-```toetra
-x0.a: ]0.0, 3.0]
-```
-
-Meaning:
-
-```text
-x0.a > 0.0 AND x0.a <= 3.0
-```
-
-### Closed lower bound, open upper bound
-
-```toetra
-x0.a: [0.0, 3.0[
-```
-
-Meaning:
-
-```text
-x0.a >= 0.0 AND x0.a < 3.0
-```
-
-### Open interval
-
-```toetra
-x0.a: ]0.0, 3.0[
-```
-
-Meaning:
-
-```text
-x0.a > 0.0 AND x0.a < 3.0
-```
-
-### Boundary Representation
-
-Open and closed bounds must use an enum-like representation, not booleans:
-
-```text
-EnumBoundaryKind.OPEN
-EnumBoundaryKind.CLOSED
-```
-
-This keeps the AST and IR self-describing.
-
----
-
-## Interval Validation
-
-Interval validation is semantic, not only syntactic.
-
-The contract requires:
-
-- both bounds are numeric scalar expressions;
-- both bound types are compatible;
-- division by a literal zero is rejected;
-- constant subexpressions are folded when safe;
-- when both bounds are compile-time constants, reversed and empty intervals are rejected;
-- `[a, a]` is a valid singleton interval;
-- `]a, a]`, `[a, a[`, and `]a, a[` are empty when both sides normalize to the same constant;
-- non-finite literals such as `inf` and `-inf` are not part of the initial syntax.
-
-For symbolic bounds, the semantic layer does not invent an ordering assumption. The interval denotes only the conjunction generated by its two boundaries.
-
-Example:
-
-```toetra
-x0.a: [x0.b - 1, x0.b + 1]
-```
-
-means:
-
-```text
-x0.a >= x0.b - 1
-AND x0.a <= x0.b + 1
-```
-
-If a symbolic domain is unsatisfiable, a universal property may otherwise be proved vacuously. Toetra should therefore expose domain-satisfiability diagnostics when the verification pipeline can determine that the admissible set is empty.
-
-Valid constant singleton:
-
-```toetra
-x0.a: [3.0, 3.0]
-```
-
-Invalid constant empty interval:
-
-```toetra
-x0.a: ]3.0, 3.0]
-```
-
-Invalid constant reversed interval:
-
-```toetra
-x0.a: [5.0, 3.0]
-```
-
----
-
-## Arithmetic Interval Bounds
-
-Interval bounds may be numeric arithmetic expressions:
-
-```toetra
-with domain(
-    x0.a: [x0.b - 1.0, x0.b + 1.0],
-    x0.b: [0.0, 10.0]
-)
-```
-
-Normative rules:
-
-- every input-feature reference in a domain bound is explicitly qualified;
-- bare identifiers in bounds may resolve to specification constants;
-- every referenced entity is introduced by the enclosing scope;
-- `target` is prohibited in domain bounds;
-- arithmetic operands must be numeric;
-- division by a literal zero is invalid;
-- open/closed boundary kinds remain independent from expression structure;
-- all entries denote simultaneous logical assumptions, not sequential assignments.
-
-Conceptual expansion:
-
-```text
-x0.a >= x0.b - 1.0
-AND x0.a <= x0.b + 1.0
-AND x0.b >= 0.0
-AND x0.b <= 10.0
-```
-
-Arithmetic expressions are not introduced as finite-set members in this patch. Scalar specification constants may be used as members. See [Arithmetic Expressions](arithmetic-expressions.md).
-
-## Finite Sets
-
-Curly braces denote a finite discrete set:
-
-```toetra
-x0.b: {obj1, obj2}
-```
-
-Meaning:
-
-```text
-x0.b == obj1 OR x0.b == obj2
-```
-
-Numeric values inside braces remain discrete values:
-
-```toetra
-x0.d: {0.0, 7.0}
-```
-
-Meaning:
-
-```text
-x0.d == 0.0 OR x0.d == 7.0
-```
-
-It does not mean:
-
-```text
-0.0 <= x0.d <= 7.0
-```
-
-A finite set must contain at least one value.
-
-Invalid:
-
-```toetra
-x0.d: {}
-```
-
-Duplicate members should be rejected or normalized with a diagnostic before IR lowering. The target contract prefers semantic rejection because duplicates usually indicate an authoring mistake.
-
----
-
-## Domain Literals
-
-The initial finite-set syntax supports:
-
-| Literal family | Examples | Intended semantic type |
+| Source | Lower | Upper |
 |---|---|---|
-| integer | `0`, `7` | integer |
-| real | `0.0`, `7.5` | real |
-| boolean | `true`, `false` | boolean |
-| quoted string | `"north region"`, `"A"` | string |
-| symbolic category | `obj1`, `EU`, `premium` | categorical symbol |
-
-Unquoted identifiers inside a finite set are never input-variable references. A matching specification constant is resolved first; otherwise the identifier is a symbolic categorical literal.
-
-```toetra
-x0.region: {EU, US}
-```
-
-must preserve `EU` and `US` as symbolic category values.
-
-The AST should distinguish symbolic category literals from quoted strings until schema-aware semantic validation decides whether and how they normalize to model values.
-
----
-
-### Specification constants in domains
-
-Specification constants may be used in interval bounds:
-
-```toetra
-minimum_age := 18
-maximum_age := 65
-
-with domain(
-    x0.age: [minimum_age, maximum_age]
-)
-```
-
-They may also be finite-set members:
-
-```toetra
-preferred_level := 7
-
-with domain(
-    x0.level: {0, preferred_level}
-)
-```
-
-Domain subjects remain explicit features and cannot be specification constants. Bare input-feature fallback is not used in domain bounds.
-
-## Type Compatibility
-
-Domain constraints must be compatible with the feature type known through `ModelSchema` or an external schema.
+| `[a, b]` | closed | closed |
+| `]a, b]` | open | closed |
+| `[a, b[` | closed | open |
+| `]a, b[` | open | open |
 
 Examples:
 
-| Feature type | Compatible domain examples |
-|---|---|
-| integer | `[0, 10]`, `{0, 1, 2}` |
-| real | `]0.0, 1.0]`, `{0.0, 0.5, 1.0}` |
-| boolean | `{true}`, `{true, false}` |
-| string/category | `{EU, US}`, `{"EU", "US"}` according to schema policy |
-
-Examples that should fail during schema-aware semantic validation:
-
 ```toetra
-x0.age: {adult, senior}
+applicant.closed: [0.0, 1.0]
+applicant.open_lower: ]0.0, 1.0]
+applicant.open_upper: [0.0, 1.0[
+applicant.open: ]0.0, 1.0[
 ```
 
-when `age` is numeric.
+Parenthesis interval notation is not accepted.
+
+### Bound validation
+
+Interval bounds are scalar expressions:
 
 ```toetra
-x0.region: [0, 10]
+candidate.income: [
+    baseline.income - tolerance,
+    baseline.income + tolerance
+]
 ```
 
-when `region` is categorical.
+Validation requires:
 
-The parser and builder preserve syntax. They do not decide model-schema compatibility.
+- numeric bound types;
+- exact binding for every feature reference;
+- no model-output reference;
+- no constant division by zero;
+- non-reversed constant bounds;
+- both endpoints closed when equal constant bounds describe a singleton.
 
----
+Domain entries have simultaneous logical meaning. A later entry is not an
+assignment that can depend on a value produced by an earlier entry.
 
-## Conjunction Semantics
-
-Entries in a domain are conjunctive:
+## Finite sets
 
 ```toetra
+applicant.level: {0, 1, 2}
+applicant.region: {EU, US}
+applicant.channel: {"web", "branch"}
+```
+
+A finite set contains at least one member. Members may be scalar literals,
+specification constants, or symbolic categorical literals.
+
+In finite-set value position, a bare identifier resolves as:
+
+1. a matching specification constant;
+2. otherwise a symbolic categorical literal.
+
+For example:
+
+```toetra
+preferred_region := "EU"
+
+[LOGIC]:
+forall applicant
 with domain(
-    x0.a: [0.0, 3.0],
-    x0.b: {obj1, obj2}
+    applicant.region: {preferred_region, US}
 )
+=> target[applicant] <= 1
 ```
 
-means:
+`preferred_region` is the string constant `"EU"`; `US` is a symbolic literal.
+Semantic validation checks member compatibility when the feature schema is
+known.
 
-```text
-x0.a in [0.0, 3.0]
-AND
-x0.b in {obj1, obj2}
-```
+## Specification constants in bounds
 
-The domain is therefore an admissibility predicate:
-
-```text
-Domain(x0)
-```
-
-For a universally quantified property, the refutation-style verification condition is:
-
-```text
-Gamma_domain(x0)
-AND Gamma_model(x0, target)
-AND NOT P(x0, target)
-```
-
-For an existential property, a witness-oriented query is:
-
-```text
-Gamma_domain(x0)
-AND Gamma_model(x0, target)
-AND P(x0, target)
-```
-
-Backend support for these verification modes is declared separately from the language meaning.
-
----
-
-## Duplicate Subjects
-
-One feature may appear only once in the initial structured domain block.
-
-Invalid:
+Bare names in interval bounds may resolve to specification constants:
 
 ```toetra
+minimum_income := 25000.0
+maximum_income := 200000.0
+
+[LOGIC]:
+forall applicant
 with domain(
-    x0.age: [18, 65],
-    x0.age: {21, 42}
+    applicant.income: [minimum_income, maximum_income]
 )
+=> target[applicant] <= 1
 ```
 
-Although the two entries could theoretically be intersected, supporting repeated subjects would blur the boundary between structured domains and arbitrary logical assumptions.
-
-Relational and compound domain predicates are deferred to a future language extension.
-
----
-
-## Target and Relational Restrictions
-
-The structured domain syntax cannot constrain the model output:
-
-```toetra
-with domain(
-    target: [0, 1]
-)
-```
-
-is invalid. Output restrictions belong in the property assertion.
-
-Cross-feature references are permitted inside interval-bound expressions:
-
-```toetra
-x0.a: [x0.b - 1, x0.b + 1]
-```
-
-However, the domain block does not yet accept arbitrary standalone relational entries such as:
-
-```toetra
-x0.a + x0.b <= 10
-```
-
-Such predicates may be added later as a general assumption form. This patch only extends typed interval bounds while preserving the `subject: constraint` domain structure.
-
----
-
-## Target Grammar Shape
-
-Conceptual EBNF:
-
-```ebnf
-domain = "with", "domain", "(", domain_entry,
-         { ",", domain_entry }, [ "," ], ")" ;
-
-domain_entry = domain_subject, ":", domain_constraint ;
-
-domain_subject = qualified_attribute ;
-
-domain_constraint = interval_domain | finite_set_domain ;
-
-interval_domain = closed_closed_interval
-                | open_closed_interval
-                | closed_open_interval
-                | open_open_interval ;
-
-closed_closed_interval = "[", arithmetic_expression, ",", arithmetic_expression, "]" ;
-open_closed_interval   = "]", arithmetic_expression, ",", arithmetic_expression, "]" ;
-closed_open_interval   = "[", arithmetic_expression, ",", arithmetic_expression, "[" ;
-open_open_interval     = "]", arithmetic_expression, ",", arithmetic_expression, "[" ;
-
-finite_set_domain = "{", domain_literal,
-                    { ",", domain_literal }, "}" ;
-
-domain_literal = numeric_literal
-               | boolean_literal
-               | string_literal
-               | symbolic_literal ;
-```
-
-This grammar shape is normative at the language-design level. Exact Lark tokenization belongs to implementation work after documentation stabilization.
-
----
-
-## Target AST Shape
-
-The current raw `DomainNode(name, values)` representation is not sufficient.
-
-Target structure:
+Feature references inside bounds remain explicit. Without a constant named
+`margin`, this is invalid:
 
 ```text
-DomainNode(
-    entries=[
-        DomainEntryNode(
-            subject=AttributeNode(entity="x0", feature="a"),
-            constraint=IntervalDomainNode(
-                lower=ScalarExpressionNode(...),
-                upper=ScalarExpressionNode(...),
-                lower_boundary=CLOSED,
-                upper_boundary=CLOSED,
-            ),
-        ),
-        DomainEntryNode(
-            subject=AttributeNode(entity="x0", feature="b"),
-            constraint=FiniteSetDomainNode(
-                values=[
-                    SymbolLiteralNode("obj1"),
-                    SymbolLiteralNode("obj2"),
-                ]
-            ),
-        ),
-    ]
-)
+applicant.income: [margin - 1, margin + 1]
 ```
 
-Recommended node families:
+Write `applicant.margin` when referring to a feature.
+
+## Logical meaning
+
+Each interval becomes a conjunction of endpoint relations:
+
+```text
+point.age: ]18, 65]
+→ point.age > 18 ∧ point.age <= 65
+```
+
+Each finite set becomes a disjunction of equalities:
+
+```text
+point.level: {1, 2, 3}
+→ point.level == 1 ∨ point.level == 2 ∨ point.level == 3
+```
+
+Entries in one domain are conjoined.
+
+For a universal property, domain assumptions participate in counterexample
+search:
+
+```text
+Γdomain ∧ Γmodel ∧ ¬P
+```
+
+For an existential property, they participate in witness search:
+
+```text
+Γdomain ∧ Γmodel ∧ P
+```
+
+## Representation boundary
+
+The current compiler preserves domains as:
 
 ```text
 DomainNode
-DomainEntryNode
-DomainConstraintNode
-IntervalDomainNode
-FiniteSetDomainNode
-SymbolLiteralNode
-EnumBoundaryKind
+→ DomainIR with IntervalDomainIR / FiniteSetDomainIR
+→ provenanced AssumptionIR2 values
 ```
 
----
+Open/closed endpoint kinds and source ownership survive until assumption
+encoding. The language and IR remain backend-independent.
 
-## Semantic Validation Contract
+## V1 execution boundary
 
-For each domain entry, semantic validation must:
+The public numeric-affine routes support:
 
-1. verify that the subject is explicitly qualified;
-2. resolve the subject entity through the current symbol table;
-3. reject entities not declared by the scope;
-4. reject `target` as a subject;
-5. reject duplicate subjects;
-6. recursively validate and type interval-bound expressions;
-7. reject `target` in interval-bound expressions;
-8. reject literal-zero division;
-9. preserve open/closed boundary kinds;
-10. validate finite-set uniqueness;
-11. validate literal compatibility when schema information is available;
-12. classify arithmetic capability requirements;
-13. attach resolved entity, path, symbol, and type information for IR lowering.
+- finite numeric features;
+- numeric interval bounds in the affine scalar profile;
+- numeric finite sets encodable by Z3;
+- homogeneous point quantifiers;
+- domain provenance in reports.
 
----
+Accepted language outside the built-in V1 route includes symbolic/string
+categorical membership and any bound expression whose requirements exceed the
+affine capability profile. Those requests are rejected during qualification,
+not approximated.
 
-## IR1 Contract
+## Failure ownership
 
-`ScopeIR.domain` should hold a typed `DomainIR`, not a generic name/argument dictionary.
-
-Target structure:
-
-```text
-DomainIR(
-    constraints=(
-        IntervalConstraintIR(lower=ScalarIR(...), upper=ScalarIR(...), ...),
-        FiniteSetConstraintIR(...),
-    )
-)
-```
-
-IR1 preserves the structured domain and resolved feature bindings. It does not yet emit backend-specific solver expressions.
-
----
-
-## IR2 and Aggregation Contract
-
-Typed domain constraints become assumptions with provenance:
-
-```text
-AssumptionIR2(source=DOMAIN, formula=...)
-```
-
-Lowering rules:
-
-```text
-x0.a: [0.0, 3.0]
-```
-
-becomes:
-
-```text
-x0.a >= 0.0 AND x0.a <= 3.0
-```
-
-and:
-
-```text
-x0.b: {obj1, obj2}
-```
-
-becomes:
-
-```text
-x0.b == obj1 OR x0.b == obj2
-```
-
-Every emitted assumption must retain traceability to the original domain entry.
-
----
-
-## Expected Failure Boundaries
-
-| Invalid case | Expected boundary |
+| Failure | Boundary |
 |---|---|
-| missing colon | parser |
-| empty domain | parser |
-| empty finite set | parser |
-| malformed bracket sequence | parser |
-| implicit domain subject | parser or builder contract |
-| undeclared subject entity | semantic binding |
+| empty domain/set or malformed delimiters | parser |
+| implicit or unknown subject | semantic binding |
 | duplicate subject | semantic domain validation |
-| reversed interval | semantic domain validation |
-| empty open singleton interval | semantic domain validation |
-| feature/literal type mismatch | schema-aware semantic validation |
-| backend lacks categorical support | backend routing/capability boundary |
+| incompatible bound/member type | schema-aware semantic validation |
+| reversed or empty constant interval | semantic domain validation |
+| `target` in a subject or bound | semantic domain validation |
+| categorical or unsupported arithmetic requirement | route qualification |
 
----
+## Related pages
 
-## Valid Complete Example
-
-```toetra
-model := "demo.onnx"
-target := MyTarget
-
-[LOGIC]:
-forall x0
-    with domain(
-        x0.a: [0.0, 3.0],
-        x0.b: {obj1, obj2},
-        x0.c: ]0.0, 3.0],
-        x0.d: {0.0, 7.0},
-        x0.e: ]0.0, 3.0[
-    )
-    => target <= 7
-    using Z3
-```
-
-Meaning:
-
-```text
-For every valuation of x0 satisfying all five input-domain constraints,
-the model output MyTarget must be less than or equal to 7.
-```
-
----
-
-## Deferred Features
-
-The following features are intentionally deferred:
-
-- arbitrary standalone relational domain entries;
-- nonlinear interval-bound expressions beyond supported backend capabilities;
-- unions and intersections of named domains;
-- reusable domain declarations;
-- infinite bounds;
-- distributional domains;
-- conditional domain entries;
-- multi-variable quantification syntax;
-- backend-specific abstract domains.
-
-These extensions must build on the typed-domain artifact rather than reintroducing raw argument dictionaries.
-
----
-
-## Related Documents
-
+- [Language support levels](support-levels.md)
 - [Syntax](syntax.md)
-- [Grammar](grammar.md)
 - [Scopes](scopes.md)
-- [Quantified Variable Bindings](quantified-bindings.md)
-- [Examples](examples.md)
-- [Arithmetic Expressions](arithmetic-expressions.md)
+- [Arithmetic expressions](arithmetic-expressions.md)
+- [Specification constants](specification-constants.md)
+- [Typed domain IR1](../compiler/ir1-layer.md)
+- [Quantified domain contract](../contracts/quantified-domain-scalar-expressions.md)

@@ -1,441 +1,218 @@
-# Arithmetic Expressions
+# Arithmetic expressions
 
-> Status: Target contract accepted for documentation-first implementation  
-> Scope: Numeric expressions in assertions and interval bounds  
-> Priority: P0  
-> Audience: DSL users, compiler contributors, semantic validators, IR and backend authors
+> Status: Accepted syntax and semantics; affine built-in V1 execution
+> Scope: Numeric scalar expressions in assertions and interval bounds
+> Audience: users, semantic contributors, and backend authors
 
-## Purpose
+## Expression model
 
-Toetra arithmetic expressions allow users to express relations between model inputs, model outputs, and numeric constants without embedding backend-specific syntax.
+A comparison relates two scalar expressions:
+
+```text
+scalar expression
+comparison operator
+scalar expression
+```
 
 Examples:
 
 ```toetra
-x0.revenue - x0.cost >= 0
-2 * x0.a + x0.b <= target
-(target - x0.baseline) / 2 <= 7
+applicant.revenue - applicant.cost >= 0
+2 * applicant.income - applicant.debt <= target[applicant]
+target[candidate] - target[baseline] <= tolerance
 ```
 
-Arithmetic expressions may also appear as bounds of a typed numeric interval:
+The compiler preserves operand order and grouping as a structured tree. It does
+not flatten user arithmetic into text or backend-native expressions.
 
-```toetra
-with domain(
-    x0.a: [x0.b - 1.0, x0.b + 1.0]
-)
-```
-
-Arithmetic is a scalar-expression concern. Boolean operators continue to compose complete predicates.
-
----
-
-## Core Design Decision
-
-A comparison is generalized from:
-
-```text
-attribute comparison_operator constant
-```
-
-to:
-
-```text
-scalar_expression comparison_operator scalar_expression
-```
-
-Conceptually:
-
-```text
-ComparisonNode(
-    left: ScalarExpressionNode,
-    op: EnumComparisonOperator,
-    right: ScalarExpressionNode,
-)
-```
-
-This makes feature-to-feature, target-to-expression, and expression-to-expression relations first-class.
-
----
-
-## Expression Leaves
-
-A scalar expression may contain:
+## Leaves
 
 | Leaf | Example | Meaning |
 |---|---|---|
-| Numeric literal | `3`, `0.5` | Typed numeric literal. |
-| Specification constant | `max_risk`, `tolerance` | Immutable scalar declared in the header. |
-| Input feature | `x0.a`, `a` | Explicit or implicitly bound feature reference. |
-| Model output | `target` | Output declared by the program header. |
-| Parenthesized expression | `(x0.a + x0.b)` | Explicit grouping. |
+| numeric literal | `3`, `0.5` | integer or real scalar |
+| specification constant | `tolerance` | immutable header value |
+| explicit feature | `applicant.income` | feature of one visible point |
+| implicit feature | `income` | feature of the unique default point |
+| regression output | `target[applicant]` | scalar model evaluation |
+| class probability | `target[applicant].probability("yes")` | typed probability observable |
+| parentheses | `(a + b)` | explicit grouping |
 
-String and boolean literals or specification constants remain valid comparison operands for compatible equality checks, but they cannot participate in arithmetic operators.
+Booleans, strings, and predicted labels can participate in compatible equality
+comparisons but not arithmetic.
 
-```toetra
-x0.segment == "A"
-x0.enabled != false
-```
+## Operators and precedence
 
----
-
-## Operators
-
-| Operator | Meaning | Associativity |
+| Level | Operators | Associativity |
 |---|---|---|
-| unary `+` | Numeric identity | right |
-| unary `-` | Numeric negation | right |
-| `*` | Multiplication | left |
-| `/` | Division | left |
-| `+` | Addition | left |
-| `-` | Subtraction | left |
-
-The initial language does not include exponentiation, modulo, implicit multiplication, or arithmetic functions such as `abs`, `min`, `max`, `log`, and `exp`.
-
----
-
-## Precedence
-
-From strongest to weakest:
-
-```text
-parenthesized scalar expression
-unary + and -
-multiplication and division
-addition and subtraction
-comparison
-NOT
-AND
-OR
-logical implication
-```
+| strongest | parentheses | explicit |
+| unary | `+`, `-` | right |
+| multiplicative | `*`, `/` | left |
+| additive | `+`, `-` | left |
+| weakest scalar layer | comparisons | non-associative |
 
 Therefore:
 
 ```toetra
-x0.a + 2 * x0.b <= target
+a + 2 * b <= target
 ```
 
 means:
 
 ```text
-x0.a + (2 * x0.b) <= target
+a + (2 * b) <= target
 ```
 
-Comparison operators are not associative. Chained comparisons are rejected:
+Chained comparisons do not parse. Write:
 
 ```toetra
-0 <= x0.a <= 3
+0 <= applicant.score and applicant.score <= 1
 ```
 
-The equivalent valid assertion is:
+## Numeric typing
 
-```toetra
-0 <= x0.a AND x0.a <= 3
-```
-
----
-
-## Numeric Typing
-
-Arithmetic operators require numeric operands.
-
-Initial numeric types:
+Arithmetic operands must be numeric. With known schema types:
 
 ```text
-INT
-FLOAT
+INT op INT     → numeric
+INT op FLOAT   → FLOAT-compatible
+FLOAT op INT   → FLOAT-compatible
+FLOAT op FLOAT → FLOAT-compatible
+division       → real-compatible
 ```
 
-Expected promotion rule:
+Examples rejected by semantic typing:
 
 ```text
-INT operation INT     → INT, except division
-INT operation FLOAT   → FLOAT
-FLOAT operation INT   → FLOAT
-FLOAT operation FLOAT → FLOAT
-division              → numeric real-compatible result
+applicant.region + 1
+target[applicant].label * 2
 ```
 
-The semantic layer rejects arithmetic involving incompatible types:
+Ordering comparisons also require numeric operands. Equality and inequality
+require compatible scalar types.
 
-```toetra
-x0.segment + 1
-x0.enabled * 2
+## Arithmetic classification
+
+Semantic analysis classifies every numeric tree before backend selection:
+
+| Class | Examples | Built-in V1 |
+|---|---|---|
+| affine | `a + b`, `2 * a`, `a / 2` | supported |
+| nonlinear | `a * b` | capability-rejected |
+| symbolic division | `a / b` | capability-rejected |
+
+### Affine rules
+
+The public built-in route supports:
+
+- addition and subtraction;
+- unary plus and minus;
+- multiplication when at least one operand is a compile-time numeric constant;
+- division by a non-zero compile-time numeric constant.
+
+Specification constants count as compile-time constants after semantic
+resolution.
+
+### Constant division by zero
+
+```text
+a / 0
+a / (1 - 1)
 ```
 
-Ordering comparisons require compatible ordered types. Equality and inequality require compatible scalar types but do not require numeric operands.
+These are semantic errors. They do not reach capability routing.
 
----
+### Unsupported arithmetic is preserved
 
-## Initial Affine Verification Profile
-
-The AST and IR represent arithmetic structurally, but the first end-to-end verification profile is intentionally affine.
-
-Supported initially:
+For:
 
 ```toetra
-x0.a + x0.b
-x0.a - x0.b
--x0.a
-2 * x0.a
-x0.a * 2
-x0.a / 2
-2 * target - x0.a
+applicant.income * applicant.debt <= target[applicant]
 ```
 
-Rules:
+the language and semantic layers preserve a nonlinear requirement. The affine
+Z3 route rejects it. Toetra must not replace it with a bound, sample, tangent,
+or other approximation.
 
-- multiplication has at least one compile-time numeric constant operand, including a numeric specification constant;
-- division has a non-zero compile-time numeric constant denominator, including a numeric specification constant;
-- symbolic products such as `x0.a * x0.b` are outside the initial profile;
-- symbolic denominators such as `x0.a / x0.b` are outside the initial profile.
+## Domain bounds
 
-Unsupported forms must produce a precise capability diagnostic rather than being silently approximated.
-
-A constant zero denominator is always a semantic error:
+Arithmetic may appear in numeric interval bounds:
 
 ```toetra
-x0.a / 0
-```
+tolerance := 1000.0
 
----
-
-## Arithmetic in Assertions
-
-Arithmetic expressions may appear on either side of a comparison:
-
-```toetra
-x0.a + x0.b <= 7
-2 * target >= x0.a - 1
-0 <= target - x0.baseline
-```
-
-Boolean operators combine complete predicates:
-
-```toetra
-x0.a + x0.b <= 7 AND target - x0.baseline >= 0
-```
-
-This is invalid because a numeric expression is not itself a predicate:
-
-```toetra
-x0.a + x0.b AND target <= 7
-```
-
----
-
-## Arithmetic in Domain Bounds
-
-Numeric interval bounds may be arithmetic expressions:
-
-```toetra
-tolerance := 1.0
-minimum_b := 0.0
-maximum_b := 10.0
-
+[LOGIC]:
+forall baseline, candidate
 with domain(
-    x0.a: [x0.b - tolerance, x0.b + tolerance],
-    x0.b: [minimum_b, maximum_b]
+    baseline.income: [0.0, 100000.0],
+    candidate.income: [
+        baseline.income - tolerance,
+        baseline.income + tolerance
+    ]
 )
+=> target[candidate] <= target[baseline] + 0.02
 ```
 
-Normative rules:
+Domain-specific rules still apply:
 
-1. Every input-feature reference in a domain is explicitly qualified; bare specification constants are allowed.
-2. Referenced entities must be declared by the enclosing scope.
-3. `target` is not allowed in a domain bound.
-4. Bounds are simultaneous logical constraints, not assignments evaluated top to bottom.
-5. Finite-set members remain literals in this patch.
-6. Open and closed boundary semantics are preserved independently of bound expressions.
+- every feature reference is explicitly point-qualified;
+- bare names may resolve to specification constants, not implicit features;
+- `target` and classification observables are prohibited in domain bounds;
+- every bound must be numeric.
 
-The example lowers conceptually to:
+## Model output rules
 
-```text
-x0.a >= x0.b - 1.0
-AND x0.a <= x0.b + 1.0
-AND x0.b >= 0.0
-AND x0.b <= 10.0
-```
-
-Mutually dependent constraints are allowed because the domain is a conjunction, not an imperative computation.
-
----
-
-## Binding Rules
-
-In assertions, bare names resolve first to specification constants and then to implicit features:
+Scalar regression outputs may participate in affine arithmetic:
 
 ```toetra
-offset := 1
-
-[LOGIC]: forall x0 => a + offset <= target
+target[candidate] - target[baseline] <= 0.02
 ```
 
-`offset` resolves to the specification constant, while `a` resolves to `x0.a` because `x0` is the default entity.
+Predicted labels do not. Class probabilities are scalar observables, but the
+public binary V1 route supports only direct order comparisons against thresholds
+strictly inside `(0, 1)`; probability arithmetic is excluded by the public
+profile.
 
-In domains, references remain explicit:
+## Logical normalization
+
+A complete comparison is one logical atom:
 
 ```toetra
-with domain(
-    x0.a: [x0.b - 1, x0.b + 1]
-)
+not (applicant.income + applicant.savings <= target[applicant])
 ```
 
-The following is rejected when `b` is not a specification constant:
+NNF may negate or invert the comparison, but it does not distribute through,
+reorder, or approximate the scalar tree.
 
-```toetra
-with domain(
-    x0.a: [b - 1, b + 1]
-)
-```
+## Current representations
 
-A bare specification constant is valid:
-
-```toetra
-tolerance := 1
-
-with domain(
-    x0.a: [x0.b - tolerance, x0.b + tolerance]
-)
-```
-
-A mismatched entity is also rejected.
-
----
-
-## Target Reference Rules
-
-`target` is a scalar-expression leaf representing the model output declared in the header.
-
-It may appear alone or inside arithmetic assertions, on either side of a comparison:
-
-```toetra
-target <= 7
-target - x0.baseline <= 2
-2 * target >= x0.a + x0.b
-```
-
-It may not appear in an input domain.
-
----
-
-## AST Target Shape
+The as-built path uses:
 
 ```text
-ScalarExpressionNode
-├── ConstantNode
-├── AttributeNode
-├── TargetRefNode
-├── UnaryArithmeticNode
-│   ├── operator
-│   └── operand: ScalarExpressionNode
-└── BinaryArithmeticNode
-    ├── left: ScalarExpressionNode
-    ├── operator
-    └── right: ScalarExpressionNode
+ConstantNode / AttributeNode / TargetRefNode
+UnaryArithmeticNode / BinaryArithmeticNode
+→ scalar IR1 expression nodes
+→ arithmetic requirements in IR2
+→ capability-qualified backend translation
 ```
 
-Comparison becomes:
+Backend expressions never appear in the AST or IR1.
 
-```text
-ComparisonNode(
-    left=ScalarExpressionNode,
-    op=EnumComparisonOperator,
-    right=ScalarExpressionNode,
-)
-```
+## Failure ownership
 
-Recommended canonical enums:
-
-```text
-EnumArithmeticOperator.ADD
-EnumArithmeticOperator.SUB
-EnumArithmeticOperator.MUL
-EnumArithmeticOperator.DIV
-EnumUnaryArithmeticOperator.POS
-EnumUnaryArithmeticOperator.NEG
-```
-
-No solver object belongs in these AST nodes.
-
----
-
-## IR Target Shape
-
-IR1 preserves a backend-independent arithmetic tree:
-
-```text
-ScalarIR
-├── ConstantIR
-├── FeatureRefIR
-├── ModelOutputRefIR
-├── UnaryArithmeticIR
-└── BinaryArithmeticIR
-```
-
-and:
-
-```text
-ComparisonIR(
-    left: ScalarIR,
-    op: EnumComparisonOperator,
-    right: ScalarIR,
-)
-```
-
-Logical normalization treats `ComparisonIR` as one atomic predicate. NNF, CNF, and DNF passes do not distribute through arithmetic subexpressions.
-
-A later analysis may canonicalize eligible expressions into affine form, but user-authored arithmetic and model-generated assumptions retain distinct provenance.
-
----
-
-## Failure Boundaries
-
-| Failure | Expected boundary |
+| Failure | Boundary |
 |---|---|
-| malformed operator sequence | parser |
-| chained comparison | parser or AST contract |
-| numeric expression used as boolean | parser or semantic logic validation |
-| unbound explicit feature | semantic binding |
-| non-numeric arithmetic operand | semantic type validation |
-| `target` used in a domain | semantic domain validation |
-| division by literal zero | semantic arithmetic validation |
-| unsupported nonlinear requirement | requirements/capability routing |
-| backend cannot encode a valid expression | backend compilation |
+| malformed operator sequence or chained comparison | parser |
+| unknown explicit point/feature | semantic binding/schema validation |
+| non-numeric operand | semantic scalar typing |
+| constant zero denominator | semantic scalar typing |
+| nonlinear or symbolic-division requirement | route qualification |
+| qualified expression cannot be translated | backend adapter |
 
----
+## Related pages
 
-## Required Golden Cases
-
-Valid:
-
-```toetra
-x0.a + x0.b <= 7
-2 * x0.a - 3 * x0.b >= target
--(x0.a - x0.b) <= 1
-x0.a / 2 <= target
-x0.a: [x0.b - 1, x0.b + 1]
-```
-
-Invalid or unsupported:
-
-```toetra
-0 <= x0.a <= 3
-x0.segment + 1 <= 2
-x0.a / 0 <= 1
-x0.a: [target - 1, target + 1]
-x0.a * x0.b <= 5
-```
-
----
-
-## Related Documents
-
+- [Language support levels](support-levels.md)
 - [Assertions](assertions.md)
 - [Domains](domains.md)
-- [Grammar](grammar.md)
-- [Syntax](syntax.md)
-- [AST Contract](../contracts/ast-contract.md)
-- [AST to Semantic Contract](../contracts/ast-to-semantic.md)
-- [Semantic to IR1 Contract](../contracts/semantic-to-ir1.md)
-- [Z3 Backend](../backends/z3.md)
+- [Model output observables](model-output-observables.md)
+- [Scalar-expression contract](../contracts/quantified-domain-scalar-expressions.md)
+- [Backend capabilities](../backends/capabilities.md)

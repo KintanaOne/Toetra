@@ -7,7 +7,8 @@
 
 ## Purpose
 
-This document defines the target Toetra language for properties that use one or more input points and one or more evaluations of the same model.
+This document defines the current Toetra language for properties that use one or
+more input points and one or more evaluations of the same model.
 
 The core model is:
 
@@ -263,7 +264,7 @@ exists x1
 
 ### Shadowing
 
-Shadowing is invalid in the V1 target language:
+Shadowing is invalid in the V1 language:
 
 ```toetra
 forall x0
@@ -678,7 +679,7 @@ where x0.age != x1.age
 
 Pairwise does not imply universal or existential quantification by itself. The source quantifier determines result interpretation.
 
-The provisional `x ~ x'` syntax is not the target core form.
+The provisional `x ~ x'` syntax is not part of the supported core form.
 
 ## Quantifier capability profile
 
@@ -861,14 +862,15 @@ forall x0
 
 Invalid because `x1` is not visible.
 
-### Provisional pair syntax as target core
+### Provisional pair syntax
 
 ```toetra
 x ~ x'
 => ...
 ```
 
-Not part of the normative target core. A migration layer may reject it or lower a supported legacy subset explicitly.
+Not part of the supported core. The semantic migration layer rejects it with a
+targeted diagnostic.
 
 ## Non-goals of this language slice
 
