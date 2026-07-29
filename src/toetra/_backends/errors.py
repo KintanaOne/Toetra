@@ -25,6 +25,10 @@ class BackendTranslationError(BackendError):
     """Raised when an IR task cannot be translated soundly."""
 
 
+class BackendExecutionPolicyError(BackendError, ValueError):
+    """Raised when backend-specific execution options violate the policy."""
+
+
 class UnsupportedBackendRequirementsError(BackendTranslationError):
     """Raised when direct translation bypasses routing capability checks."""
 

@@ -9,6 +9,7 @@ import z3 as z3_solver
 
 from toetra._backends.capabilities import BackendCapabilities
 from toetra._backends.errors import (
+    BackendTranslationError,
     BackendSymbolCollisionError,
     UnsupportedBackendRequirementsError,
     UnsupportedScalarExpressionError,
@@ -179,7 +180,9 @@ class Z3Translator:
                 _bool_and(self._translate_literal(literal) for literal in term.literals)
                 for term in formula.terms
             )
-        raise TypeError(f"Unsupported IR2 formula: {type(formula).__name__}")
+        raise BackendTranslationError(
+            f"Unsupported IR2 formula: {type(formula).__name__}"
+        )
 
     def _translate_logical(self, node: LogicalIR) -> z3_solver.BoolRef:
         if isinstance(node, ComparisonIR):
@@ -189,14 +192,18 @@ class Z3Translator:
         if isinstance(node, AffineModelQuantityConstraintIR2):
             return self._translate_affine_model_quantity_constraint(node)
         if isinstance(node, ProblemIR):
-            raise NotImplementedError("ProblemIR is not supported by the Z3 backend.")
+            raise UnsupportedBackendRequirementsError(
+                "ProblemIR is not supported by the Z3 backend."
+            )
         if isinstance(node, AndIR):
             return _bool_and(self._translate_logical(op) for op in node.operands)
         if isinstance(node, OrIR):
             return _bool_or(self._translate_logical(op) for op in node.operands)
         if isinstance(node, NotIR):
             return _bool_not(self._translate_logical(node.operand))
-        raise TypeError(f"Unsupported logical IR node: {type(node).__name__}")
+        raise BackendTranslationError(
+            f"Unsupported logical IR node: {type(node).__name__}"
+        )
 
     def _translate_literal(self, literal: LiteralIR2) -> z3_solver.BoolRef:
         atom = self._translate_atom(literal.atom)
@@ -204,7 +211,9 @@ class Z3Translator:
             return atom
         if literal.polarity == Polarity.NEGATIVE:
             return _bool_not(atom)
-        raise ValueError(f"Unsupported literal polarity: {literal.polarity}")
+        raise BackendTranslationError(
+            f"Unsupported literal polarity: {literal.polarity}"
+        )
 
     def _translate_atom(self, atom: AtomIR2) -> z3_solver.BoolRef:
         if isinstance(atom, ComparisonIR):
@@ -214,8 +223,10 @@ class Z3Translator:
         if isinstance(atom, AffineModelQuantityConstraintIR2):
             return self._translate_affine_model_quantity_constraint(atom)
         if isinstance(atom, ProblemIR):
-            raise NotImplementedError("ProblemIR is not supported by the Z3 backend.")
-        raise TypeError(f"Unsupported atom: {type(atom).__name__}")
+            raise UnsupportedBackendRequirementsError(
+                "ProblemIR is not supported by the Z3 backend."
+            )
+        raise BackendTranslationError(f"Unsupported atom: {type(atom).__name__}")
 
     def _translate_comparison(self, atom: ComparisonIR) -> z3_solver.BoolRef:
         return self._apply_operator(
@@ -258,7 +269,7 @@ class Z3Translator:
             )
         if isinstance(expression, BinaryArithmeticExpressionIR):
             return self._translate_binary_arithmetic(expression)
-        raise TypeError(
+        raise BackendTranslationError(
             f"Unsupported scalar IR expression: {type(expression).__name__}"
         )
 
@@ -461,7 +472,9 @@ class Z3Translator:
                 for literal in term.literals:
                     yield literal.atom
             return
-        raise TypeError(f"Unsupported IR2 formula: {type(formula).__name__}")
+        raise BackendTranslationError(
+            f"Unsupported IR2 formula: {type(formula).__name__}"
+        )
 
     def _iter_logical_atoms(self, node: LogicalIR) -> Iterator[AtomIR2]:
         if isinstance(
@@ -482,7 +495,9 @@ class Z3Translator:
         if isinstance(node, NotIR):
             yield from self._iter_logical_atoms(node.operand)
             return
-        raise TypeError(f"Unsupported logical IR node: {type(node).__name__}")
+        raise BackendTranslationError(
+            f"Unsupported logical IR node: {type(node).__name__}"
+        )
 
     def _iter_scalar_tree(
         self,
@@ -667,4 +682,4 @@ class Z3Translator:
             return cast(z3_solver.BoolRef, left > right)
         if op == EnumComparisonOperator.GTE:
             return cast(z3_solver.BoolRef, left >= right)
-        raise ValueError(f"Unsupported comparison operator: {op}")
+        raise BackendTranslationError(f"Unsupported comparison operator: {op}")

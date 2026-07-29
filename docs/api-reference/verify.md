@@ -125,10 +125,10 @@ Common call-time failures include:
 | `ReplayUnavailableError` | Formal evidence cannot be replayed completely |
 
 The public workflow normalizes compiler, specification, model-artifact,
-model-encoder, model-semantic, numeric-compatibility, and backend-routing
-failures. Backend translation and execution normalization remains a later P26
-step. Unexpected implementation exceptions are not relabeled as invalid user
-input, and no failure is converted into an inconclusive logical status.
+model-encoder, model-semantic, numeric-compatibility, backend-routing,
+backend-runner, translation, execution-policy, and technical execution
+failures. Unexpected implementation exceptions are not relabeled as invalid
+user input, and no failure is converted into an inconclusive logical status.
 
 ## Advanced injection hooks
 

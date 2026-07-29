@@ -12,7 +12,12 @@ from toetra._backends.diagnostics import (
     BackendDiagnosticSeverity,
     BackendResultDiagnostic,
 )
-from toetra._backends.errors import BackendExecutionError
+from toetra._backends.errors import (
+    BackendExecutionError,
+    BackendExecutionPolicyError,
+    BackendSymbolCollisionError,
+    UnsupportedBackendRequirementsError,
+)
 from toetra._backends.execution import (
     BackendExecutionEvidence,
     BackendExecutionPolicy,
@@ -265,25 +270,41 @@ class Z3Runner:
     ) -> None:
         if not hasattr(solver, "set"):
             return
-        remaining_timeout_ms = budget.remaining_timeout_ms()
-        if remaining_timeout_ms is not None:
-            solver.set(timeout=remaining_timeout_ms)
-        if policy.resources.max_backend_units is not None:
-            solver.set(rlimit=policy.resources.max_backend_units)
-        if policy.resources.max_memory_mb is not None:
-            solver.set(max_memory=policy.resources.max_memory_mb)
-        if policy.deterministic_seed is not None:
-            solver.set(random_seed=policy.deterministic_seed)
 
         reserved = _RESERVED_Z3_OPTIONS.intersection(policy.backend_options)
         if reserved:
             names = ", ".join(sorted(reserved))
-            raise ValueError(
+            raise BackendExecutionPolicyError(
                 "Z3 backend options must not override generic execution policy "
                 f"fields: {names}"
             )
-        if policy.backend_options:
-            solver.set(**dict(policy.backend_options))
+        if hasattr(solver, "param_descrs"):
+            descriptors = solver.param_descrs()
+            supported_options = {
+                str(descriptors.get_name(index)) for index in range(descriptors.size())
+            }
+            unsupported = set(policy.backend_options) - supported_options
+            if unsupported:
+                names = ", ".join(sorted(unsupported))
+                raise BackendExecutionPolicyError(
+                    f"Z3 does not recognize backend options: {names}"
+                )
+        try:
+            remaining_timeout_ms = budget.remaining_timeout_ms()
+            if remaining_timeout_ms is not None:
+                solver.set(timeout=remaining_timeout_ms)
+            if policy.resources.max_backend_units is not None:
+                solver.set(rlimit=policy.resources.max_backend_units)
+            if policy.resources.max_memory_mb is not None:
+                solver.set(max_memory=policy.resources.max_memory_mb)
+            if policy.deterministic_seed is not None:
+                solver.set(random_seed=policy.deterministic_seed)
+            if policy.backend_options:
+                solver.set(**dict(policy.backend_options))
+        except z3.Z3Exception as error:
+            raise BackendExecutionPolicyError(
+                f"Z3 rejected the backend execution policy: {error}"
+            ) from error
 
     def _inconclusive_result(
         self,
@@ -396,7 +417,7 @@ class Z3Runner:
                 model_output_count=model_output_count,
             )
             if assignment_name in assignments:
-                raise RuntimeError(
+                raise BackendSymbolCollisionError(
                     "Z3 assignment display-name collision for " f"{assignment_name!r}."
                 )
             assignments[assignment_name] = model.eval(
@@ -528,7 +549,9 @@ class Z3Runner:
             return VerificationStatus.COUNTEREXAMPLE
         if semantics is VerificationSemantics.SATISFACTION:
             return VerificationStatus.WITNESS
-        raise ValueError(f"Unsupported verification semantics: {semantics}")
+        raise UnsupportedBackendRequirementsError(
+            f"Unsupported verification semantics: {semantics}"
+        )
 
     @staticmethod
     def _status_for_unsat(
@@ -538,4 +561,6 @@ class Z3Runner:
             return VerificationStatus.PROVED
         if semantics is VerificationSemantics.SATISFACTION:
             return VerificationStatus.NO_WITNESS
-        raise ValueError(f"Unsupported verification semantics: {semantics}")
+        raise UnsupportedBackendRequirementsError(
+            f"Unsupported verification semantics: {semantics}"
+        )

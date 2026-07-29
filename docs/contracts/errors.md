@@ -135,8 +135,30 @@ numeric route therefore does not masquerade as a generic backend-capability
 failure.
 
 Unexpected exceptions outside these owned families remain implementation
-failures and are not relabeled as user input. Backend translation, runner, and
-execution failures remain owned by later P26 steps.
+failures and are not relabeled as user input.
+
+---
+
+## Implemented backend execution normalization
+
+P26.4 completes the public backend boundary without changing logical result
+semantics:
+
+| Internal owner | Public class from `verify(...)` | `stage` | Stable codes |
+|---|---|---|---|
+| runner registry | `VerificationRuntimeError` | `backend` | `BACKEND_RUNNER_NOT_REGISTERED` |
+| backend translation | `VerificationRuntimeError` | `backend` | `BACKEND_TRANSLATION_REQUIREMENTS_UNSUPPORTED`, `BACKEND_SCALAR_EXPRESSION_UNSUPPORTED`, `BACKEND_SYMBOL_COLLISION`, `BACKEND_TRANSLATION_FAILED` |
+| backend execution policy | `VerificationConfigurationError` | `backend` | `BACKEND_EXECUTION_POLICY_INVALID` |
+| technical backend execution | `VerificationRuntimeError` | `backend` | `BACKEND_EXECUTION_FAILED` |
+
+The backend adapter raises its own structured private errors. `verify(...)`
+translates only those owned families and preserves them through `__cause__`.
+An arbitrary exception from a custom runner remains an implementation failure
+instead of being mislabeled.
+
+Timeout, resource exhaustion, cancellation, and solver `unknown` remain
+inconclusive logical results with separate `BackendExecutionEvidence`. A
+technical adapter exception remains an exception and never becomes `UNKNOWN`.
 
 ---
 
