@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -147,6 +149,28 @@ def main() -> int:
             cwd=root,
             env=clean_environment,
         )
+        quickstart = root / "verify_model.py"
+        report = root / "quickstart-report.json"
+        shutil.copy2(
+            repository_root / "demo" / "quickstart" / "verify_model.py",
+            quickstart,
+        )
+        subprocess.run(
+            [
+                str(python),
+                "-I",
+                str(quickstart),
+                "--demo",
+                "--json-output",
+                str(report),
+            ],
+            check=True,
+            cwd=root,
+            env=clean_environment,
+        )
+        payload = json.loads(report.read_text(encoding="utf-8"))
+        assert payload["schema"] == "toetra.verification-report-collection"
+        assert payload["schema_version"] == 6
     return 0
 
 

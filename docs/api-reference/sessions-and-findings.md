@@ -112,6 +112,10 @@ html = session.to_html()
 html_path = session.write_html("artifacts/report.html")
 ```
 
+`session.print()` preserves the rich Unicode terminal rendering when the
+destination supports it and automatically uses the equivalent ASCII rendering
+for legacy streams such as Windows `cp1252` consoles.
+
 `to_dict()`, `to_json()` and `write_json()` use the versioned report-collection
 contract. `to_records()` instead returns one flat summary record per property
 for tabular analysis; multi-point input and output evidence remains grouped in

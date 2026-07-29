@@ -76,6 +76,9 @@ def test_release_probe_exercises_binary_classification() -> None:
     assert 'find_spec("dsl") is None' in probe
     assert 'find_spec("model") is None' in probe
     assert "target := risk_score" in probe
+    assert '"demo" / "quickstart" / "verify_model.py"' in probe
+    assert '"quickstart-report.json"' in probe
+    assert '"toetra.verification-report-collection"' in probe
     assert "demo-quickstart" in makefile
     assert "demo-regression" in makefile
     assert "demo-classification" in makefile

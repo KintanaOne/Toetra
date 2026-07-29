@@ -35,7 +35,10 @@ Every change must keep green:
 - JSON schema v2 and renderer goldens;
 - grouped replay against the real sklearn model;
 - stable legacy migration diagnostics;
-- notebook hygiene and executable credit-risk workflow.
+- notebook hygiene and both public notebook workflows from the repository root
+  and each notebook directory;
+- a quickstart copied and executed outside the repository with an isolated
+  Python path.
 
 ## CI
 

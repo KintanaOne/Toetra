@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from io import StringIO
+from io import BytesIO, StringIO, TextIOWrapper
 
 from toetra._backends.results import VerificationStatus
 from toetra._runtime.api import verify
@@ -81,3 +81,18 @@ def test_session_renders_and_serializes_report_collection(tmp_path) -> None:
     html_output = session.write_html(tmp_path / "reports" / "verification.html")
     assert html_output.is_file()
     assert html_output.read_text(encoding="utf-8").startswith("<!doctype html>")
+
+
+def test_session_print_falls_back_to_ascii_for_legacy_windows_stream() -> None:
+    session = verify(_SOURCE, schema=_schema())
+    buffer = BytesIO()
+    stream = TextIOWrapper(buffer, encoding="cp1252")
+
+    session.print(file=stream)
+    stream.flush()
+    rendered = buffer.getvalue().decode("cp1252")
+
+    assert "Toetra Verification Report" in rendered
+    assert "PASS PROVED" in rendered
+    assert "=" * 80 in rendered
+    assert "━" not in rendered

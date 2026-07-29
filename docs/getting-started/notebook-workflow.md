@@ -1,6 +1,6 @@
 # Notebook Model-Review Workflow
 
-> Status: Implemented  
+> Status: Implemented
 > Scope: Public `toetra.verify(...)` API, rich reports and automatic replay
 
 ## Purpose
@@ -22,6 +22,12 @@ The executable example is:
 ```text
 demo/regression/credit_risk_validation.ipynb
 ```
+
+Repository notebooks are supported when Jupyter is launched from either the
+repository root or the notebook's own directory. Both launch locations execute
+in the end-to-end suite. The bootstrap is only for source-checkout examples;
+normal notebooks using an installed Toetra distribution need only import
+`toetra`.
 
 ## Minimal notebook usage
 

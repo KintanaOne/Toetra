@@ -65,7 +65,10 @@ execution failures while preserving timeout, resource, cancellation, and
 solver-unknown outcomes as reportable `UNKNOWN` results. P26.5 aligns terminal
 text, HTML/Jupyter, records/DataFrame, and JSON v6 around one conclusion,
 execution context, numeric trust boundary, evidence, provenance, and diagnostic
-contract without changing JSON v6.
+contract without changing JSON v6. P26.6 makes the public quickstart copyable
+outside the repository, executes it against the clean-installed wheel, and
+verifies both public notebooks from the repository root and their own
+directories. P26 is complete.
 
 ### P27 — Release readiness
 

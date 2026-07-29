@@ -18,8 +18,9 @@ A release candidate must satisfy all of the following:
 8. the wheel contains no repository-only `tests`, `docs`, `demo` or workflow trees;
 9. the wheel installs in a clean virtual environment outside the checkout;
 10. the exact `toetra.__all__` V1 facade imports successfully and obsolete top-level namespaces are absent;
-11. the review bundle contains every critical V1 artifact;
-12. two review-bundle builds produce identical bytes.
+11. the standalone public quickstart runs after being copied into that clean environment;
+12. the review bundle contains every critical V1 artifact;
+13. two review-bundle builds produce identical bytes.
 
 ## Commands
 
@@ -55,7 +56,7 @@ Critical paths include:
 - the public `toetra` package and packaged example policy;
 - the CI workflow and packaging metadata;
 - the EBNF source and generated Lark grammar;
-- the canonical notebook;
+- the canonical public notebooks and their supported launch locations;
 - classification and regression CSV fixtures used by ModelBridge tests.
 
 The generator may exclude caches, build outputs, virtual environments and serialized model binaries. It must never claim completeness when a critical path is absent.

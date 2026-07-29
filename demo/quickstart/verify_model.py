@@ -5,10 +5,50 @@ from collections.abc import Sequence
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from demo.regression.affine_regression import build_demo_artifacts
+import joblib
+import pandas as pd
+from sklearn.linear_model import LinearRegression
+
 from toetra import VerificationConfigurationError, VerificationSession, verify
 
-DEMO_SPEC_PATH = Path(__file__).with_name("verification_policy.toetra")
+DEMO_POLICY = """\
+model := "affine_score.joblib"
+target := score
+
+minimum_a := 0.0
+maximum_a := 3.0
+maximum_score := 7.0
+witness_score := 5.0
+
+[BOUND]:
+forall x0
+    with domain(x0.a: [minimum_a, maximum_a])
+    => target <= maximum_score
+    using Z3
+
+[LOGIC]:
+exists x0
+    with domain(x0.a: [minimum_a, maximum_a])
+    => target == witness_score
+    using Z3
+"""
+
+
+def build_demo_artifacts(directory: Path) -> tuple[Path, Path]:
+    """Build the tiny public-API example without repository-local imports."""
+
+    frame = pd.DataFrame(
+        {
+            "a": [0.0, 1.0, 2.0, 3.0],
+            "score": [1.0, 3.0, 5.0, 7.0],
+        }
+    )
+    model = LinearRegression().fit(frame[["a"]], frame["score"])
+    model_path = directory / "affine_score.joblib"
+    dataset_path = directory / "affine_score.csv"
+    joblib.dump(model, model_path)
+    frame.to_csv(dataset_path, index=False)
+    return model_path, dataset_path
 
 
 def run_verification(
@@ -43,7 +83,7 @@ def run_self_contained_demo(
     with TemporaryDirectory(prefix="toetra-user-demo-") as raw_directory:
         model_path, dataset_path = build_demo_artifacts(Path(raw_directory))
         return run_verification(
-            DEMO_SPEC_PATH,
+            DEMO_POLICY,
             model=model_path,
             dataset=dataset_path,
             json_output=json_output,
@@ -65,7 +105,7 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help=(
             "Run a self-contained example that trains a temporary affine model "
-            "and uses demo/quickstart/verification_policy.toetra."
+            "and verifies an embedded Toetra policy."
         ),
     )
     parser.add_argument(

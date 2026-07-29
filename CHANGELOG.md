@@ -4,6 +4,9 @@
 
 ### Changed
 
+- Made the public quickstart independently copyable outside the repository,
+  added clean-wheel execution of that copied script, and verified both public
+  notebooks from the repository root and their own directories.
 - Aligned terminal text, HTML/Jupyter, records/DataFrame, and JSON v6 reporting
   around the same logical conclusion, backend-execution context, numeric trust
   boundary, evidence, provenance, and diagnostics without changing the JSON
@@ -64,6 +67,8 @@
 
 ### Fixed
 
+- Prevented `session.print()` and the copied quickstart from failing on legacy
+  Windows console encodings by selecting the equivalent ASCII report rendering.
 - Removed an exact duplicate NNF end-to-end test and corrected misspelled
   mutation-module filenames.
 - Tightened the public-facade and former-identity repository contracts.
