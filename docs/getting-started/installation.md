@@ -30,8 +30,9 @@ make review-bundle-check
 ```
 
 The distribution gate builds reproducible artifacts, installs the wheel outside
-the checkout, and executes both import and binary-classification public-API
-probes.
+the checkout, executes import and binary-classification public-API probes, then
+copies the standalone quickstart into the clean environment and runs it without
+the source repository on the import path.
 
 ```python
 from toetra import verify, VerificationSession, VerificationStatus

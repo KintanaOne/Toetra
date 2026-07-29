@@ -5,10 +5,14 @@ import subprocess
 import sys
 import textwrap
 
+import pytest
+
 from demo.classification.binary_classification_policy import (
     EXPECTED_STATUSES,
     run_demo,
 )
+
+REPOSITORY_ROOT = Path(__file__).parents[3]
 
 
 def test_binary_classification_demo_runs_reports_and_replay(tmp_path: Path) -> None:
@@ -33,7 +37,14 @@ NOTEBOOK_PATH = (
 )
 
 
-def test_binary_classification_notebook_executes_from_notebook_directory() -> None:
+@pytest.mark.parametrize(
+    "launch_directory",
+    (NOTEBOOK_PATH.parent, REPOSITORY_ROOT),
+    ids=("notebook-directory", "repository-root"),
+)
+def test_binary_classification_notebook_executes_from_supported_launch_directories(
+    launch_directory: Path,
+) -> None:
     script = textwrap.dedent(f"""
         import json
         from pathlib import Path
@@ -56,7 +67,7 @@ def test_binary_classification_notebook_executes_from_notebook_directory() -> No
         """)
     completed = subprocess.run(
         [sys.executable, "-I", "-c", script],
-        cwd=NOTEBOOK_PATH.parent,
+        cwd=launch_directory,
         capture_output=True,
         text=True,
         timeout=120,

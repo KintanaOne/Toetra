@@ -6,10 +6,13 @@ import sys
 
 import joblib
 import pandas as pd
+import pytest
 from sklearn.linear_model import LinearRegression
 
 from toetra import VerificationStatus, verify
 from toetra.examples import credit_risk_policy
+
+REPOSITORY_ROOT = Path(__file__).parents[3]
 
 
 def test_credit_risk_notebook_workflow_runs_and_replays_counterexample(
@@ -68,7 +71,14 @@ NOTEBOOK_PATH = (
 )
 
 
-def test_credit_risk_notebook_executes_from_notebook_directory() -> None:
+@pytest.mark.parametrize(
+    "launch_directory",
+    (NOTEBOOK_PATH.parent, REPOSITORY_ROOT),
+    ids=("notebook-directory", "repository-root"),
+)
+def test_credit_risk_notebook_executes_from_supported_launch_directories(
+    launch_directory: Path,
+) -> None:
     script = f"""
 import json
 from pathlib import Path
@@ -95,7 +105,7 @@ print(\"NOTEBOOK_EXECUTION_OK\")
 
     completed = subprocess.run(
         [sys.executable, "-I", "-c", script],
-        cwd=NOTEBOOK_PATH.parent,
+        cwd=launch_directory,
         check=False,
         capture_output=True,
         text=True,

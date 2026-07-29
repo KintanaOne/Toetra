@@ -80,6 +80,8 @@ The following are no longer open:
   stable diagnostic codes, owning stages, optional context, and chained causes;
 - cross-format reporting of logical conclusions, execution context, numeric
   trust, evidence, provenance, and diagnostics while retaining JSON v6;
+- standalone first use from a copied quickstart and repository-notebook launch
+  behavior from the root or notebook directory;
 - ownership boundaries for model families, framework adapters, and backends;
 - canonical, CI-checked public documentation snippets.
 

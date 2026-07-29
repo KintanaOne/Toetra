@@ -15,13 +15,21 @@ with a supported fitted model, reference dataset, and `.toetra` policy.
 ## Fastest path
 
 ```bash
-python -m pip install -r requirements-dev.txt
+python -m pip install .
 make demo-quickstart
 ```
 
-The quickstart exercises the public regression route. The classification demo
-covers label proof, counterexample replay, probability witnessing, and pairwise
-label equality:
+The quickstart exercises the public regression route. Its single Python file
+can also be copied outside the checkout after installation:
+
+```bash
+cp demo/quickstart/verify_model.py /tmp/toetra-quickstart.py
+cd /tmp
+python toetra-quickstart.py --demo
+```
+
+The classification demo covers label proof, counterexample replay, probability
+witnessing, and pairwise label equality:
 
 ```bash
 make demo-classification

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 from collections.abc import Iterable, Iterator, Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, TextIO, overload
@@ -63,6 +63,35 @@ def _unique_group_values(
     if grouped:
         return dict(next(iter(grouped.values())))
     return {}
+
+
+def _stream_accepts_text(stream: TextIO, text: str) -> bool:
+    """Return whether the stream's declared encoding can represent the text."""
+
+    encoding = getattr(stream, "encoding", None)
+    if not encoding:
+        return True
+
+    try:
+        text.encode(encoding)
+    except (LookupError, UnicodeEncodeError):
+        return False
+    return True
+
+
+def _escape_text_for_stream(stream: TextIO, text: str) -> str:
+    """Escape residual characters unsupported by a legacy text stream."""
+
+    encoding = getattr(stream, "encoding", None)
+    if not encoding:
+        return text
+    try:
+        return text.encode(
+            encoding,
+            errors="backslashreplace",
+        ).decode(encoding)
+    except LookupError:
+        return text
 
 
 @dataclass(frozen=True)
@@ -420,7 +449,15 @@ class VerificationSession(Sequence[VerificationExecution]):
         """Print all reports to stdout or another text stream."""
 
         destination = file or sys.stdout
-        print(self.to_text(options=options), file=destination)
+        rendered = self.to_text(options=options)
+        if not _stream_accepts_text(destination, rendered):
+            resolved_options = options or TextRenderOptions()
+            rendered = self.to_text(
+                options=replace(resolved_options, use_unicode=False),
+            )
+            if not _stream_accepts_text(destination, rendered):
+                rendered = _escape_text_for_stream(destination, rendered)
+        print(rendered, file=destination)
 
     def to_dict(self) -> dict[str, Any]:
         """Return the stable JSON-ready report collection."""

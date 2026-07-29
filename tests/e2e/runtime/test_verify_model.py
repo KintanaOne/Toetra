@@ -1,8 +1,19 @@
 from __future__ import annotations
 
-from demo.regression.affine_regression import build_demo_artifacts
-from demo.quickstart.verify_model import main, run_verification
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+
+from demo.quickstart.verify_model import (
+    build_demo_artifacts,
+    main,
+    run_verification,
+)
 from toetra._backends.results import VerificationStatus
+
+QUICKSTART_PATH = Path(__file__).parents[3] / "demo" / "quickstart" / "verify_model.py"
 
 
 def test_verify_model_runs_public_api_and_writes_json(tmp_path, capsys) -> None:
@@ -51,3 +62,32 @@ def test_verify_model_demo_mode_runs_without_external_files(tmp_path, capsys) ->
     assert "JSON report written to" in captured
     assert report_path.is_file()
     assert exit_code == 0
+
+
+def test_quickstart_script_runs_after_copy_outside_repository(tmp_path) -> None:
+    copied_script = tmp_path / "verify_model.py"
+    report_path = tmp_path / "artifacts" / "verification.json"
+    shutil.copy2(QUICKSTART_PATH, copied_script)
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-I",
+            str(copied_script),
+            "--demo",
+            "--json-output",
+            str(report_path),
+        ],
+        cwd=tmp_path,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=120,
+        env={**os.environ, "PYTHONIOENCODING": "cp1252"},
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert "Toetra Verification Report" in completed.stdout
+    assert "PROVED" in completed.stdout
+    assert "WITNESS" in completed.stdout
+    assert report_path.is_file()

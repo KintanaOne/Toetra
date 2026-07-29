@@ -26,9 +26,22 @@ python -m demo.quickstart.verify_model --demo \
     --json-output artifacts/toetra-report.json
 ```
 
-The demo trains a temporary affine model and executes
-`demo/quickstart/verification_policy.toetra`. Generated model and dataset files are
-deleted automatically.
+The demo trains a temporary affine model and executes an embedded copy of
+`demo/quickstart/verification_policy.toetra`. Generated model and dataset files
+are deleted automatically.
+
+The Python file is intentionally standalone. After Toetra is installed, it can
+be copied to any directory and run without the repository or the adjacent
+policy file:
+
+```bash
+cp demo/quickstart/verify_model.py /tmp/toetra-quickstart.py
+cd /tmp
+python toetra-quickstart.py --demo
+```
+
+Its imports are limited to the public `toetra` facade and declared runtime
+dependencies. The clean-wheel release probe executes this copied-file scenario.
 
 For an existing project, provide paths from your repository:
 
@@ -156,6 +169,10 @@ The matching notebook is:
 ```text
 demo/classification/binary_classification_policy.ipynb
 ```
+
+Both public notebooks are tested when launched from their own directory and
+from the repository root. Their source-checkout bootstrap does not depend on
+the shell's original import path.
 
 ### Cleveland heart-disease workspace
 
