@@ -3,7 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from toetra._backends.capabilities import BackendCapabilities
-from toetra._backends.errors import BackendNotRegisteredError, NoCompatibleBackendError
+from toetra._backends.errors import (
+    BackendNotRegisteredError,
+    NoCompatibleBackendError,
+    NumericCompatibilityRouteError,
+)
 from toetra._backends.execution import BackendExecutionPolicy
 from toetra._backends.registry import BackendRegistry
 from toetra._compatibility.defaults import create_default_numeric_compatibility_registry
@@ -99,7 +103,7 @@ class BackendRouter:
         )
         if assessment is not None and not assessment.is_executable:
             details = "; ".join(assessment.diagnostics) or assessment.summary
-            raise NoCompatibleBackendError(
+            raise NumericCompatibilityRouteError(
                 f"Requested backend '{backend.value}' has no executable numeric "
                 f"compatibility route: {details}"
             )
@@ -122,6 +126,8 @@ class BackendRouter:
         execution_policy: BackendExecutionPolicy,
     ) -> BackendRoute:
         rejected: list[str] = []
+        capability_rejected = False
+        compatibility_rejected = False
         for capabilities in self.registry.all():
             incompatibilities = capabilities.incompatibilities(task.requirements)
             execution_incompatibilities = (
@@ -131,6 +137,7 @@ class BackendRouter:
                 f"execution policy: {item}" for item in execution_incompatibilities
             )
             if incompatibilities:
+                capability_rejected = True
                 rejected.append(
                     f"{capabilities.backend.value}: " + "; ".join(incompatibilities)
                 )
@@ -140,6 +147,7 @@ class BackendRouter:
                 task, capabilities, numeric_compatibility_context
             )
             if assessment is not None and not assessment.is_executable:
+                compatibility_rejected = True
                 rejected.append(
                     f"{capabilities.backend.value}: "
                     + ("; ".join(assessment.diagnostics) or assessment.summary)
@@ -157,10 +165,13 @@ class BackendRouter:
             )
 
         details = "; ".join(rejected) if rejected else "no backends registered"
-        raise NoCompatibleBackendError(
+        message = (
             "No registered backend satisfies IR2 and numeric compatibility "
             "requirements: " + details
         )
+        if compatibility_rejected and not capability_rejected:
+            raise NumericCompatibilityRouteError(message)
+        raise NoCompatibleBackendError(message)
 
     def _assess_numeric_compatibility(
         self,
@@ -173,7 +184,7 @@ class BackendRouter:
 
         backend_profile = capabilities.numeric_profile
         if backend_profile is None:
-            raise NoCompatibleBackendError(
+            raise NumericCompatibilityRouteError(
                 f"Backend '{capabilities.backend.value}' does not declare a "
                 "numeric compatibility profile"
             )

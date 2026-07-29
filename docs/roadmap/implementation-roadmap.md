@@ -56,9 +56,11 @@ contract in
 normalizes syntax, builder, and semantic failures while preserving their
 internal ownership. P26.2 normalizes specification, model, and reference-dataset
 artifacts plus model detection and introspection, while distinguishing invalid
-artifacts from loaded but unsupported model integrations. Encoder,
-model-semantic, compatibility, routing, and backend translation remain
-implementation steps within P26.
+artifacts from loaded but unsupported model integrations. P26.3 normalizes
+model-encoder, model-semantic, numeric-compatibility, and backend-routing
+failures while preserving the difference between incomplete configuration,
+unsupported routes, and technical integration failures. Backend translation
+and execution remain implementation steps within P26.
 
 ### P27 — Release readiness
 
