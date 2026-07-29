@@ -157,6 +157,13 @@ def test_text_and_html_reports_make_the_semantic_boundary_visible() -> None:
     assert "Numeric route : lossy (supported)" in text
     assert "Semantic target: toetra.real_affine_extracted_model" in text
     assert "Claim scope   : semantic_target_only" in text
+    assert "Encoder: toetra.affine-equation@1" in text
+    assert "Permitted conclusions:" in text
+    assert "Replay required for:" in text
+    assert "Evidence" in html
+    assert "ADR-0018#example" in html
+    assert "Documentation" in html
+    assert "docs/adr/ADR-0018.md" in html
     assert "Numeric compatibility" in html
     assert "toetra.real_affine_extracted_model" in html
     assert "semantic_target_only" in html

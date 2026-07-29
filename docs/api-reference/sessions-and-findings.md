@@ -117,6 +117,17 @@ contract. `to_records()` instead returns one flat summary record per property
 for tabular analysis; multi-point input and output evidence remains grouped in
 the `points` and `outputs_by_point` fields.
 
+Each record also contains JSON-compatible nested blocks named
+`backend_execution`, `numeric_compatibility`, `provenance`, `point_evidence`,
+`assignments`, `model_evaluations`, and `diagnostics`. These blocks preserve the
+machine evidence that cannot be flattened safely. Frequently filtered values
+such as `status`, `summary`, `route_reason`, execution limits, numeric
+classification and fingerprints remain available as top-level record columns.
+
+`to_records()` is intentionally not a versioned interchange schema. Use
+`to_dict()` or JSON v6 for durable exchange and use records/DataFrame for
+analysis.
+
 The write methods create missing parent directories and return the written
 `Path`.
 

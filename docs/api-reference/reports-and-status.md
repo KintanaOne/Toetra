@@ -114,6 +114,11 @@ html_path = report.write_html("artifacts/property-1.html")
 The write methods create missing parent directories and return the written
 `Path`. Notebook display delegates to `to_html()`.
 
+Text and HTML/Jupyter expose the same conclusion, execution termination,
+numeric trust boundary, evidence identity, provenance and diagnostics. The
+HTML representation selected automatically by Jupyter is exactly
+`report.to_html()`.
+
 `to_dict()`, `to_json()` and `write_json()` use:
 
 ```text

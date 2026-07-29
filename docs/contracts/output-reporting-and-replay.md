@@ -119,6 +119,49 @@ Historical v1-v5 fixtures remain in the repository under the former schema
 identifier. `verification_report_v6.json` protects the current Toetra contract.
 A future incompatible field change requires a schema version greater than 6.
 
+## Cross-format consistency
+
+Every public projection originates from the same `VerificationReport`. A
+renderer may change layout or flatten selected fields, but it must not change
+the logical conclusion, trust boundary, execution outcome, or evidence
+identity.
+
+The required consistency groups are:
+
+| Group | Required information |
+|---|---|
+| property | index, type, semantics, source specification |
+| conclusion | status and human summary |
+| route | backend, native backend status, route reason |
+| execution | termination status, duration, policy limits/options, normalized reason and native reason |
+| numeric trust | rule, support, classification, semantic target, conclusion scope, permitted conclusions and replay requirements |
+| evidence | points, assignments, model evaluations and lowering traces when present |
+| traceability | provenance fingerprints/completeness and structured diagnostics |
+
+Terminal text and HTML/Jupyter are human presentations. They make the
+conclusion and trust context visible and summarize the available evidence.
+HTML displayed by Jupyter is exactly the `to_html()` representation.
+
+JSON v6 is the exhaustive, versioned machine contract. `to_records()` is an
+unversioned tabular projection with ergonomic flat columns plus nested
+JSON-compatible blocks for:
+
+- backend execution;
+- numeric compatibility;
+- provenance;
+- point evidence and assignments;
+- model evaluations;
+- diagnostics.
+
+Those nested blocks prevent records/DataFrame export from silently losing
+multi-point, classification, execution, or trust evidence. They reuse the
+corresponding JSON v6 report substructures, but the record shape itself is not a
+separate versioned schema.
+
+Cross-format consistency does not mean byte-for-byte equality. It means that no
+format contradicts another and that the two machine projections retain the
+complete report evidence.
+
 ## Runtime observer protocol
 
 Concrete replay obtains model values through a framework-neutral
@@ -188,3 +231,4 @@ P21.9 does not:
 - make internal quantities public outputs;
 - amend the `1.0.0rc1` executable support profile;
 - replace P21.8.1 interval evidence with displayed reconstructed probabilities.
+- create a second versioned contract for records/DataFrame.

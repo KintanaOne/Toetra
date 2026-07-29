@@ -18,13 +18,6 @@ internal execution policy can opt out with `timeout_ms=None`. Which cancellation
 and resource-limit controls are enforceable enough to report as guarantees, and
 which must remain best-effort evidence?
 
-### Report consistency
-
-Which fields must appear consistently across terminal text, HTML/Jupyter,
-records/DataFrame, and JSON v6? Presentation changes must not alter logical
-status or silently discard provenance, lowering, compatibility, or replay
-evidence.
-
 ### Stable-release acceptance
 
 How long should the final release candidate soak, which external installation
@@ -85,6 +78,8 @@ The following are no longer open:
 - separation of syntax acceptance, semantic validity, and executable support;
 - public normalization into the three existing error families while retaining
   stable diagnostic codes, owning stages, optional context, and chained causes;
+- cross-format reporting of logical conclusions, execution context, numeric
+  trust, evidence, provenance, and diagnostics while retaining JSON v6;
 - ownership boundaries for model families, framework adapters, and backends;
 - canonical, CI-checked public documentation snippets.
 
