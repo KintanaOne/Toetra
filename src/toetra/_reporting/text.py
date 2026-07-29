@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from textwrap import wrap
 
@@ -11,6 +11,7 @@ from toetra._reporting.model import (
     ReportAssignmentKind,
     VerificationReport,
 )
+from toetra._reporting.evaluations import ReportLoweringTrace
 
 
 @dataclass(frozen=True)
@@ -79,6 +80,34 @@ def render_verification_report_text(
                         else f"{execution.timeout_ms} ms"
                     ),
                 ),
+                _field(
+                    "Backend units",
+                    (
+                        "unbounded"
+                        if execution.max_backend_units is None
+                        else str(execution.max_backend_units)
+                    ),
+                ),
+                _field(
+                    "Memory",
+                    (
+                        "unbounded"
+                        if execution.max_memory_mb is None
+                        else f"{execution.max_memory_mb} MB"
+                    ),
+                ),
+                _field(
+                    "Seed",
+                    (
+                        "default"
+                        if execution.deterministic_seed is None
+                        else str(execution.deterministic_seed)
+                    ),
+                ),
+                _field(
+                    "Backend opts",
+                    _format_backend_options(execution.backend_options),
+                ),
             ]
         )
         if execution.reason is not None:
@@ -133,11 +162,42 @@ def render_verification_report_text(
                 resolved,
             )
         )
+        lines.extend(
+            _indented_wrapped(
+                "Encoder: "
+                f"{compatibility.model_encoder_id}@"
+                f"{compatibility.model_encoder_version}",
+                resolved,
+            )
+        )
+        if compatibility.evidence_id is not None:
+            lines.extend(
+                _indented_wrapped(
+                    f"Evidence: {compatibility.evidence_id}",
+                    resolved,
+                )
+            )
         if compatibility.property_numeric_requirements:
             lines.extend(
                 _indented_wrapped(
                     "Requirements: "
                     + ", ".join(compatibility.property_numeric_requirements),
+                    resolved,
+                )
+            )
+        if compatibility.permitted_conclusions:
+            lines.extend(
+                _indented_wrapped(
+                    "Permitted conclusions: "
+                    + ", ".join(compatibility.permitted_conclusions),
+                    resolved,
+                )
+            )
+        if compatibility.replay_required_for:
+            lines.extend(
+                _indented_wrapped(
+                    "Replay required for: "
+                    + ", ".join(compatibility.replay_required_for),
                     resolved,
                 )
             )
@@ -163,6 +223,13 @@ def render_verification_report_text(
                         subsequent_indent="  ",
                     )
                 )
+        if compatibility.documentation_reference is not None:
+            lines.extend(
+                _indented_wrapped(
+                    f"Documentation: {compatibility.documentation_reference}",
+                    resolved,
+                )
+            )
 
     if provenance is not None:
         lines.extend(["", "Verification provenance"])
@@ -352,7 +419,8 @@ def _render_model_evaluations(
             lines.append(
                 "    reconstructed probability"
                 f"({probability.label!r}) = {probability.value} "
-                f"({probability.precision_digits} digits)"
+                f"({probability.precision_digits} digits; "
+                f"source={probability.source})"
             )
         for quantity in evaluation.quantities:
             lines.append(f"    technical {quantity.kind} = {quantity.value}")
@@ -368,6 +436,14 @@ def _render_model_evaluations(
                 if lowering.property_threshold is not None:
                     intent = f"{lowering.observable}({lowering.label!r}) {lowering.operator} {lowering.property_threshold}"
             lines.append(f"    intent: {intent}")
+            lines.append(
+                "      trace: "
+                f"semantic={lowering.semantic_profile_id}@"
+                f"{lowering.semantic_profile_version}; "
+                f"transformation={lowering.transformation_id}@"
+                f"{lowering.transformation_version}; "
+                f"polarity={lowering.logical_polarity}"
+            )
             if lowering.canonical_formula_kind is not None:
                 lines.append(
                     f"      lowering: {lowering.canonical_formula_kind} at {lowering.quantity_kind} threshold {lowering.canonical_threshold}"
@@ -377,9 +453,13 @@ def _render_model_evaluations(
                     f"      lowering: {lowering.quantity_kind} {lowering.canonical_operator} {lowering.canonical_threshold}"
                 )
             if lowering.exact_threshold_expression is not None:
+                precision = _format_threshold_precision(lowering)
                 lines.append(
                     "      threshold: "
-                    f"{lowering.exact_threshold_expression} in [{lowering.threshold_lower_bound}, {lowering.threshold_upper_bound}] (selected {lowering.selected_bound})"
+                    f"{lowering.exact_threshold_expression} in "
+                    f"[{lowering.threshold_lower_bound}, "
+                    f"{lowering.threshold_upper_bound}] "
+                    f"(selected {lowering.selected_bound}{precision})"
                 )
             if lowering.property_value is not None:
                 related = (
@@ -426,3 +506,22 @@ def _indented_wrapped(text: str, options: TextRenderOptions) -> list[str]:
     return [
         f"  {line}" for line in wrap(text, width=max(20, options.width - 2)) or [""]
     ]
+
+
+def _format_backend_options(
+    options: Mapping[str, bool | int | float | str],
+) -> str:
+    rendered = ", ".join(f"{key}={value!r}" for key, value in options.items())
+    return rendered or "none"
+
+
+def _format_threshold_precision(lowering: ReportLoweringTrace) -> str:
+    values = (
+        ("precision", lowering.precision_digits),
+        ("working", lowering.working_precision_digits),
+        ("guard", lowering.guard_digits),
+    )
+    rendered = ", ".join(
+        f"{name}={value}" for name, value in values if value is not None
+    )
+    return f"; {rendered}" if rendered else ""

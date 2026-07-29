@@ -62,7 +62,10 @@ failures while preserving the difference between incomplete configuration,
 unsupported routes, and technical integration failures. P26.4 normalizes
 runner lookup, backend translation, backend execution-policy, and technical
 execution failures while preserving timeout, resource, cancellation, and
-solver-unknown outcomes as reportable `UNKNOWN` results.
+solver-unknown outcomes as reportable `UNKNOWN` results. P26.5 aligns terminal
+text, HTML/Jupyter, records/DataFrame, and JSON v6 around one conclusion,
+execution context, numeric trust boundary, evidence, provenance, and diagnostic
+contract without changing JSON v6.
 
 ### P27 — Release readiness
 

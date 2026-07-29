@@ -144,6 +144,11 @@ Reports store only a policy snapshot:
 The cancellation token is intentionally absent because it is mutable runtime
 state, not provenance.
 
+Text and HTML/Jupyter expose the same termination status, duration, applied
+limits/options, normalized reason, and native reason. Records/DataFrame preserve
+the complete JSON-compatible `backend_execution` block in addition to flat
+columns used for filtering.
+
 ## Backend adapter checklist
 
 A new adapter is complete only when it has tests proving that it:

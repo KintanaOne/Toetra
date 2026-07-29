@@ -137,6 +137,11 @@ def test_text_and_html_render_classification_evidence() -> None:
     assert "Model evaluations" in text
     assert "native decision" in text
     assert "probability('approved')" in text
+    assert "source=reconstructed_from_oriented_decision_value" in text
+    assert "semantic=binary_logistic_affine_classification" in text
+    assert "Permitted conclusions" in html
+    assert "source=reconstructed_from_oriented_decision_value" in html
+    assert "semantic=binary_logistic_affine_classification" in html
     assert "logit(0.8)" in text
     assert "Model evaluations" in html
     assert "Native probability threshold" in html

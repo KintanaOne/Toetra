@@ -4,6 +4,10 @@
 
 ### Changed
 
+- Aligned terminal text, HTML/Jupyter, records/DataFrame, and JSON v6 reporting
+  around the same logical conclusion, backend-execution context, numeric trust
+  boundary, evidence, provenance, and diagnostics without changing the JSON
+  schema.
 - Normalized backend-runner, translation, execution-policy, and technical
   execution failures at `verify(...)`, while preserving timeout, resource,
   cancellation, and solver-unknown outcomes as reportable `UNKNOWN` results.

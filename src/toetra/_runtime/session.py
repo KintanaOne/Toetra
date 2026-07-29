@@ -275,6 +275,8 @@ class VerificationSession(Sequence[VerificationExecution]):
             points = report_point_values(report)
             outputs_by_point = report_output_values_by_point(report)
             compatibility = report.numeric_compatibility
+            report_payload = report.to_dict()
+            execution_payload = report_payload["execution"]["backend_execution"]
             records.append(
                 {
                     "property": report.property_index + 1,
@@ -282,8 +284,11 @@ class VerificationSession(Sequence[VerificationExecution]):
                     "status": report.status.value,
                     "semantics": report.semantics.value,
                     "specification": report.specification,
+                    "summary": report.summary,
                     "backend": report.backend.value,
                     "backend_status": report.backend_status,
+                    "assumption_count": report.assumption_count,
+                    "route_reason": report.route_reason,
                     "backend_execution_status": (
                         report.backend_execution.status
                         if report.backend_execution is not None
@@ -304,8 +309,38 @@ class VerificationSession(Sequence[VerificationExecution]):
                         if report.backend_execution is not None
                         else None
                     ),
+                    "backend_native_reason": (
+                        report.backend_execution.backend_reason
+                        if report.backend_execution is not None
+                        else None
+                    ),
+                    "backend_max_units": (
+                        report.backend_execution.max_backend_units
+                        if report.backend_execution is not None
+                        else None
+                    ),
+                    "backend_max_memory_mb": (
+                        report.backend_execution.max_memory_mb
+                        if report.backend_execution is not None
+                        else None
+                    ),
+                    "backend_deterministic_seed": (
+                        report.backend_execution.deterministic_seed
+                        if report.backend_execution is not None
+                        else None
+                    ),
+                    "backend_options": (
+                        dict(report.backend_execution.backend_options)
+                        if report.backend_execution is not None
+                        else {}
+                    ),
                     "numeric_rule": (
                         compatibility.matched_rule_id
+                        if compatibility is not None
+                        else None
+                    ),
+                    "numeric_support_status": (
+                        compatibility.support_status
                         if compatibility is not None
                         else None
                     ),
@@ -323,6 +358,16 @@ class VerificationSession(Sequence[VerificationExecution]):
                         compatibility.conclusion_scope
                         if compatibility is not None
                         else None
+                    ),
+                    "numeric_permitted_conclusions": (
+                        compatibility.permitted_conclusions
+                        if compatibility is not None
+                        else ()
+                    ),
+                    "numeric_replay_required_for": (
+                        compatibility.replay_required_for
+                        if compatibility is not None
+                        else ()
                     ),
                     "verification_fingerprint": (
                         report.provenance.verification_fingerprint
@@ -343,6 +388,13 @@ class VerificationSession(Sequence[VerificationExecution]):
                     "outputs": _unique_group_values(outputs_by_point),
                     "points": points,
                     "outputs_by_point": outputs_by_point,
+                    "backend_execution": execution_payload,
+                    "numeric_compatibility": report_payload["numeric_compatibility"],
+                    "provenance": report_payload["provenance"],
+                    "point_evidence": report_payload["points"],
+                    "assignments": report_payload["assignments"],
+                    "model_evaluations": report_payload.get("model_evaluations", []),
+                    "diagnostics": report_payload["diagnostics"],
                 }
             )
         return records

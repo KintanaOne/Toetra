@@ -110,7 +110,13 @@ def test_execution_evidence_is_exposed_in_all_report_formats() -> None:
     html = report.to_html()
     assert "Execution     : timeout" in text
     assert "Duration      : 751.250 ms" in text
+    assert "Backend units : 100" in text
+    assert "Memory        : 32 MB" in text
+    assert "Seed          : 4" in text
+    assert "Backend opts  : adapter_option=True" in text
     assert "Native reason : timeout" in text
     assert "Backend execution" in html
     assert "751.250 ms" in html
+    assert "Backend options" in html
+    assert "adapter_option=True" in html
     assert "timeout" in html

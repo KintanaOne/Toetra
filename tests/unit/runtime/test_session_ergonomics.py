@@ -59,7 +59,19 @@ def test_session_exposes_findings_records_dataframe_and_artifacts(
     assert records[0]["status"] == "counterexample"
     assert records[0]["numeric_classification"] == "lossy"
     assert records[0]["numeric_conclusion_scope"] == "semantic_target_only"
-    assert session.to_dataframe().shape == (2, 22)
+    frame = session.to_dataframe()
+    assert len(frame) == 2
+    assert {
+        "status",
+        "summary",
+        "backend_execution",
+        "numeric_compatibility",
+        "provenance",
+        "point_evidence",
+        "assignments",
+        "model_evaluations",
+        "diagnostics",
+    }.issubset(frame.columns)
 
     written = session.write_artifacts(tmp_path / "reports", formats={"html", "json"})
     assert set(written) == {"html", "json"}

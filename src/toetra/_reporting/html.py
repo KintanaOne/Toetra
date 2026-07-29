@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from html import escape
 from pathlib import Path
@@ -9,6 +9,7 @@ from typing import Any
 
 from toetra._backends.diagnostics import BackendResultDiagnostic
 from toetra._backends.results import VerificationStatus
+from toetra._reporting.evaluations import ReportLoweringTrace
 from toetra._reporting.model import ReportAssignment, VerificationReport
 
 
@@ -384,6 +385,10 @@ def _render_backend_execution(report: VerificationReport) -> str:
                 else "default"
             ),
         ),
+        (
+            "Backend options",
+            _format_backend_options(execution.backend_options),
+        ),
         ("Reason", execution.reason or "—"),
         ("Backend reason", execution.backend_reason or "—"),
     )
@@ -412,6 +417,7 @@ def _render_numeric_compatibility(report: VerificationReport) -> str:
 
     rows = (
         ("Rule", rule_id),
+        ("Evidence", compatibility.evidence_id or "None"),
         ("Support", compatibility.support_status),
         ("Classification", compatibility.classification),
         ("Semantic target", compatibility.semantic_target),
@@ -425,6 +431,10 @@ def _render_numeric_compatibility(report: VerificationReport) -> str:
         ("Property requirements", requirements),
         ("Permitted conclusions", permitted),
         ("Replay required for", replay),
+        (
+            "Documentation",
+            compatibility.documentation_reference or "None",
+        ),
     )
     table_rows = "".join(
         f"<tr><th>{escape(label)}</th><td>{escape(value)}</td></tr>"
@@ -521,7 +531,8 @@ def _render_model_evaluations(report: VerificationReport) -> str:
         rows.extend(
             (
                 f"Reconstructed probability {item.label!r}",
-                f"{item.value} ({item.precision_digits} digits)",
+                f"{item.value} ({item.precision_digits} digits; "
+                f"source={item.source})",
             )
             for item in evaluation.probabilities
         )
@@ -543,6 +554,14 @@ def _render_model_evaluations(report: VerificationReport) -> str:
             rows.extend(
                 [
                     (f"Intent {index}", intent),
+                    (
+                        f"Trace {index}",
+                        f"semantic={lowering.semantic_profile_id}@"
+                        f"{lowering.semantic_profile_version}; "
+                        f"transformation={lowering.transformation_id}@"
+                        f"{lowering.transformation_version}; "
+                        f"polarity={lowering.logical_polarity}",
+                    ),
                     (f"Lowering {index}", lowering_text),
                     (
                         f"Observed {index}",
@@ -551,6 +570,10 @@ def _render_model_evaluations(report: VerificationReport) -> str:
                     (
                         f"Canonical {index}",
                         f"value={lowering.quantity_value}; margin={lowering.canonical_margin}; compatibility={lowering.compatibility_classification}",
+                    ),
+                    (
+                        f"Permitted conclusions {index}",
+                        ", ".join(lowering.permitted_conclusions) or "None",
                     ),
                 ]
             )
@@ -562,10 +585,14 @@ def _render_model_evaluations(report: VerificationReport) -> str:
                     )
                 )
             if lowering.exact_threshold_expression is not None:
+                precision = _format_threshold_precision(lowering)
                 rows.append(
                     (
                         f"Threshold evidence {index}",
-                        f"{lowering.exact_threshold_expression} in [{lowering.threshold_lower_bound}, {lowering.threshold_upper_bound}], selected {lowering.selected_bound}",
+                        f"{lowering.exact_threshold_expression} in "
+                        f"[{lowering.threshold_lower_bound}, "
+                        f"{lowering.threshold_upper_bound}], selected "
+                        f"{lowering.selected_bound}{precision}",
                     )
                 )
         table_rows = "".join(
@@ -672,6 +699,25 @@ def _render_diagnostics(
 
 def _format_value(value: Any) -> str:
     return str(value)
+
+
+def _format_backend_options(
+    options: Mapping[str, bool | int | float | str],
+) -> str:
+    rendered = ", ".join(f"{key}={value!r}" for key, value in options.items())
+    return rendered or "None"
+
+
+def _format_threshold_precision(lowering: ReportLoweringTrace) -> str:
+    values = (
+        ("precision", lowering.precision_digits),
+        ("working", lowering.working_precision_digits),
+        ("guard", lowering.guard_digits),
+    )
+    rendered = ", ".join(
+        f"{name}={value}" for name, value in values if value is not None
+    )
+    return f"; {rendered}" if rendered else ""
 
 
 def _style_block() -> str:
