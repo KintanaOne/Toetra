@@ -5,6 +5,7 @@ from typing import cast
 
 import pytest
 
+from toetra._backends.errors import BackendExecutionPolicyError
 from toetra._backends.execution import (
     BackendCancellationToken,
     BackendExecutionPolicy,
@@ -195,7 +196,14 @@ def test_z3_maps_generic_policy_to_native_solver_options(
 def test_generic_policy_fields_cannot_be_overridden_by_z3_options() -> None:
     policy = BackendExecutionPolicy(backend_options={"timeout": 999})
 
-    with pytest.raises(ValueError, match="must not override"):
+    with pytest.raises(BackendExecutionPolicyError, match="must not override"):
+        Z3Runner().run(_task(), policy=policy)
+
+
+def test_z3_rejects_unknown_native_backend_option() -> None:
+    policy = BackendExecutionPolicy(backend_options={"definitely_not_a_z3_option": 1})
+
+    with pytest.raises(BackendExecutionPolicyError, match="does not recognize"):
         Z3Runner().run(_task(), policy=policy)
 
 

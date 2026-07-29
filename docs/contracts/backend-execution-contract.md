@@ -106,7 +106,13 @@ contains backend-neutral execution evidence whose status is `ERROR`.
 
 Technical errors are not converted into verification reports. They belong to
 the runtime error boundary and can be handled by a CLI, CI integration or
-orchestrator.
+orchestrator. The public `verify(...)` workflow presents the private backend
+exception as `VerificationRuntimeError` with code `BACKEND_EXECUTION_FAILED`,
+`stage == "backend"`, and the original error in `__cause__`.
+
+Invalid backend-native options raise a private `BackendExecutionPolicyError`
+and are presented publicly as `VerificationConfigurationError` with code
+`BACKEND_EXECUTION_POLICY_INVALID`.
 
 ## Total budget
 

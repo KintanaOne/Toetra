@@ -133,7 +133,8 @@ integration is a `VerificationRuntimeError` with `stage == "model"` rather than
 an invalid artifact. Model-encoder and model-semantic failures retain
 `stage == "model"` and distinct codes. Numeric compatibility uses
 `stage == "compatibility"`, while backend selection uses `stage == "routing"`.
-Backend translation and execution normalization continues in a later P26 step.
+Runner lookup, backend translation, backend execution-policy validation, and
+technical execution failures use `stage == "backend"`.
 
 Common route diagnostics include:
 
@@ -143,12 +144,20 @@ Common route diagnostics include:
 | model semantics | `MODEL_SEMANTIC_PROFILE_UNSUPPORTED`, `MODEL_OBSERVABLE_UNSUPPORTED`, `MODEL_SEMANTIC_PROFILE_INVALID`, `MODEL_SEMANTIC_LOWERING_INCOMPLETE`, `MODEL_SEMANTIC_LOWERING_FAILED` |
 | numeric compatibility | `NUMERIC_COMPATIBILITY_ROUTE_UNSUPPORTED`, `NUMERIC_COMPATIBILITY_AMBIGUOUS`, `NUMERIC_COMPATIBILITY_INVALID` |
 | backend routing | `BACKEND_NOT_REGISTERED`, `BACKEND_ROUTE_UNSUPPORTED`, `BACKEND_ROUTING_FAILED` |
+| backend runner and translation | `BACKEND_RUNNER_NOT_REGISTERED`, `BACKEND_TRANSLATION_REQUIREMENTS_UNSUPPORTED`, `BACKEND_SCALAR_EXPRESSION_UNSUPPORTED`, `BACKEND_SYMBOL_COLLISION`, `BACKEND_TRANSLATION_FAILED` |
+| backend policy and execution | `BACKEND_EXECUTION_POLICY_INVALID`, `BACKEND_EXECUTION_FAILED` |
 
 `MODEL_ENCODER_PARAMETER_MISSING` is a
 `VerificationConfigurationError`: a caller-provided normalized schema without
 parameters required by its selected encoder is incomplete. The other route
 codes above are `VerificationRuntimeError` because the request is meaningful
 but unsupported or the integration failed technically.
+
+`BACKEND_EXECUTION_POLICY_INVALID` is also a
+`VerificationConfigurationError`: it identifies conflicting or rejected
+backend-specific options. Backend timeout, resource exhaustion, cancellation,
+and native `unknown` are not failures of this public boundary. They return an
+inconclusive report with technical execution evidence.
 
 ### `VerificationConfigurationError`
 

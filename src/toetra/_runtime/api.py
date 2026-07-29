@@ -6,10 +6,16 @@ from pathlib import Path
 
 from toetra._backends.defaults import create_default_backend_registry
 from toetra._backends.errors import (
+    BackendExecutionError,
+    BackendExecutionPolicyError,
     BackendNotRegisteredError,
     BackendRoutingError,
+    BackendSymbolCollisionError,
+    BackendTranslationError,
     NoCompatibleBackendError,
     NumericCompatibilityRouteError,
+    UnsupportedBackendRequirementsError,
+    UnsupportedScalarExpressionError,
 )
 from toetra._backends.execution import BackendExecutionPolicy
 from toetra._backends.registry import BackendRegistry
@@ -47,6 +53,7 @@ from toetra._runtime.backends import (
 )
 from toetra._runtime.errors import (
     AnchorResolutionError,
+    BackendRunnerNotRegisteredError,
     VerificationConfigurationError,
     VerificationRuntimeError,
 )
@@ -286,10 +293,19 @@ def _verify(
                 error,
                 model_path=resolved.model_path,
             ) from error
-        result = runners.require(route.backend).run(
-            task,
-            policy=resolved_execution_policy,
-        )
+        try:
+            result = runners.require(route.backend).run(
+                task,
+                policy=resolved_execution_policy,
+            )
+        except BackendRunnerNotRegisteredError as error:
+            raise _public_backend_runner_error(error) from error
+        except BackendExecutionPolicyError as error:
+            raise _public_backend_policy_error(error) from error
+        except BackendTranslationError as error:
+            raise _public_backend_translation_error(error) from error
+        except BackendExecutionError as error:
+            raise _public_backend_execution_error(error) from error
         result = apply_numeric_compatibility_policy(
             result,
             route.numeric_compatibility,
@@ -816,6 +832,78 @@ def _public_backend_routing_error(
         stage="routing",
         hint="Inspect the chained backend-routing error for diagnostic details.",
         path=path,
+    )
+
+
+def _public_backend_runner_error(
+    error: BackendRunnerNotRegisteredError,
+) -> VerificationRuntimeError:
+    return VerificationRuntimeError(
+        str(error),
+        code="BACKEND_RUNNER_NOT_REGISTERED",
+        stage="backend",
+        hint=(
+            "Register a runner for the selected backend or use the default "
+            "runner registry."
+        ),
+    )
+
+
+def _public_backend_policy_error(
+    error: BackendExecutionPolicyError,
+) -> VerificationConfigurationError:
+    return VerificationConfigurationError(
+        str(error),
+        code="BACKEND_EXECUTION_POLICY_INVALID",
+        stage="backend",
+        hint=(
+            "Use backend_options only for backend-native controls; configure "
+            "timeout, resources, cancellation, and seed through their generic "
+            "execution-policy fields."
+        ),
+    )
+
+
+def _public_backend_translation_error(
+    error: BackendTranslationError,
+) -> VerificationRuntimeError:
+    if isinstance(error, UnsupportedBackendRequirementsError):
+        code = "BACKEND_TRANSLATION_REQUIREMENTS_UNSUPPORTED"
+        hint = (
+            "Route the task through a backend whose declared capabilities "
+            "satisfy every IR2 requirement."
+        )
+    elif isinstance(error, BackendSymbolCollisionError):
+        code = "BACKEND_SYMBOL_COLLISION"
+        hint = (
+            "Inspect the chained backend translation error and the structured "
+            "symbol identities that collided."
+        )
+    elif isinstance(error, UnsupportedScalarExpressionError):
+        code = "BACKEND_SCALAR_EXPRESSION_UNSUPPORTED"
+        hint = "Use scalar expressions within the selected backend numeric profile."
+    else:
+        code = "BACKEND_TRANSLATION_FAILED"
+        hint = "Inspect the chained backend-translation error for details."
+    return VerificationRuntimeError(
+        str(error),
+        code=code,
+        stage="backend",
+        hint=hint,
+    )
+
+
+def _public_backend_execution_error(
+    error: BackendExecutionError,
+) -> VerificationRuntimeError:
+    return VerificationRuntimeError(
+        str(error),
+        code="BACKEND_EXECUTION_FAILED",
+        stage="backend",
+        hint=(
+            "Inspect the chained backend error and its execution evidence; "
+            "retry only after resolving the technical backend failure."
+        ),
     )
 
 

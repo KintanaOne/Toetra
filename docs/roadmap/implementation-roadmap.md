@@ -59,8 +59,10 @@ artifacts plus model detection and introspection, while distinguishing invalid
 artifacts from loaded but unsupported model integrations. P26.3 normalizes
 model-encoder, model-semantic, numeric-compatibility, and backend-routing
 failures while preserving the difference between incomplete configuration,
-unsupported routes, and technical integration failures. Backend translation
-and execution remain implementation steps within P26.
+unsupported routes, and technical integration failures. P26.4 normalizes
+runner lookup, backend translation, backend execution-policy, and technical
+execution failures while preserving timeout, resource, cancellation, and
+solver-unknown outcomes as reportable `UNKNOWN` results.
 
 ### P27 — Release readiness
 

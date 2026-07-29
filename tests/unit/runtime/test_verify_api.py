@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from toetra import VerificationRuntimeError
 from toetra._runtime.errors import (
     BackendRunnerNotRegisteredError,
     VerificationConfigurationError,
@@ -61,12 +62,18 @@ def test_verify_rejects_explicit_target_different_from_header() -> None:
 
 
 def test_verify_requires_runner_for_selected_backend() -> None:
-    with pytest.raises(BackendRunnerNotRegisteredError, match="Z3"):
+    with pytest.raises(VerificationRuntimeError, match="Z3") as caught:
         verify(
             _SOURCE,
             schema=_schema(),
             runner_registry=BackendRunnerRegistry(),
         )
+
+    error = caught.value
+    assert error.code == "BACKEND_RUNNER_NOT_REGISTERED"
+    assert error.stage == "backend"
+    assert error.hint is not None
+    assert isinstance(error.__cause__, BackendRunnerNotRegisteredError)
 
 
 def test_verify_treats_missing_toetra_string_as_a_file_path() -> None:

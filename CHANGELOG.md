@@ -4,6 +4,9 @@
 
 ### Changed
 
+- Normalized backend-runner, translation, execution-policy, and technical
+  execution failures at `verify(...)`, while preserving timeout, resource,
+  cancellation, and solver-unknown outcomes as reportable `UNKNOWN` results.
 - Normalized model-encoder, model-semantic, numeric-compatibility, and backend-
   routing failures at `verify(...)`, distinguishing invalid integration inputs,
   unsupported routes, and technical routing failures with stable diagnostics.

@@ -127,7 +127,12 @@ report.backend_execution.timeout_ms
 report.backend_execution.backend_reason
 ```
 
-Timeout, resource exhaustion and cancellation therefore remain visible in text, JSON, HTML and session records. Technical adapter failures raise `BackendExecutionError` instead of producing a misleading logical `UNKNOWN`. The complete contract is documented in [Backend Execution Contract](../contracts/backend-execution-contract.md).
+Timeout, resource exhaustion and cancellation therefore remain visible in
+text, JSON, HTML and session records. Technical adapter failures raise a
+private `BackendExecutionError` and are presented by `verify(...)` as
+`VerificationRuntimeError` instead of producing a misleading logical
+`UNKNOWN`. The complete contract is documented in
+[Backend Execution Contract](../contracts/backend-execution-contract.md).
 
 ## Verification provenance
 
