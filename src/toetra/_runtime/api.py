@@ -5,6 +5,12 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from toetra._backends.defaults import create_default_backend_registry
+from toetra._backends.errors import (
+    BackendNotRegisteredError,
+    BackendRoutingError,
+    NoCompatibleBackendError,
+    NumericCompatibilityRouteError,
+)
 from toetra._backends.execution import BackendExecutionPolicy
 from toetra._backends.registry import BackendRegistry
 from toetra._backends.router import BackendRouter
@@ -14,6 +20,10 @@ from toetra._compatibility.policy import (
     apply_semantic_lowering_policy,
 )
 from toetra._compatibility.registry import NumericCompatibilityRegistry
+from toetra._compatibility.errors import (
+    AmbiguousCompatibilityRuleError,
+    NumericCompatibilityError,
+)
 from toetra._compiler.ast.nodes.program import ProgramNode
 from toetra._compiler.builder.errors import BuilderError
 from toetra._compiler.builder.program import parse_program
@@ -66,10 +76,24 @@ from toetra._models.errors.loading import (
     UnsupportedModelFormatError,
 )
 from toetra._models.encoder.context import ModelEncodingContext
+from toetra._models.encoder.errors import (
+    InvalidModelAssumptionError,
+    MissingModelParameterError,
+    ModelEncoderError,
+    UnsupportedModelEncoderError,
+    UnsupportedModelParameterError,
+)
 from toetra._models.encoder.factory import ModelEncoderFactory
 from toetra._models.encoder.profile import model_encoder_descriptor
 from toetra._models.runtime.manager import ModelManager
 from toetra._models.schema.model_schema import ModelSchema
+from toetra._models.semantics.errors import (
+    InvalidModelSemanticProfileError,
+    MissingModelSemanticsError,
+    ModelSemanticLoweringError,
+    UnsupportedModelSemanticProfileError,
+    UnsupportedObservableLoweringError,
+)
 
 
 @dataclass(frozen=True)
@@ -196,19 +220,35 @@ def _verify(
 
     context = ir2_context or IR2BuildContext(preferred_normal_form=NormalFormKind.NNF)
     encoder_factory = model_encoder_factory or ModelEncoderFactory()
-    selected_encoder = encoder_factory.create(resolved.schema)
-    numeric_compatibility_context = NumericCompatibilityContext(
-        source_model=framework_model_descriptor(resolved.schema),
-        model_encoder=model_encoder_descriptor(selected_encoder),
-    )
-    tasks = run_ir2_with_model_schema(
-        loaded.source,
-        schema=resolved.schema,
-        model_context=model_context,
-        ir2_context=context,
-        encoder_factory=encoder_factory,
-        resolved_anchors=resolved_anchors,
-    )
+    try:
+        selected_encoder = encoder_factory.create(resolved.schema)
+        numeric_compatibility_context = NumericCompatibilityContext(
+            source_model=framework_model_descriptor(resolved.schema),
+            model_encoder=model_encoder_descriptor(selected_encoder),
+        )
+        tasks = run_ir2_with_model_schema(
+            loaded.source,
+            schema=resolved.schema,
+            model_context=model_context,
+            ir2_context=context,
+            encoder_factory=encoder_factory,
+            resolved_anchors=resolved_anchors,
+        )
+    except ModelEncoderError as error:
+        raise _public_model_encoder_error(
+            error,
+            model_path=resolved.model_path,
+        ) from error
+    except ModelSemanticLoweringError as error:
+        raise _public_model_semantic_error(
+            error,
+            model_path=resolved.model_path,
+        ) from error
+    except NumericCompatibilityError as error:
+        raise _public_numeric_compatibility_error(
+            error,
+            model_path=resolved.model_path,
+        ) from error
 
     router = BackendRouter(
         backend_registry or create_default_backend_registry(),
@@ -230,11 +270,22 @@ def _verify(
 
     executions: list[VerificationExecution] = []
     for property_index, task in enumerate(tasks):
-        route = router.route(
-            task,
-            numeric_compatibility_context=numeric_compatibility_context,
-            execution_policy=resolved_execution_policy,
-        )
+        try:
+            route = router.route(
+                task,
+                numeric_compatibility_context=numeric_compatibility_context,
+                execution_policy=resolved_execution_policy,
+            )
+        except NumericCompatibilityError as error:
+            raise _public_numeric_compatibility_error(
+                error,
+                model_path=resolved.model_path,
+            ) from error
+        except BackendRoutingError as error:
+            raise _public_backend_routing_error(
+                error,
+                model_path=resolved.model_path,
+            ) from error
         result = runners.require(route.backend).run(
             task,
             policy=resolved_execution_policy,
@@ -574,6 +625,197 @@ def _public_model_error(
         stage="model",
         hint="Inspect the chained model-layer cause for diagnostic details.",
         path=model_artifact_path,
+    )
+
+
+def _public_model_encoder_error(
+    error: ModelEncoderError,
+    *,
+    model_path: Path | None,
+) -> VerificationRuntimeError:
+    path = str(model_path) if model_path is not None else None
+    if isinstance(error, UnsupportedModelEncoderError):
+        return VerificationRuntimeError(
+            str(error),
+            code="MODEL_ENCODER_UNSUPPORTED",
+            stage="model",
+            hint=(
+                "Use a model family with a complete V1 encoder route or register "
+                "a compatible model encoder through the advanced integration API."
+            ),
+            path=path,
+        )
+    if isinstance(error, MissingModelParameterError):
+        return VerificationConfigurationError(
+            str(error),
+            code="MODEL_ENCODER_PARAMETER_MISSING",
+            stage="model",
+            hint=(
+                "Provide a complete normalized model schema, including the "
+                "parameters required by its selected encoder."
+            ),
+            path=path,
+        )
+    if isinstance(error, UnsupportedModelParameterError):
+        return VerificationRuntimeError(
+            str(error),
+            code="MODEL_ENCODER_PARAMETER_UNSUPPORTED",
+            stage="model",
+            hint=(
+                "Use parameters within the selected encoder profile or add a "
+                "complete encoder integration for this model variant."
+            ),
+            path=path,
+        )
+    if isinstance(error, InvalidModelAssumptionError):
+        return VerificationRuntimeError(
+            str(error),
+            code="MODEL_ENCODER_OUTPUT_INVALID",
+            stage="model",
+            hint=(
+                "The selected encoder emitted invalid model assumptions; inspect "
+                "the chained integration error."
+            ),
+            path=path,
+        )
+    return VerificationRuntimeError(
+        str(error),
+        code="MODEL_ENCODING_FAILED",
+        stage="model",
+        hint="Inspect the chained model-encoder error for diagnostic details.",
+        path=path,
+    )
+
+
+def _public_model_semantic_error(
+    error: ModelSemanticLoweringError,
+    *,
+    model_path: Path | None,
+) -> VerificationRuntimeError:
+    path = str(model_path) if model_path is not None else None
+    if isinstance(error, UnsupportedModelSemanticProfileError):
+        return VerificationRuntimeError(
+            str(error),
+            code="MODEL_SEMANTIC_PROFILE_UNSUPPORTED",
+            stage="model",
+            hint=(
+                "Use a model family with a registered semantic profile for the "
+                "requested output observable."
+            ),
+            path=path,
+        )
+    if isinstance(error, UnsupportedObservableLoweringError):
+        return VerificationRuntimeError(
+            str(error),
+            code="MODEL_OBSERVABLE_UNSUPPORTED",
+            stage="model",
+            hint=(
+                "Use an observable and comparison supported by the selected "
+                "model-family semantic profile."
+            ),
+            path=path,
+        )
+    if isinstance(error, InvalidModelSemanticProfileError):
+        return VerificationRuntimeError(
+            str(error),
+            code="MODEL_SEMANTIC_PROFILE_INVALID",
+            stage="model",
+            hint=(
+                "Check that the model schema satisfies the selected semantic "
+                "profile contract."
+            ),
+            path=path,
+        )
+    if isinstance(error, MissingModelSemanticsError):
+        return VerificationRuntimeError(
+            str(error),
+            code="MODEL_SEMANTIC_LOWERING_INCOMPLETE",
+            stage="model",
+            hint=(
+                "The selected integration did not lower every public model "
+                "observable; inspect the chained integration error."
+            ),
+            path=path,
+        )
+    return VerificationRuntimeError(
+        str(error),
+        code="MODEL_SEMANTIC_LOWERING_FAILED",
+        stage="model",
+        hint="Inspect the chained model-semantic error for diagnostic details.",
+        path=path,
+    )
+
+
+def _public_numeric_compatibility_error(
+    error: NumericCompatibilityError,
+    *,
+    model_path: Path | None,
+) -> VerificationRuntimeError:
+    code = (
+        "NUMERIC_COMPATIBILITY_AMBIGUOUS"
+        if isinstance(error, AmbiguousCompatibilityRuleError)
+        else "NUMERIC_COMPATIBILITY_INVALID"
+    )
+    hint = (
+        "Remove equally specific compatibility rules so one deterministic route "
+        "wins."
+        if isinstance(error, AmbiguousCompatibilityRuleError)
+        else "Check the registered numeric compatibility descriptors and rules."
+    )
+    return VerificationRuntimeError(
+        str(error),
+        code=code,
+        stage="compatibility",
+        hint=hint,
+        path=str(model_path) if model_path is not None else None,
+    )
+
+
+def _public_backend_routing_error(
+    error: BackendRoutingError,
+    *,
+    model_path: Path | None,
+) -> VerificationRuntimeError:
+    path = str(model_path) if model_path is not None else None
+    if isinstance(error, NumericCompatibilityRouteError):
+        return VerificationRuntimeError(
+            str(error),
+            code="NUMERIC_COMPATIBILITY_ROUTE_UNSUPPORTED",
+            stage="compatibility",
+            hint=(
+                "Use a framework, encoder, backend, and property combination "
+                "covered by an executable numeric compatibility rule."
+            ),
+            path=path,
+        )
+    if isinstance(error, BackendNotRegisteredError):
+        return VerificationRuntimeError(
+            str(error),
+            code="BACKEND_NOT_REGISTERED",
+            stage="routing",
+            hint=(
+                "Use a registered backend from the public V1 profile or provide "
+                "a complete backend integration."
+            ),
+            path=path,
+        )
+    if isinstance(error, NoCompatibleBackendError):
+        return VerificationRuntimeError(
+            str(error),
+            code="BACKEND_ROUTE_UNSUPPORTED",
+            stage="routing",
+            hint=(
+                "Choose a backend whose declared capabilities satisfy the "
+                "property and execution-policy requirements."
+            ),
+            path=path,
+        )
+    return VerificationRuntimeError(
+        str(error),
+        code="BACKEND_ROUTING_FAILED",
+        stage="routing",
+        hint="Inspect the chained backend-routing error for diagnostic details.",
+        path=path,
     )
 
 

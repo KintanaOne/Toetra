@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from toetra._backends.errors import NoCompatibleBackendError
+from toetra import VerificationRuntimeError
 from toetra._compatibility.defaults import SKLEARN_AFFINE_TO_EXACT_REAL_RULE_ID
 from toetra._runtime.api import verify
 from toetra._compiler.semantic.types.enums import EnumDataType
@@ -51,8 +51,11 @@ def test_verify_exposes_the_matched_abstraction_route() -> None:
 
 
 def test_verify_rejects_non_finite_model_parameters_before_z3_translation() -> None:
-    with pytest.raises(NoCompatibleBackendError, match="NaN or infinity"):
+    with pytest.raises(VerificationRuntimeError, match="NaN or infinity") as caught:
         verify(_SOURCE, schema=_schema(coefficient=float("inf")))
+
+    assert caught.value.code == "NUMERIC_COMPATIBILITY_ROUTE_UNSUPPORTED"
+    assert caught.value.stage == "compatibility"
 
 
 def test_decimal_boundary_proof_is_explicitly_scoped_to_the_real_abstraction() -> None:

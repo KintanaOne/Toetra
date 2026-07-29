@@ -17,6 +17,10 @@ class NoCompatibleBackendError(BackendRoutingError):
     """Raised when registered backends do not satisfy IR2 requirements."""
 
 
+class NumericCompatibilityRouteError(NoCompatibleBackendError):
+    """Raised when backend capabilities match but numeric semantics do not."""
+
+
 class BackendTranslationError(BackendError):
     """Raised when an IR task cannot be translated soundly."""
 

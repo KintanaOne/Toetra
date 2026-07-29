@@ -121,14 +121,14 @@ Common call-time failures include:
 | Failure | Meaning |
 |---|---|
 | `VerificationConfigurationError` | Inputs are ambiguous or mutually inconsistent |
-| `FileNotFoundError` | A specification, model or dataset path does not exist |
-| `VerificationRuntimeError` subclass | User-facing orchestration failed |
-| parser, semantic, model-loading or dependency error | The corresponding stage rejected or could not load the input |
+| `VerificationRuntimeError` | A valid route is unsupported or orchestration failed |
+| `ReplayUnavailableError` | Formal evidence cannot be replayed completely |
 
-Not every compiler or third-party failure is wrapped in
-`VerificationRuntimeError` in `1.0.0rc3`. Catch a narrow error when the caller
-can recover from it; do not treat every exception as an inconclusive logical
-status.
+The public workflow normalizes compiler, specification, model-artifact,
+model-encoder, model-semantic, numeric-compatibility, and backend-routing
+failures. Backend translation and execution normalization remains a later P26
+step. Unexpected implementation exceptions are not relabeled as invalid user
+input, and no failure is converted into an inconclusive logical status.
 
 ## Advanced injection hooks
 

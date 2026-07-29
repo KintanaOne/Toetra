@@ -112,8 +112,31 @@ An absent, unreadable, or incoherent artifact is invalid input. A model that
 loads correctly but has no complete Toetra integration is instead a valid but
 unsupported route. Both retain the original private cause when one exists.
 
-Encoder, model-semantic, compatibility, routing, and backend failures remain
-owned by later P26 steps.
+P26.2 intentionally left encoder, model-semantic, compatibility, routing, and
+backend failures to later P26 steps.
+
+---
+
+## Implemented supported-route normalization
+
+P26.3 normalizes valid but unsupported model and backend routes without
+changing the built-in V1 profile:
+
+| Internal owner | Public class from `verify(...)` | `stage` | Stable codes |
+|---|---|---|---|
+| model encoder | `VerificationConfigurationError` only for missing required schema parameters; otherwise `VerificationRuntimeError` | `model` | `MODEL_ENCODER_UNSUPPORTED`, `MODEL_ENCODER_PARAMETER_MISSING`, `MODEL_ENCODER_PARAMETER_UNSUPPORTED`, `MODEL_ENCODER_OUTPUT_INVALID`, `MODEL_ENCODING_FAILED` |
+| model semantic lowering | `VerificationRuntimeError` | `model` | `MODEL_SEMANTIC_PROFILE_UNSUPPORTED`, `MODEL_OBSERVABLE_UNSUPPORTED`, `MODEL_SEMANTIC_PROFILE_INVALID`, `MODEL_SEMANTIC_LOWERING_INCOMPLETE`, `MODEL_SEMANTIC_LOWERING_FAILED` |
+| numeric compatibility | `VerificationRuntimeError` | `compatibility` | `NUMERIC_COMPATIBILITY_ROUTE_UNSUPPORTED`, `NUMERIC_COMPATIBILITY_AMBIGUOUS`, `NUMERIC_COMPATIBILITY_INVALID` |
+| backend selection | `VerificationRuntimeError` | `routing` | `BACKEND_NOT_REGISTERED`, `BACKEND_ROUTE_UNSUPPORTED`, `BACKEND_ROUTING_FAILED` |
+
+The router distinguishes structural capability rejection from numeric
+compatibility rejection before the public boundary. An empty or non-executable
+numeric route therefore does not masquerade as a generic backend-capability
+failure.
+
+Unexpected exceptions outside these owned families remain implementation
+failures and are not relabeled as user input. Backend translation, runner, and
+execution failures remain owned by later P26 steps.
 
 ---
 

@@ -4,6 +4,9 @@
 
 ### Changed
 
+- Normalized model-encoder, model-semantic, numeric-compatibility, and backend-
+  routing failures at `verify(...)`, distinguishing invalid integration inputs,
+  unsupported routes, and technical routing failures with stable diagnostics.
 - Normalized specification, model, and reference-dataset artifact failures at
   `verify(...)`, distinguishing invalid inputs from loaded but unsupported
   model integrations while preserving stable diagnostics and private causes.

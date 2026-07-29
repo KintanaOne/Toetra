@@ -130,9 +130,25 @@ Syntax, CST-to-AST construction, semantic-validation, specification-artifact,
 model-loading, and model-introspection failures are normalized by `verify(...)`
 while retaining their owning stage. A loaded model without a supported Toetra
 integration is a `VerificationRuntimeError` with `stage == "model"` rather than
-an invalid artifact. Encoder, model-semantic, compatibility, routing, and
-backend normalization continues in later P26 steps; failures from those
-still-unfinished boundaries may still cross `verify(...)` directly.
+an invalid artifact. Model-encoder and model-semantic failures retain
+`stage == "model"` and distinct codes. Numeric compatibility uses
+`stage == "compatibility"`, while backend selection uses `stage == "routing"`.
+Backend translation and execution normalization continues in a later P26 step.
+
+Common route diagnostics include:
+
+| Boundary | Stable codes |
+|---|---|
+| model encoder | `MODEL_ENCODER_UNSUPPORTED`, `MODEL_ENCODER_PARAMETER_MISSING`, `MODEL_ENCODER_PARAMETER_UNSUPPORTED`, `MODEL_ENCODER_OUTPUT_INVALID`, `MODEL_ENCODING_FAILED` |
+| model semantics | `MODEL_SEMANTIC_PROFILE_UNSUPPORTED`, `MODEL_OBSERVABLE_UNSUPPORTED`, `MODEL_SEMANTIC_PROFILE_INVALID`, `MODEL_SEMANTIC_LOWERING_INCOMPLETE`, `MODEL_SEMANTIC_LOWERING_FAILED` |
+| numeric compatibility | `NUMERIC_COMPATIBILITY_ROUTE_UNSUPPORTED`, `NUMERIC_COMPATIBILITY_AMBIGUOUS`, `NUMERIC_COMPATIBILITY_INVALID` |
+| backend routing | `BACKEND_NOT_REGISTERED`, `BACKEND_ROUTE_UNSUPPORTED`, `BACKEND_ROUTING_FAILED` |
+
+`MODEL_ENCODER_PARAMETER_MISSING` is a
+`VerificationConfigurationError`: a caller-provided normalized schema without
+parameters required by its selected encoder is incomplete. The other route
+codes above are `VerificationRuntimeError` because the request is meaningful
+but unsupported or the integration failed technically.
 
 ### `VerificationConfigurationError`
 
