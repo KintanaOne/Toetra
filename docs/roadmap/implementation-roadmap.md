@@ -70,23 +70,64 @@ outside the repository, executes it against the clean-installed wheel, and
 verifies both public notebooks from the repository root and their own
 directories. P26 is complete.
 
-### P27 — Release readiness
+### P27 — Public repository readiness
 
-P27 turns the green release candidate into a publishable V1:
+P27 makes the `1.0.0rc3` GitHub repository safe, truthful, and useful to an
+external reader without forcing the stable release:
 
-- final clean-checkout audit;
+- **P27.0 — exposure acceptance freeze:** separate repository visibility, CLI,
+  package publication, and stable release; accept the
+  [public repository readiness contract](../contracts/public-repository-readiness.md);
+- **P27.1 — snapshot, history, and provenance audit:** inspect credentials,
+  private data, reachable Git history, author identity, licenses, datasets, and
+  redistribution evidence;
+- **P27.2 — public narrative and first use:** make README, installation,
+  positioning, limitations, and release-candidate status truthful from outside
+  the private checkout;
+- **P27.3 — collaboration and workflow safety:** add contribution, security, and
+  issue-intake surfaces and harden untrusted pull-request automation;
+- **P27.4 — outside-in rehearsal:** clone or extract the exact candidate in a
+  clean location and follow the public journey literally;
+- **P27.5 — controlled exposure:** make the accepted commit public, verify the
+  public surfaces anonymously, and record the evidence.
+
+P27 keeps `1.0.0rc3` unless a release-candidate defect requires a later
+candidate. A GitHub Release is optional and, if created, remains a pre-release.
+PyPI publication and the stable version are separate decisions.
+
+### P28 — CLI and automation contract
+
+P28 defines a thin process-level adapter over the public Python workflow for
+terminal use, CI/CD, and future orchestration. It owns:
+
+- the installed `toetra` entry point and command grammar;
+- stable exit-code meanings;
+- stdout/stderr separation and machine-readable output;
+- path and configuration behavior outside the checkout;
+- CI integration examples and clean-install probes.
+
+No compiler, verification, or reporting semantics live in the CLI. P28 may
+justify another release candidate, but it does not force `1.0.0`.
+
+### P29 — Stable release hardening
+
+P29 turns the publicly observed release candidate into a publishable stable V1:
+
+- final clean-checkout and metadata audit;
 - deterministic wheel, source distribution, and review bundle;
-- clean-wheel installation and public import probes;
-- demonstrations and documentation built from the release artifact;
-- changelog, release notes, compatibility statement, and rollback evidence.
+- wheel and sdist installation across the accepted compatibility matrix;
+- demonstrations and documentation built against release artifacts;
+- publication rehearsal, checksums, changelog, release notes, and rollback
+  evidence;
+- the final transition to `1.0.0`.
 
-P27 is a release-hardening phase, not a late feature window.
+P29 is a release-hardening phase, not a late feature window.
 
 ### `1.0.0`
 
-The stable release is cut only after the durable gates pass from a clean
-checkout and the release candidate has had enough time to expose documentation,
-packaging, and usability defects. No calendar date overrides a soundness or
+The stable release is cut only after P27 public observation, the accepted P28
+automation boundary, and all P29 durable gates pass from a clean checkout. No
+calendar date overrides a soundness, security, provenance, installation, or
 reproducibility failure.
 
 ## Post-V1 capability expansion

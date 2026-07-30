@@ -24,6 +24,7 @@ def test_public_version_license_and_json_contract_are_frozen() -> None:
 
     assert project["version"] == EXPECTED_VERSION
     assert project["license"] == EXPECTED_LICENSE
+    assert "scripts" not in project
     assert report_schema_version() == 6
 
 

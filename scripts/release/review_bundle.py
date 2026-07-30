@@ -48,6 +48,8 @@ CRITICAL_PATHS = (
     "Makefile",
     "README.md",
     "pyproject.toml",
+    "docs/adr/ADR-0030-separate-public-exposure-cli-and-stable-release.md",
+    "docs/contracts/public-repository-readiness.md",
     "docs/contracts/repository-contract.md",
     "scripts/repository/check_repository_contract.py",
     "src/toetra/__init__.py",
