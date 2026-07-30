@@ -144,4 +144,6 @@ repository structure is documented in the
 
 ## License
 
-Toetra is licensed under the [Apache License 2.0](LICENSE).
+Toetra is licensed under the [Apache License 2.0](LICENSE). Redistributed
+third-party material keeps its own license and attribution; see
+[Third-party material](THIRD_PARTY.md).

@@ -48,6 +48,15 @@ The exact commit selected for exposure must contain:
 Automated pattern checks are defense in depth, not proof that arbitrary secrets
 are absent. Every finding requires human classification before exposure.
 
+The durable snapshot check is:
+
+```bash
+make public-snapshot-check
+```
+
+It scans tracked filenames and textual content, freezes known third-party asset
+digests, and fails on automated blockers without printing matched secret values.
+
 ### 2. Reachable Git history
 
 The canonical clone, not a source bundle, must be inspected across every
@@ -63,6 +72,19 @@ History rewriting is a deliberate repository-owner operation performed before
 public exposure, followed by a fresh-clone verification. The review bundle
 cannot satisfy this gate because it contains no `.git` history.
 
+After fetching every reachable branch and tag in a non-shallow canonical clone,
+the history check is:
+
+```bash
+make public-history-check
+```
+
+The command lists refs and author/committer identities for deliberate human
+review, then scans every reachable blob. It reports only rule identifiers,
+object prefixes, and repository paths. Passing it is defense in depth; the owner
+still classifies identities, refs, large or binary history, and any external
+secret-scanner findings.
+
 ### 3. Legal and provenance boundary
 
 The public commit must provide:
@@ -75,6 +97,9 @@ The public commit must provide:
 - no claim that the project license overrides a third-party asset license.
 
 An asset without a documented redistribution basis blocks public exposure.
+The root `THIRD_PARTY.md` file is the public attribution registry. Asset-specific
+documentation must link to it, and any separately licensed material must keep a
+content digest so an unnoticed replacement cannot inherit an unrelated notice.
 
 ### 4. External narrative and first use
 

@@ -80,7 +80,10 @@ external reader without forcing the stable release:
   [public repository readiness contract](../contracts/public-repository-readiness.md);
 - **P27.1 — snapshot, history, and provenance audit:** inspect credentials,
   private data, reachable Git history, author identity, licenses, datasets, and
-  redistribution evidence;
+  redistribution evidence. The tracked-snapshot gate and full-history command
+  are implemented, and the UCI Cleveland asset now has a digest-bound CC BY 4.0
+  attribution. P27.1 closes only after the history command and human ref/identity
+  review pass on the canonical non-shallow clone;
 - **P27.2 — public narrative and first use:** make README, installation,
   positioning, limitations, and release-candidate status truthful from outside
   the private checkout;

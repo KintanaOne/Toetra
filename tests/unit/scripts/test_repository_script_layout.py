@@ -22,6 +22,7 @@ EXPECTED_LAYOUT = {
     "repository": {
         "__init__.py",
         "check_identity_contract.py",
+        "check_public_exposure.py",
         "check_repository_contract.py",
     },
 }

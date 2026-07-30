@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Added
+
+- Added a public-snapshot audit gate, a full-history audit command, and explicit
+  CC BY 4.0 provenance for the redistributed UCI processed Cleveland dataset.
+
 ### Changed
 
 - Separated public repository exposure, the CLI automation surface, and stable
