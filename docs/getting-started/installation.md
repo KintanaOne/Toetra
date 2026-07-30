@@ -1,15 +1,60 @@
-# Installation
+# Installation and availability
 
 Toetra `1.0.0rc3` supports Python 3.11 and 3.12.
+
+## Release-candidate availability
+
+`1.0.0rc3` is an evaluation release candidate, not the stable `1.0.0` release.
+It is not currently published on PyPI. The command `pip install toetra`
+is not a documented installation path.
+
+Install the candidate from a source checkout or extracted source archive. From
+its repository root:
 
 ```bash
 python -m pip install .
 ```
 
-Development setup:
+Confirm that the public package is importable:
 
 ```bash
-python -m pip install -r requirements-dev.txt
+python -c "from toetra import verify; print('Toetra import: OK')"
+```
+
+Normal user code imports only from `toetra`. The former top-level `dsl` and
+`model` packages are not installed. Modules under `toetra._*` are private and
+carry no compatibility guarantee.
+
+## First run
+
+From the same repository root:
+
+```bash
+python -m demo.quickstart.verify_model --demo
+```
+
+The quickstart trains a temporary affine regression model, verifies two
+properties through `toetra.verify(...)`, and removes its temporary files. It
+should finish with one `PROVED` result and one `WITNESS`.
+
+After installation, its standalone runner can also be copied outside the
+checkout:
+
+```bash
+cp demo/quickstart/verify_model.py /tmp/toetra-quickstart.py
+cd /tmp
+python toetra-quickstart.py --demo
+```
+
+The release gate executes this outside-checkout form against a clean-installed
+wheel without the source repository on the import path.
+
+## Development setup
+
+Install the pinned development and documentation dependencies in editable mode:
+
+```bash
+python -m pip install -e ".[dev,docs]"
 make ci
 ```
 
@@ -29,20 +74,7 @@ make release-check
 make review-bundle-check
 ```
 
-The distribution gate builds reproducible artifacts, installs the wheel outside
-the checkout, executes import and binary-classification public-API probes, then
-copies the standalone quickstart into the clean environment and runs it without
-the source repository on the import path.
-
-```python
-from toetra import verify, VerificationSession, VerificationStatus
-```
-
-Normal user code imports only from `toetra`. The former top-level `dsl` and
-`model` packages are not installed. Modules under `toetra._*` are private and
-carry no compatibility guarantee.
-
-See the [repository contract](../contracts/repository-contract.md) for the
-frozen package, test, demo, documentation, and automation boundaries. Release
-validation deliberately keeps `ci`, demonstrations, distribution, and
-review-bundle reproducibility as explicit gates.
+The four commands are separate quality, demonstration, distribution, and
+review-bundle gates. See the
+[repository contract](../contracts/repository-contract.md) for the frozen
+package, test, demo, documentation, and automation boundaries.

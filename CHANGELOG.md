@@ -9,6 +9,10 @@
 
 ### Changed
 
+- Reworked the public README and onboarding path around an explicit
+  source-installed `1.0.0rc3` evaluation status, a literal self-contained first
+  run, expected conclusions, supported routes, and visible limitations without
+  claiming PyPI, CLI, or stable-release availability.
 - Separated public repository exposure, the CLI automation surface, and stable
   release hardening into P27, P28, and P29, and accepted a dedicated public
   repository readiness contract without changing `1.0.0rc3`.

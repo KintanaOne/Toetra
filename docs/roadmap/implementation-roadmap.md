@@ -84,9 +84,11 @@ external reader without forcing the stable release:
   are implemented, and the UCI Cleveland asset now has a digest-bound CC BY 4.0
   attribution. P27.1 closes only after the history command and human ref/identity
   review pass on the canonical non-shallow clone;
-- **P27.2 — public narrative and first use:** make README, installation,
-  positioning, limitations, and release-candidate status truthful from outside
-  the private checkout;
+- **P27.2 — public narrative and first use:** README, documentation landing
+  page, installation, first-use path, limitations, and release notes now
+  identify `1.0.0rc3` as a source-installed evaluation candidate, distinguish
+  it from PyPI and stable publication, and lead an outside reader through the
+  self-contained public quickstart;
 - **P27.3 — collaboration and workflow safety:** add contribution, security, and
   issue-intake surfaces and harden untrusted pull-request automation;
 - **P27.4 — outside-in rehearsal:** clone or extract the exact candidate in a

@@ -308,6 +308,86 @@ def _validate_sdist_manifest() -> None:
         )
 
 
+def _validate_public_narrative() -> None:
+    documents = {
+        "README.md": ROOT / "README.md",
+        "docs/index.md": ROOT / "docs" / "index.md",
+        "docs/getting-started/installation.md": (
+            ROOT / "docs" / "getting-started" / "installation.md"
+        ),
+        "docs/getting-started/overview.md": (
+            ROOT / "docs" / "getting-started" / "overview.md"
+        ),
+        "docs/public-v1-profile.md": ROOT / "docs" / "public-v1-profile.md",
+        "docs/releases/1.0.0rc3.md": (ROOT / "docs" / "releases" / "1.0.0rc3.md"),
+    }
+    sources = {
+        name: path.read_text(encoding="utf-8") for name, path in documents.items()
+    }
+
+    for name, source in sources.items():
+        required = ("1.0.0rc3", "release candidate")
+        missing = tuple(marker for marker in required if marker not in source)
+        if missing:
+            raise PublicContractError(
+                f"{name} does not identify the current release-candidate status: "
+                + ", ".join(missing)
+            )
+
+        if re.search(
+            r"^\s*(?:python\s+-m\s+)?pip\s+install\s+[\"']?toetra(?:[=<>!~\s]|$)",
+            source,
+            re.MULTILINE,
+        ):
+            raise PublicContractError(
+                f"{name} presents an unavailable PyPI installation command"
+            )
+        if re.search(r"^\s*toetra\s+verify(?:\s|$)", source, re.MULTILINE):
+            raise PublicContractError(
+                f"{name} presents the P28 CLI as available during P27"
+            )
+
+    readme = sources["README.md"]
+    readme_markers = (
+        "not currently published on PyPI",
+        "source checkout or source archive",
+        "python -m pip install .",
+        "python -m demo.quickstart.verify_model --demo",
+        "`PROVED`",
+        "`COUNTEREXAMPLE`",
+        "`WITNESS`",
+        "`NO_WITNESS`",
+        "`UNKNOWN`",
+        "docs/getting-started/installation.md",
+        "docs/public-v1-profile.md",
+        "docs/releases/1.0.0rc3.md",
+        "CHANGELOG.md",
+    )
+    missing_readme = tuple(marker for marker in readme_markers if marker not in readme)
+    if missing_readme:
+        raise PublicContractError(
+            "README is missing public-first-use markers: " + ", ".join(missing_readme)
+        )
+
+    installation = sources["docs/getting-started/installation.md"]
+    installation_markers = (
+        "not currently published on PyPI",
+        "source checkout or extracted source archive",
+        "Python 3.11 and 3.12",
+        "python -m pip install .",
+        "python -m demo.quickstart.verify_model --demo",
+        'python -m pip install -e ".[dev,docs]"',
+    )
+    missing_installation = tuple(
+        marker for marker in installation_markers if marker not in installation
+    )
+    if missing_installation:
+        raise PublicContractError(
+            "Installation guide is missing candidate-availability markers: "
+            + ", ".join(missing_installation)
+        )
+
+
 def check_public_contract() -> None:
     project = _project()
     if project.get("name") != EXPECTED_PROJECT_NAME:
@@ -353,8 +433,12 @@ def check_public_contract() -> None:
     public_documents = (
         ROOT / "README.md",
         ROOT / "ARCHITECTURE.md",
+        ROOT / "docs" / "index.md",
         ROOT / "docs" / "public-v1-profile.md",
+        ROOT / "docs" / "getting-started" / "installation.md",
+        ROOT / "docs" / "getting-started" / "overview.md",
         ROOT / "docs" / "getting-started" / "first-property.md",
+        ROOT / "docs" / "releases" / "1.0.0rc3.md",
         ROOT
         / "docs"
         / "adr"
@@ -378,6 +462,7 @@ def check_public_contract() -> None:
     _validate_mkdocs_navigation()
     _validate_classification_target_contract()
     _validate_sdist_manifest()
+    _validate_public_narrative()
 
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     stale_markers = (
