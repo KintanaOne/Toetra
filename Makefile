@@ -4,7 +4,8 @@
 
 .PHONY: install test test-wip test-all lint format format-check type \
 	notebooks-clean notebooks-check generated-check identity-check public-contract-check \
-	public-snapshot-check public-history-check snippets-check docs-check ci \
+	public-snapshot-check public-history-check public-collaboration-check \
+	snippets-check docs-check ci \
 	dist dist-check install-check release-check review-bundle \
 	review-bundle-check repository-check demo-regression demo-quickstart \
 	demo-classification demo-check clean ci-local
@@ -48,6 +49,9 @@ public-snapshot-check:
 public-history-check:
 	python scripts/repository/check_public_exposure.py --history
 
+public-collaboration-check:
+	python scripts/repository/check_public_collaboration.py
+
 format: notebooks-clean
 	python -m black .
 
@@ -65,11 +69,11 @@ docs-check: snippets-check
 	python -m mkdocs build --strict
 
 # Non-mutating authoritative verification gate.
-ci: lint format-check generated-check identity-check public-contract-check repository-check public-snapshot-check type test docs-check
+ci: lint format-check generated-check identity-check public-contract-check repository-check public-snapshot-check public-collaboration-check type test docs-check
 
 # Complete local gate without Ruff for hosts that block unsigned native tools.
 # Hosted CI remains authoritative for lint.
-ci-local: format format-check generated-check identity-check public-contract-check repository-check public-snapshot-check type test docs-check
+ci-local: format format-check generated-check identity-check public-contract-check repository-check public-snapshot-check public-collaboration-check type test docs-check
 	
 ci-local-fix: format ci-local
 
@@ -93,12 +97,12 @@ dist-check:
 install-check:
 	python scripts/release/check_installed_distribution.py dist
 
-release-check: identity-check public-contract-check repository-check dist dist-check install-check
+release-check: identity-check public-contract-check repository-check public-collaboration-check dist dist-check install-check
 
 review-bundle:
 	python scripts/release/build_review_bundle.py --output dist/toetra_review_bundle.zip
 
-review-bundle-check: identity-check repository-check
+review-bundle-check: identity-check repository-check public-collaboration-check
 	python scripts/release/build_review_bundle.py --check-reproducible
 
 # Run the public affine-regression demonstration.

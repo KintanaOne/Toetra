@@ -38,6 +38,8 @@ def test_readme_points_to_the_authoritative_v1_profile() -> None:
     assert "LinearRegression" in readme
     assert "LogisticRegression" in readme
     assert "Apache License 2.0" in readme
+    assert "CONTRIBUTING.md" in readme
+    assert "SECURITY.md" in readme
 
 
 def test_installation_does_not_claim_unavailable_distribution_surfaces() -> None:

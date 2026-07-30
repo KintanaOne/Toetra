@@ -362,6 +362,8 @@ def _validate_public_narrative() -> None:
         "docs/public-v1-profile.md",
         "docs/releases/1.0.0rc3.md",
         "CHANGELOG.md",
+        "CONTRIBUTING.md",
+        "SECURITY.md",
     )
     missing_readme = tuple(marker for marker in readme_markers if marker not in readme)
     if missing_readme:
@@ -432,6 +434,8 @@ def check_public_contract() -> None:
 
     public_documents = (
         ROOT / "README.md",
+        ROOT / "CONTRIBUTING.md",
+        ROOT / "SECURITY.md",
         ROOT / "ARCHITECTURE.md",
         ROOT / "docs" / "index.md",
         ROOT / "docs" / "public-v1-profile.md",
@@ -444,6 +448,7 @@ def check_public_contract() -> None:
         / "adr"
         / "ADR-0030-separate-public-exposure-cli-and-stable-release.md",
         ROOT / "docs" / "contracts" / "public-repository-readiness.md",
+        ROOT / "docs" / "development" / "public-collaboration-and-workflows.md",
         ROOT / "docs" / "contracts" / "public-v1-contract.md",
     )
     for document in public_documents:

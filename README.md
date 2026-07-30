@@ -153,6 +153,8 @@ probability witness, and pairwise label equality.
 - [Architecture](docs/architecture/overview.md)
 - [Public contract](docs/contracts/public-v1-contract.md)
 - [Changelog](CHANGELOG.md)
+- [Contributing](CONTRIBUTING.md)
+- [Security policy](SECURITY.md)
 
 ## Development and validation
 

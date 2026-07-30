@@ -1,0 +1,40 @@
+name: Post-V1 proposal
+description: Suggest a capability or usability improvement for later roadmap consideration.
+title: "[Proposal]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        P27 keeps the 1.0.0rc3 product boundary frozen. Proposals are welcome,
+        but acceptance does not place them in the current release scope.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: Describe the user need before proposing an implementation.
+    validations:
+      required: true
+
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: Explain the behavior or workflow that would solve the problem.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope acknowledgement
+      options:
+        - label: I understand this proposal is outside the frozen P27 release-candidate scope.
+          required: true
+        - label: This proposal does not contain credentials, private data, or a security vulnerability.
+          required: true
