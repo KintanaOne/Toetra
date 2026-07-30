@@ -5,6 +5,19 @@ Cleveland heart-disease dataset. It is intentionally kept under `demo/` because
 it combines data preparation, model training, schema export, and generated
 artifacts rather than serving as an installed package resource.
 
+## Dataset provenance
+
+The immutable CSV is derived from the UCI `processed.cleveland.data` file. It
+contains the same 303 records and numeric values, with an added header, the
+response column named `target`, and normalized textual notation for
+integer-valued entries.
+
+The dataset is licensed separately under CC BY 4.0. Its creators, citation,
+source and exact file hashes are recorded in the repository
+[third-party notice](../../../THIRD_PARTY.md). The Apache-2.0 license for Toetra
+does not replace the dataset license. This workspace is an engineering example,
+not a medical or diagnostic claim.
+
 Run it from the repository root:
 
 ```bash

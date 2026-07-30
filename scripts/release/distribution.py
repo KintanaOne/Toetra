@@ -408,7 +408,13 @@ def _check_sdist(
         members = [member.name for member in archive_members]
         file_members = [member.name for member in archive_members if member.isfile()]
         _check_required_members(members, archive_kind="Source distribution")
-        for required in ("pyproject.toml", "README.md", "CHANGELOG.md", "LICENSE"):
+        for required in (
+            "pyproject.toml",
+            "README.md",
+            "CHANGELOG.md",
+            "LICENSE",
+            "THIRD_PARTY.md",
+        ):
             if not any(member.endswith(f"/{required}") for member in members):
                 raise DistributionContractError(
                     f"Source distribution does not contain {required!r}."

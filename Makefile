@@ -3,7 +3,8 @@
 # =========================
 
 .PHONY: install test test-wip test-all lint format format-check type \
-	notebooks-clean notebooks-check generated-check identity-check public-contract-check snippets-check docs-check ci \
+	notebooks-clean notebooks-check generated-check identity-check public-contract-check \
+	public-snapshot-check public-history-check snippets-check docs-check ci \
 	dist dist-check install-check release-check review-bundle \
 	review-bundle-check repository-check demo-regression demo-quickstart \
 	demo-classification demo-check clean ci-local
@@ -41,6 +42,12 @@ public-contract-check:
 repository-check:
 	python scripts/repository/check_repository_contract.py
 
+public-snapshot-check:
+	python scripts/repository/check_public_exposure.py --snapshot
+
+public-history-check:
+	python scripts/repository/check_public_exposure.py --history
+
 format: notebooks-clean
 	python -m black .
 
@@ -58,11 +65,11 @@ docs-check: snippets-check
 	python -m mkdocs build --strict
 
 # Non-mutating authoritative verification gate.
-ci: lint format-check generated-check identity-check public-contract-check repository-check type test docs-check
+ci: lint format-check generated-check identity-check public-contract-check repository-check public-snapshot-check type test docs-check
 
 # Complete local gate without Ruff for hosts that block unsigned native tools.
 # Hosted CI remains authoritative for lint.
-ci-local: format format-check generated-check identity-check public-contract-check repository-check type test docs-check
+ci-local: format format-check generated-check identity-check public-contract-check repository-check public-snapshot-check type test docs-check
 	
 ci-local-fix: format ci-local
 
