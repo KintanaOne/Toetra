@@ -5,6 +5,11 @@
 
 This page is the public source of truth for executable Toetra V1 support.
 
+`1.0.0rc3` is an evaluation release candidate, not the stable `1.0.0`
+release. It is currently installed from a source checkout or source archive and
+is not published on PyPI. See
+[Installation and availability](getting-started/installation.md).
+
 ## Supported end-to-end routes
 
 | Axis | Regression route | Binary-classification route |

@@ -32,9 +32,24 @@ def test_readme_points_to_the_authoritative_v1_profile() -> None:
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
 
     assert "docs/public-v1-profile.md" in readme
+    assert "not currently published on PyPI" in readme
+    assert "source checkout or source archive" in readme
+    assert "python -m demo.quickstart.verify_model --demo" in readme
     assert "LinearRegression" in readme
     assert "LogisticRegression" in readme
     assert "Apache License 2.0" in readme
+
+
+def test_installation_does_not_claim_unavailable_distribution_surfaces() -> None:
+    installation = (ROOT / "docs" / "getting-started" / "installation.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "not the stable `1.0.0` release" in installation
+    assert "not currently published on PyPI" in installation
+    assert "pip install toetra" in installation
+    assert "is not a documented installation path" in installation
+    assert "python -m pip install ." in installation
 
 
 def test_sdist_manifest_includes_public_release_files() -> None:
