@@ -4,6 +4,9 @@
 
 ### Changed
 
+- Separated public repository exposure, the CLI automation surface, and stable
+  release hardening into P27, P28, and P29, and accepted a dedicated public
+  repository readiness contract without changing `1.0.0rc3`.
 - Made the public quickstart independently copyable outside the repository,
   added clean-wheel execution of that copied script, and verified both public
   notebooks from the repository root and their own directories.

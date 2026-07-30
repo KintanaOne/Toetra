@@ -24,6 +24,13 @@ How long should the final release candidate soak, which external installation
 scenarios are mandatory, and which documentation or packaging defects block
 `1.0.0` even when the core solver tests remain green?
 
+### CLI automation contract
+
+Which command shape, stream guarantees, exit-code meanings, and artifact
+behaviors form the smallest stable CLI for terminal use, CI/CD, and future
+orchestration? The CLI must remain a thin adapter over the public Python
+workflow rather than a second implementation of verification semantics.
+
 ## Post-V1 product questions
 
 ### Next model route
@@ -82,6 +89,8 @@ The following are no longer open:
   trust, evidence, provenance, and diagnostics while retaining JSON v6;
 - standalone first use from a copied quickstart and repository-notebook launch
   behavior from the root or notebook directory;
+- separation of public repository exposure, the CLI automation surface, and the
+  stable release into P27, P28, and P29;
 - ownership boundaries for model families, framework adapters, and backends;
 - canonical, CI-checked public documentation snippets.
 

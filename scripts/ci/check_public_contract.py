@@ -323,6 +323,11 @@ def check_public_contract() -> None:
         raise PublicContractError(
             f"Expected SPDX license {EXPECTED_LICENSE}, got {project.get('license')!r}"
         )
+    if "scripts" in project:
+        raise PublicContractError(
+            "P27 must not publish an installed CLI; the entry-point contract "
+            "belongs to P28."
+        )
     if report_schema_version() != 6:
         raise PublicContractError(
             "JSON report schema v6 is frozen for the Toetra identity; use a new schema "
@@ -350,6 +355,11 @@ def check_public_contract() -> None:
         ROOT / "ARCHITECTURE.md",
         ROOT / "docs" / "public-v1-profile.md",
         ROOT / "docs" / "getting-started" / "first-property.md",
+        ROOT
+        / "docs"
+        / "adr"
+        / "ADR-0030-separate-public-exposure-cli-and-stable-release.md",
+        ROOT / "docs" / "contracts" / "public-repository-readiness.md",
         ROOT / "docs" / "contracts" / "public-v1-contract.md",
     )
     for document in public_documents:
