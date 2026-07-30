@@ -1,0 +1,81 @@
+name: Bug report
+description: Report a reproducible defect in the current Toetra release candidate.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping evaluate Toetra. If this could be a security
+        vulnerability, stop here and follow SECURITY.md instead.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Verification result or soundness
+        - Installation or packaging
+        - Parser or compiler
+        - Model loading or encoding
+        - Reporting or replay
+        - Documentation or demo
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Toetra version
+      placeholder: 1.0.0rc3
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Python version, operating system, and relevant dependency versions.
+      placeholder: Python 3.12, Windows 11, scikit-learn 1.8.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed behavior
+      description: Describe what happened and include the complete Toetra status or error.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Provide the smallest specification, model setup, and commands that reproduce the issue.
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: artifacts
+    attributes:
+      label: Relevant output
+      description: Add redacted logs, reports, or links. Never include credentials or private data.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Submission checks
+      options:
+        - label: I checked the documented V1 profile and limitations.
+          required: true
+        - label: This report does not disclose a security vulnerability or secret.
+          required: true

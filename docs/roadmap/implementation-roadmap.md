@@ -89,8 +89,11 @@ external reader without forcing the stable release:
   identify `1.0.0rc3` as a source-installed evaluation candidate, distinguish
   it from PyPI and stable publication, and lead an outside reader through the
   self-contained public quickstart;
-- **P27.3 — collaboration and workflow safety:** add contribution, security, and
-  issue-intake surfaces and harden untrusted pull-request automation;
+- **P27.3 — collaboration and workflow safety:** contribution, private
+  security-reporting, structured issue-intake, and pull-request surfaces are
+  present; CI is explicitly read-only, time-bounded, credential-free, and
+  pinned to immutable action commits; the durable collaboration gate and
+  GitHub owner-settings checklist preserve that boundary;
 - **P27.4 — outside-in rehearsal:** clone or extract the exact candidate in a
   clean location and follow the public journey literally;
 - **P27.5 — controlled exposure:** make the accepted commit public, verify the

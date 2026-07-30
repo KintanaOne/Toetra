@@ -219,6 +219,7 @@ nav:
       - Documentation Snippets: development/documentation-snippets.md
       - Repository Layout: development/repository-layout.md
       - Public Repository Audit: development/public-repository-audit.md
+      - Public Collaboration and Workflows: development/public-collaboration-and-workflows.md
       - Extension Architecture: development/extensions.md
       - Add a Model Family: development/adding-model-family.md
       - Add a Framework Adapter: development/adding-framework-adapter.md

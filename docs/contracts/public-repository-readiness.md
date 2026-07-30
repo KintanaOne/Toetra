@@ -130,6 +130,15 @@ Before accepting untrusted public contributions:
 Settings controlled by GitHub are recorded as manual evidence because source
 tests cannot enforce them.
 
+The source-controlled gate is:
+
+```bash
+make public-collaboration-check
+```
+
+The owner-settings checklist is maintained in
+[Public collaboration and workflow settings](../development/public-collaboration-and-workflows.md).
+
 ### 6. Outside-in validation
 
 The candidate public commit is validated without private checkout assumptions:
