@@ -175,6 +175,7 @@ def repository_contract_errors(repository: Path) -> tuple[str, ...]:
     required_files = (
         repository / "ARCHITECTURE.md",
         repository / "CHANGELOG.md",
+        repository / "COMMERCIAL_LICENSE.md",
         repository / "LICENSE",
         repository / "Makefile",
         repository / "README.md",

@@ -18,7 +18,7 @@ from toetra._compiler.parser.parser import parse_toetra_code  # noqa: E402
 
 EXPECTED_PROJECT_NAME = "toetra"
 EXPECTED_VERSION = "1.0.0rc3"
-EXPECTED_LICENSE = "Apache-2.0"
+EXPECTED_LICENSE = "PolyForm-Noncommercial-1.0.0"
 
 CLASSIFICATION_TARGET_DOCUMENTS = (
     ROOT / "docs" / "adr" / "ADR-0023-typed-model-outputs-and-observables.md",
@@ -295,6 +295,7 @@ def _validate_sdist_manifest() -> None:
     }
     required = {
         "include LICENSE",
+        "include COMMERCIAL_LICENSE.md",
         "include README.md",
         "include CHANGELOG.md",
         "include pyproject.toml",
@@ -425,8 +426,27 @@ def check_public_contract() -> None:
         )
 
     license_text = (ROOT / "LICENSE").read_text(encoding="utf-8")
-    if "Apache License" not in license_text or "Version 2.0" not in license_text:
-        raise PublicContractError("LICENSE is not the Apache License 2.0 text")
+    required_license_markers = (
+        "# PolyForm Noncommercial License 1.0.0",
+        "https://polyformproject.org/licenses/noncommercial/1.0.0",
+        "Any noncommercial purpose is a permitted purpose.",
+    )
+    if any(marker not in license_text for marker in required_license_markers):
+        raise PublicContractError(
+            "LICENSE is not the PolyForm Noncommercial License 1.0.0 text"
+        )
+
+    commercial_license = (ROOT / "COMMERCIAL_LICENSE.md").read_text(encoding="utf-8")
+    required_commercial_markers = (
+        "separate written commercial",
+        "hosted or managed-service use",
+        "KintanaOne@proton.me",
+        "Commercial terms are not granted by this document",
+    )
+    if any(marker not in commercial_license for marker in required_commercial_markers):
+        raise PublicContractError(
+            "COMMERCIAL_LICENSE.md does not preserve the separate commercial route"
+        )
 
     changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
     if f"[{EXPECTED_VERSION}]" not in changelog:
@@ -434,6 +454,7 @@ def check_public_contract() -> None:
 
     public_documents = (
         ROOT / "README.md",
+        ROOT / "COMMERCIAL_LICENSE.md",
         ROOT / "CONTRIBUTING.md",
         ROOT / "SECURITY.md",
         ROOT / "ARCHITECTURE.md",

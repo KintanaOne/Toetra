@@ -14,9 +14,9 @@ integer-valued entries.
 
 The dataset is licensed separately under CC BY 4.0. Its creators, citation,
 source and exact file hashes are recorded in the repository
-[third-party notice](../../../THIRD_PARTY.md). The Apache-2.0 license for Toetra
-does not replace the dataset license. This workspace is an engineering example,
-not a medical or diagnostic claim.
+[third-party notice](../../../THIRD_PARTY.md). Toetra's PolyForm Noncommercial
+license does not replace the dataset license. This workspace is an engineering
+example, not a medical or diagnostic claim.
 
 Run it from the repository root:
 

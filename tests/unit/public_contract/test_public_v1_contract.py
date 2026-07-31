@@ -37,7 +37,9 @@ def test_readme_points_to_the_authoritative_v1_profile() -> None:
     assert "python -m demo.quickstart.verify_model --demo" in readme
     assert "LinearRegression" in readme
     assert "LogisticRegression" in readme
-    assert "Apache License 2.0" in readme
+    assert "PolyForm Noncommercial License 1.0.0" in readme
+    assert "COMMERCIAL_LICENSE.md" in readme
+    assert "not an open-source license" in readme
     assert "CONTRIBUTING.md" in readme
     assert "SECURITY.md" in readme
 
@@ -58,6 +60,7 @@ def test_sdist_manifest_includes_public_release_files() -> None:
     manifest = (ROOT / "MANIFEST.in").read_text(encoding="utf-8")
 
     assert "include CHANGELOG.md" in manifest
+    assert "include COMMERCIAL_LICENSE.md" in manifest
     assert "include LICENSE" in manifest
     assert "include README.md" in manifest
     assert "include pyproject.toml" in manifest

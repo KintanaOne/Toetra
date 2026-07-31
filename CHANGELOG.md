@@ -14,6 +14,9 @@
 
 ### Changed
 
+- Replaced Apache-2.0 with PolyForm Noncommercial 1.0.0 for Toetra-originated
+  code and documentation, documented the separate commercial-licensing route,
+  and protected that route from ungoverned outside contributions.
 - Reworked the public README and onboarding path around an explicit
   source-installed `1.0.0rc3` evaluation status, a literal self-contained first
   run, expected conclusions, supported routes, and visible limitations without

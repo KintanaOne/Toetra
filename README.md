@@ -191,6 +191,12 @@ The frozen repository structure is documented in the
 
 ## License
 
-Toetra is licensed under the [Apache License 2.0](LICENSE). Redistributed
-third-party material keeps its own license and attribution; see
-[Third-party material](THIRD_PARTY.md).
+Toetra is source-available for noncommercial use under the
+[PolyForm Noncommercial License 1.0.0](LICENSE). Use outside the purposes
+permitted by that license requires a separate written agreement; see
+[Commercial licensing](COMMERCIAL_LICENSE.md).
+
+This is not an open-source license under the Open Source Definition. The public
+license does not grant the right to use Toetra for a commercial hosted service,
+managed service, or SaaS offering. Redistributed third-party material keeps its
+own license and attribution; see [Third-party material](THIRD_PARTY.md).

@@ -52,5 +52,9 @@ Keep each pull request focused and explain its contract impact. Complete the
 pull-request checklist, wait for all required CI jobs, and address review
 comments before merge.
 
-Contributions accepted into this repository are provided under the project's
-[Apache-2.0 license](LICENSE).
+Public issues, reviews, reproductions, and proposals are welcome. Until an
+explicit contributor agreement is published and accepted, outside code or
+documentation contributions cannot be merged. This preserves the project's
+ability to offer both its
+[PolyForm Noncommercial 1.0.0 license](LICENSE) and separate
+[commercial agreements](COMMERCIAL_LICENSE.md).

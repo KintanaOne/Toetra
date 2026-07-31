@@ -11,6 +11,9 @@ The repository provides:
 - `CONTRIBUTING.md` and a pull-request checklist;
 - `SECURITY.md` with a private reporting route;
 - structured issue forms for defects, documentation, and post-V1 proposals;
+- a contributor-licensing boundary that accepts public feedback but does not
+  merge outside code or documentation before an explicit contributor
+  agreement;
 - read-only pull-request CI with immutable action references;
 - no `pull_request_target`, publication credential, deployment, or release job;
 - weekly Dependabot checks for pinned GitHub Actions.
@@ -66,6 +69,11 @@ The `pull_request` workflow executes contributor-controlled code, including
 tests and build hooks. It therefore receives only a read-only token, no secrets,
 no publishing identity, and no write permission. Publication remains a
 separate, explicitly authorized future operation.
+
+Opening a pull request does not grant Toetra the commercial relicensing rights
+needed by its dual-licensing model. Until an explicit contributor agreement is
+published and accepted, outside code and documentation pull requests are not
+merged. Issues, reviews, reproductions, and proposals remain welcome.
 
 Never replace this boundary with `pull_request_target` plus an untrusted
 checkout. Never pass issue, pull-request, branch, or commit text directly into a

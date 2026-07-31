@@ -35,8 +35,10 @@ The goal of the ADR section is to make explicit:
 - why installable code uses a `src`-based single-package layout,
 - why public verification failures are normalized without erasing their
   owning internal boundary,
-- and why public repository exposure, the CLI contract, and the stable release
-  are separate projects.
+- why public repository exposure, the CLI contract, and the stable release are
+  separate projects,
+- and why public source access is noncommercial while commercial rights require
+  a separate agreement.
 
 ## ADR format
 
@@ -86,6 +88,7 @@ Impact on Toetra
 | ADR-0028 | Adopt a `src`-based single-package layout |
 | ADR-0029 | Normalize public verification failures without erasing ownership |
 | ADR-0030 | Separate public repository exposure, CLI, and stable release |
+| ADR-0031 | Adopt noncommercial and separate commercial licensing |
 
 ## Decision status vocabulary
 

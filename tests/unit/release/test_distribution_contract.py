@@ -71,6 +71,7 @@ def _write_source_inventory(repository: Path) -> None:
 def _write_sdist(path: Path, *, mtime: int) -> None:
     members = {
         f"{SDIST_ROOT}/LICENSE": b"license\n",
+        f"{SDIST_ROOT}/COMMERCIAL_LICENSE.md": b"commercial licensing\n",
         f"{SDIST_ROOT}/THIRD_PARTY.md": b"third-party notices\n",
         f"{SDIST_ROOT}/README.md": b"readme\n",
         f"{SDIST_ROOT}/CHANGELOG.md": b"changelog\n",

@@ -51,9 +51,11 @@ P27, must be marked as a pre-release.
 ## 4. Verify anonymously
 
 Use a signed-out browser or private window to confirm the repository, README,
-license, issues, issue forms, security policy, Actions results, and
-documentation site are visible. Recheck the owner-controlled settings after
-the visibility change.
+license, commercial-licensing route, issues, issue forms, security policy,
+Actions results, and documentation site are visible. Recheck the
+owner-controlled settings after the visibility change. GitHub may label the
+PolyForm license as `NOASSERTION` or omit a detected-license badge; the
+authoritative checks read the exact `LICENSE` file and package metadata.
 
 Then run the credential-free automated probe:
 

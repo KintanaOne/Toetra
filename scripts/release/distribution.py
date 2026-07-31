@@ -413,6 +413,7 @@ def _check_sdist(
             "README.md",
             "CHANGELOG.md",
             "LICENSE",
+            "COMMERCIAL_LICENSE.md",
             "THIRD_PARTY.md",
         ):
             if not any(member.endswith(f"/{required}") for member in members):
