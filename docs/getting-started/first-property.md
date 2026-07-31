@@ -1,4 +1,11 @@
-# First Toetra property
+# First Toetra properties
+
+## First regression property
+
+This example uses the public regression route: a fitted single-output
+scikit-learn `LinearRegression`. Toetra exposes its numeric prediction as
+`target[point]` and encodes the extracted model as an exact-real affine
+abstraction for Z3.
 
 Create `policy.toetra`:
 
@@ -12,11 +19,12 @@ maximum_score := 7.0
 [BOUND]:
 forall x0
 with domain(x0.a: [0.0, 3.0])
-=> target <= maximum_score using Z3
+=> target[x0] <= maximum_score using Z3
 ```
 
-This property asks whether the extracted affine model output is at most `7.0` for
-every value of feature `a` in the closed interval `[0.0, 3.0]`.
+This regression property asks whether the model prediction `target[x0]` is at
+most `7.0` for every value of feature `a` in the closed interval
+`[0.0, 3.0]`.
 
 Run it from Python:
 
@@ -34,9 +42,9 @@ session.print()
 Possible universal outcomes are `PROVED`, `COUNTEREXAMPLE`, or `UNKNOWN`.
 Existential properties use `WITNESS`, `NO_WITNESS`, or `UNKNOWN`.
 
-The V1 route proves properties of `toetra.real_affine_extracted_model`, not a
-bit-exact model of sklearn floating-point execution. The report records that
-numeric scope explicitly.
+For this `LinearRegression` route, V1 proves properties of
+`toetra.real_affine_extracted_model`, not a bit-exact model of sklearn
+floating-point execution. The report records that numeric scope explicitly.
 
 
 ## First binary-classification property

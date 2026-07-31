@@ -33,9 +33,10 @@ From the same repository root:
 python -m demo.quickstart.verify_model --demo
 ```
 
-The quickstart trains a temporary affine regression model, verifies two
-properties through `toetra.verify(...)`, and removes its temporary files. It
-should finish with one `PROVED` result and one `WITNESS`.
+The quickstart trains a temporary scikit-learn `LinearRegression` model,
+verifies two regression properties through `toetra.verify(...)`, and removes
+its temporary files. It should finish with one `PROVED` result and one
+`WITNESS`.
 
 After installation, its standalone runner can also be copied outside the
 checkout:

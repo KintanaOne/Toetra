@@ -1,6 +1,10 @@
 # End-to-End Preview
 
-Toetra V1 verifies numeric affine model behavior over concrete and symbolic points.
+The examples on this page use Toetra's public regression route: a fitted
+single-output scikit-learn `LinearRegression` over concrete and symbolic
+points. Toetra encodes its scalar regression prediction as an exact-real affine
+abstraction for Z3. Here, *affine* describes the formal encoding, not a separate
+user-facing task.
 
 ## Global bound
 
@@ -86,4 +90,7 @@ replay = session.first_counterexample.replay()
 print(replay.to_dataframe())
 ```
 
-The initial executable profile is deliberately narrow: numerical transformed features, scalar affine output, Z3, homogeneous quantifiers, and `Linf` neighborhoods.
+The regression profile shown here is deliberately narrow: transformed numeric
+features, one scalar regression output, Z3, homogeneous quantifiers, and `Linf`
+neighborhoods. The separate public binary-classification route is summarized in
+the [Public V1 profile](../public-v1-profile.md).

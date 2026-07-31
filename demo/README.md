@@ -26,9 +26,9 @@ python -m demo.quickstart.verify_model --demo \
     --json-output artifacts/toetra-report.json
 ```
 
-The demo trains a temporary affine model and executes an embedded copy of
-`demo/quickstart/verification_policy.toetra`. Generated model and dataset files
-are deleted automatically.
+The demo trains a temporary scikit-learn `LinearRegression` model and executes
+an embedded copy of `demo/quickstart/verification_policy.toetra`. Generated
+model and dataset files are deleted automatically.
 
 The Python file is intentionally standalone. After Toetra is installed, it can
 be copied to any directory and run without the repository or the adjacent
@@ -61,7 +61,7 @@ The generated JSON uses the versioned `toetra.verification-report-collection`
 schema. Exact backend rationals are retained as numerator/denominator pairs
 instead of being rounded.
 
-## Regression — affine model end to end
+## Regression — LinearRegression end to end
 
 Run:
 
@@ -100,9 +100,9 @@ It executes three properties:
 
 | Property | Expected result | Explanation |
 |---|---|---|
-| `target <= maximum_score` | `PROVED` | On `a ∈ [0, 3]`, the maximum score is 7. |
-| `target < maximum_score` | `COUNTEREXAMPLE` | `a = 3` produces `score = 7`. |
-| `target == witness_score` under `exists` | `WITNESS` | `a = 2` produces `score = 5`. |
+| `target[x0] <= maximum_score` | `PROVED` | On `a ∈ [0, 3]`, the maximum score is 7. |
+| `target[x0] < maximum_score` | `COUNTEREXAMPLE` | `a = 3` produces `score = 7`. |
+| `target[x0] == witness_score` under `exists` | `WITNESS` | `a = 2` produces `score = 5`. |
 
 The complete runtime path is:
 
@@ -140,9 +140,10 @@ The notebook-oriented model-review workflow is:
 demo/regression/credit_risk_validation.ipynb
 ```
 
-It trains a small affine credit-risk score from transformed numerical features,
-loads the packaged public policy, displays the native Jupyter report, selects
-and replays a counterexample, and exports JSON and standalone HTML artifacts.
+It trains a small scikit-learn `LinearRegression` credit-risk score from
+transformed numerical features, loads the packaged public policy, displays the
+native Jupyter report, selects and replays a counterexample, and exports JSON
+and standalone HTML artifacts.
 No solver-value conversion or feature-name parsing is written by the notebook
 user. Preprocessing remains explicitly outside the current V1 contract.
 

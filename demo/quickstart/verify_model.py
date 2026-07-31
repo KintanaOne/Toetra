@@ -23,13 +23,13 @@ witness_score := 5.0
 [BOUND]:
 forall x0
     with domain(x0.a: [minimum_a, maximum_a])
-    => target <= maximum_score
+    => target[x0] <= maximum_score
     using Z3
 
 [LOGIC]:
 exists x0
     with domain(x0.a: [minimum_a, maximum_a])
-    => target == witness_score
+    => target[x0] == witness_score
     using Z3
 """
 
@@ -104,8 +104,9 @@ def _build_parser() -> argparse.ArgumentParser:
         "--demo",
         action="store_true",
         help=(
-            "Run a self-contained example that trains a temporary affine model "
-            "and verifies an embedded Toetra policy."
+            "Run a self-contained regression example that trains a temporary "
+            "scikit-learn LinearRegression model and verifies an embedded "
+            "Toetra policy."
         ),
     )
     parser.add_argument(

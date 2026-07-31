@@ -46,9 +46,10 @@ python -m pip install .
 python -m demo.quickstart.verify_model --demo
 ```
 
-The self-contained quickstart trains a temporary affine regression model and
-checks two properties through the public API. It should finish with one
-`PROVED` result and one `WITNESS`, then remove its temporary model and dataset.
+The self-contained quickstart trains a temporary scikit-learn
+`LinearRegression` model and checks two regression properties through the
+public API. It should finish with one `PROVED` result and one `WITNESS`, then
+remove its temporary model and dataset.
 
 See [Installation](docs/getting-started/installation.md) for environment and
 development setup, or [Getting started](docs/getting-started/overview.md) for
@@ -66,7 +67,7 @@ maximum_score := 7.0
 [BOUND]:
 forall x0
 with domain(x0.a: [0.0, 3.0])
-=> target <= maximum_score using Z3
+=> target[x0] <= maximum_score using Z3
 ```
 
 ## Binary-classification property
