@@ -100,7 +100,9 @@ external reader without forcing the stable release:
   drift. P27.4 closes after that command passes on the canonical committed
   candidate;
 - **P27.5 — controlled exposure:** make the accepted commit public, verify the
-  public surfaces anonymously, and record the evidence.
+  public surfaces anonymously, and record the evidence. The source-controlled
+  runbook and credential-free surface probe prepare this operation; P27 closes
+  only after the owner changes visibility and the post-exposure checks pass.
 
 P27 keeps `1.0.0rc3` unless a release-candidate defect requires a later
 candidate. A GitHub Release is optional and, if created, remains a pre-release.

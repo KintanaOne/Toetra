@@ -75,4 +75,5 @@ shell command.
 
 P27.3 source controls are complete when the collaboration gate and hosted
 pull-request CI pass. The GitHub settings are rechecked immediately before and
-after the visibility change in P27.5.
+after the visibility change by the
+[P27.5 controlled exposure runbook](public-exposure-runbook.md).

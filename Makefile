@@ -8,7 +8,7 @@
 	snippets-check docs-check ci \
 	dist dist-check install-check release-check review-bundle \
 	review-bundle-check repository-check demo-regression demo-quickstart \
-	demo-classification demo-check outside-in-check clean ci-local
+	demo-classification demo-check outside-in-check public-surface-check clean ci-local
 
 install:
 	python -m pip install -e ".[dev,docs]"
@@ -122,6 +122,10 @@ demo-check: demo-quickstart demo-regression demo-classification
 # Rehearse the documented public journey from an exact clean clone.
 outside-in-check:
 	python scripts/release/check_outside_in.py
+
+# Verify the exposed commit and hosted surfaces without GitHub authentication.
+public-surface-check:
+	python scripts/release/check_public_surfaces.py
 
 clean:
 	python -c "import shutil; [shutil.rmtree(p, ignore_errors=True) for p in ('build', 'dist', 'site')]"

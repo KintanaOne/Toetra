@@ -9,6 +9,8 @@
 - Added an outside-in gate that clones the exact clean candidate, follows the
   public README journey in a new Python environment, runs all durable release
   gates, and rejects checkout drift.
+- Added the controlled-exposure runbook and an unauthenticated public-surface
+  probe that binds the exposed commit to the review-bundle digest.
 
 ### Changed
 

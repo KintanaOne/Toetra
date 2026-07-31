@@ -161,6 +161,17 @@ new Python environment, follows the public first-use commands, runs all four
 quality and release gates, and rejects any resulting checkout drift. Online
 GitHub surfaces remain a P27.5 post-exposure check.
 
+The credential-free post-exposure probe is:
+
+```bash
+make public-surface-check
+```
+
+It binds anonymous Git, GitHub metadata, critical public files, collaboration
+surfaces, and the documentation site to the accepted commit and review-bundle
+digest. The complete operation is defined by the
+[controlled public exposure runbook](../development/public-exposure-runbook.md).
+
 ### 7. Controlled exposure and observation
 
 The visibility change targets the exact accepted commit. Immediately afterward,
