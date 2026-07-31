@@ -22,8 +22,8 @@
   run, expected conclusions, supported routes, and visible limitations without
   claiming PyPI, CLI, or stable-release availability.
 - Separated public repository exposure, the CLI automation surface, and stable
-  release hardening into P27, P28, and P29, and accepted a dedicated public
-  repository readiness contract without changing `1.0.0rc3`.
+  release hardening into independent milestones, and accepted a dedicated
+  public repository readiness contract without changing `1.0.0rc3`.
 - Made the public quickstart independently copyable outside the repository,
   added clean-wheel execution of that copied script, and verified both public
   notebooks from the repository root and their own directories.
@@ -45,17 +45,16 @@
   locations, stable codes, remediation hints, and chained private causes.
 - Stopped relabeling semantic validation failures as parser errors and stopped
   exposing Lark `UnexpectedInput` subclasses from the parser entry point.
-- Accepted the P26 public failure boundary: the three existing error families
-  now expose stable diagnostic codes, owning stages, optional remediation and
-  source context, while private causes remain available through exception
-  chaining.
+- Accepted the public failure boundary: the three existing error families now
+  expose stable diagnostic codes, owning stages, optional remediation and source
+  context, while private causes remain available through exception chaining.
 - Froze the `1.0.0rc3` documentation around the nine-symbol public API,
   as-built compiler/runtime pipeline, explicit language support levels, and
   separate model-family, framework-adapter, and backend extension paths.
-- Added canonical CI-checked public snippets, archived completed V1 and
-  documentation roadmaps, and replaced stale active planning with the remaining
-  UX, release, and post-V1 questions.
-- Froze the post-P24 repository contract, added exact source-to-distribution
+- Added canonical CI-checked public snippets, consolidated delivered work into a
+  chronological project history, and replaced stale active planning with the
+  remaining evaluation, release, and post-V1 questions.
+- Froze the repository contract, added exact source-to-distribution
   package inventory checks, and introduced durable repository and demo
   validation gates.
 - Split binary-classification semantic lowering into a stable profile facade
@@ -64,8 +63,8 @@
 - Split counterexample replay into stable public data models, orchestration,
   three-valued evaluation, and rendering modules without changing replay outputs.
 - Consolidated the Cleveland classification workspace under `demo/`, grouped
-  repository scripts by responsibility, and archived completed roadmaps under
-  `docs/history/roadmaps/`.
+  repository scripts by responsibility, and separated project history from
+  active planning.
 - Migrated all installable code to the canonical `src/toetra/` layout.
 - Consolidated the former top-level `dsl` and `model` implementation packages
   into private responsibility-based `toetra._*` namespaces.
@@ -73,7 +72,7 @@
   and strengthened clean-install checks against obsolete namespaces.
 - Switched grammar loading to packaged resources so parsing works from wheels,
   source distributions, editable installs, and external working directories.
-- Accepted the final `src/toetra` single-package layout and the P24
+- Accepted the final `src/toetra` single-package layout and the
   responsibility-based internal namespace plan.
 - Removed broad private-package aggregate exports and the historical IR2
   `nodes` shim; internal imports now target concrete private modules.

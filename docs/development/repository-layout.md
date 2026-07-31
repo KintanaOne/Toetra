@@ -38,8 +38,9 @@ one-off migration scripts should not remain after the migration is complete.
 ## Documentation lifecycle
 
 The implementation roadmap and open questions remain under `docs/roadmap/`.
-Delivered plans move to `docs/history/roadmaps/`, where they remain useful as
-engineering evidence without appearing to describe pending work.
+Delivered work is summarized chronologically under `docs/history/roadmaps/`,
+where it remains useful as engineering context without appearing to describe
+pending work.
 
 ADRs and contracts remain authoritative regardless of roadmap location.
 

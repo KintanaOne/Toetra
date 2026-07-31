@@ -1,157 +1,97 @@
 # Implementation roadmap
 
-> **Status:** Active after the `1.0.0rc3` documentation freeze
+> **Status:** Active from the `1.0.0rc3` evaluation candidate
 >
-> **Scope:** remaining V1 stabilization and evidence-led post-V1 expansion
+> **Scope:** public evaluation, the first automation surface, stable V1, and
+> evidence-led capability expansion
 
-This roadmap starts from the implementation that exists. It does not redefine
-the [public V1 profile](../public-v1-profile.md), accepted contracts, or the
-nine-symbol Python facade.
+This roadmap starts from the product that exists today. Delivered work belongs
+in the [project history](../history/roadmaps/index.md); current support is defined
+by the [public V1 profile](../public-v1-profile.md), not by future plans.
 
-## Current baseline
+## Current position
 
-The implemented route is:
-
-```text
-.toetra source + model artifact
-→ CST → ProgramNode AST → semantic validation
-→ VerificationTask IR1 → model-semantic lowering → NNF
-→ VerificationTaskIR2 + assumptions
-→ BackendRoute → backend-private translation → VerificationResult
-→ VerificationReport + provenance + concrete replay
-```
-
-The public release candidate supports:
+`1.0.0rc3` is a source-installed evaluation candidate. Its public executable
+profile includes:
 
 - fitted single-output sklearn `LinearRegression`;
 - direct fitted binary sklearn `LogisticRegression`;
 - finite transformed numeric features and affine model encodings;
 - homogeneous `forall` or `exists` point bindings;
 - Z3 execution;
-- text, JSON v6, HTML, Jupyter, records/DataFrame, provenance, and replay.
+- text, JSON v6, HTML, Jupyter, records/DataFrame, provenance, and replay;
+- reproducible distributions, clean-install checks, and a reproducible review
+  bundle.
+
+The repository structure, public Python facade, documentation baseline, error
+boundary, reporting contract, contribution surfaces, licensing, and controlled
+exposure procedure are already in place. These are current foundations rather
+than future roadmap items.
 
 The [implementation status matrix](../architecture/status-matrix.md) separates
 code present in the repository from built-in and publicly guaranteed routes.
 
-## Remaining V1 sequence
+## Immediate — public evaluation
 
-### P26 — User and developer experience
+The next milestone is a controlled public repository exposure, without
+presenting the candidate as a stable package release.
 
-P26 improves the boundaries users already encounter without widening the
-verification profile:
+The remaining work is operational:
 
-- parser and semantic diagnostics;
-- unsupported model, property, framework, and backend messages;
-- consistent report presentation and failure ownership;
-- clean-install and first-use feedback;
-- error-path tests across the public `verify(...)` workflow.
+- expose the accepted commit and verify its public surfaces anonymously;
+- confirm that the published repository matches the reviewed commit and review
+  bundle;
+- observe first-use, installation, documentation, security, and soundness
+  feedback;
+- correct release-candidate defects without widening the frozen V1 capability
+  profile.
 
-Changes to error wrapping must preserve the distinction between compilation
-failure, capability rejection, backend failure, and a logical result such as
-`COUNTEREXAMPLE` or `UNKNOWN`.
+A GitHub Release is optional during this period and, if created, remains a
+pre-release. PyPI publication and `1.0.0` are separate decisions.
 
-P26.0 accepted the public failure classification and structured diagnostic
-contract in
-[ADR-0029](../adr/ADR-0029-public-verification-failure-boundary.md). P26.1
-normalizes syntax, builder, and semantic failures while preserving their
-internal ownership. P26.2 normalizes specification, model, and reference-dataset
-artifacts plus model detection and introspection, while distinguishing invalid
-artifacts from loaded but unsupported model integrations. P26.3 normalizes
-model-encoder, model-semantic, numeric-compatibility, and backend-routing
-failures while preserving the difference between incomplete configuration,
-unsupported routes, and technical integration failures. P26.4 normalizes
-runner lookup, backend translation, backend execution-policy, and technical
-execution failures while preserving timeout, resource, cancellation, and
-solver-unknown outcomes as reportable `UNKNOWN` results. P26.5 aligns terminal
-text, HTML/Jupyter, records/DataFrame, and JSON v6 around one conclusion,
-execution context, numeric trust boundary, evidence, provenance, and diagnostic
-contract without changing JSON v6. P26.6 makes the public quickstart copyable
-outside the repository, executes it against the clean-installed wheel, and
-verifies both public notebooks from the repository root and their own
-directories. P26 is complete.
+## Next — CLI and automation
 
-### P27 — Public repository readiness
+After the Python workflow has been exercised publicly, Toetra can define a thin
+process-level adapter for terminal use, CI/CD, and future orchestration. This
+milestone covers:
 
-P27 makes the `1.0.0rc3` GitHub repository safe, truthful, and useful to an
-external reader without forcing the stable release:
-
-- **P27.0 — exposure acceptance freeze:** separate repository visibility, CLI,
-  package publication, and stable release; accept the
-  [public repository readiness contract](../contracts/public-repository-readiness.md);
-- **P27.1 — snapshot, history, and provenance audit:** inspect credentials,
-  private data, reachable Git history, author identity, licenses, datasets, and
-  redistribution evidence. The tracked-snapshot gate and full-history command
-  are implemented, and the UCI Cleveland asset now has a digest-bound CC BY 4.0
-  attribution. P27.1 closes only after the history command and human ref/identity
-  review pass on the canonical non-shallow clone;
-- **P27.2 — public narrative and first use:** README, documentation landing
-  page, installation, first-use path, limitations, and release notes now
-  identify `1.0.0rc3` as a source-installed evaluation candidate, distinguish
-  it from PyPI and stable publication, and lead an outside reader through the
-  self-contained public quickstart;
-- **P27.3 — collaboration and workflow safety:** contribution, private
-  security-reporting, structured issue-intake, and pull-request surfaces are
-  present; CI is explicitly read-only, time-bounded, credential-free, and
-  pinned to immutable action commits; the durable collaboration gate and
-  GitHub owner-settings checklist preserve that boundary;
-- **P27.4 — outside-in rehearsal:** the durable `make outside-in-check` gate
-  creates an exact detached clean clone and new Python environment, follows the
-  README journey literally, runs all four public gates, and rejects checkout
-  drift. P27.4 closes after that command passes on the canonical committed
-  candidate;
-- **P27.5 — controlled exposure:** make the accepted commit public, verify the
-  public surfaces anonymously, and record the evidence. The source-controlled
-  runbook and credential-free surface probe prepare this operation; P27 closes
-  only after the owner changes visibility and the post-exposure checks pass.
-
-P27 keeps `1.0.0rc3` unless a release-candidate defect requires a later
-candidate. A GitHub Release is optional and, if created, remains a pre-release.
-PyPI publication and the stable version are separate decisions.
-
-### P28 — CLI and automation contract
-
-P28 defines a thin process-level adapter over the public Python workflow for
-terminal use, CI/CD, and future orchestration. It owns:
-
-- the installed `toetra` entry point and command grammar;
+- an installed `toetra` entry point and a deliberately small command grammar;
 - stable exit-code meanings;
 - stdout/stderr separation and machine-readable output;
-- path and configuration behavior outside the checkout;
-- CI integration examples and clean-install probes.
+- predictable path and configuration behavior outside the source checkout;
+- clean-install probes and CI integration examples.
 
-No compiler, verification, or reporting semantics live in the CLI. P28 may
-justify another release candidate, but it does not force `1.0.0`.
+The CLI will delegate to the public Python workflow. Compiler, verification,
+and reporting semantics remain owned by the library rather than duplicated in
+the command-line layer. This work may justify another release candidate, but it
+does not by itself trigger the stable release.
 
-### P29 — Stable release hardening
+## Then — stable `1.0.0`
 
-P29 turns the publicly observed release candidate into a publishable stable V1:
+Stable V1 follows public observation and acceptance of the automation boundary.
+The release milestone includes:
 
-- final clean-checkout and metadata audit;
+- a final clean-checkout, metadata, provenance, and licensing audit;
 - deterministic wheel, source distribution, and review bundle;
-- wheel and sdist installation across the accepted compatibility matrix;
+- wheel and source-distribution installation across the accepted compatibility
+  matrix;
 - demonstrations and documentation built against release artifacts;
-- publication rehearsal, checksums, changelog, release notes, and rollback
-  evidence;
+- publication rehearsal, checksums, release notes, and rollback evidence;
 - the final transition to `1.0.0`.
 
-P29 is a release-hardening phase, not a late feature window.
+This is a hardening milestone, not a late feature window. No calendar date
+overrides a soundness, security, provenance, installation, or reproducibility
+failure.
 
-### `1.0.0`
+## Later — capability expansion
 
-The stable release is cut only after P27 public observation, the accepted P28
-automation boundary, and all P29 durable gates pass from a clean checkout. No
-calendar date overrides a soundness, security, provenance, installation, or
-reproducibility failure.
-
-## Post-V1 capability expansion
-
-Post-V1 work is selected from concrete user and integration evidence. Candidate
-directions include:
+Post-V1 work will be selected from concrete user and integration evidence.
+Candidate directions include:
 
 - additional sklearn model families with auditable encoders;
 - preprocessing-aware contracts and pipeline reconstruction;
 - another framework adapter for an already-supported mathematical family;
-- a second backend when it provides a capability Z3 cannot supply;
+- a second backend when it supplies a capability Z3 cannot;
 - categorical, multi-output, or nonlinear reasoning;
 - stronger property-based and Miova mutation campaigns;
 - runtime monitoring and higher-level orchestration.
@@ -160,7 +100,7 @@ These are directions, not support promises. A model detector, schema
 introspector, enum value, experimental encoder, or backend prototype does not
 create a public route.
 
-## Expansion rule
+## How a capability becomes public
 
 Model-family semantics, framework integration, and backend execution remain
 separate extension responsibilities. A route becomes public only when all of
@@ -179,9 +119,3 @@ Contributor entry points are documented in the
 for a [model family](../development/adding-model-family.md),
 [framework adapter](../development/adding-framework-adapter.md), and
 [backend](../development/adding-backend.md).
-
-## Historical plans
-
-Delivered patch plans live under
-[completed roadmaps](../history/roadmaps/index.md). They explain how the current
-contracts were reached but do not define present support or pending work.

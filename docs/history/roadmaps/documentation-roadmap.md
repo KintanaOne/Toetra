@@ -1,203 +1,46 @@
-# P25 — Documentation roadmap
+# Documentation and user experience
 
-> **Status:** Complete — documentation frozen on 2026-07-28
->
-> **Baseline:** `1.0.0rc3` after P24 repository freeze
->
-> **Scope:** public and contributor documentation
+> **Status:** Delivered in late July 2026 for the `1.0.0rc3` evaluation
+> candidate
 
-## Purpose
+With the implementation and repository structure stable, the documentation was
+rebuilt around the product that actually existed rather than planned
+capabilities.
 
-P25 makes the documentation describe the product that is implemented and
-supported today. It establishes a public Python reference, replaces prospective
-architecture descriptions with as-built views, documents extension paths, and
-prevents examples from drifting away from executable behavior.
+## Documentation baseline
 
-P25 does not add a model, property, framework, backend, public symbol, or result
-status. User-facing error and report redesign belongs to P26. Further release
-automation belongs to P27.
+The public reference established clear authorities for:
 
-## Sources of authority
+- the nine-symbol Python facade and `verify(...)` workflow;
+- the as-built compiler, model bridge, runtime, and reporting pipeline;
+- language syntax, semantics, and executable support levels;
+- regression and direct binary-classification routes;
+- model-family, framework-adapter, and backend extension responsibilities;
+- current limitations and release-candidate availability.
 
-When documents disagree, resolve the conflict in this order:
+Canonical snippets became executable and CI-checked so the README, onboarding,
+examples, and reference pages could not silently diverge.
 
-1. [`public-v1-profile.md`](../../public-v1-profile.md) defines the executable
-   routes and exclusions exposed as Toetra V1.
-2. `src/toetra/__init__.py` and the
-   [public V1 contract](../../contracts/public-v1-contract.md) define the supported
-   Python facade.
-3. Accepted contracts and ADRs define normative guarantees and architectural
-   decisions. They cannot silently widen the public V1 profile.
-4. As-built architecture pages describe the current implementation behind those
-   boundaries. If implementation and description disagree, P25 corrects the
-   description or records the discrepancy; it does not invent a guarantee.
-5. Completed roadmaps and historical documents provide context only. They do
-   not define current support or pending work.
+## Error and reporting experience
 
-For language syntax specifically, the EBNF source is authoritative and the
-generated Lark grammar is derived. Language pages must still distinguish
-parseable syntax, accepted semantics, and the smaller end-to-end public V1
-profile.
+Syntax, construction, semantic, artifact, model, compatibility, routing, and
+backend failures were normalized at the public boundary while preserving their
+owning stage and chained private cause. Stable diagnostic codes, remediation
+hints, and source context made failures actionable without collapsing them into
+logical conclusions.
 
-## Documentation rules
+Terminal text, HTML/Jupyter, records/DataFrame, and JSON v6 were aligned around
+one conclusion, execution context, numeric trust boundary, evidence,
+provenance, and diagnostic contract.
 
-Every current page must make its audience and status clear enough to answer:
+## First use and public evaluation
 
-- is this a public guarantee, an internal implementation description, or future
-  direction;
-- what inputs and outputs cross the documented boundary;
-- what is implemented in `1.0.0rc3`;
-- where the behavior is tested or otherwise validated.
+The quickstart became copyable outside the repository and executable against a
+clean-installed wheel. Public notebooks were checked both from the repository
+root and their own directories. The README and documentation landing page now
+state that `1.0.0rc3` is source-installed, not published on PyPI, and not the
+stable release.
 
-Current documentation must not present planned types as implemented, private
-modules as supported imports, or post-V1 routes as available. Code examples use
-the public `toetra` facade unless a page is explicitly an internal contributor
-guide.
-
-## Delivery sequence
-
-### P25.0 — Documentation truth reset
-
-Status: Complete
-
-Remove the retired P24 aggregate gate, establish this authority order, and
-define the remaining P25 exit criteria.
-
-Exit criteria:
-
-- no reference to the retired P24 aggregate target remains;
-- release documentation names only durable Make targets;
-- this roadmap identifies public, normative, as-built, and historical sources;
-- identity, repository, public-contract, documentation, and CI checks remain
-  green.
-
-### P25.1 — Public Python API reference
-
-Status: Complete
-
-Document the nine names exported by `toetra.__all__`: `verify`, sessions,
-findings, reports, statuses, counterexample replay, and the three public error
-types.
-
-Exit criteria:
-
-- every public symbol has a stable reference entry;
-- signatures, return values, lifecycle, status handling, artifact writing, and
-  failure boundaries are documented from the implementation;
-- examples import only from `toetra`;
-- public reference pages do not expose private implementation modules as API.
-
-### P25.2 — As-built architecture
-
-Status: Complete
-
-Align architecture, compiler, IR, ModelBridge, backend, runtime, and status
-pages with the implemented pipeline:
-
-```text
-source -> CST -> AST -> semantic validation -> IR1
-       -> model-semantic lowering -> NNF -> IR2 + assumptions
-       -> route qualification -> backend execution
-       -> report -> provenance -> replay
-```
-
-Exit criteria:
-
-- current pipeline stages and ownership match `src/toetra`;
-- planned or removed artifacts are not presented as runtime types;
-- the status matrix separates implemented V1 behavior from post-V1 direction;
-- architecture pages link to the contracts governing each boundary.
-
-### P25.3 — Extension guides
-
-Status: Complete
-
-Create separate contributor paths for adding a model family, a framework
-adapter, and a backend. Each path must identify the required schema, semantics,
-capabilities, numeric policy, execution, reporting, replay, and test work.
-
-Exit criteria:
-
-- the three extension types are not conflated;
-- each guide identifies registration points and private boundaries from the
-  current source tree;
-- each guide includes unit, contract, end-to-end, documentation, clean-install,
-  and release expectations;
-- no guide implies that an extension is public before the V1 extension rule is
-  satisfied.
-
-### P25.4 — Language reference consolidation
-
-Status: Complete
-
-Organize the language documentation around three distinct questions: what
-parses, what has accepted meaning, and what executes through the public V1
-routes.
-
-Exit criteria:
-
-- syntax, semantic validity, and executable support are explicitly separated;
-- regression and binary-classification observables use consistent terminology;
-- supported and rejected examples agree with the grammar, semantic rules, and
-  public V1 profile;
-- post-V1 constructs are labelled as such and cannot be mistaken for support.
-
-### P25.5 — Executable documentation
-
-Status: Complete
-
-Make public snippets checkable and reuse canonical examples where practical.
-Integrate drift detection into an existing durable documentation or CI gate.
-
-Exit criteria:
-
-- selected public Python and Toetra snippets are parsed or executed in tests;
-- copied snippets have an identified canonical source;
-- snippet failures report the owning page clearly;
-- no temporary `p25-check` target is introduced.
-
-### P25.6 — Consolidation and freeze
-
-Status: Complete
-
-Review navigation, links, status labels, duplicated concepts, terminology, and
-historical placement. Archive the completed P25 plan once the documentation is
-frozen.
-
-Exit criteria:
-
-- `mkdocs build --strict` succeeds without broken navigation or links;
-- no active page contradicts the public profile, public facade, accepted
-  contracts, or as-built pipeline;
-- completed planning material lives under `docs/history/roadmaps/`;
-- all durable quality and release gates pass from a clean checkout.
-
-Completion record:
-
-- the public reference, as-built architecture, extension guides, and language
-  reference use the `1.0.0rc3` implementation as their baseline;
-- selected public examples are canonical and checked by `make snippets-check`;
-- stale active planning was moved to history or replaced by current planning;
-- this roadmap is historical evidence and no longer defines pending work.
-
-## Patch delivery contract
-
-Each P25 sub-step is delivered as an independently reviewable `.patch` against
-the baseline produced by the preceding accepted step. Every delivery includes:
-
-- the exact baseline and files changed;
-- an application command using `git apply`;
-- focused checks followed by the relevant durable gates;
-- a reversal command using `git apply -R`;
-- no unrelated source, version, or public-contract change.
-
-P25 uses existing validation targets:
-
-```bash
-make ci
-make demo-check
-make release-check
-make review-bundle-check
-```
-
-No permanent target named after P25 is added.
+Repository audit, contribution and security surfaces, outside-in rehearsal,
+controlled exposure, reproducible artifacts, provenance, copyright, and
+noncommercial licensing completed the preparation for public evaluation.
