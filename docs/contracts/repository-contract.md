@@ -68,9 +68,8 @@ scripts/repository/
 The `scripts/` root contains no one-off implementation script.
 
 Exactly two active planning documents live under `docs/roadmap/`: the
-implementation roadmap and open questions. Delivered patch plans, including the
-V1 implementation and documentation roadmaps, live under
-`docs/history/roadmaps/` and do not describe pending work.
+implementation roadmap and open questions. Chronological summaries of delivered
+work live under `docs/history/roadmaps/` and do not describe pending work.
 
 ## Executable gates
 

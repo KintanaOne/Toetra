@@ -281,10 +281,10 @@ nav:
       - Open Questions: roadmap/open-questions.md
 
   - History:
-      - Completed Roadmaps: history/roadmaps/index.md
-      - V1 Implementation: history/roadmaps/v1-implementation-roadmap.md
-      - Documentation Freeze: history/roadmaps/documentation-roadmap.md
-      - Repository Final Polish: history/roadmaps/repository-final-polish-roadmap.md
-      - Point Binding and Evaluation: history/roadmaps/point-binding-evaluation-implementation-roadmap.md
+      - Project History: history/roadmaps/index.md
+      - V1 Foundations: history/roadmaps/v1-implementation-roadmap.md
+      - Point-Based Semantics: history/roadmaps/point-binding-evaluation-implementation-roadmap.md
       - Binary Classification: history/roadmaps/binary-classification-implementation-roadmap.md
-      - Toetra Identity Migration: history/roadmaps/toetra-identity-migration-roadmap.md
+      - Canonical Toetra Identity: history/roadmaps/toetra-identity-migration-roadmap.md
+      - Repository Structure: history/roadmaps/repository-final-polish-roadmap.md
+      - Documentation and UX: history/roadmaps/documentation-roadmap.md
