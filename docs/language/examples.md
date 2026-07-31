@@ -1,12 +1,12 @@
 # Language examples
 
 > Status: Current examples for `1.0.0rc3`
-> Scope: Accepted language with explicit support-level classification
+> Scope: Accepted language with explicit support levels
 > Audience: users, compiler authors, and test authors
 
 ## How to read the examples
 
-Every complete source example is classified as one of:
+Every complete source example has one of these support levels:
 
 - **public V1 route shape**: executable when the supplied artifact and runtime
   inputs satisfy the exact public profile;
@@ -21,7 +21,7 @@ is fitted, or has the required model family. See
 
 ## V1-REG-001 — Universal regression bound
 
-Classification: **public V1 regression route shape**
+Support level: **public V1 regression route shape**
 
 ```toetra
 model := "linear.joblib"
@@ -52,7 +52,7 @@ finite-numeric scikit-learn `LinearRegression` whose feature schema contains
 
 ## V1-REG-002 — Existential witness
 
-Classification: **public V1 regression route shape**
+Support level: **public V1 regression route shape**
 
 ```toetra
 model := "linear.joblib"
@@ -77,7 +77,7 @@ attempt produces `UNKNOWN`.
 
 ## V1-REG-003 — Concrete inline anchor
 
-Classification: **public V1 regression route shape**
+Support level: **public V1 regression route shape**
 
 ```toetra
 model := "linear.joblib"
@@ -97,7 +97,7 @@ a symbolic domain.
 
 ## V1-REG-004 — Referenced anchor
 
-Classification: **public V1 regression route shape with runtime input**
+Support level: **public V1 regression route shape with runtime input**
 
 ```toetra
 model := "linear.joblib"
@@ -119,7 +119,7 @@ model features.
 
 ## V1-REG-005 — Local robustness sugar
 
-Classification: **public V1 regression route shape**
+Support level: **public V1 regression route shape**
 
 ```toetra
 model := "linear.joblib"
@@ -144,7 +144,7 @@ evaluations unambiguous.
 
 ## V1-REG-006 — Two-point monotonicity
 
-Classification: **public V1 regression route shape**
+Support level: **public V1 regression route shape**
 
 ```toetra
 model := "linear.joblib"
@@ -165,7 +165,7 @@ the input order; the assertion states the required output order.
 
 ## V1-CLS-001 — Binary class probability
 
-Classification: **public V1 binary-classification route shape**
+Support level: **public V1 binary-classification route shape**
 
 ```toetra
 --8<-- "docs/snippets/binary-probability.toetra"
@@ -177,7 +177,7 @@ the numeric qualification rules in the public profile.
 
 ## V1-CLS-002 — Predicted-label relation
 
-Classification: **public V1 binary-classification route shape**
+Support level: **public V1 binary-classification route shape**
 
 ```toetra
 model := "binary.joblib"
@@ -193,7 +193,7 @@ binary decision semantics without exposing a logit or framework class index.
 
 ## V1-CLS-003 — Classification equality sugar
 
-Classification: **public V1 binary-classification route shape**
+Support level: **public V1 binary-classification route shape**
 
 ```toetra
 model := "binary.joblib"
@@ -209,7 +209,7 @@ equivalent to predicted-label equality for the supported binary profile.
 
 ## LANG-DOM-001 — Boundary preservation
 
-Classification: **accepted syntax and semantics**
+Support level: **accepted syntax and semantics**
 
 ```toetra
 model := "linear.joblib"
@@ -240,7 +240,7 @@ numeric features.
 
 ## LANG-ARI-001 — Affine precedence
 
-Classification: **accepted language; V1-executable when the route qualifies**
+Support level: **accepted language; V1-executable when the route qualifies**
 
 ```toetra
 model := "linear.joblib"
@@ -257,7 +257,7 @@ left-associative. The full comparison remains one logical atom during NNF.
 
 ## LANG-NONLINEAR-001 — Valid language, unsupported arithmetic
 
-Classification: **accepted language; capability-rejected by built-in V1**
+Support level: **accepted language; capability-rejected by built-in V1**
 
 ```toetra
 model := "linear.joblib"
@@ -274,7 +274,7 @@ approximate it.
 
 ## LANG-CAT-001 — Valid categorical domain, unsupported backend sort
 
-Classification: **accepted language; capability-rejected by built-in V1**
+Support level: **accepted language; capability-rejected by built-in V1**
 
 ```toetra
 model := "model.joblib"
@@ -297,7 +297,7 @@ public categorical encoding and must reject it during route qualification.
 
 ## LANG-QUANT-001 — Represented quantifier alternation
 
-Classification: **accepted language; capability-rejected by built-in V1**
+Support level: **accepted language; capability-rejected by built-in V1**
 
 ```toetra
 model := "linear.joblib"
@@ -321,7 +321,7 @@ into a homogeneous query.
 
 Each example must retain:
 
-- its support-level classification;
+- its support level;
 - complete source when fenced as `toetra`;
 - explicit point qualification in multi-point assertions;
 - a route caveat whenever execution depends on model/runtime inputs;

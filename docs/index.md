@@ -26,7 +26,7 @@ The self-contained demo should produce one `PROVED` result and one `WITNESS`.
 Continue with:
 
 1. [Installation and availability](getting-started/installation.md)
-2. [First Toetra property](getting-started/first-property.md)
+2. [First Toetra properties](getting-started/first-property.md)
 3. [Public V1 profile and limitations](public-v1-profile.md)
 4. [Public Python API](api-reference/index.md)
 5. [1.0.0rc3 release notes](releases/1.0.0rc3.md)

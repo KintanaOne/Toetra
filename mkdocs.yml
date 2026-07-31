@@ -82,7 +82,7 @@ nav:
   - Getting Started:
       - Overview: getting-started/overview.md
       - Installation: getting-started/installation.md
-      - First Toetra Property: getting-started/first-property.md
+      - First Toetra Properties: getting-started/first-property.md
       - First Model Schema: getting-started/first-model-schema.md
       - End-to-End Preview: getting-started/end-to-end-preview.md
       - Notebook Workflow: getting-started/notebook-workflow.md

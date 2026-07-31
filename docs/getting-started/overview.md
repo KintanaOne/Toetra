@@ -1,9 +1,10 @@
 # Getting started
 
-Toetra V1 verifies declared behavioral properties of a narrow numeric-affine ML
-profile. Begin with the self-contained demo, then replace its temporary
-artifacts with a supported fitted model, reference dataset, and `.toetra`
-policy.
+Toetra V1 verifies declared behavioral properties through two narrow public
+routes: single-output linear regression and direct binary logistic
+classification. Begin with the self-contained regression demo, then replace
+its temporary artifacts with a supported fitted model, reference dataset, and
+`.toetra` policy.
 
 `1.0.0rc3` is an evaluation release candidate installed from a source checkout
 or source archive. It is not the stable release and is not currently published
@@ -48,7 +49,7 @@ make demo-classification
 ## Reading order
 
 1. [Installation and availability](installation.md)
-2. [First Toetra property](first-property.md)
+2. [First Toetra properties](first-property.md)
 3. [End-to-end preview](end-to-end-preview.md)
 4. [Public V1 profile and limitations](../public-v1-profile.md)
 5. [Public Python API](../api-reference/index.md)

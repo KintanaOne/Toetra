@@ -20,7 +20,7 @@ EXPECTED_STATUSES = (
 
 
 def build_demo_artifacts(directory: Path) -> tuple[Path, Path]:
-    """Train and serialize the tiny affine model used by the demo."""
+    """Train and serialize the tiny LinearRegression used by the demo."""
 
     frame = pd.DataFrame(
         {
@@ -84,7 +84,7 @@ def print_demo(schema: ModelSchema, session: VerificationSession) -> None:
     """Print the demo through the shared user-facing report renderer."""
 
     print("=" * 80)
-    print("Toetra — affine model, specification constants and typed domains")
+    print("Toetra — LinearRegression, specification constants and typed domains")
     print("=" * 80)
     print(SPEC_PATH.read_text(encoding="utf-8"))
     print()
@@ -107,7 +107,7 @@ def main() -> None:
         )
 
     print_demo(schema, session)
-    print("✅ Toetra affine end-to-end demo succeeded.")
+    print("✅ Toetra LinearRegression end-to-end demo succeeded.")
 
 
 if __name__ == "__main__":

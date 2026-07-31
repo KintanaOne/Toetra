@@ -87,6 +87,9 @@
 
 ### Fixed
 
+- Named the regression route explicitly throughout onboarding and public demos,
+  exposed its scalar `target[point]` observable in first-use examples, and
+  removed the overloaded `Classification` label from regression examples.
 - Prevented `session.print()` and the copied quickstart from failing on legacy
   Windows console encodings by selecting the equivalent ASCII report rendering.
 - Removed an exact duplicate NNF end-to-end test and corrected misspelled
