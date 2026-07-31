@@ -22,6 +22,8 @@ DOCUMENTATION_URL = "https://kintanaone.github.io/Toetra/"
 DEFAULT_BRANCH = "main"
 COMMIT_PATTERN = re.compile(r"[0-9a-f]{40}")
 EXPECTED_LICENSE = "PolyForm-Noncommercial-1.0.0"
+EXPECTED_COPYRIGHT_HOLDER = "Tina RANDRIANARIJAONA-DUBIN"
+EXPECTED_COPYRIGHT_YEARS = "2025-2026"
 UNASSERTED_LICENSE_IDS = (None, "NOASSERTION")
 
 RAW_SURFACES = {
@@ -36,6 +38,14 @@ RAW_SURFACES = {
     "commercial licensing": (
         "COMMERCIAL_LICENSE.md",
         ("separate written commercial", "KintanaOne@proton.me"),
+    ),
+    "copyright notice": (
+        "COPYRIGHT.md",
+        (
+            "Copyright © 2025–2026 Tina RANDRIANARIJAONA-DUBIN",
+            "declared copyright holder and licensor",
+            "THIRD_PARTY.md",
+        ),
     ),
     "contribution guide": ("CONTRIBUTING.md", ("# Contributing", "make ci")),
     "security policy": ("SECURITY.md", ("# Security", "1.0.0rc3")),
@@ -173,6 +183,20 @@ def _validate_bundle(bundle: Path, commit: str) -> str:
         ) from error
     if not isinstance(manifest, dict):
         raise PublicSurfaceCheckError("Review-bundle manifest is not an object")
+    if manifest.get("schema_version") != 3:
+        raise PublicSurfaceCheckError("Review-bundle manifest schema is not version 3")
+
+    copyright_data = manifest.get("copyright")
+    expected_copyright = {
+        "holder": EXPECTED_COPYRIGHT_HOLDER,
+        "years": EXPECTED_COPYRIGHT_YEARS,
+        "notice_path": "COPYRIGHT.md",
+        "third_party_notice_path": "THIRD_PARTY.md",
+    }
+    if copyright_data != expected_copyright:
+        raise PublicSurfaceCheckError(
+            "Review-bundle copyright declaration does not match the public contract"
+        )
 
     git = manifest.get("git")
     if not isinstance(git, dict):
@@ -277,6 +301,8 @@ def validate_public_surfaces(
         "exposed_commit": commit,
         "review_bundle_sha256": bundle_digest,
         "github_detected_license": license_id,
+        "copyright_holder": EXPECTED_COPYRIGHT_HOLDER,
+        "copyright_years": EXPECTED_COPYRIGHT_YEARS,
         "anonymous_surfaces": checked_surfaces,
         "manual_settings_review": "required",
     }

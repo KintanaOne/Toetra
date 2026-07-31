@@ -17,6 +17,7 @@ EXPECTED_PUBLIC_FILES = (
     ".github/workflows/ci.yml",
     "COMMERCIAL_LICENSE.md",
     "CONTRIBUTING.md",
+    "COPYRIGHT.md",
     "SECURITY.md",
     "docs/development/public-collaboration-and-workflows.md",
 )
@@ -38,6 +39,12 @@ REQUIRED_MARKERS = {
         "hosted or managed-service use",
         "KintanaOne@proton.me",
         "THIRD_PARTY.md",
+    ),
+    "COPYRIGHT.md": (
+        "Copyright © 2025–2026 Tina RANDRIANARIJAONA-DUBIN",
+        "declared copyright holder and licensor",
+        "THIRD_PARTY.md",
+        "INPI e-Soleau",
     ),
     "SECURITY.md": (
         "1.0.0rc3",

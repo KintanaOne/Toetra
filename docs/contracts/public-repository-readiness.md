@@ -89,6 +89,8 @@ secret-scanner findings.
 
 The public commit must provide:
 
+- the declared civil copyright holder and covered years for original Toetra
+  source code and documentation;
 - the accepted PolyForm Noncommercial 1.0.0 project license;
 - the separate commercial-licensing route and contact;
 - an accurate source-available claim, with no claim that Toetra is open source
@@ -103,6 +105,13 @@ An asset without a documented redistribution basis blocks public exposure.
 The root `THIRD_PARTY.md` file is the public attribution registry. Asset-specific
 documentation must link to it, and any separately licensed material must keep a
 content digest so an unnoticed replacement cannot inherit an unrelated notice.
+
+The root `COPYRIGHT.md` notice records the ownership claim and separates it
+from third-party material. The reproducible review bundle binds that notice,
+the exact Git commit, and every included file digest. An optional e-Soleau
+deposit supplies independent dated evidence of that exact archive; it does not
+create copyright or resolve competing ownership claims. Receipt and
+restitution information remain private.
 
 Until an explicit contributor agreement exists, outside code and documentation
 contributions are not merged. Issues, reviews, reproductions, and proposals may
@@ -219,6 +228,8 @@ the public description materially misleading.
 P27 closes only when the repository records:
 
 - the exposed commit and review-bundle digest;
+- the confirmed declared copyright holder and any privately retained e-Soleau
+  record;
 - snapshot, history, provenance, documentation, and workflow audit outcomes;
 - manual GitHub-setting checks;
 - any accepted residual limitations;

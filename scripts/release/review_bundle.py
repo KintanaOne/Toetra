@@ -52,6 +52,7 @@ CRITICAL_PATHS = (
     "CHANGELOG.md",
     "COMMERCIAL_LICENSE.md",
     "CONTRIBUTING.md",
+    "COPYRIGHT.md",
     "LICENSE",
     "Makefile",
     "README.md",
@@ -63,6 +64,7 @@ CRITICAL_PATHS = (
     "docs/contracts/public-repository-readiness.md",
     "docs/contracts/repository-contract.md",
     "docs/development/public-repository-audit.md",
+    "docs/development/copyright-and-esoleau.md",
     "docs/development/public-collaboration-and-workflows.md",
     "docs/development/public-exposure-runbook.md",
     "docs/development/outside-in-rehearsal.md",
@@ -81,6 +83,9 @@ CRITICAL_PATHS = (
     "tests/fixtures/model_bridge/classification.csv",
     "tests/fixtures/model_bridge/regression.csv",
 )
+
+COPYRIGHT_HOLDER = "Tina RANDRIANARIJAONA-DUBIN"
+COPYRIGHT_YEARS = "2025-2026"
 
 
 class ReviewBundleError(RuntimeError):
@@ -247,7 +252,7 @@ def build_review_bundle(
     entries = [_file_entry(repository, path) for path in files]
     epoch = _repository_epoch(repository)
     manifest: dict[str, object] = {
-        "schema_version": 2,
+        "schema_version": 3,
         "bundle_kind": "toetra_review_source_snapshot",
         "source_date_epoch": epoch,
         "created_at_utc": datetime.fromtimestamp(epoch, tz=timezone.utc).isoformat(),
@@ -257,6 +262,12 @@ def build_review_bundle(
         "critical_paths": list(CRITICAL_PATHS),
         "missing_critical_paths": missing,
         "git": _git_metadata(repository),
+        "copyright": {
+            "holder": COPYRIGHT_HOLDER,
+            "years": COPYRIGHT_YEARS,
+            "notice_path": "COPYRIGHT.md",
+            "third_party_notice_path": "THIRD_PARTY.md",
+        },
         "files": entries,
     }
     manifest_payload = (

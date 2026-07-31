@@ -296,6 +296,7 @@ def _validate_sdist_manifest() -> None:
     required = {
         "include LICENSE",
         "include COMMERCIAL_LICENSE.md",
+        "include COPYRIGHT.md",
         "include README.md",
         "include CHANGELOG.md",
         "include pyproject.toml",
@@ -406,6 +407,10 @@ def check_public_contract() -> None:
         raise PublicContractError(
             f"Expected SPDX license {EXPECTED_LICENSE}, got {project.get('license')!r}"
         )
+    if project.get("license-files") != ["LICENSE", "COPYRIGHT.md"]:
+        raise PublicContractError(
+            "Project license files must include LICENSE and COPYRIGHT.md"
+        )
     if "scripts" in project:
         raise PublicContractError(
             "P27 must not publish an installed CLI; the entry-point contract "
@@ -448,6 +453,18 @@ def check_public_contract() -> None:
             "COMMERCIAL_LICENSE.md does not preserve the separate commercial route"
         )
 
+    copyright_notice = (ROOT / "COPYRIGHT.md").read_text(encoding="utf-8")
+    required_copyright_markers = (
+        "Copyright © 2025–2026 Tina RANDRIANARIJAONA-DUBIN",
+        "declared copyright holder and licensor",
+        "THIRD_PARTY.md",
+        "INPI e-Soleau",
+    )
+    if any(marker not in copyright_notice for marker in required_copyright_markers):
+        raise PublicContractError(
+            "COPYRIGHT.md does not identify the declared holder and evidence boundary"
+        )
+
     changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
     if f"[{EXPECTED_VERSION}]" not in changelog:
         raise PublicContractError("CHANGELOG does not contain the current release")
@@ -455,6 +472,7 @@ def check_public_contract() -> None:
     public_documents = (
         ROOT / "README.md",
         ROOT / "COMMERCIAL_LICENSE.md",
+        ROOT / "COPYRIGHT.md",
         ROOT / "CONTRIBUTING.md",
         ROOT / "SECURITY.md",
         ROOT / "ARCHITECTURE.md",
@@ -470,6 +488,7 @@ def check_public_contract() -> None:
         / "ADR-0030-separate-public-exposure-cli-and-stable-release.md",
         ROOT / "docs" / "contracts" / "public-repository-readiness.md",
         ROOT / "docs" / "development" / "public-collaboration-and-workflows.md",
+        ROOT / "docs" / "development" / "copyright-and-esoleau.md",
         ROOT / "docs" / "development" / "outside-in-rehearsal.md",
         ROOT / "docs" / "development" / "public-exposure-runbook.md",
         ROOT / "docs" / "contracts" / "public-v1-contract.md",

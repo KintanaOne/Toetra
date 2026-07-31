@@ -10,7 +10,7 @@ edit_uri: edit/main/docs/
 docs_dir: docs
 use_directory_urls: true
 
-copyright: Copyright &copy; 2026 KintanaOne
+copyright: Copyright &copy; 2025–2026 Tina RANDRIANARIJAONA-DUBIN
 
 theme:
   name: material
@@ -219,6 +219,7 @@ nav:
       - Documentation Snippets: development/documentation-snippets.md
       - Repository Layout: development/repository-layout.md
       - Public Repository Audit: development/public-repository-audit.md
+      - Copyright and e-Soleau Evidence: development/copyright-and-esoleau.md
       - Public Collaboration and Workflows: development/public-collaboration-and-workflows.md
       - Outside-In Rehearsal: development/outside-in-rehearsal.md
       - Controlled Public Exposure: development/public-exposure-runbook.md

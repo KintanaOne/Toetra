@@ -191,6 +191,10 @@ The frozen repository structure is documented in the
 
 ## License
 
+Copyright © 2025–2026 Tina RANDRIANARIJAONA-DUBIN. See the
+[copyright and ownership notice](COPYRIGHT.md) for the scope of this claim and
+the separate treatment of third-party material.
+
 Toetra is source-available for noncommercial use under the
 [PolyForm Noncommercial License 1.0.0](LICENSE). Use outside the purposes
 permitted by that license requires a separate written agreement; see
