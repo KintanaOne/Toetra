@@ -24,6 +24,7 @@ def test_public_version_license_and_json_contract_are_frozen() -> None:
 
     assert project["version"] == EXPECTED_VERSION
     assert project["license"] == EXPECTED_LICENSE
+    assert project["license-files"] == ["LICENSE", "COPYRIGHT.md"]
     assert "scripts" not in project
     assert report_schema_version() == 6
 
@@ -39,6 +40,8 @@ def test_readme_points_to_the_authoritative_v1_profile() -> None:
     assert "LogisticRegression" in readme
     assert "PolyForm Noncommercial License 1.0.0" in readme
     assert "COMMERCIAL_LICENSE.md" in readme
+    assert "COPYRIGHT.md" in readme
+    assert "Tina RANDRIANARIJAONA-DUBIN" in readme
     assert "not an open-source license" in readme
     assert "CONTRIBUTING.md" in readme
     assert "SECURITY.md" in readme
@@ -61,6 +64,7 @@ def test_sdist_manifest_includes_public_release_files() -> None:
 
     assert "include CHANGELOG.md" in manifest
     assert "include COMMERCIAL_LICENSE.md" in manifest
+    assert "include COPYRIGHT.md" in manifest
     assert "include LICENSE" in manifest
     assert "include README.md" in manifest
     assert "include pyproject.toml" in manifest

@@ -1,5 +1,6 @@
 include LICENSE
 include COMMERCIAL_LICENSE.md
+include COPYRIGHT.md
 include README.md
 include CHANGELOG.md
 include THIRD_PARTY.md

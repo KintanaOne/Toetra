@@ -22,10 +22,23 @@ from scripts.release.check_public_surfaces import (
 COMMIT = "a" * 40
 
 
-def _bundle(path: Path, *, commit: str = COMMIT, dirty: bool = False) -> Path:
+def _bundle(
+    path: Path,
+    *,
+    commit: str = COMMIT,
+    dirty: bool = False,
+    copyright_holder: str = "Tina RANDRIANARIJAONA-DUBIN",
+) -> Path:
     manifest = {
+        "schema_version": 3,
         "git": {"commit": commit, "dirty": dirty, "status": []},
         "missing_critical_paths": [],
+        "copyright": {
+            "holder": copyright_holder,
+            "years": "2025-2026",
+            "notice_path": "COPYRIGHT.md",
+            "third_party_notice_path": "THIRD_PARTY.md",
+        },
     }
     with zipfile.ZipFile(path, mode="w") as archive:
         archive.writestr("_meta/manifest.json", json.dumps(manifest))
@@ -110,6 +123,8 @@ def test_public_surface_evidence_binds_remote_and_bundle_commit(
     assert evidence["exposed_commit"] == COMMIT
     assert evidence["default_branch"] == "main"
     assert evidence["github_detected_license"] == "PolyForm-Noncommercial-1.0.0"
+    assert evidence["copyright_holder"] == "Tina RANDRIANARIJAONA-DUBIN"
+    assert evidence["copyright_years"] == "2025-2026"
     assert evidence["checked_at_utc"] == "2026-07-31T00:00:00+00:00"
     assert evidence["manual_settings_review"] == "required"
     assert evidence["review_bundle_sha256"]
@@ -135,6 +150,18 @@ def test_public_surface_check_rejects_wrong_remote_or_dirty_bundle(
             dirty_bundle,
             fetcher=_fetcher,
             remote_reader=lambda url: (DEFAULT_BRANCH, COMMIT),
+        )
+
+
+def test_public_surface_check_rejects_wrong_copyright_holder(tmp_path: Path) -> None:
+    bundle = _bundle(tmp_path / "review.zip", copyright_holder="Unexpected Holder")
+
+    with pytest.raises(PublicSurfaceCheckError, match="copyright declaration"):
+        validate_public_surfaces(
+            COMMIT,
+            bundle,
+            fetcher=_fetcher,
+            remote_reader=lambda _: (DEFAULT_BRANCH, COMMIT),
         )
 
 

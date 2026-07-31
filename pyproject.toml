@@ -9,7 +9,7 @@ description = "Declarative behavioral specification and formal verification for 
 authors = [{ name = "KintanaOne", email = "KintanaOne@proton.me" }]
 readme = "README.md"
 license = "PolyForm-Noncommercial-1.0.0"
-license-files = ["LICENSE"]
+license-files = ["LICENSE", "COPYRIGHT.md"]
 requires-python = ">=3.11"
 keywords = ["machine-learning", "formal-verification", "smt", "z3", "model-validation"]
 classifiers = [

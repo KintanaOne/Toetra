@@ -375,6 +375,13 @@ def _check_wheel(
     with zipfile.ZipFile(path) as archive:
         members = archive.namelist()
         _check_required_members(members, archive_kind="Wheel")
+        for required in ("LICENSE", "COPYRIGHT.md"):
+            if not any(
+                member.endswith(f".dist-info/licenses/{required}") for member in members
+            ):
+                raise DistributionContractError(
+                    f"Wheel does not contain required legal notice {required!r}."
+                )
         forbidden = ("test/", "tests/", "docs/", "demo/", ".github/")
         leaked = [member for member in members if member.startswith(forbidden)]
         if leaked:
@@ -414,6 +421,7 @@ def _check_sdist(
             "CHANGELOG.md",
             "LICENSE",
             "COMMERCIAL_LICENSE.md",
+            "COPYRIGHT.md",
             "THIRD_PARTY.md",
         ):
             if not any(member.endswith(f"/{required}") for member in members):

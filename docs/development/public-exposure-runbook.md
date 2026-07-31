@@ -21,6 +21,12 @@ The status and patch-file listing must be empty, the clone must not be shallow,
 and the two commits must be identical. Record that full commit as the accepted
 exposure commit.
 
+Confirm that the public ownership notice names the intended civil holder. If
+using e-Soleau for dated evidence, complete the
+[copyright and e-Soleau procedure](copyright-and-esoleau.md) for this exact
+commit before changing repository visibility. Keep the receipt and
+confidential restitution information outside the repository.
+
 ## 2. Run the final local gates
 
 ```bash
@@ -80,6 +86,8 @@ The P27 closure record contains:
 - successful snapshot, history, collaboration, outside-in, and anonymous
   surface checks;
 - completed GitHub settings review;
+- confirmed copyright holder and, when completed, a privately retained
+  e-Soleau deposit record;
 - any deliberately accepted residual limitation;
 - confirmation that PyPI, the P28 CLI, and stable `1.0.0` remain deferred.
 
