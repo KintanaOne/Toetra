@@ -41,7 +41,7 @@ def _fetcher(url: str, accept: str) -> bytes:
                 "default_branch": DEFAULT_BRANCH,
                 "has_issues": True,
                 "archived": False,
-                "license": {"spdx_id": "Apache-2.0"},
+                "license": {"spdx_id": "PolyForm-Noncommercial-1.0.0"},
             }
         ).encode()
     if url == DOCUMENTATION_URL:
@@ -53,6 +53,25 @@ def _fetcher(url: str, accept: str) -> bytes:
         if url.endswith(f"/{path}"):
             return "\n".join(markers).encode()
     raise AssertionError(f"Unexpected URL: {url}")
+
+
+def _fetcher_with_license(license_id: str | None):
+    def fetch(url: str, accept: str) -> bytes:
+        if url == API_URL:
+            return json.dumps(
+                {
+                    "private": False,
+                    "default_branch": DEFAULT_BRANCH,
+                    "has_issues": True,
+                    "archived": False,
+                    "license": (
+                        {"spdx_id": license_id} if license_id is not None else None
+                    ),
+                }
+            ).encode()
+        return _fetcher(url, accept)
+
+    return fetch
 
 
 def test_parse_remote_head_requires_one_default_branch_commit() -> None:
@@ -90,6 +109,7 @@ def test_public_surface_evidence_binds_remote_and_bundle_commit(
 
     assert evidence["exposed_commit"] == COMMIT
     assert evidence["default_branch"] == "main"
+    assert evidence["github_detected_license"] == "PolyForm-Noncommercial-1.0.0"
     assert evidence["checked_at_utc"] == "2026-07-31T00:00:00+00:00"
     assert evidence["manual_settings_review"] == "required"
     assert evidence["review_bundle_sha256"]
@@ -115,4 +135,31 @@ def test_public_surface_check_rejects_wrong_remote_or_dirty_bundle(
             dirty_bundle,
             fetcher=_fetcher,
             remote_reader=lambda url: (DEFAULT_BRANCH, COMMIT),
+        )
+
+
+@pytest.mark.parametrize("license_id", [None, "NOASSERTION"])
+def test_public_surface_check_accepts_unasserted_github_license(
+    tmp_path: Path,
+    license_id: str | None,
+) -> None:
+    evidence = validate_public_surfaces(
+        COMMIT,
+        _bundle(tmp_path / "review.zip"),
+        fetcher=_fetcher_with_license(license_id),
+        remote_reader=lambda _: (DEFAULT_BRANCH, COMMIT),
+    )
+
+    assert evidence["github_detected_license"] == license_id
+
+
+def test_public_surface_check_rejects_conflicting_github_license(
+    tmp_path: Path,
+) -> None:
+    with pytest.raises(PublicSurfaceCheckError, match="conflicts"):
+        validate_public_surfaces(
+            COMMIT,
+            _bundle(tmp_path / "review.zip"),
+            fetcher=_fetcher_with_license("Apache-2.0"),
+            remote_reader=lambda _: (DEFAULT_BRANCH, COMMIT),
         )

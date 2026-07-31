@@ -1,6 +1,10 @@
 # ADR-0022 — Freeze the public V1 contract
 
 > **Amended by ADR-0026:** `1.0.0rc2` adds the direct binary `LogisticRegression` route while preserving this ADR as the historical `rc1` freeze.
+>
+> **Licensing superseded by ADR-0031:** the repository moved from Apache-2.0
+> to PolyForm Noncommercial 1.0.0 plus separate commercial licensing before
+> controlled public exposure.
 
 
 - **Status:** Accepted
@@ -30,8 +34,9 @@ The built-in numeric route remains explicitly `LOSSY` and scoped to
 `toetra.real_affine_extracted_model`. Broader framework and backend vocabulary is
 an extension architecture, not a V1 support claim.
 
-The repository license is Apache-2.0. README, package metadata, documentation,
-and release artifacts must agree.
+At the time of this ADR, the repository license was Apache-2.0. ADR-0031
+supersedes that licensing decision. README, package metadata, documentation,
+and release artifacts must agree with the current accepted licensing ADR.
 
 ## Consequences
 

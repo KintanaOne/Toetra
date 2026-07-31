@@ -273,6 +273,7 @@ nav:
       - ADR-0028 Src-Based Single-Package Layout: adr/ADR-0028-src-based-single-package-layout.md
       - ADR-0029 Public Verification Failure Boundary: adr/ADR-0029-public-verification-failure-boundary.md
       - ADR-0030 Public Exposure, CLI, and Stable Release: adr/ADR-0030-separate-public-exposure-cli-and-stable-release.md
+      - ADR-0031 Noncommercial and Commercial Licensing: adr/ADR-0031-noncommercial-and-commercial-licensing.md
 
   - Roadmap:
       - Implementation Roadmap: roadmap/implementation-roadmap.md

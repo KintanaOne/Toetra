@@ -1,8 +1,8 @@
 # Third-party material
 
 Toetra source code and original documentation are licensed under the
-[Apache License 2.0](LICENSE). The asset below keeps its own license; the
-Apache-2.0 project license does not replace or narrow that license.
+[PolyForm Noncommercial License 1.0.0](LICENSE). The asset below keeps its own
+license; the PolyForm project license does not replace or narrow that license.
 
 ## UCI Heart Disease — processed Cleveland data
 

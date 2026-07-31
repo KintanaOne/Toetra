@@ -8,7 +8,7 @@ version = "1.0.0rc3"
 description = "Declarative behavioral specification and formal verification for machine-learning models"
 authors = [{ name = "KintanaOne", email = "KintanaOne@proton.me" }]
 readme = "README.md"
-license = "Apache-2.0"
+license = "PolyForm-Noncommercial-1.0.0"
 license-files = ["LICENSE"]
 requires-python = ">=3.11"
 keywords = ["machine-learning", "formal-verification", "smt", "z3", "model-validation"]

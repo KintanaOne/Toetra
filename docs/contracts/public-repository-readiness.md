@@ -89,7 +89,10 @@ secret-scanner findings.
 
 The public commit must provide:
 
-- the accepted Apache-2.0 project license;
+- the accepted PolyForm Noncommercial 1.0.0 project license;
+- the separate commercial-licensing route and contact;
+- an accurate source-available claim, with no claim that Toetra is open source
+  under the Open Source Definition;
 - an intentional public author/contact identity;
 - provenance, license, and required attribution for every third-party dataset,
   fixture, image, generated asset, or substantial copied source;
@@ -100,6 +103,10 @@ An asset without a documented redistribution basis blocks public exposure.
 The root `THIRD_PARTY.md` file is the public attribution registry. Asset-specific
 documentation must link to it, and any separately licensed material must keep a
 content digest so an unnoticed replacement cannot inherit an unrelated notice.
+
+Until an explicit contributor agreement exists, outside code and documentation
+contributions are not merged. Issues, reviews, reproductions, and proposals may
+still be accepted without transferring code copyright.
 
 ### 4. External narrative and first use
 

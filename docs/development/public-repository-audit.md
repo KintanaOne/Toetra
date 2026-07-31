@@ -47,7 +47,8 @@ that identity requires updating the audit allowlist deliberately.
 
 The root `THIRD_PARTY.md` notice records every redistributed third-party asset
 known at P27.1. The UCI processed Cleveland dataset is
-separately licensed under CC BY 4.0; Apache-2.0 does not relicense it.
+separately licensed under CC BY 4.0; Toetra's PolyForm Noncommercial license
+does not relicense it.
 
 The snapshot gate freezes both the repository copy digest and the notice
 markers. A changed digest blocks exposure until the source, transformation,

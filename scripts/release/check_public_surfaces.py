@@ -21,10 +21,22 @@ API_URL = "https://api.github.com/repos/KintanaOne/Toetra"
 DOCUMENTATION_URL = "https://kintanaone.github.io/Toetra/"
 DEFAULT_BRANCH = "main"
 COMMIT_PATTERN = re.compile(r"[0-9a-f]{40}")
+EXPECTED_LICENSE = "PolyForm-Noncommercial-1.0.0"
+UNASSERTED_LICENSE_IDS = (None, "NOASSERTION")
 
 RAW_SURFACES = {
     "README": ("README.md", ("# Toetra", "1.0.0rc3")),
-    "license": ("LICENSE", ("Apache License", "Version 2.0")),
+    "license": (
+        "LICENSE",
+        (
+            "PolyForm Noncommercial License 1.0.0",
+            "Any noncommercial purpose is a permitted purpose.",
+        ),
+    ),
+    "commercial licensing": (
+        "COMMERCIAL_LICENSE.md",
+        ("separate written commercial", "KintanaOne@proton.me"),
+    ),
     "contribution guide": ("CONTRIBUTING.md", ("# Contributing", "make ci")),
     "security policy": ("SECURITY.md", ("# Security", "1.0.0rc3")),
     "bug-report form": (
@@ -236,9 +248,10 @@ def validate_public_surfaces(
             raise PublicSurfaceCheckError(
                 f"GitHub repository metadata {field!r} is not {expected!r}"
             )
-    if license_id != "Apache-2.0":
+    if license_id not in (*UNASSERTED_LICENSE_IDS, EXPECTED_LICENSE):
         raise PublicSurfaceCheckError(
-            "GitHub does not identify the repository license as Apache-2.0"
+            "GitHub identifies a repository license that conflicts with "
+            f"{EXPECTED_LICENSE}"
         )
 
     checked_surfaces = ["anonymous git", "repository metadata"]
@@ -263,6 +276,7 @@ def validate_public_surfaces(
         "default_branch": branch,
         "exposed_commit": commit,
         "review_bundle_sha256": bundle_digest,
+        "github_detected_license": license_id,
         "anonymous_surfaces": checked_surfaces,
         "manual_settings_review": "required",
     }
