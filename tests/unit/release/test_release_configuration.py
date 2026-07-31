@@ -95,6 +95,8 @@ def test_permanent_release_gates_cover_repository_boundaries() -> None:
     assert "demo-check: demo-quickstart demo-regression demo-classification" in makefile
     assert "release-check:" in makefile
     assert "review-bundle-check:" in makefile
+    assert "outside-in-check:" in makefile
+    assert "python scripts/release/check_outside_in.py" in makefile
 
     ci_target = re.search(r"^ci:.*$", makefile, flags=re.MULTILINE)
     local_target = re.search(r"^ci-local:.*$", makefile, flags=re.MULTILINE)

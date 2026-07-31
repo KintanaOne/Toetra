@@ -94,8 +94,11 @@ external reader without forcing the stable release:
   present; CI is explicitly read-only, time-bounded, credential-free, and
   pinned to immutable action commits; the durable collaboration gate and
   GitHub owner-settings checklist preserve that boundary;
-- **P27.4 — outside-in rehearsal:** clone or extract the exact candidate in a
-  clean location and follow the public journey literally;
+- **P27.4 — outside-in rehearsal:** the durable `make outside-in-check` gate
+  creates an exact detached clean clone and new Python environment, follows the
+  README journey literally, runs all four public gates, and rejects checkout
+  drift. P27.4 closes after that command passes on the canonical committed
+  candidate;
 - **P27.5 — controlled exposure:** make the accepted commit public, verify the
   public surfaces anonymously, and record the evidence.
 

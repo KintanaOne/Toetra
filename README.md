@@ -179,6 +179,13 @@ make release-check
 make review-bundle-check
 ```
 
+After committing a clean candidate, reproduce that entire journey from a fresh
+clone:
+
+```bash
+make outside-in-check
+```
+
 The frozen repository structure is documented in the
 [repository contract](docs/contracts/repository-contract.md).
 

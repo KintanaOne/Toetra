@@ -62,6 +62,8 @@ CRITICAL_PATHS = (
     "docs/contracts/repository-contract.md",
     "docs/development/public-repository-audit.md",
     "docs/development/public-collaboration-and-workflows.md",
+    "docs/development/outside-in-rehearsal.md",
+    "scripts/release/check_outside_in.py",
     "scripts/repository/check_public_collaboration.py",
     "scripts/repository/check_public_exposure.py",
     "scripts/repository/check_repository_contract.py",

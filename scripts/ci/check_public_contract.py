@@ -449,6 +449,7 @@ def check_public_contract() -> None:
         / "ADR-0030-separate-public-exposure-cli-and-stable-release.md",
         ROOT / "docs" / "contracts" / "public-repository-readiness.md",
         ROOT / "docs" / "development" / "public-collaboration-and-workflows.md",
+        ROOT / "docs" / "development" / "outside-in-rehearsal.md",
         ROOT / "docs" / "contracts" / "public-v1-contract.md",
     )
     for document in public_documents:
