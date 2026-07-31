@@ -221,6 +221,7 @@ nav:
       - Public Repository Audit: development/public-repository-audit.md
       - Public Collaboration and Workflows: development/public-collaboration-and-workflows.md
       - Outside-In Rehearsal: development/outside-in-rehearsal.md
+      - Controlled Public Exposure: development/public-exposure-runbook.md
       - Extension Architecture: development/extensions.md
       - Add a Model Family: development/adding-model-family.md
       - Add a Framework Adapter: development/adding-framework-adapter.md

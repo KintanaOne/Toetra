@@ -49,4 +49,5 @@ untracked files, and imports from the original checkout.
 Before repository exposure, GitHub repository, issue, security, documentation,
 and release URLs may not be anonymously reachable. P27.5 verifies those
 surfaces after the accepted commit becomes public and records the exposed
-commit plus the review-bundle digest.
+commit plus the review-bundle digest through the
+[controlled public exposure runbook](public-exposure-runbook.md).
