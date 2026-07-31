@@ -6,6 +6,9 @@
 
 - Added a public-snapshot audit gate, a full-history audit command, and explicit
   CC BY 4.0 provenance for the redistributed UCI processed Cleveland dataset.
+- Added an outside-in gate that clones the exact clean candidate, follows the
+  public README journey in a new Python environment, runs all durable release
+  gates, and rejects checkout drift.
 
 ### Changed
 

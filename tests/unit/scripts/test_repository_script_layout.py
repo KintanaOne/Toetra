@@ -16,6 +16,7 @@ EXPECTED_LAYOUT = {
         "build_review_bundle.py",
         "check_distribution.py",
         "check_installed_distribution.py",
+        "check_outside_in.py",
         "distribution.py",
         "review_bundle.py",
     },

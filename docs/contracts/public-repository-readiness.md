@@ -150,6 +150,17 @@ The candidate public commit is validated without private checkout assumptions:
 - documentation built strictly and local links checked;
 - repository and documentation URLs checked when they become reachable.
 
+The durable clean-clone rehearsal is:
+
+```bash
+make outside-in-check
+```
+
+It targets the exact committed source state, creates a detached fresh clone and
+new Python environment, follows the public first-use commands, runs all four
+quality and release gates, and rejects any resulting checkout drift. Online
+GitHub surfaces remain a P27.5 post-exposure check.
+
 ### 7. Controlled exposure and observation
 
 The visibility change targets the exact accepted commit. Immediately afterward,

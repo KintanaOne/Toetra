@@ -8,7 +8,7 @@
 	snippets-check docs-check ci \
 	dist dist-check install-check release-check review-bundle \
 	review-bundle-check repository-check demo-regression demo-quickstart \
-	demo-classification demo-check clean ci-local
+	demo-classification demo-check outside-in-check clean ci-local
 
 install:
 	python -m pip install -e ".[dev,docs]"
@@ -118,6 +118,10 @@ demo-classification:
 	python -m demo.classification.binary_classification_policy
 
 demo-check: demo-quickstart demo-regression demo-classification
+
+# Rehearse the documented public journey from an exact clean clone.
+outside-in-check:
+	python scripts/release/check_outside_in.py
 
 clean:
 	python -c "import shutil; [shutil.rmtree(p, ignore_errors=True) for p in ('build', 'dist', 'site')]"

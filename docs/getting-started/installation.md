@@ -75,6 +75,8 @@ make review-bundle-check
 ```
 
 The four commands are separate quality, demonstration, distribution, and
-review-bundle gates. See the
+review-bundle gates. After committing a clean candidate,
+`make outside-in-check` repeats the documented first use and all four gates from
+an exact fresh clone. See the
 [repository contract](../contracts/repository-contract.md) for the frozen
 package, test, demo, documentation, and automation boundaries.
