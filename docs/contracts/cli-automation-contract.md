@@ -1,6 +1,6 @@
 # CLI and Automation Contract
 
-> **Status:** Accepted design; implementation pending P28
+> **Status:** Accepted design; P28.1 process foundation implemented
 >
 > **Compatibility surface:** installed process interface, machine-readable output,
 > diagnostics, artifacts, and exit codes

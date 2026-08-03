@@ -1,4 +1,4 @@
-"""Validate the frozen post-P24 repository and package layout."""
+"""Validate the frozen repository and its accepted P28.1 amendment."""
 
 from __future__ import annotations
 
@@ -21,6 +21,7 @@ EXPECTED_PUBLIC_API = (
 )
 EXPECTED_SOURCE_DIRECTORIES = {
     "_backends",
+    "_cli",
     "_compatibility",
     "_compiler",
     "_language",
@@ -69,7 +70,7 @@ FORBIDDEN_ROOT_PATHS = {
 
 
 class RepositoryContractError(RuntimeError):
-    """Raised when the post-P24 repository contract is violated."""
+    """Raised when the amended repository contract is violated."""
 
 
 def _visible_directories(path: Path) -> set[str]:
@@ -165,7 +166,7 @@ def _require_exact_directories(
 
 
 def repository_contract_errors(repository: Path) -> tuple[str, ...]:
-    """Return every violation of the frozen post-P24 repository contract."""
+    """Return every violation of the frozen amended repository contract."""
 
     repository = repository.resolve()
     source_root = repository / "src" / "toetra"

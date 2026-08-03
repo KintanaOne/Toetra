@@ -26,6 +26,7 @@ def test_setuptools_discovers_only_toetra_from_src() -> None:
 def test_private_subsystems_match_the_accepted_layout() -> None:
     expected = {
         "_backends",
+        "_cli",
         "_compatibility",
         "_compiler",
         "_language",

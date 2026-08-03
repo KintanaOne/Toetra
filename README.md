@@ -98,9 +98,10 @@ session.write_artifacts("artifacts", formats={"json", "html"})
 raise SystemExit(session.exit_code)
 ```
 
-`toetra.verify(...)` is the public execution entry point. `1.0.0rc3` does not
-install a `toetra` command-line interface; the CLI and automation contract is a
-separate post-exposure project.
+`toetra.verify(...)` remains the public Python execution entry point. P28.1 also
+installs the `toetra` and `python -m toetra` process shells with help, version,
+diagnostics, and the accepted command index. Verification command handlers are
+delivered incrementally under the separate CLI automation contract.
 
 ## Reading a result
 

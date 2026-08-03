@@ -1,6 +1,6 @@
 # Repository contract
 
-> **Status:** Frozen for `1.0.0rc3`
+> **Status:** Frozen for `1.0.0rc3`, amended by P28.1
 >
 > **Scope:** repository and package structure through the V1 release
 
@@ -8,7 +8,9 @@
 
 This contract freezes the structural boundaries established before the
 documentation freeze. It prevents UX or release work from depending on another
-implicit package or repository migration before V1.
+implicit package or repository migration before V1. P28.1 adds one accepted
+private process adapter without changing the public Python facade or the report
+schema.
 
 ## Canonical roots
 
@@ -30,6 +32,7 @@ The direct children of `src/toetra/` are:
 
 ```text
 _backends
+_cli
 _compatibility
 _compiler
 _language
@@ -42,6 +45,10 @@ examples
 
 Only names listed by `toetra.__all__` form the supported V1 Python API. Private
 `toetra._*` package initializers do not aggregate implementation symbols.
+
+`toetra._cli` is the private process adapter behind the installed `toetra` script
+and `python -m toetra`. Its command grammar and process behavior are governed by
+the dedicated CLI automation contract; it does not add Python facade exports.
 
 The wheel and source distribution package inventories must match the files under
 `src/toetra/`. The wheel must not contain repository-only trees. Small installed

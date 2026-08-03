@@ -17,6 +17,7 @@ from toetra._compiler.builder.program import parse_program  # noqa: E402
 from toetra._compiler.parser.parser import parse_toetra_code  # noqa: E402
 
 EXPECTED_PROJECT_NAME = "toetra"
+EXPECTED_PROJECT_SCRIPTS = {"toetra": "toetra._cli.main:main"}
 EXPECTED_VERSION = "1.0.0rc3"
 EXPECTED_LICENSE = "PolyForm-Noncommercial-1.0.0"
 
@@ -411,10 +412,10 @@ def check_public_contract() -> None:
         raise PublicContractError(
             "Project license files must include LICENSE and COPYRIGHT.md"
         )
-    if "scripts" in project:
+    if project.get("scripts") != EXPECTED_PROJECT_SCRIPTS:
         raise PublicContractError(
-            "P27 must not publish an installed CLI; the entry-point contract "
-            "belongs to P28."
+            "P28.1 requires the exact installed CLI entry point "
+            f"{EXPECTED_PROJECT_SCRIPTS!r}, got {project.get('scripts')!r}."
         )
     if report_schema_version() != 6:
         raise PublicContractError(

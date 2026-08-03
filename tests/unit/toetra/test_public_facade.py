@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import toetra as toetra_module
 from toetra import (
     CounterexampleReplay,
@@ -42,3 +44,13 @@ def test_public_facade_exposes_the_normal_user_api() -> None:
     assert issubclass(ReplayUnavailableError, RuntimeError)
     assert issubclass(VerificationConfigurationError, RuntimeError)
     assert issubclass(VerificationRuntimeError, RuntimeError)
+
+
+def test_public_facade_defers_private_runtime_imports() -> None:
+    source = Path(toetra_module.__file__).read_text(encoding="utf-8")
+
+    assert "def __getattr__" in source
+    assert (
+        "from toetra._runtime.api import verify"
+        not in source.split("if TYPE_CHECKING:", maxsplit=1)[0]
+    )
