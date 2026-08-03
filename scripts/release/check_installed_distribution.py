@@ -40,10 +40,26 @@ expected_public_api = (
     "verify",
 )
 assert toetra.__all__ == expected_public_api
-assert {name for name in vars(toetra) if not name.startswith("_")} == {
-    *expected_public_api,
-    "examples",
+
+initial_public_names = {
+    name for name in vars(toetra) if not name.startswith("_")
 }
+allowed_public_names = {*expected_public_api, "examples"}
+
+assert initial_public_names <= allowed_public_names
+assert {
+    "VerificationSession",
+    "VerificationStatus",
+    "verify",
+    "examples",
+} <= initial_public_names
+
+for name in expected_public_api:
+    assert getattr(toetra, name) is not None
+
+assert {name for name in vars(toetra) if not name.startswith("_")} == (
+    allowed_public_names
+)
 assert importlib.util.find_spec("forml") is None
 assert importlib.util.find_spec("dsl") is None
 assert importlib.util.find_spec("model") is None
