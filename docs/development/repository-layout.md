@@ -21,6 +21,10 @@ Complete scenarios belong under `demo/`. They may include datasets, notebooks,
 training code, policies, and ignored local artifacts. Generated models and
 reports must not be committed beside immutable inputs.
 
+The private `src/toetra/_cli/` package owns process parsing, diagnostics, and
+command routing for the installed `toetra` and `python -m toetra` entry points.
+It is an adapter over application capabilities, not a second public Python API.
+
 ## Repository scripts
 
 Automation is grouped under one of four packages:

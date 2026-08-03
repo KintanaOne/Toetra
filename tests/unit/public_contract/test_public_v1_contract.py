@@ -5,6 +5,7 @@ from pathlib import Path
 
 from scripts.ci.check_public_contract import (
     EXPECTED_LICENSE,
+    EXPECTED_PROJECT_SCRIPTS,
     EXPECTED_VERSION,
     check_public_contract,
     report_schema_version,
@@ -17,7 +18,7 @@ def test_public_contract_checker_accepts_repository() -> None:
     check_public_contract()
 
 
-def test_public_version_license_and_json_contract_are_frozen() -> None:
+def test_public_version_license_cli_and_json_contract_are_frozen() -> None:
     project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))[
         "project"
     ]
@@ -25,7 +26,7 @@ def test_public_version_license_and_json_contract_are_frozen() -> None:
     assert project["version"] == EXPECTED_VERSION
     assert project["license"] == EXPECTED_LICENSE
     assert project["license-files"] == ["LICENSE", "COPYRIGHT.md"]
-    assert "scripts" not in project
+    assert project["scripts"] == EXPECTED_PROJECT_SCRIPTS
     assert report_schema_version() == 6
 
 

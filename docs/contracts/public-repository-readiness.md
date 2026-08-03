@@ -30,6 +30,13 @@ P27 must preserve:
 P27 does not add an installed CLI. CLI syntax, streams, exit codes, and
 automation behavior belong to P28.
 
+### P28.1 amendment
+
+After P27 acceptance, P28.1 adds the installed `toetra` and `python -m toetra`
+process entry points under the separate CLI automation contract. This additive
+amendment does not retroactively change the evidence required for the P27 public
+exposure decision.
+
 ## Acceptance evidence
 
 ### 1. Public snapshot hygiene

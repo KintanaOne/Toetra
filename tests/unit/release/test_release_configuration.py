@@ -50,6 +50,13 @@ def test_ci_installs_project_runtime_and_all_required_extras() -> None:
     assert 'python -m pip install -e ".[dev,docs]"' in makefile
 
 
+def test_cli_entry_point_targets_the_private_process_adapter() -> None:
+    project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+
+    assert project["project"]["scripts"] == {"toetra": "toetra._cli.main:main"}
+    assert (ROOT / "src" / "toetra" / "__main__.py").is_file()
+
+
 def test_build_toolchain_and_dev_extra_are_pinned() -> None:
     project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
 

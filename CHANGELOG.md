@@ -4,10 +4,13 @@
 
 ### Added
 
+- Added the P28.1 CLI foundation with equivalent installed `toetra` and
+  `python -m toetra` entry points, metadata-backed `--version`, the accepted
+  command index, reserved process status `3`, and text/JSON stderr diagnostics.
 - Accepted the P28 CLI and automation contract for `validate`, `inspect`,
   `verify`, `replay`, and `init`, including process statuses, stream ownership,
   machine-readable diagnostics, artifact manifests, cancellation, and MLOps
-  integration boundaries; implementation remains pending.
+  integration boundaries; command handlers remain pending.
 - Added a public-snapshot audit gate, a full-history audit command, and explicit
   CC BY 4.0 provenance for the redistributed UCI processed Cleveland dataset.
 - Added an outside-in gate that clones the exact clean candidate, follows the
@@ -18,6 +21,8 @@
 
 ### Changed
 
+- Made the nine-symbol public Python facade lazy so CLI help and version queries
+  do not import compiler, model, backend, or solver implementations.
 - Replaced Apache-2.0 with PolyForm Noncommercial 1.0.0 for Toetra-originated
   code and documentation, documented the separate commercial-licensing route,
   and protected that route from ungoverned outside contributions.
@@ -90,6 +95,9 @@
 
 ### Fixed
 
+- Amended the frozen public and repository contract gates for P28.1 so the
+  exact installed `toetra` entry point and private `_cli` subsystem are
+  accepted without changing the nine-symbol Python facade or JSON v6.
 - Named the regression route explicitly throughout onboarding and public demos,
   exposed its scalar `target[point]` observable in first-use examples, and
   removed the overloaded `Classification` label from regression examples.
