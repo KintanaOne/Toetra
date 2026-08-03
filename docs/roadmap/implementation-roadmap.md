@@ -51,20 +51,26 @@ pre-release. PyPI publication and `1.0.0` are separate decisions.
 
 ## Next — CLI and automation
 
-After the Python workflow has been exercised publicly, Toetra can define a thin
-process-level adapter for terminal use, CI/CD, and future orchestration. This
-milestone covers:
+The process contract is now accepted in the
+[CLI and automation contract](../contracts/cli-automation-contract.md) and
+[ADR-0032](../adr/ADR-0032-cli-command-surface-and-application-boundary.md).
+P28 implementation covers:
 
-- an installed `toetra` entry point and a deliberately small command grammar;
-- stable exit-code meanings;
-- stdout/stderr separation and machine-readable output;
-- predictable path and configuration behavior outside the source checkout;
-- clean-install probes and CI integration examples.
+- equivalent installed `toetra` and `python -m toetra` entry points;
+- `validate`, `inspect`, `verify`, `replay`, and `init` commands;
+- stable exit-code meanings and strict stdout/stderr separation;
+- machine-readable validation, inspection, diagnostics, and artifact manifests;
+- predictable path, cancellation, and resource-policy behavior outside the
+  source checkout;
+- clean-install, Windows/Linux, container-job, and CI integration evidence.
 
-The CLI will delegate to the public Python workflow. Compiler, verification,
-and reporting semantics remain owned by the library rather than duplicated in
-the command-line layer. This work may justify another release candidate, but it
-does not by itself trigger the stable release.
+The CLI remains an adapter over shared application workflows. Compiler,
+verification, reporting, and replay semantics stay owned by the library rather
+than being duplicated beneath the command-line layer. `compile` and `serve` are
+reserved but deferred because they require, respectively, a versioned compiled
+artifact or a separately secured network-service contract. This work may
+justify another release candidate, but it does not by itself trigger the stable
+release.
 
 ## Then — stable `1.0.0`
 
