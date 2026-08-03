@@ -43,9 +43,13 @@ is satisfied. Public GitHub visibility does not by itself:
 If a GitHub Release is created during P27, it is explicitly marked as a
 pre-release and contains only artifacts built from the accepted public commit.
 
-P28 owns the CLI contract. The CLI remains a thin adapter over the public Python
-workflow; command syntax, stream behavior, machine-readable output, and exit
-codes must be accepted before an entry point is published.
+P28 owns the CLI contract. The accepted command surface and process behavior
+are defined by the
+[CLI and automation contract](../contracts/cli-automation-contract.md) and
+[ADR-0032](ADR-0032-cli-command-surface-and-application-boundary.md). The CLI
+remains an adapter over shared application workflows; command syntax, stream
+behavior, machine-readable output, artifacts, and exit codes are accepted
+before an entry point is published.
 
 P29 owns stable-release hardening and the transition to `1.0.0`. No calendar
 date overrides a soundness, provenance, security, installation, or

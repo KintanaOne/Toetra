@@ -33,13 +33,6 @@ public guarantees, and which must remain best-effort evidence?
 
 ## Before stable `1.0.0`
 
-### CLI automation contract
-
-Which command shape, stream guarantees, exit-code meanings, and artifact
-behaviors form the smallest stable CLI for terminal use, CI/CD, and future
-orchestration? The CLI must remain a thin adapter over the public Python
-workflow rather than a second implementation of verification semantics.
-
 ### Stable-release acceptance
 
 Which unresolved soundness, security, provenance, packaging, documentation, or
@@ -105,6 +98,10 @@ The following questions are closed for the current V1 profile:
 - standalone first use from a copied quickstart and repository-notebook launch
   behavior from the root or notebook directory;
 - independent timing for repository exposure, CLI adoption, and stable release;
+- the initial CLI command surface (`validate`, `inspect`, `verify`, `replay`,
+  and `init`), process statuses, stream ownership, diagnostic formats, and
+  artifact behavior defined by the
+  [CLI and automation contract](../contracts/cli-automation-contract.md);
 - ownership boundaries for model families, framework adapters, and backends;
 - canonical, CI-checked public documentation snippets.
 

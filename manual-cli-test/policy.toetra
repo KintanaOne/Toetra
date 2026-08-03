@@ -1,0 +1,25 @@
+model := "affine_score.joblib"
+target := score
+
+minimum_a := 0.0
+maximum_a := 3.0
+maximum_score := 7.0
+witness_score := 5.0
+
+[BOUND]:
+forall x0
+    with domain(x0.a: [minimum_a, maximum_a])
+    => target[x0] <= maximum_score
+    using Z3
+
+[LOGIC]:
+forall x0
+    with domain(x0.a: [minimum_a, maximum_a])
+    => target[x0] < maximum_score
+    using Z3
+
+[LOGIC]:
+exists x0
+    with domain(x0.a: [minimum_a, maximum_a])
+    => target[x0] == witness_score
+    using Z3

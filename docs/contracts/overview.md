@@ -47,7 +47,7 @@ artifact progression.
 | ModelBridge | [model to schema](model-to-schema.md), [model constraints](model-constraints.md) | normalize model metadata and encode requested model equations |
 | Numeric/backend | [numeric registry](numeric-compatibility-registry.md), [IR to backend](ir-to-backend.md), [backend execution](backend-execution-contract.md) | qualify and execute a sound backend route |
 | Evidence | [reporting and replay](output-reporting-and-replay.md), [provenance](verification-provenance.md) | retain source meaning, evidence, fingerprints, and concrete observations |
-| Product/release | [public V1](public-v1-contract.md), [repository](repository-contract.md), [public repository readiness](public-repository-readiness.md), [release engineering](release-engineering.md) | freeze supported facade, layout, public exposure, and artifacts |
+| Product/release | [public V1](public-v1-contract.md), [CLI and automation](cli-automation-contract.md), [repository](repository-contract.md), [public repository readiness](public-repository-readiness.md), [release engineering](release-engineering.md) | freeze supported facade, process automation, layout, public exposure, and artifacts |
 
 ## Implemented versus target contracts
 

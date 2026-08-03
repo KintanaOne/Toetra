@@ -1,6 +1,6 @@
 # Architecture Decision Records
 
-> Status: Active  
+> Status: Active
 > Scope: Toetra architecture, compiler pipeline, verification pipeline, ModelBridge, Miova integration, and product identity
 
 ## Purpose
@@ -37,8 +37,10 @@ The goal of the ADR section is to make explicit:
   owning internal boundary,
 - why public repository exposure, the CLI contract, and the stable release are
   separate projects,
-- and why public source access is noncommercial while commercial rights require
-  a separate agreement.
+- why public source access is noncommercial while commercial rights require
+  a separate agreement,
+- and why the CLI exposes application workflows without becoming a second
+  verification implementation.
 
 ## ADR format
 
@@ -89,6 +91,7 @@ Impact on Toetra
 | ADR-0029 | Normalize public verification failures without erasing ownership |
 | ADR-0030 | Separate public repository exposure, CLI, and stable release |
 | ADR-0031 | Adopt noncommercial and separate commercial licensing |
+| ADR-0032 | Define the CLI command surface and application boundary |
 
 ## Decision status vocabulary
 

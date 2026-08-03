@@ -4,6 +4,10 @@
 
 ### Added
 
+- Accepted the P28 CLI and automation contract for `validate`, `inspect`,
+  `verify`, `replay`, and `init`, including process statuses, stream ownership,
+  machine-readable diagnostics, artifact manifests, cancellation, and MLOps
+  integration boundaries; implementation remains pending.
 - Added a public-snapshot audit gate, a full-history audit command, and explicit
   CC BY 4.0 provenance for the redistributed UCI processed Cleveland dataset.
 - Added an outside-in gate that clones the exact clean candidate, follows the

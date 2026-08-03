@@ -94,6 +94,11 @@ nav:
       - Reports and Status: api-reference/reports-and-status.md
       - Replay and Errors: api-reference/replay-and-errors.md
 
+  - CLI and Automation:
+      - Overview: cli/overview.md
+      - Command Reference: cli/command-reference.md
+      - MLOps Integration: cli/mlops-integration.md
+
   - Architecture:
       - Overview: architecture/overview.md
       - Pipeline Views: architecture/pipeline-views.md
@@ -181,6 +186,7 @@ nav:
       - Repository Contract: contracts/repository-contract.md
       - Public Repository Readiness: contracts/public-repository-readiness.md
       - Public V1 Contract: contracts/public-v1-contract.md
+      - CLI and Automation Contract: contracts/cli-automation-contract.md
       - Generated Numeric Compatibility Matrices: generated/numeric-compatibility-matrices.md
       - Model to Schema: contracts/model-to-schema.md
       - Schema to Semantic: contracts/schema-to-semantic.md
@@ -275,6 +281,7 @@ nav:
       - ADR-0029 Public Verification Failure Boundary: adr/ADR-0029-public-verification-failure-boundary.md
       - ADR-0030 Public Exposure, CLI, and Stable Release: adr/ADR-0030-separate-public-exposure-cli-and-stable-release.md
       - ADR-0031 Noncommercial and Commercial Licensing: adr/ADR-0031-noncommercial-and-commercial-licensing.md
+      - ADR-0032 CLI Command Surface and Application Boundary: adr/ADR-0032-cli-command-surface-and-application-boundary.md
 
   - Roadmap:
       - Implementation Roadmap: roadmap/implementation-roadmap.md
