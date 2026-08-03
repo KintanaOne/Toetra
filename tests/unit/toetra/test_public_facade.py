@@ -52,5 +52,5 @@ def test_public_facade_defers_private_runtime_imports() -> None:
     assert "def __getattr__" in source
     assert (
         "from toetra._runtime.api import verify"
-        not in source.split("if TYPE_CHECKING:", maxsplit=1)[0]
+        not in source.split("if _TYPE_CHECKING:", maxsplit=1)[0]
     )

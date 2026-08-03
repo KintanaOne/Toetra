@@ -8,12 +8,11 @@ The facade resolves public symbols lazily so process-level operations such as
 model, backend, or solver implementations.
 """
 
-from __future__ import annotations
+from importlib import import_module as _import_module
+from typing import TYPE_CHECKING as _TYPE_CHECKING
+from typing import Any as _Any
 
-from importlib import import_module
-from typing import TYPE_CHECKING, Any
-
-if TYPE_CHECKING:
+if _TYPE_CHECKING:
     from toetra._backends.results import VerificationStatus
     from toetra._reporting.model import VerificationReport
     from toetra._runtime.api import verify
@@ -59,14 +58,14 @@ _PUBLIC_IMPORTS = {
 }
 
 
-def __getattr__(name: str) -> Any:
+def __getattr__(name: str) -> _Any:
     try:
         module_name, attribute_name = _PUBLIC_IMPORTS[name]
     except KeyError as error:
         message = f"module {__name__!r} has no attribute {name!r}"
         raise AttributeError(message) from error
 
-    value = getattr(import_module(module_name), attribute_name)
+    value = getattr(_import_module(module_name), attribute_name)
     globals()[name] = value
     return value
 
