@@ -141,6 +141,11 @@ class Z3Runner:
     def __init__(self, translator: Z3Translator | None = None) -> None:
         self.translator = translator or Z3Translator()
 
+    def translate(self, task: VerificationTaskIR2) -> Z3Translation:
+        """Translate one task without creating or invoking a solver."""
+
+        return self.translator.translate(task)
+
     def run(
         self,
         task: VerificationTaskIR2,
@@ -160,7 +165,7 @@ class Z3Runner:
                 budget=budget,
             )
 
-        translation = self.translator.translate(task)
+        translation = self.translate(task)
         if budget.remaining_timeout_ms() == 0:
             return self._inconclusive_result(
                 execution_status=BackendExecutionStatus.TIMEOUT,

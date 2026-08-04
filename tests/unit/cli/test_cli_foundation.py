@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import importlib
 import json
+import signal
 
 import pytest
 
-from toetra._cli.main import EXIT_OK, EXIT_USAGE, main
+from toetra._cli.main import EXIT_OK, EXIT_TERMINATED, EXIT_USAGE, main
+
+cli_main = importlib.import_module("toetra._cli.main")
 
 
 def test_empty_invocation_prints_command_index(
@@ -105,7 +109,7 @@ def test_subcommand_errors_preserve_json_diagnostics(
     assert payload["code"] == "INVALID_ARGUMENTS"
 
 
-@pytest.mark.parametrize("command", ["validate", "inspect", "verify", "replay", "init"])
+@pytest.mark.parametrize("command", ["verify", "replay", "init"])
 def test_pending_commands_fail_explicitly(
     command: str,
     capsys: pytest.CaptureFixture[str],
@@ -115,3 +119,31 @@ def test_pending_commands_fail_explicitly(
     captured = capsys.readouterr()
     assert captured.out == ""
     assert "not implemented in this build" in captured.err
+
+
+def test_sigterm_uses_reserved_termination_status(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    installed: dict[str, object] = {}
+
+    def fake_signal(_signal_number: object, handler: object) -> object:
+        if callable(handler):
+            installed["handler"] = handler
+        return signal.SIG_DFL
+
+    def terminate_during_dispatch(_namespace: object) -> int:
+        handler = installed["handler"]
+        assert callable(handler)
+        handler(signal.SIGTERM, None)
+        raise AssertionError("SIGTERM handler must interrupt dispatch")
+
+    monkeypatch.setattr(cli_main.signal, "getsignal", lambda _signal: signal.SIG_DFL)
+    monkeypatch.setattr(cli_main.signal, "signal", fake_signal)
+    monkeypatch.setattr(cli_main, "_dispatch", terminate_during_dispatch)
+
+    assert main(["verify"]) == EXIT_TERMINATED
+
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "terminated by SIGTERM" in captured.err

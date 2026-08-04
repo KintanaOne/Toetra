@@ -1,6 +1,6 @@
 # CLI and Automation Contract
 
-> **Status:** Accepted design; P28.1 process foundation implemented
+> **Status:** Accepted design; P28.2 validate and inspect implemented
 >
 > **Compatibility surface:** installed process interface, machine-readable output,
 > diagnostics, artifacts, and exit codes
@@ -122,7 +122,7 @@ backend-neutral policy surface:
 [--timeout-ms POSITIVE_INTEGER | --no-timeout]
 [--max-backend-units POSITIVE_INTEGER]
 [--max-memory-mb POSITIVE_INTEGER]
-[--seed INTEGER]
+[--seed NON_NEGATIVE_INTEGER]
 ```
 
 Omitted values use the existing Toetra defaults. `--timeout-ms` and

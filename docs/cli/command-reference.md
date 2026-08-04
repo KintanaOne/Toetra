@@ -1,5 +1,8 @@
 # CLI command reference
 
+> P28.2 implements `validate` and `inspect`. The remaining command sections
+> define accepted contracts for handlers delivered in later P28 increments.
+
 ## Shared inputs
 
 ```text
@@ -19,7 +22,7 @@ The executable commands share:
 --timeout-ms POSITIVE_INTEGER | --no-timeout
 --max-backend-units POSITIVE_INTEGER
 --max-memory-mb POSITIVE_INTEGER
---seed INTEGER
+--seed NON_NEGATIVE_INTEGER
 ```
 
 `validate` accepts these options only with `--level executable`; `inspect` and
@@ -36,7 +39,7 @@ toetra validate SPECIFICATION
     [--timeout-ms POSITIVE_INTEGER | --no-timeout]
     [--max-backend-units POSITIVE_INTEGER]
     [--max-memory-mb POSITIVE_INTEGER]
-    [--seed INTEGER]
+    [--seed NON_NEGATIVE_INTEGER]
     [--level {syntax,semantic,executable}]
     [--format {text,json}]
     [--output PATH|-]
@@ -59,7 +62,7 @@ toetra inspect SPECIFICATION
     [--timeout-ms POSITIVE_INTEGER | --no-timeout]
     [--max-backend-units POSITIVE_INTEGER]
     [--max-memory-mb POSITIVE_INTEGER]
-    [--seed INTEGER]
+    [--seed NON_NEGATIVE_INTEGER]
     [--format {text,json}]
     [--output PATH|-]
 ```
@@ -78,7 +81,7 @@ toetra verify SPECIFICATION
     [--timeout-ms POSITIVE_INTEGER | --no-timeout]
     [--max-backend-units POSITIVE_INTEGER]
     [--max-memory-mb POSITIVE_INTEGER]
-    [--seed INTEGER]
+    [--seed NON_NEGATIVE_INTEGER]
     [--format {text,json,html}]
     [--output PATH|-]
     [--artifacts-dir DIRECTORY]

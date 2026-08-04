@@ -20,6 +20,8 @@ EXPECTED_PROJECT_NAME = "toetra"
 EXPECTED_PROJECT_SCRIPTS = {"toetra": "toetra._cli.main:main"}
 EXPECTED_VERSION = "1.0.0rc3"
 EXPECTED_LICENSE = "PolyForm-Noncommercial-1.0.0"
+EXPECTED_VALIDATION_SCHEMA = ("toetra.validation-result", 1)
+EXPECTED_INSPECTION_SCHEMA = ("toetra.inspection", 1)
 
 CLASSIFICATION_TARGET_DOCUMENTS = (
     ROOT / "docs" / "adr" / "ADR-0023-typed-model-outputs-and-observables.md",
@@ -142,6 +144,40 @@ def report_schema_identities() -> tuple[str, str]:
         return values["REPORT_SCHEMA"], values["REPORT_COLLECTION_SCHEMA"]
     except KeyError as error:
         raise PublicContractError("Report schema identifiers were not found") from error
+
+
+def cli_schema_contracts() -> tuple[tuple[str, int], tuple[str, int]]:
+    source = (ROOT / "src" / "toetra" / "_runtime" / "preflight.py").read_text(
+        encoding="utf-8"
+    )
+    module = ast.parse(source)
+    names = {
+        "VALIDATION_SCHEMA",
+        "VALIDATION_SCHEMA_VERSION",
+        "INSPECTION_SCHEMA",
+        "INSPECTION_SCHEMA_VERSION",
+    }
+    values: dict[str, str | int] = {}
+    for node in module.body:
+        if not isinstance(node, ast.Assign):
+            continue
+        for target in node.targets:
+            if isinstance(target, ast.Name) and target.id in names:
+                value = ast.literal_eval(node.value)
+                if isinstance(value, (str, int)):
+                    values[target.id] = value
+    try:
+        validation = (
+            str(values["VALIDATION_SCHEMA"]),
+            int(values["VALIDATION_SCHEMA_VERSION"]),
+        )
+        inspection = (
+            str(values["INSPECTION_SCHEMA"]),
+            int(values["INSPECTION_SCHEMA_VERSION"]),
+        )
+    except KeyError as error:
+        raise PublicContractError("CLI schema constants were not found") from error
+    return validation, inspection
 
 
 def _validate_mkdocs_navigation() -> None:
@@ -429,6 +465,15 @@ def check_public_contract() -> None:
     if report_schema_identities() != expected_schema_ids:
         raise PublicContractError(
             "JSON report schema identifiers must use the canonical Toetra identity."
+        )
+    validation_schema, inspection_schema = cli_schema_contracts()
+    if validation_schema != EXPECTED_VALIDATION_SCHEMA:
+        raise PublicContractError(
+            "CLI validation JSON schema identity/version changed unexpectedly."
+        )
+    if inspection_schema != EXPECTED_INSPECTION_SCHEMA:
+        raise PublicContractError(
+            "CLI inspection JSON schema identity/version changed unexpectedly."
         )
 
     license_text = (ROOT / "LICENSE").read_text(encoding="utf-8")
