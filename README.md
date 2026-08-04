@@ -98,10 +98,11 @@ session.write_artifacts("artifacts", formats={"json", "html"})
 raise SystemExit(session.exit_code)
 ```
 
-`toetra.verify(...)` remains the public Python execution entry point. P28.1 also
-installs the `toetra` and `python -m toetra` process shells with help, version,
-diagnostics, and the accepted command index. Verification command handlers are
-delivered incrementally under the separate CLI automation contract.
+`toetra.verify(...)` remains the public Python execution entry point. The
+installed `toetra` and `python -m toetra` process interfaces now provide
+`validate` and `inspect` for solver-free pipeline checks and normalized execution
+plans. The `verify`, `replay`, and `init` command handlers remain scheduled for
+later P28 increments under the separate CLI automation contract.
 
 ## Reading a result
 

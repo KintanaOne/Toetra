@@ -1,8 +1,9 @@
 # Command-line interface
 
-> This page documents the intended process interface before implementation. The
-> current release candidate is still used through the
-> [Python API](../api-reference/index.md).
+> `validate` and `inspect` are implemented in P28.2 for both the installed
+> `toetra` entry point and `python -m toetra`. `verify`, `replay`, and `init`
+> remain documented contracts pending later P28 increments. The
+> [Python API](../api-reference/index.md) remains the current verification path.
 
 ## Goals
 
@@ -23,6 +24,16 @@ toetra verify
 toetra replay
 toetra init
 ```
+
+Current implementation status:
+
+| Command | Status |
+|---|---|
+| `validate` | implemented in P28.2 |
+| `inspect` | implemented in P28.2 |
+| `verify` | command reserved; handler pending |
+| `replay` | command reserved; handler pending |
+| `init` | command reserved; handler pending |
 
 The normative behavior is defined by the
 [CLI and automation contract](../contracts/cli-automation-contract.md). The

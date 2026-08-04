@@ -4,7 +4,6 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
-from toetra._backends.defaults import create_default_backend_registry
 from toetra._backends.errors import (
     BackendExecutionError,
     BackendExecutionPolicyError,
@@ -20,7 +19,6 @@ from toetra._backends.errors import (
 from toetra._backends.execution import BackendExecutionPolicy
 from toetra._backends.registry import BackendRegistry
 from toetra._backends.router import BackendRouter
-from toetra._compatibility.model import NumericCompatibilityContext
 from toetra._compatibility.policy import (
     apply_numeric_compatibility_policy,
     apply_semantic_lowering_policy,
@@ -34,12 +32,10 @@ from toetra._compiler.ast.nodes.program import ProgramNode
 from toetra._compiler.builder.errors import BuilderError
 from toetra._compiler.builder.program import parse_program
 from toetra._compiler.ir.ir2.context import IR2BuildContext
-from toetra._compiler.ir.ir2.enums import NormalFormKind
 from toetra._compiler.ir.ir2.run_ir2 import run_ir2_with_model_schema
 from toetra._compiler.parser.errors import ParserError
 from toetra._compiler.parser.parser import parse_toetra_code
 from toetra._compiler.semantic.errors.errors import SemanticError
-from toetra._provenance.builder import build_provenance_context
 from toetra._reporting.builder import build_verification_report
 from toetra._runtime.anchors import (
     AnchorLookupRequest,
@@ -47,10 +43,7 @@ from toetra._runtime.anchors import (
     AnchorSource,
     DataFrameAnchorResolver,
 )
-from toetra._runtime.backends import (
-    BackendRunnerRegistry,
-    create_default_backend_runner_registry,
-)
+from toetra._runtime.backends import BackendRunnerRegistry
 from toetra._runtime.errors import (
     AnchorResolutionError,
     BackendRunnerNotRegisteredError,
@@ -64,7 +57,6 @@ from toetra._compiler.semantic.symbols.point import (
     ResolvedAnchorBinding,
     frozen_mapping,
 )
-from toetra._models.compatibility import framework_model_descriptor
 from toetra._models.errors.base import ModelError
 from toetra._models.errors.detection import (
     ModelDetectionError,
@@ -91,7 +83,6 @@ from toetra._models.encoder.errors import (
     UnsupportedModelParameterError,
 )
 from toetra._models.encoder.factory import ModelEncoderFactory
-from toetra._models.encoder.profile import model_encoder_descriptor
 from toetra._models.runtime.manager import ModelManager
 from toetra._models.schema.model_schema import ModelSchema
 from toetra._models.semantics.errors import (
@@ -101,6 +92,10 @@ from toetra._models.semantics.errors import (
     UnsupportedModelSemanticProfileError,
     UnsupportedObservableLoweringError,
 )
+
+# These names remain module-level monkeypatch seams for existing runtime tests and
+# advanced private integrations while preflight planning is shared across commands.
+_RUNTIME_MONKEYPATCH_SEAMS = (BackendRouter, run_ir2_with_model_schema)
 
 
 @dataclass(frozen=True)
@@ -208,98 +203,33 @@ def _verify(
     anchor_source: AnchorSource | None,
     anchor_resolver: AnchorResolver | None,
 ) -> VerificationSession:
-    loaded = _load_specification(specification)
-    resolved = _resolve_model(
-        loaded,
+    from toetra._runtime.preflight import build_executable_plan
+
+    plan = build_executable_plan(
+        specification,
         model=model,
         dataset=dataset,
         target=target,
         schema=schema,
-    )
-    _validate_target_contract(loaded.target, resolved.schema.output_name)
-    resolved_anchors = _resolve_anchor_bindings(
-        loaded.program,
-        schema=resolved.schema,
-        anchor_source=anchor_source,
-        anchor_resolver=anchor_resolver,
-        dataset_fallback=resolved.dataset_path,
-    )
-
-    context = ir2_context or IR2BuildContext(preferred_normal_form=NormalFormKind.NNF)
-    encoder_factory = model_encoder_factory or ModelEncoderFactory()
-    try:
-        selected_encoder = encoder_factory.create(resolved.schema)
-        numeric_compatibility_context = NumericCompatibilityContext(
-            source_model=framework_model_descriptor(resolved.schema),
-            model_encoder=model_encoder_descriptor(selected_encoder),
-        )
-        tasks = run_ir2_with_model_schema(
-            loaded.source,
-            schema=resolved.schema,
-            model_context=model_context,
-            ir2_context=context,
-            encoder_factory=encoder_factory,
-            resolved_anchors=resolved_anchors,
-        )
-    except ModelEncoderError as error:
-        raise _public_model_encoder_error(
-            error,
-            model_path=resolved.model_path,
-        ) from error
-    except ModelSemanticLoweringError as error:
-        raise _public_model_semantic_error(
-            error,
-            model_path=resolved.model_path,
-        ) from error
-    except NumericCompatibilityError as error:
-        raise _public_numeric_compatibility_error(
-            error,
-            model_path=resolved.model_path,
-        ) from error
-
-    router = BackendRouter(
-        backend_registry or create_default_backend_registry(),
+        model_context=model_context,
+        model_encoder_factory=model_encoder_factory,
+        ir2_context=ir2_context,
+        backend_registry=backend_registry,
         numeric_compatibility_registry=numeric_compatibility_registry,
-    )
-    runners = runner_registry or create_default_backend_runner_registry()
-    resolved_execution_policy = execution_policy or BackendExecutionPolicy()
-    provenance_context = build_provenance_context(
-        specification_source=loaded.source,
-        specification_path=loaded.path,
-        model_path=resolved.model_path,
-        dataset_path=resolved.dataset_path,
+        runner_registry=runner_registry,
+        execution_policy=execution_policy,
         anchor_source=anchor_source,
         anchor_resolver=anchor_resolver,
-        anchors_used=bool(resolved_anchors),
-        schema=resolved.schema,
-        ir2_context=context,
+        require_translation=False,
     )
 
     executions: list[VerificationExecution] = []
-    for property_index, task in enumerate(tasks):
+    for item in plan.properties:
         try:
-            route = router.route(
-                task,
-                numeric_compatibility_context=numeric_compatibility_context,
-                execution_policy=resolved_execution_policy,
+            result = item.runner.run(
+                item.task,
+                policy=plan.execution_policy,
             )
-        except NumericCompatibilityError as error:
-            raise _public_numeric_compatibility_error(
-                error,
-                model_path=resolved.model_path,
-            ) from error
-        except BackendRoutingError as error:
-            raise _public_backend_routing_error(
-                error,
-                model_path=resolved.model_path,
-            ) from error
-        try:
-            result = runners.require(route.backend).run(
-                task,
-                policy=resolved_execution_policy,
-            )
-        except BackendRunnerNotRegisteredError as error:
-            raise _public_backend_runner_error(error) from error
         except BackendExecutionPolicyError as error:
             raise _public_backend_policy_error(error) from error
         except BackendTranslationError as error:
@@ -308,39 +238,39 @@ def _verify(
             raise _public_backend_execution_error(error) from error
         result = apply_numeric_compatibility_policy(
             result,
-            route.numeric_compatibility,
+            item.route.numeric_compatibility,
         )
         result = apply_semantic_lowering_policy(
             result,
-            task.lowering_evidence,
+            item.task.lowering_evidence,
         )
         report = build_verification_report(
-            task,
-            route,
+            item.task,
+            item.route,
             result,
-            property_index=property_index,
-            provenance_context=provenance_context,
-            schema=resolved.schema,
+            property_index=item.index,
+            provenance_context=plan.provenance,
+            schema=plan.schema,
         )
         executions.append(
             VerificationExecution(
-                task=task,
-                route=route,
+                task=item.task,
+                route=item.route,
                 result=result,
                 report=report,
             )
         )
 
     return VerificationSession(
-        source=loaded.source,
-        specification_path=loaded.path,
-        schema=resolved.schema,
+        source=plan.source,
+        specification_path=plan.specification_path,
+        schema=plan.schema,
         executions=tuple(executions),
-        model=resolved.model,
-        model_path=resolved.model_path,
-        dataset_path=resolved.dataset_path,
-        anchor_resolutions=resolved_anchors,
-        provenance=provenance_context,
+        model=plan.model,
+        model_path=plan.model_path,
+        dataset_path=plan.dataset_path,
+        anchor_resolutions=plan.anchor_resolutions,
+        provenance=plan.provenance,
     )
 
 

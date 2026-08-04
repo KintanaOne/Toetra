@@ -78,6 +78,12 @@ def test_release_probe_exercises_binary_classification() -> None:
     assert "target[applicant].label" in probe
     assert "target[applicant].probability" in probe
     assert "VerificationStatus.WITNESS" in probe
+    assert '"validate",' in probe
+    assert '"inspect",' in probe
+    assert '"toetra.validation-result"' in probe
+    assert '"toetra.inspection"' in probe
+    assert '"-m",' in probe and '"toetra",' in probe
+    assert "CLI artifacts \u03a9" in probe
     assert "from toetra.examples import credit_risk_policy" in probe
     assert 'find_spec("forml") is None' in probe
     assert 'find_spec("dsl") is None' in probe

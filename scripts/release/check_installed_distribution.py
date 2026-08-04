@@ -118,6 +118,44 @@ with domain(applicant.income: [3.0, 6.0])
 print(f"Installed Toetra regression/classification probe passed from {module_path}")
 """
 
+CLI_FIXTURE = r"""
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+import joblib
+import pandas as pd
+from sklearn.linear_model import LinearRegression
+
+root = Path(sys.argv[1])
+root.mkdir(parents=True, exist_ok=True)
+frame = pd.DataFrame(
+    {
+        "a": [0.0, 1.0, 2.0, 3.0],
+        "score": [1.0, 3.0, 5.0, 7.0],
+    }
+)
+model = LinearRegression().fit(frame[["a"]], frame["score"])
+joblib.dump(model, root / "linear model.joblib")
+frame.to_csv(root / "reference data.csv", index=False)
+source = (
+    'model := "linear model.joblib"\n'
+    'target := score\n\n'
+    '[BOUND]:\n'
+    'forall x0\n'
+    'with domain(x0.a: [0.0, 3.0])\n'
+    '=> target[x0] <= 7.0 using Z3\n'
+)
+(root / "policy.toetra").write_text(source, encoding="utf-8")
+"""
+
+
+def _venv_script(directory: Path, name: str) -> Path:
+    if os.name == "nt":
+        return directory / "Scripts" / f"{name}.exe"
+    return directory / "bin" / name
+
 
 def _venv_python(directory: Path) -> Path:
     if os.name == "nt":
@@ -165,6 +203,71 @@ def main() -> int:
             cwd=root,
             env=clean_environment,
         )
+
+        cli_root = root / "CLI artifacts Ω"
+        subprocess.run(
+            [str(python), "-I", "-c", CLI_FIXTURE, str(cli_root)],
+            check=True,
+            cwd=root,
+            env=clean_environment,
+        )
+        console = _venv_script(environment, "toetra")
+        policy = cli_root / "policy.toetra"
+        dataset = cli_root / "reference data.csv"
+        validate = subprocess.run(
+            [
+                str(console),
+                "validate",
+                str(policy),
+                "--dataset",
+                str(dataset),
+                "--format",
+                "json",
+            ],
+            check=False,
+            cwd=root,
+            env=clean_environment,
+            capture_output=True,
+            text=True,
+        )
+        assert validate.returncode == 0, validate.stderr
+        assert validate.stderr == ""
+        validation_payload = json.loads(validate.stdout)
+        assert validation_payload["schema"] == "toetra.validation-result"
+        assert validation_payload["schema_version"] == 1
+        assert validation_payload["valid"] is True
+        assert validation_payload["completed_level"] == "executable"
+
+        inspection_output = cli_root / "nested output" / "inspection.json"
+        inspect = subprocess.run(
+            [
+                str(python),
+                "-I",
+                "-m",
+                "toetra",
+                "inspect",
+                str(policy),
+                "--dataset",
+                str(dataset),
+                "--format",
+                "json",
+                "--output",
+                str(inspection_output),
+            ],
+            check=False,
+            cwd=root,
+            env=clean_environment,
+            capture_output=True,
+            text=True,
+        )
+        assert inspect.returncode == 0, inspect.stderr
+        assert inspect.stdout == ""
+        assert inspect.stderr == ""
+        inspection_payload = json.loads(inspection_output.read_text(encoding="utf-8"))
+        assert inspection_payload["schema"] == "toetra.inspection"
+        assert inspection_payload["schema_version"] == 1
+        assert inspection_payload["execution"]["translation_ready"] is True
+
         quickstart = root / "verify_model.py"
         report = root / "quickstart-report.json"
         shutil.copy2(

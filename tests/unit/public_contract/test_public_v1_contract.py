@@ -4,10 +4,13 @@ import tomllib
 from pathlib import Path
 
 from scripts.ci.check_public_contract import (
+    EXPECTED_INSPECTION_SCHEMA,
     EXPECTED_LICENSE,
     EXPECTED_PROJECT_SCRIPTS,
+    EXPECTED_VALIDATION_SCHEMA,
     EXPECTED_VERSION,
     check_public_contract,
+    cli_schema_contracts,
     report_schema_version,
 )
 
@@ -28,6 +31,10 @@ def test_public_version_license_cli_and_json_contract_are_frozen() -> None:
     assert project["license-files"] == ["LICENSE", "COPYRIGHT.md"]
     assert project["scripts"] == EXPECTED_PROJECT_SCRIPTS
     assert report_schema_version() == 6
+    assert cli_schema_contracts() == (
+        EXPECTED_VALIDATION_SCHEMA,
+        EXPECTED_INSPECTION_SCHEMA,
+    )
 
 
 def test_readme_points_to_the_authoritative_v1_profile() -> None:

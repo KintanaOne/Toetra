@@ -4,13 +4,18 @@
 
 ### Added
 
+- Added the P28.2 `validate` and `inspect` workflows with syntax, semantic,
+  and executable dry-run boundaries, stable JSON schemas, atomic primary output,
+  backend translation without solving, SIGTERM status handling, and
+  installed-wheel CLI probes.
 - Added the P28.1 CLI foundation with equivalent installed `toetra` and
   `python -m toetra` entry points, metadata-backed `--version`, the accepted
   command index, reserved process status `3`, and text/JSON stderr diagnostics.
 - Accepted the P28 CLI and automation contract for `validate`, `inspect`,
   `verify`, `replay`, and `init`, including process statuses, stream ownership,
   machine-readable diagnostics, artifact manifests, cancellation, and MLOps
-  integration boundaries; command handlers remain pending.
+  integration boundaries; `verify`, `replay`, and `init` handlers remain
+  pending after P28.2.
 - Added a public-snapshot audit gate, a full-history audit command, and explicit
   CC BY 4.0 provenance for the redistributed UCI processed Cleveland dataset.
 - Added an outside-in gate that clones the exact clean candidate, follows the
@@ -21,6 +26,8 @@
 
 ### Changed
 
+- Reused one private routed pre-execution plan across `validate`, `inspect`, and
+  `verify`, while keeping backend solver execution exclusive to verification.
 - Made the nine-symbol public Python facade lazy so CLI help and version queries
   do not import compiler, model, backend, or solver implementations.
 - Replaced Apache-2.0 with PolyForm Noncommercial 1.0.0 for Toetra-originated

@@ -54,11 +54,13 @@ pre-release. PyPI publication and `1.0.0` are separate decisions.
 The process contract is now accepted in the
 [CLI and automation contract](../contracts/cli-automation-contract.md) and
 [ADR-0032](../adr/ADR-0032-cli-command-surface-and-application-boundary.md).
-P28.1 now provides equivalent installed `toetra` and `python -m toetra` entry
+P28.1 provides equivalent installed `toetra` and `python -m toetra` entry
 points, metadata-backed version reporting, the accepted command index, and the
-process diagnostic boundary. Remaining P28 implementation covers:
+process diagnostic boundary. P28.2 adds solver-free `validate` and `inspect`
+handlers, stable validation/inspection JSON, atomic output, and installed-wheel
+probes. Remaining P28 implementation covers:
 
-- `validate`, `inspect`, `verify`, `replay`, and `init` command handlers;
+- `verify`, `replay`, and `init` command handlers;
 - stable exit-code meanings and strict stdout/stderr separation;
 - machine-readable validation, inspection, diagnostics, and artifact manifests;
 - predictable path, cancellation, and resource-policy behavior outside the

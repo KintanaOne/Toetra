@@ -3,14 +3,23 @@
 from __future__ import annotations
 
 import argparse
+import signal
 import sys
+import traceback
+from collections.abc import Iterator
+from contextlib import contextmanager
 from importlib.metadata import PackageNotFoundError, version
+from types import FrameType
 from typing import NoReturn, Sequence, cast
 
 from toetra._cli.diagnostics import CliDiagnostic, render_diagnostic
 
 EXIT_OK = 0
 EXIT_USAGE = 3
+EXIT_RUNTIME = 4
+EXIT_INTERNAL = 5
+EXIT_INTERRUPTED = 130
+EXIT_TERMINATED = 143
 
 _COMMANDS: tuple[tuple[str, str], ...] = (
     ("validate", "Validate a verification request without solving."),
@@ -47,8 +56,6 @@ class ToetraArgumentParser(argparse.ArgumentParser):
     _diagnostic_format: str = "text"
 
     def use_diagnostic_format(self, output_format: str) -> None:
-        """Configure diagnostics without widening ``ArgumentParser.__init__``."""
-
         self._diagnostic_format = output_format
 
     def error(self, message: str) -> NoReturn:
@@ -56,12 +63,58 @@ class ToetraArgumentParser(argparse.ArgumentParser):
             CliDiagnostic(
                 category="usage",
                 code="INVALID_ARGUMENTS",
+                stage="usage",
                 message=message,
                 hint=f"Run '{self.prog} --help' for usage.",
             ),
             output_format=self._diagnostic_format,
         )
         raise SystemExit(EXIT_USAGE)
+
+
+class _TerminationRequested(Exception):
+    """Internal control flow raised by the temporary SIGTERM handler."""
+
+
+def _raise_termination(_signum: int, _frame: FrameType | None) -> NoReturn:
+    raise _TerminationRequested
+
+
+@contextmanager
+def _sigterm_boundary() -> Iterator[None]:
+    sigterm = getattr(signal, "SIGTERM", None)
+    if sigterm is None:
+        yield
+        return
+
+    try:
+        previous = signal.getsignal(sigterm)
+        signal.signal(sigterm, _raise_termination)
+    except (OSError, ValueError):
+        yield
+        return
+
+    try:
+        yield
+    finally:
+        try:
+            signal.signal(sigterm, previous)
+        except (OSError, ValueError):
+            pass
+
+
+def _positive_integer(value: str) -> int:
+    parsed = int(value)
+    if parsed <= 0:
+        raise argparse.ArgumentTypeError("must be a strictly positive integer")
+    return parsed
+
+
+def _non_negative_integer(value: str) -> int:
+    parsed = int(value)
+    if parsed < 0:
+        raise argparse.ArgumentTypeError("must be a non-negative integer")
+    return parsed
 
 
 def _build_parser(*, diagnostic_format: str) -> ToetraArgumentParser:
@@ -91,6 +144,7 @@ def _build_parser(*, diagnostic_format: str) -> ToetraArgumentParser:
     )
 
     subparsers = parser.add_subparsers(dest="command", metavar="COMMAND")
+    parsers: dict[str, ToetraArgumentParser] = {}
     for name, help_text in _COMMANDS:
         command = cast(
             ToetraArgumentParser,
@@ -98,8 +152,61 @@ def _build_parser(*, diagnostic_format: str) -> ToetraArgumentParser:
         )
         command.use_diagnostic_format(diagnostic_format)
         command.set_defaults(_command_name=name)
+        parsers[name] = command
 
+    _configure_validate_parser(parsers["validate"])
+    _configure_inspect_parser(parsers["inspect"])
     return parser
+
+
+def _configure_validate_parser(parser: ToetraArgumentParser) -> None:
+    _add_shared_inputs(parser)
+    _add_execution_policy(parser)
+    parser.add_argument(
+        "--level",
+        choices=("syntax", "semantic", "executable"),
+        default="executable",
+        help="Validation depth (default: executable).",
+    )
+    _add_primary_output(parser)
+
+
+def _configure_inspect_parser(parser: ToetraArgumentParser) -> None:
+    _add_shared_inputs(parser)
+    _add_execution_policy(parser)
+    _add_primary_output(parser)
+
+
+def _add_shared_inputs(parser: ToetraArgumentParser) -> None:
+    parser.add_argument("specification", metavar="SPECIFICATION")
+    parser.add_argument("--model", metavar="PATH")
+    parser.add_argument("--dataset", metavar="PATH")
+    parser.add_argument("--anchor-source", metavar="PATH")
+    parser.add_argument("--target", metavar="NAME")
+
+
+def _add_execution_policy(parser: ToetraArgumentParser) -> None:
+    timeout = parser.add_mutually_exclusive_group()
+    timeout.add_argument("--timeout-ms", type=_positive_integer, default=None)
+    timeout.add_argument("--no-timeout", action="store_true")
+    parser.add_argument("--max-backend-units", type=_positive_integer)
+    parser.add_argument("--max-memory-mb", type=_positive_integer)
+    parser.add_argument("--seed", type=_non_negative_integer)
+
+
+def _add_primary_output(parser: ToetraArgumentParser) -> None:
+    parser.add_argument(
+        "--format",
+        choices=("text", "json"),
+        default="text",
+        help="Primary output representation (default: text).",
+    )
+    parser.add_argument(
+        "--output",
+        metavar="PATH|-",
+        default="-",
+        help="Primary output destination (default: stdout).",
+    )
 
 
 def _pending_command(command: str, *, diagnostic_format: str) -> int:
@@ -107,12 +214,87 @@ def _pending_command(command: str, *, diagnostic_format: str) -> int:
         CliDiagnostic(
             category="usage",
             code="COMMAND_NOT_IMPLEMENTED",
+            stage="usage",
+            command=command,
             message=f"Command '{command}' is not implemented in this build.",
-            hint="This P28.1 increment provides the CLI foundation only.",
+            hint="This command is planned for a later P28 increment.",
         ),
         output_format=diagnostic_format,
     )
     return EXIT_USAGE
+
+
+def _dispatch(namespace: argparse.Namespace) -> int:
+    command = cast(str, namespace._command_name)
+    if command == "validate":
+        from toetra._cli.commands import run_validate
+
+        return run_validate(namespace)
+    if command == "inspect":
+        from toetra._cli.commands import run_inspect
+
+        return run_inspect(namespace)
+    return _pending_command(command, diagnostic_format=namespace.diagnostic_format)
+
+
+def _render_failure(
+    error: Exception,
+    *,
+    command: str | None,
+    diagnostic_format: str,
+    debug: bool,
+) -> int:
+    from toetra._runtime.errors import (
+        VerificationConfigurationError,
+        VerificationRuntimeError,
+    )
+
+    if isinstance(error, VerificationConfigurationError):
+        status = EXIT_USAGE
+        category = "configuration"
+        code = error.code
+        stage = error.stage
+        hint = error.hint
+        path = error.path
+        line = error.line
+        column = error.column
+    elif isinstance(error, VerificationRuntimeError):
+        status = EXIT_RUNTIME
+        category = "runtime"
+        code = error.code
+        stage = error.stage
+        hint = error.hint
+        path = error.path
+        line = error.line
+        column = error.column
+    else:
+        status = EXIT_INTERNAL
+        category = "internal"
+        code = "INTERNAL_ERROR"
+        stage = "internal"
+        hint = "Re-run with --debug and report the traceback if the failure persists."
+        path = None
+        line = None
+        column = None
+
+    render_diagnostic(
+        CliDiagnostic(
+            category=category,
+            code=code,
+            stage=stage,
+            message=str(error),
+            hint=hint,
+            path=path,
+            line=line,
+            column=column,
+            command=command,
+            debug_traceback=(
+                traceback.format_exc() if debug and status == EXIT_INTERNAL else None
+            ),
+        ),
+        output_format=diagnostic_format,
+    )
+    return status
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -132,10 +314,40 @@ def main(argv: Sequence[str] | None = None) -> int:
         parser.print_help()
         return EXIT_OK
 
-    return _pending_command(
-        command,
-        diagnostic_format=namespace.diagnostic_format,
-    )
+    try:
+        with _sigterm_boundary():
+            return _dispatch(namespace)
+    except _TerminationRequested:
+        render_diagnostic(
+            CliDiagnostic(
+                category="signal",
+                code="TERMINATED",
+                stage="process",
+                command=command,
+                message="Command terminated by SIGTERM.",
+            ),
+            output_format=namespace.diagnostic_format,
+        )
+        return EXIT_TERMINATED
+    except KeyboardInterrupt:
+        render_diagnostic(
+            CliDiagnostic(
+                category="signal",
+                code="INTERRUPTED",
+                stage="process",
+                command=command,
+                message="Command interrupted by the user.",
+            ),
+            output_format=namespace.diagnostic_format,
+        )
+        return EXIT_INTERRUPTED
+    except Exception as error:
+        return _render_failure(
+            error,
+            command=command,
+            diagnostic_format=namespace.diagnostic_format,
+            debug=namespace.debug,
+        )
 
 
 if __name__ == "__main__":  # pragma: no cover - module execution guard
