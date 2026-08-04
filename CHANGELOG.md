@@ -4,6 +4,10 @@
 
 ### Added
 
+- Added the P28.3 `verify` workflow with text, exact JSON v6, and HTML
+  primary output, logical process statuses `0`/`1`/`2`, individually atomic
+  JSON/HTML artifacts, a manifest-last `toetra.run-manifest` completion marker,
+  output-collision protection, and installed-wheel verification probes.
 - Added the P28.2 `validate` and `inspect` workflows with syntax, semantic,
   and executable dry-run boundaries, stable JSON schemas, atomic primary output,
   backend translation without solving, SIGTERM status handling, and
@@ -14,8 +18,8 @@
 - Accepted the P28 CLI and automation contract for `validate`, `inspect`,
   `verify`, `replay`, and `init`, including process statuses, stream ownership,
   machine-readable diagnostics, artifact manifests, cancellation, and MLOps
-  integration boundaries; `verify`, `replay`, and `init` handlers remain
-  pending after P28.2.
+  integration boundaries; `replay` and `init` handlers remain pending after
+  P28.3.
 - Added a public-snapshot audit gate, a full-history audit command, and explicit
   CC BY 4.0 provenance for the redistributed UCI processed Cleveland dataset.
 - Added an outside-in gate that clones the exact clean candidate, follows the
@@ -26,6 +30,10 @@
 
 ### Changed
 
+- Published `toetra verify` as the process adapter over the existing shared
+  verification session without changing the Python API or JSON v6 report
+  contract, while invalidating stale completion manifests before artifact
+  replacement and deferring Z3 imports until an executable backend is needed.
 - Reused one private routed pre-execution plan across `validate`, `inspect`, and
   `verify`, while keeping backend solver execution exclusive to verification.
 - Made the nine-symbol public Python facade lazy so CLI help and version queries

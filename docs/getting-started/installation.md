@@ -50,6 +50,20 @@ python toetra-quickstart.py --demo
 The release gate executes this outside-checkout form against a clean-installed
 wheel without the source repository on the import path.
 
+For an existing specification and trusted local model artifacts, the installed
+process interface can validate and execute the same workflow:
+
+```bash
+toetra validate policy.toetra --model model.joblib --dataset reference.csv
+toetra inspect policy.toetra --model model.joblib --dataset reference.csv
+toetra verify policy.toetra --model model.joblib --dataset reference.csv \
+  --format json --artifacts-dir artifacts/toetra
+```
+
+`verify` returns `0` for positive conclusions, `1` for a formal failure, and `2`
+for `UNKNOWN`. The JSON v6 and HTML files are each committed atomically,
+and the manifest is written last.
+
 ## Development setup
 
 Install the pinned development and documentation dependencies in editable mode:

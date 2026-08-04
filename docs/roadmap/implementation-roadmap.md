@@ -58,11 +58,13 @@ P28.1 provides equivalent installed `toetra` and `python -m toetra` entry
 points, metadata-backed version reporting, the accepted command index, and the
 process diagnostic boundary. P28.2 adds solver-free `validate` and `inspect`
 handlers, stable validation/inspection JSON, atomic output, and installed-wheel
-probes. Remaining P28 implementation covers:
+probes. P28.3 adds `verify`, exact JSON v6 and HTML rendering, logical process
+statuses, atomic report artifacts, and the run-manifest completion marker.
+Remaining P28 implementation covers:
 
-- `verify`, `replay`, and `init` command handlers;
-- stable exit-code meanings and strict stdout/stderr separation;
-- machine-readable validation, inspection, diagnostics, and artifact manifests;
+- `replay` and `init` command handlers;
+- final cross-command exit-code and stdout/stderr consistency checks;
+- replay JSON and generated-specification contracts;
 - predictable path, cancellation, and resource-policy behavior outside the
   source checkout;
 - clean-install, Windows/Linux, container-job, and CI integration evidence.

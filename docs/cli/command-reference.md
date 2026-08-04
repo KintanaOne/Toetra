@@ -1,7 +1,8 @@
 # CLI command reference
 
-> P28.2 implements `validate` and `inspect`. The remaining command sections
-> define accepted contracts for handlers delivered in later P28 increments.
+> P28.3 implements `validate`, `inspect`, and `verify`. The remaining command
+> sections define accepted contracts for handlers delivered in later P28
+> increments.
 
 ## Shared inputs
 
@@ -89,7 +90,11 @@ toetra verify SPECIFICATION
 ```
 
 JSON primary output remains the existing verification-report collection schema
-v6. `--artifacts-dir` writes JSON, HTML, and a run manifest atomically.
+v6. `--artifacts-dir` commits each JSON and HTML file atomically, then commits
+the run manifest last.
+`--artifact-stem` is a portable ASCII filename stem, not a path; leading dots or
+hyphens, trailing dots, separators, and Windows reserved device names are
+rejected.
 
 ## Replay
 

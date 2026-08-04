@@ -98,11 +98,22 @@ session.write_artifacts("artifacts", formats={"json", "html"})
 raise SystemExit(session.exit_code)
 ```
 
-`toetra.verify(...)` remains the public Python execution entry point. The
-installed `toetra` and `python -m toetra` process interfaces now provide
-`validate` and `inspect` for solver-free pipeline checks and normalized execution
-plans. The `verify`, `replay`, and `init` command handlers remain scheduled for
-later P28 increments under the separate CLI automation contract.
+`toetra.verify(...)` remains the public Python execution entry point for
+embedded use. The installed `toetra` and `python -m toetra` process interfaces
+now provide solver-free `validate` and `inspect` commands plus executable
+verification:
+
+```bash
+toetra verify policy.toetra \
+  --model model.joblib \
+  --dataset reference.csv \
+  --format json \
+  --artifacts-dir artifacts/toetra
+```
+
+The command returns `0` for positive conclusions, `1` for a formal failure, and
+`2` for an inconclusive result. `replay` and `init` remain scheduled for later
+P28 increments under the separate CLI automation contract.
 
 ## Reading a result
 

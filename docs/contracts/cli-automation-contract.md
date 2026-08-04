@@ -1,6 +1,6 @@
 # CLI and Automation Contract
 
-> **Status:** Accepted design; P28.2 validate and inspect implemented
+> **Status:** Accepted design; P28.3 validate, inspect, and verify implemented
 >
 > **Compatibility surface:** installed process interface, machine-readable output,
 > diagnostics, artifacts, and exit codes
@@ -319,8 +319,11 @@ Defaults:
 - output: stdout (`-`);
 - artifact stem: `toetra-verification-report`.
 
-`--artifact-stem` accepts one safe filename stem, not a path. Directory
-separators, `.` and `..` are rejected.
+`--artifact-stem` accepts one portable ASCII filename stem, not a path. It
+must contain 1-128 letters, digits, dots, underscores, or hyphens; begin with a
+letter, digit, or underscore; and not end with a dot. Directory separators,
+`.`/`..`, leading dots or hyphens, and Windows reserved device names are
+rejected.
 
 The execution controls construct the existing backend-neutral execution policy.
 
@@ -346,8 +349,10 @@ ARTIFACTS_DIR/
 ```
 
 The JSON and HTML files come from the same `VerificationSession`. Each file is
-committed atomically, and the manifest is committed last. A valid final manifest
-is the completion marker for the artifact set.
+committed atomically, and the manifest is committed last. Before replacing an
+existing artifact set under the same stem, the previous manifest is removed
+immediately before the first report write. A valid final manifest is therefore
+the completion marker for the current artifact set.
 
 The manifest uses:
 

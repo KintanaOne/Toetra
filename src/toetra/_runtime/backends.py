@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from toetra._backends.base import BackendRunner
-from toetra._backends.z3_backend.runner import Z3Runner
 from toetra._language.vocabulary.backends import EnumBackend
 from toetra._runtime.errors import BackendRunnerNotRegisteredError
 
@@ -34,6 +33,8 @@ class BackendRunnerRegistry:
 
 def create_default_backend_runner_registry() -> BackendRunnerRegistry:
     """Create the runner registry shipped with the current Toetra runtime."""
+
+    from toetra._backends.z3_backend.runner import Z3Runner
 
     registry = BackendRunnerRegistry()
     registry.register(EnumBackend.Z3, Z3Runner())

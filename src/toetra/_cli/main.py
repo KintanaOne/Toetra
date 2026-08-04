@@ -15,6 +15,8 @@ from typing import NoReturn, Sequence, cast
 from toetra._cli.diagnostics import CliDiagnostic, render_diagnostic
 
 EXIT_OK = 0
+EXIT_LOGICAL_FAILURE = 1
+EXIT_INCONCLUSIVE = 2
 EXIT_USAGE = 3
 EXIT_RUNTIME = 4
 EXIT_INTERNAL = 5
@@ -156,6 +158,7 @@ def _build_parser(*, diagnostic_format: str) -> ToetraArgumentParser:
 
     _configure_validate_parser(parsers["validate"])
     _configure_inspect_parser(parsers["inspect"])
+    _configure_verify_parser(parsers["verify"])
     return parser
 
 
@@ -177,6 +180,22 @@ def _configure_inspect_parser(parser: ToetraArgumentParser) -> None:
     _add_primary_output(parser)
 
 
+def _configure_verify_parser(parser: ToetraArgumentParser) -> None:
+    _add_shared_inputs(parser)
+    _add_execution_policy(parser)
+    _add_primary_output(parser, formats=("text", "json", "html"))
+    parser.add_argument(
+        "--artifacts-dir",
+        metavar="DIRECTORY",
+        help="Write JSON, HTML, and a completion manifest into this directory.",
+    )
+    parser.add_argument(
+        "--artifact-stem",
+        metavar="NAME",
+        help="Portable filename stem for --artifacts-dir outputs.",
+    )
+
+
 def _add_shared_inputs(parser: ToetraArgumentParser) -> None:
     parser.add_argument("specification", metavar="SPECIFICATION")
     parser.add_argument("--model", metavar="PATH")
@@ -194,10 +213,14 @@ def _add_execution_policy(parser: ToetraArgumentParser) -> None:
     parser.add_argument("--seed", type=_non_negative_integer)
 
 
-def _add_primary_output(parser: ToetraArgumentParser) -> None:
+def _add_primary_output(
+    parser: ToetraArgumentParser,
+    *,
+    formats: tuple[str, ...] = ("text", "json"),
+) -> None:
     parser.add_argument(
         "--format",
-        choices=("text", "json"),
+        choices=formats,
         default="text",
         help="Primary output representation (default: text).",
     )
@@ -234,6 +257,10 @@ def _dispatch(namespace: argparse.Namespace) -> int:
         from toetra._cli.commands import run_inspect
 
         return run_inspect(namespace)
+    if command == "verify":
+        from toetra._cli.commands import run_verify
+
+        return run_verify(namespace)
     return _pending_command(command, diagnostic_format=namespace.diagnostic_format)
 
 
