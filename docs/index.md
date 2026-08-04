@@ -20,6 +20,7 @@ From the repository root with Python 3.11 or 3.12:
 ```bash
 python -m pip install .
 python -m demo.quickstart.verify_model --demo
+toetra --help
 ```
 
 The self-contained demo should produce one `PROVED` result and one `WITNESS`.
@@ -29,9 +30,10 @@ Continue with:
 2. [First Toetra properties](getting-started/first-property.md)
 3. [Public V1 profile and limitations](public-v1-profile.md)
 4. [Public Python API](api-reference/index.md)
-5. [1.0.0rc3 release notes](releases/1.0.0rc3.md)
-6. [Model output observables](language/model-output-observables.md)
-7. [Compatibility matrices](generated/numeric-compatibility-matrices.md)
+5. [Command-line interface](cli/overview.md)
+6. [1.0.0rc3 release notes](releases/1.0.0rc3.md)
+7. [Model output observables](language/model-output-observables.md)
+8. [Compatibility matrices](generated/numeric-compatibility-matrices.md)
 
 ```text
 .toetra + model/schema

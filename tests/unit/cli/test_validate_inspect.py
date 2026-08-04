@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import json
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 import joblib
@@ -413,3 +416,56 @@ def test_output_write_failure_leaves_no_partial_file(
     assert "Failed to write CLI output" in captured.err
     assert destination.is_dir()
     assert not tuple(tmp_path.glob(".existing-directory.*.tmp"))
+
+
+def test_validate_syntax_does_not_import_backend_specific_z3(
+    tmp_path: Path,
+) -> None:
+    specification_path = tmp_path / "policy.toetra"
+    specification_path.write_text(_SOURCE, encoding="utf-8")
+    repository_root = Path(__file__).resolve().parents[3]
+    script = r"""
+import importlib.abc
+import json
+import sys
+
+class BlockZ3(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname == "z3" or fullname.startswith("z3."):
+            raise ModuleNotFoundError("z3 import blocked during syntax validation")
+        return None
+
+sys.meta_path.insert(0, BlockZ3())
+from toetra._cli.main import main
+status = main([
+    "validate",
+    sys.argv[1],
+    "--level",
+    "syntax",
+    "--format",
+    "json",
+])
+assert not any(
+    name == "z3" or name.startswith("z3.") for name in sys.modules
+)
+raise SystemExit(status)
+"""
+    environment = os.environ.copy()
+    environment["PYTHONPATH"] = os.pathsep.join(
+        (str(repository_root / "src"), str(repository_root))
+    )
+
+    result = subprocess.run(
+        [sys.executable, "-c", script, str(specification_path)],
+        cwd=repository_root,
+        env=environment,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == EXIT_OK, result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["valid"] is True
+    assert payload["completed_level"] == "syntax"
+    assert result.stderr == ""

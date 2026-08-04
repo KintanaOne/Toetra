@@ -7,9 +7,11 @@ from scripts.ci.check_public_contract import (
     EXPECTED_INSPECTION_SCHEMA,
     EXPECTED_LICENSE,
     EXPECTED_PROJECT_SCRIPTS,
+    EXPECTED_RUN_MANIFEST_SCHEMA,
     EXPECTED_VALIDATION_SCHEMA,
     EXPECTED_VERSION,
     check_public_contract,
+    cli_run_manifest_contract,
     cli_schema_contracts,
     report_schema_version,
 )
@@ -35,6 +37,7 @@ def test_public_version_license_cli_and_json_contract_are_frozen() -> None:
         EXPECTED_VALIDATION_SCHEMA,
         EXPECTED_INSPECTION_SCHEMA,
     )
+    assert cli_run_manifest_contract() == EXPECTED_RUN_MANIFEST_SCHEMA
 
 
 def test_readme_points_to_the_authoritative_v1_profile() -> None:
@@ -44,6 +47,7 @@ def test_readme_points_to_the_authoritative_v1_profile() -> None:
     assert "not currently published on PyPI" in readme
     assert "source checkout or source archive" in readme
     assert "python -m demo.quickstart.verify_model --demo" in readme
+    assert "toetra verify" in readme
     assert "LinearRegression" in readme
     assert "LogisticRegression" in readme
     assert "PolyForm Noncommercial License 1.0.0" in readme

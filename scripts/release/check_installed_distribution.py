@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import shutil
@@ -148,6 +149,15 @@ source = (
     '=> target[x0] <= 7.0 using Z3\n'
 )
 (root / "policy.toetra").write_text(source, encoding="utf-8")
+failure_source = (
+    'model := "linear model.joblib"\n'
+    "target := score\n\n"
+    "[BOUND]:\n"
+    "forall x0\n"
+    "with domain(x0.a: [0.0, 3.0])\n"
+    "=> target[x0] < 7.0 using Z3\n"
+)
+(root / "failure.toetra").write_text(failure_source, encoding="utf-8")
 """
 
 
@@ -268,6 +278,91 @@ def main() -> int:
         assert inspection_payload["schema_version"] == 1
         assert inspection_payload["execution"]["translation_ready"] is True
 
+        verification_output = cli_root / "nested output" / "verification.json"
+        artifact_directory = cli_root / "verification artifacts"
+
+        verify_result = subprocess.run(
+            [
+                str(console),
+                "verify",
+                str(policy),
+                "--dataset",
+                str(dataset),
+                "--format",
+                "json",
+                "--output",
+                str(verification_output),
+                "--artifacts-dir",
+                str(artifact_directory),
+                "--artifact-stem",
+                "installed-check",
+            ],
+            check=False,
+            cwd=root,
+            env=clean_environment,
+            capture_output=True,
+            text=True,
+        )
+
+        assert verify_result.returncode == 0, verify_result.stderr
+        assert verify_result.stdout == ""
+        assert verify_result.stderr == ""
+
+        verification_payload = json.loads(
+            verification_output.read_text(encoding="utf-8")
+        )
+        assert verification_payload["schema"] == (
+            "toetra.verification-report-collection"
+        )
+        assert verification_payload["schema_version"] == 6
+
+        artifact_json = artifact_directory / "installed-check.json"
+        artifact_html = artifact_directory / "installed-check.html"
+
+        assert verification_output.read_bytes() == artifact_json.read_bytes()
+
+        artifact_manifest = artifact_directory / "installed-check.manifest.json"
+        manifest_payload = json.loads(artifact_manifest.read_text(encoding="utf-8"))
+
+        assert manifest_payload["schema"] == "toetra.run-manifest"
+        assert manifest_payload["schema_version"] == 1
+        assert manifest_payload["process_status"] == 0
+
+        for role, artifact_path in (
+            ("json", artifact_json),
+            ("html", artifact_html),
+        ):
+            content = artifact_path.read_bytes()
+            assert (
+                manifest_payload["artifacts"][role]["sha256"]
+                == hashlib.sha256(content).hexdigest()
+            )
+
+        failure = subprocess.run(
+            [
+                str(python),
+                "-I",
+                "-m",
+                "toetra",
+                "verify",
+                str(cli_root / "failure.toetra"),
+                "--dataset",
+                str(dataset),
+                "--format",
+                "json",
+            ],
+            check=False,
+            cwd=root,
+            env=clean_environment,
+            capture_output=True,
+            text=True,
+        )
+
+        assert failure.returncode == 1, failure.stderr
+        assert failure.stderr == ""
+
+        failure_payload = json.loads(failure.stdout)
+        assert failure_payload["schema_version"] == 6
         quickstart = root / "verify_model.py"
         report = root / "quickstart-report.json"
         shutil.copy2(

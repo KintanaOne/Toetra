@@ -22,6 +22,7 @@ EXPECTED_VERSION = "1.0.0rc3"
 EXPECTED_LICENSE = "PolyForm-Noncommercial-1.0.0"
 EXPECTED_VALIDATION_SCHEMA = ("toetra.validation-result", 1)
 EXPECTED_INSPECTION_SCHEMA = ("toetra.inspection", 1)
+EXPECTED_RUN_MANIFEST_SCHEMA = ("toetra.run-manifest", 1)
 
 CLASSIFICATION_TARGET_DOCUMENTS = (
     ROOT / "docs" / "adr" / "ADR-0023-typed-model-outputs-and-observables.md",
@@ -178,6 +179,32 @@ def cli_schema_contracts() -> tuple[tuple[str, int], tuple[str, int]]:
     except KeyError as error:
         raise PublicContractError("CLI schema constants were not found") from error
     return validation, inspection
+
+
+def cli_run_manifest_contract() -> tuple[str, int]:
+    source = (ROOT / "src" / "toetra" / "_cli" / "artifacts.py").read_text(
+        encoding="utf-8"
+    )
+    module = ast.parse(source)
+    names = {"RUN_MANIFEST_SCHEMA", "RUN_MANIFEST_SCHEMA_VERSION"}
+    values: dict[str, str | int] = {}
+    for node in module.body:
+        if not isinstance(node, ast.Assign):
+            continue
+        for target in node.targets:
+            if isinstance(target, ast.Name) and target.id in names:
+                value = ast.literal_eval(node.value)
+                if isinstance(value, (str, int)):
+                    values[target.id] = value
+    try:
+        return (
+            str(values["RUN_MANIFEST_SCHEMA"]),
+            int(values["RUN_MANIFEST_SCHEMA_VERSION"]),
+        )
+    except KeyError as error:
+        raise PublicContractError(
+            "CLI run-manifest schema constants were not found"
+        ) from error
 
 
 def _validate_mkdocs_navigation() -> None:
@@ -381,17 +408,13 @@ def _validate_public_narrative() -> None:
             raise PublicContractError(
                 f"{name} presents an unavailable PyPI installation command"
             )
-        if re.search(r"^\s*toetra\s+verify(?:\s|$)", source, re.MULTILINE):
-            raise PublicContractError(
-                f"{name} presents the P28 CLI as available during P27"
-            )
-
     readme = sources["README.md"]
     readme_markers = (
         "not currently published on PyPI",
         "source checkout or source archive",
         "python -m pip install .",
         "python -m demo.quickstart.verify_model --demo",
+        "toetra verify",
         "`PROVED`",
         "`COUNTEREXAMPLE`",
         "`WITNESS`",
@@ -417,6 +440,7 @@ def _validate_public_narrative() -> None:
         "Python 3.11 and 3.12",
         "python -m pip install .",
         "python -m demo.quickstart.verify_model --demo",
+        "toetra verify",
         'python -m pip install -e ".[dev,docs]"',
     )
     missing_installation = tuple(
@@ -474,6 +498,10 @@ def check_public_contract() -> None:
     if inspection_schema != EXPECTED_INSPECTION_SCHEMA:
         raise PublicContractError(
             "CLI inspection JSON schema identity/version changed unexpectedly."
+        )
+    if cli_run_manifest_contract() != EXPECTED_RUN_MANIFEST_SCHEMA:
+        raise PublicContractError(
+            "CLI run-manifest JSON schema identity/version changed unexpectedly."
         )
 
     license_text = (ROOT / "LICENSE").read_text(encoding="utf-8")
