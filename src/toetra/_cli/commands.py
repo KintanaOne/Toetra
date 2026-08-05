@@ -89,7 +89,7 @@ def run_replay(namespace: Namespace) -> int:
     consumed = (
         report_path,
         specification,
-        Path(namespace.model).expanduser(),
+        *((Path(namespace.model).expanduser(),) if namespace.model is not None else ()),
         *(
             (Path(namespace.dataset).expanduser(),)
             if namespace.dataset is not None

@@ -25,7 +25,15 @@ _PROPERTY_FINGERPRINT = "sha256:" + "2" * 64
 
 
 def _payload(
-    *, status: str = "counterexample", property_index: int = 0
+    *,
+    status: str = "counterexample",
+    property_index: int = 0,
+    effective_target: str = "score",
+    effective_model: str = "model.joblib",
+    effective_dataset: str | None = None,
+    model_overridden: bool = False,
+    dataset_overridden: bool = False,
+    include_execution_context: bool = True,
 ) -> dict[str, Any]:
     report = {
         "schema": "toetra.verification-report",
@@ -55,14 +63,37 @@ def _payload(
         "assignments": {"inputs": [], "outputs": [], "auxiliary": []},
         "diagnostics": [],
     }
+    collection_provenance: dict[str, Any] = {
+        "completeness": "complete",
+        "fingerprints": {"inputs": _INPUT_FINGERPRINT},
+    }
+    if include_execution_context:
+        execution_context = {
+            "declared": {
+                "model": "model.joblib",
+                "target": "score",
+                "dataset": None,
+            },
+            "effective": {
+                "model": effective_model,
+                "target": effective_target,
+                "dataset": effective_dataset,
+            },
+            "overrides": {
+                "model": model_overridden,
+                "target": effective_target != "score",
+                "dataset": dataset_overridden,
+            },
+        }
+        collection_provenance["execution_context"] = execution_context
+        report["provenance"]["execution_context"] = json.loads(
+            json.dumps(execution_context)
+        )
     return {
         "schema": "toetra.verification-report-collection",
         "schema_version": 6,
         "report_count": 1,
-        "provenance": {
-            "completeness": "complete",
-            "fingerprints": {"inputs": _INPUT_FINGERPRINT},
-        },
+        "provenance": collection_provenance,
         "reports": [report],
     }
 
@@ -141,6 +172,111 @@ def test_archived_replay_returns_stable_json_without_solving(
     assert payload["conclusion"] == "consistent"
     assert payload["results"][0]["formal_status"] == "counterexample"
     assert captured["kwargs"]["require_translation"] is False
+
+
+def test_archived_effective_target_is_reused_when_cli_override_is_omitted(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    report = _write_report(
+        tmp_path,
+        _payload(effective_target="risk_score"),
+    )
+    captured = _install_plan(monkeypatch, tmp_path)
+    monkeypatch.setattr(
+        "toetra._runtime.archived_replay.replay_verification_report",
+        lambda *args, **kwargs: _consistent_replay(),
+    )
+
+    replay_archived_report(
+        report,
+        specification=tmp_path / "policy.toetra",
+        model=None,
+    )
+
+    context = captured["kwargs"]["execution_context"]
+    assert context.effective_target == "risk_score"
+    assert captured["kwargs"]["model"] is None
+
+
+def test_replay_uses_archived_identity_with_a_relocated_model_locator(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    report = _write_report(
+        tmp_path,
+        _payload(
+            effective_model="runs/original/model.joblib",
+            model_overridden=True,
+        ),
+    )
+    captured = _install_plan(monkeypatch, tmp_path)
+    monkeypatch.setattr(
+        "toetra._runtime.archived_replay.replay_verification_report",
+        lambda *args, **kwargs: _consistent_replay(),
+    )
+    relocated = tmp_path / "relocated" / "model.joblib"
+
+    replay_archived_report(
+        report,
+        specification=tmp_path / "policy.toetra",
+        model=relocated,
+    )
+
+    context = captured["kwargs"]["execution_context"]
+    assert context.effective_model_reference == "runs/original/model.joblib"
+    assert captured["kwargs"]["model"] == relocated
+
+
+def test_replay_rejects_a_target_different_from_archived_context(
+    tmp_path: Path,
+) -> None:
+    report = _write_report(
+        tmp_path,
+        _payload(effective_target="risk_score"),
+    )
+
+    with pytest.raises(VerificationConfigurationError) as caught:
+        replay_archived_report(
+            report,
+            specification=tmp_path / "policy.toetra",
+            target="another_score",
+        )
+
+    assert caught.value.code == "REPLAY_EXECUTION_CONTEXT_MISMATCH"
+
+
+def test_legacy_archive_uses_declared_header_identity(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    report = _write_report(
+        tmp_path,
+        _payload(include_execution_context=False),
+    )
+    policy = tmp_path / "policy.toetra"
+    policy.write_text(
+        'model := "model.joblib"\ntarget := score\n\n'
+        "[BOUND]:\nforall x0 => target[x0] <= 7 using Z3\n",
+        encoding="utf-8",
+    )
+    captured = _install_plan(monkeypatch, tmp_path)
+    monkeypatch.setattr(
+        "toetra._runtime.archived_replay.replay_verification_report",
+        lambda *args, **kwargs: _consistent_replay(),
+    )
+    relocated = tmp_path / "relocated.joblib"
+
+    replay_archived_report(
+        report,
+        specification=policy,
+        model=relocated,
+    )
+
+    context = captured["kwargs"]["execution_context"]
+    assert context.effective_model_reference == "model.joblib"
+    assert context.effective_target == "score"
+    assert captured["kwargs"]["model"] == relocated
 
 
 def test_default_selection_with_no_replayable_finding_is_inconclusive(
@@ -464,3 +600,83 @@ def test_archived_replay_rejects_wrong_collection_schema(
 
     assert raised.value.code == "REPLAY_REPORT_CONTRACT_INVALID"
     assert called is False
+
+
+def test_archived_replay_rejects_report_context_mismatch_before_planning(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    payload = _payload()
+    payload["reports"][0]["provenance"]["execution_context"]["effective"][
+        "target"
+    ] = "other_score"
+    report = _write_report(tmp_path, payload)
+    called = False
+
+    def build_plan(*args: object, **kwargs: object) -> object:
+        nonlocal called
+        called = True
+        return object()
+
+    monkeypatch.setattr(
+        "toetra._runtime.archived_replay.build_executable_plan",
+        build_plan,
+    )
+
+    with pytest.raises(VerificationConfigurationError) as raised:
+        replay_archived_report(
+            report,
+            specification=tmp_path / "policy.toetra",
+        )
+
+    assert raised.value.code == "REPLAY_REPORT_CONTRACT_INVALID"
+    assert called is False
+
+
+def test_archived_replay_rejects_malformed_execution_context_before_planning(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    payload = _payload()
+    payload["provenance"]["execution_context"]["overrides"]["model"] = "yes"
+    report = _write_report(tmp_path, payload)
+    called = False
+
+    def build_plan(*args: object, **kwargs: object) -> object:
+        nonlocal called
+        called = True
+        return object()
+
+    monkeypatch.setattr(
+        "toetra._runtime.archived_replay.build_executable_plan",
+        build_plan,
+    )
+
+    with pytest.raises(VerificationConfigurationError) as raised:
+        replay_archived_report(
+            report,
+            specification=tmp_path / "policy.toetra",
+        )
+
+    assert raised.value.code == "REPLAY_REPORT_CONTRACT_INVALID"
+    assert called is False
+
+
+def test_archived_replay_rejects_unflagged_effective_context_change(
+    tmp_path: Path,
+) -> None:
+    payload = _payload()
+    for provenance in (
+        payload["provenance"],
+        payload["reports"][0]["provenance"],
+    ):
+        provenance["execution_context"]["effective"]["model"] = "other.joblib"
+    report = _write_report(tmp_path, payload)
+
+    with pytest.raises(VerificationConfigurationError) as raised:
+        replay_archived_report(
+            report,
+            specification=tmp_path / "policy.toetra",
+        )
+
+    assert raised.value.code == "REPLAY_REPORT_CONTRACT_INVALID"

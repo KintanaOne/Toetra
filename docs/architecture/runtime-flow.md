@@ -50,8 +50,9 @@ Produced runtime state:
 - exact source text;
 - optional resolved specification path;
 - base directory;
-- header model reference and target;
-- `ProgramNode` used for anchor validation.
+- declared model, target, and optional dataset references;
+- an immutable declared/effective execution context;
+- an isolated effective `ProgramNode` used for semantic and anchor validation.
 
 ## 2. Resolve model metadata
 
@@ -60,8 +61,9 @@ The request must choose one authority:
 - `schema=...` supplies an already normalized `ModelSchema`; or
 - model/dataset artifacts are handled by `ModelManager`.
 
-Combining a schema with model artifacts is a configuration error. The explicit
-target, header target, and schema output name must agree.
+Combining a schema with model artifacts is a configuration error. An explicit
+target creates an isolated schema view bound to the effective output name; the
+caller-owned schema and declared AST remain unchanged.
 
 For artifact-based requests, `ModelManager` loads the estimator, detects its
 framework, introspects it, and builds the normalized schema. The concrete model

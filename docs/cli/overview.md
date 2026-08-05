@@ -36,9 +36,12 @@ Current implementation status:
 | `init` | command reserved; handler pending |
 
 The normative behavior is defined by the
-[CLI and automation contract](../contracts/cli-automation-contract.md). The
-architecture decision is recorded in
-[ADR-0032](../adr/ADR-0032-cli-command-surface-and-application-boundary.md).
+[CLI and automation contract](../contracts/cli-automation-contract.md) and the
+[execution override contract](../contracts/execution-overrides.md). The
+application boundary is recorded in
+[ADR-0032](../adr/ADR-0032-cli-command-surface-and-application-boundary.md),
+while declared defaults and temporary overrides are recorded in
+[ADR-0033](../adr/ADR-0033-declared-defaults-and-execution-overrides.md).
 
 ## Intended workflow
 
@@ -60,6 +63,11 @@ optional delayed toetra replay of archived evidence
 conclusion. `replay` validates archived JSON v6 provenance, reconstructs the
 matching property tasks, and checks witness/counterexample evidence against a
 concrete model without silently rerunning formal verification.
+
+The model, target, and dataset declared in `.toetra` are defaults. Explicit CLI
+values create a temporary effective context for one invocation, so the same
+formal properties can be evaluated against compatible candidate artifacts and
+output names without rewriting the policy file.
 
 ## Process statuses
 

@@ -212,7 +212,7 @@ def _configure_replay_parser(parser: ToetraArgumentParser) -> None:
         required=True,
         metavar="SPECIFICATION",
     )
-    parser.add_argument("--model", required=True, metavar="PATH")
+    parser.add_argument("--model", metavar="PATH")
     parser.add_argument("--dataset", metavar="PATH")
     parser.add_argument("--anchor-source", metavar="PATH")
     parser.add_argument("--target", metavar="NAME")

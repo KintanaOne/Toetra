@@ -45,7 +45,7 @@ injection hooks.
 | `specification` | Inline source, a `.toetra` string path, or a `Path` | A path is read as UTF-8; inline source is compiled directly |
 | `model` | Serialized supported model path | Overrides the header model reference |
 | `dataset` | Optional reference CSV path | Overrides the optional header dataset for schema construction and, when needed, default anchor lookup |
-| `target` | Optional output name | Must equal the target declared in the specification |
+| `target` | Optional output name | Temporarily overrides the header target and rebinds the effective compilation context |
 | `schema` | Already normalized model schema | Alternative to `model` and `dataset`; see the boundary below |
 | `anchor_source` | pandas DataFrame or CSV path | Source used to resolve referenced anchors |
 | `anchor_resolver` | Custom resolver object | Alternative to `anchor_source` |
@@ -54,8 +54,8 @@ When `specification` is a `.toetra` file, omitted model and dataset arguments
 use their header declarations and resolve them relative to the specification
 directory. For inline source, header references resolve from the caller's
 working directory. Explicit `model` and `dataset` paths also resolve from that
-working directory and override only the effective artifact selected for the
-run.
+working directory. They replace the model or dataset value in the isolated
+effective header and select the corresponding artifacts for that run.
 
 A string ending in `.toetra` is treated as a file path even when the file does
 not exist. Former specification extensions are rejected.
@@ -71,9 +71,10 @@ The model metadata has exactly one source:
 | `schema=...` only | Toetra verifies against the normalized schema; an optional header dataset remains available for anchor lookup |
 | `schema=...` with `model` or `dataset` | `VerificationConfigurationError` |
 
-The header target, explicit `target` and schema output must agree. Toetra
-rejects a mismatch instead of allowing the property and model assumptions to
-refer to different outputs.
+The header target is the default output name. An explicit `target` temporarily
+rebinds the DSL `target` token and the effective schema output for this
+invocation. Toetra compiles the isolated effective view and preserves the
+original source and caller-owned schema.
 
 The schema-only route is accepted by the runtime, but the schema classes are not
 part of the nine-name public facade in `1.0.0rc3`. Normal application code

@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import TYPE_CHECKING
 
-from toetra._compiler.ir.ir1.run_ir1 import run_ir
+from toetra._compiler.ir.ir1.run_ir1 import run_ir, run_ir_from_program
 from toetra._compiler.ir.ir2.builder import IR2Builder
 from toetra._compiler.ir.ir2.context import IR2BuildContext
 from toetra._compiler.ir.ir2.dsl.nodes import (
@@ -15,6 +15,7 @@ from toetra._compiler.ir.normalization.nnf import NNFNormalizer
 from toetra._models.semantics.lowering import ModelSemanticLowerer
 
 if TYPE_CHECKING:
+    from toetra._compiler.ast.nodes.program import ProgramNode
     from toetra._models.encoder.context import ModelEncodingContext
     from toetra._models.encoder.factory import ModelEncoderFactory
     from toetra._models.schema.model_schema import ModelSchema
@@ -54,6 +55,7 @@ def run_ir2_with_model_schema(
     ir2_context: IR2BuildContext | None = None,
     encoder_factory: ModelEncoderFactory | None = None,
     resolved_anchors: Mapping[str, ResolvedAnchorBinding] | None = None,
+    program: ProgramNode | None = None,
 ) -> list[VerificationTaskIR2]:
     """Compile Toetra source to IR2 and inject per-evaluation model equations.
 
@@ -65,10 +67,18 @@ def run_ir2_with_model_schema(
 
     from toetra._models.encoder.factory import ModelEncoderFactory
 
-    ir1_tasks = run_ir(
-        source,
-        model_schema=schema,
-        resolved_anchors=resolved_anchors,
+    ir1_tasks = (
+        run_ir(
+            source,
+            model_schema=schema,
+            resolved_anchors=resolved_anchors,
+        )
+        if program is None
+        else run_ir_from_program(
+            program,
+            model_schema=schema,
+            resolved_anchors=resolved_anchors,
+        )
     )
     lowerer = ModelSemanticLowerer()
     lowered_tasks = [lowerer.lower_task(task, schema=schema) for task in ir1_tasks]

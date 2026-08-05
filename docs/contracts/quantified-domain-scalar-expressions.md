@@ -134,7 +134,9 @@ The raw syntax remains available for diagnostics; semantic annotations store the
 
 ### `target`
 
-`target` resolves to the model output declared by the header. It is not an input variable and is not required to match the quantified identifier.
+`target` resolves to the effective model output for the invocation: the header
+declaration by default, or an explicit execution override. It is not an input
+variable and is not required to match the quantified identifier.
 
 ---
 

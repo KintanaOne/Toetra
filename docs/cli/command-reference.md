@@ -13,10 +13,17 @@ SPECIFICATION
 --target NAME
 ```
 
-CLI model and dataset paths are per-run overrides relative to the working
-directory. Model and dataset paths declared inside the specification are
-relative to the specification file and are used when no corresponding override
-is supplied.
+The header supplies default model, target, and dataset values. Explicit CLI
+values are temporary execution overrides for one invocation:
+
+```text
+CLI option > .toetra declaration
+```
+
+CLI model and dataset paths are relative to the working directory. Header paths
+are relative to the specification file. `--target` rebinds the DSL `target`
+output for the effective run. Validation, inspection, reports, manifests, and
+replay retain both declared and effective values.
 
 The executable commands share:
 
@@ -102,7 +109,7 @@ rejected.
 ```text
 toetra replay REPORT_JSON
     --specification SPECIFICATION
-    --model PATH
+    [--model PATH]
     [--dataset PATH]
     [--anchor-source PATH]
     [--target NAME]
@@ -112,7 +119,10 @@ toetra replay REPORT_JSON
     [--output PATH|-]
 ```
 
-Replay accepts only a JSON v6 report collection. It validates complete input
+Replay accepts only a JSON v6 report collection. Model and dataset values
+default to the specification header. The archived effective target is reused
+when `--target` is omitted. Explicit values may only reconstruct the same
+archived effective context. It validates complete input
 provenance and each selected property fingerprint, reconstructs matching tasks
 without translation or solver execution, and replays all witness and
 counterexample evidence by default. Repeated `--property` values preserve first
@@ -129,8 +139,8 @@ evidence.
 ```text
 toetra init SPECIFICATION
     --model PATH
+    --target NAME
     [--dataset PATH]
-    [--target NAME]
     [--force]
 ```
 

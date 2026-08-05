@@ -21,6 +21,7 @@ from toetra._provenance.model import (
     ArtifactProvenance,
     CompilerProvenance,
     ContentFingerprint,
+    ExecutionContextProvenance,
     FingerprintStatus,
     ProvenanceCompleteness,
     ReportProvenance,
@@ -126,6 +127,17 @@ def _report() -> VerificationReport:
                     status=FingerprintStatus.NOT_PROVIDED,
                 ),
             },
+            execution_context=ExecutionContextProvenance(
+                declared_model_reference="model.joblib",
+                declared_target="score",
+                declared_dataset_reference=None,
+                effective_model_reference="candidate.joblib",
+                effective_target="risk_score",
+                effective_dataset_reference="reference.csv",
+                model_overridden=True,
+                target_overridden=True,
+                dataset_overridden=True,
+            ),
             software=SoftwareProvenance(
                 toetra_version="1.0.0rc1",
                 toetra_build_id="git:abc123",
@@ -181,6 +193,23 @@ def test_report_to_dict_uses_versioned_stable_contract() -> None:
         "sha256:" + "5" * 64
     )
     assert payload["provenance"]["artifacts"]["model"]["status"] == ("not_provided")
+    assert payload["provenance"]["execution_context"] == {
+        "declared": {
+            "model": "model.joblib",
+            "target": "score",
+            "dataset": None,
+        },
+        "effective": {
+            "model": "candidate.joblib",
+            "target": "risk_score",
+            "dataset": "reference.csv",
+        },
+        "overrides": {
+            "model": True,
+            "target": True,
+            "dataset": True,
+        },
+    }
     software = payload["provenance"]["software"]
     assert software["toetra_version"] == "1.0.0rc1"
     assert software["toetra_build_id"] == "git:abc123"

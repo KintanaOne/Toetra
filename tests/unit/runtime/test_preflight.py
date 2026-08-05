@@ -34,6 +34,7 @@ def _artifacts(tmp_path: Path) -> tuple[Path, Path, Path]:
         {
             "a": [0.0, 1.0, 2.0, 3.0],
             "score": [1.0, 3.0, 5.0, 7.0],
+            "risk_score": [1.0, 3.0, 5.0, 7.0],
         }
     )
     model = LinearRegression().fit(frame[["a"]], frame["score"])
@@ -215,6 +216,7 @@ def test_inspection_distinguishes_declared_and_effective_artifacts(
     assert declared["model"]["overridden"] is False
     assert declared["model"]["dataset"] == {
         "declared_reference": "linear.csv",
+        "effective_reference": "linear.csv",
         "path": str(dataset_path.resolve()),
         "overridden": False,
         "provided": True,
@@ -236,6 +238,18 @@ def test_inspection_distinguishes_declared_and_effective_artifacts(
     assert overridden["model"]["dataset"]["declared_reference"] == "linear.csv"
     assert overridden["model"]["dataset"]["path"] == str(override_dataset.resolve())
     assert overridden["model"]["dataset"]["overridden"] is True
+
+    retargeted = inspect_request(
+        specification_path,
+        target="risk_score",
+    ).to_dict()
+
+    assert retargeted["specification"]["declarations"]["target"] == "score"
+    assert retargeted["specification"]["effective"]["target"] == "risk_score"
+    assert retargeted["specification"]["overrides"]["target"] is True
+    assert retargeted["model"]["output"]["declared_name"] == "score"
+    assert retargeted["model"]["output"]["name"] == "risk_score"
+    assert retargeted["model"]["output"]["overridden"] is True
 
 
 def test_syntax_validation_reports_declarations_without_consuming_artifacts(
@@ -260,5 +274,14 @@ def test_syntax_validation_reports_declarations_without_consuming_artifacts(
         "target": "score",
         "dataset": "missing.csv",
     }
-    assert payload["overrides"] == {"model": False, "dataset": False}
+    assert payload["effective"] == {
+        "model": "linear.joblib",
+        "target": "score",
+        "dataset": "missing.csv",
+    }
+    assert payload["overrides"] == {
+        "model": False,
+        "target": False,
+        "dataset": False,
+    }
     assert result.consumed_paths == (specification_path.resolve(),)

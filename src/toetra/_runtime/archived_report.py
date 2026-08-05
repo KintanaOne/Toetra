@@ -26,6 +26,7 @@ from toetra._reporting.model import (
     ReportPointEvidence,
 )
 from toetra._runtime.errors import VerificationConfigurationError
+from toetra._runtime.execution_context import ExecutionContext
 
 
 @dataclass(frozen=True)
@@ -46,7 +47,14 @@ class ArchivedVerificationCollection:
 
     path: Path
     input_fingerprint: str
+    execution_context: ExecutionContext | None
     reports: tuple[ArchivedReplayReport, ...]
+
+    @property
+    def effective_target(self) -> str | None:
+        if self.execution_context is None:
+            return None
+        return self.execution_context.effective_target
 
 
 def load_archived_verification_collection(
@@ -57,10 +65,15 @@ def load_archived_verification_collection(
     path = Path(report).expanduser().resolve()
     payload = _load_collection(path)
     input_fingerprint = _require_input_fingerprint(payload, path)
-    reports = _parse_reports(payload)
+    execution_context = _optional_execution_context(payload)
+    reports = _parse_reports(
+        payload,
+        execution_context=execution_context,
+    )
     return ArchivedVerificationCollection(
         path=path,
         input_fingerprint=input_fingerprint,
+        execution_context=execution_context,
         reports=reports,
     )
 
@@ -137,10 +150,119 @@ def _require_input_fingerprint(payload: Mapping[str, Any], path: Path) -> str:
     return _fingerprint(fingerprints.get("inputs"), "inputs")
 
 
-def _parse_reports(payload: Mapping[str, Any]) -> tuple[ArchivedReplayReport, ...]:
+def _optional_execution_context(
+    payload: Mapping[str, Any],
+) -> ExecutionContext | None:
+    provenance = _mapping(payload.get("provenance"), "collection.provenance")
+    return _execution_context_from_value(
+        provenance.get("execution_context"),
+        prefix="collection.execution_context",
+    )
+
+
+def _execution_context_from_value(
+    raw_context: object,
+    *,
+    prefix: str,
+) -> ExecutionContext | None:
+    if raw_context is None:
+        return None
+    context = _mapping(raw_context, prefix)
+    declared = _mapping(context.get("declared"), f"{prefix}.declared")
+    effective = _mapping(context.get("effective"), f"{prefix}.effective")
+    overrides = _mapping(context.get("overrides"), f"{prefix}.overrides")
+    parsed = ExecutionContext(
+        declared_model_reference=_required_text(
+            declared.get("model"),
+            f"{prefix}.declared.model",
+        ),
+        declared_target=_required_text(
+            declared.get("target"),
+            f"{prefix}.declared.target",
+        ),
+        declared_dataset_reference=_optional_text(
+            declared.get("dataset"),
+            f"{prefix}.declared.dataset",
+        ),
+        effective_model_reference=_required_text(
+            effective.get("model"),
+            f"{prefix}.effective.model",
+        ),
+        effective_target=_required_text(
+            effective.get("target"),
+            f"{prefix}.effective.target",
+        ),
+        effective_dataset_reference=_optional_text(
+            effective.get("dataset"),
+            f"{prefix}.effective.dataset",
+        ),
+        model_overridden=_required_bool(
+            overrides.get("model"),
+            f"{prefix}.overrides.model",
+        ),
+        target_overridden=_required_bool(
+            overrides.get("target"),
+            f"{prefix}.overrides.target",
+        ),
+        dataset_overridden=_required_bool(
+            overrides.get("dataset"),
+            f"{prefix}.overrides.dataset",
+        ),
+    )
+    _validate_execution_context_flags(parsed, prefix=prefix)
+    return parsed
+
+
+def _validate_execution_context_flags(
+    context: ExecutionContext,
+    *,
+    prefix: str,
+) -> None:
+    pairs = (
+        (
+            "model",
+            context.model_overridden,
+            context.declared_model_reference,
+            context.effective_model_reference,
+        ),
+        (
+            "target",
+            context.target_overridden,
+            context.declared_target,
+            context.effective_target,
+        ),
+        (
+            "dataset",
+            context.dataset_overridden,
+            context.declared_dataset_reference,
+            context.effective_dataset_reference,
+        ),
+    )
+    for name, overridden, declared, effective in pairs:
+        if not overridden and declared != effective:
+            raise _report_contract_error(
+                f"{prefix}.{name} differs without an override flag."
+            )
+    if context.dataset_overridden and context.effective_dataset_reference is None:
+        raise _report_contract_error(
+            f"{prefix}.effective.dataset is required for a dataset override."
+        )
+
+
+def _parse_reports(
+    payload: Mapping[str, Any],
+    *,
+    execution_context: ExecutionContext | None,
+) -> tuple[ArchivedReplayReport, ...]:
     raw_reports = payload["reports"]
     assert isinstance(raw_reports, list)
-    parsed = tuple(_parse_report(item) for item in raw_reports)
+    parsed = tuple(
+        _parse_report(
+            item,
+            execution_context=execution_context,
+        )
+        for item in raw_reports
+    )
     indices = [item.property_index for item in parsed]
     if len(indices) != len(set(indices)):
         raise VerificationConfigurationError(
@@ -152,7 +274,11 @@ def _parse_reports(payload: Mapping[str, Any]) -> tuple[ArchivedReplayReport, ..
     return parsed
 
 
-def _parse_report(raw: object) -> ArchivedReplayReport:
+def _parse_report(
+    raw: object,
+    *,
+    execution_context: ExecutionContext | None,
+) -> ArchivedReplayReport:
     report = _mapping(raw, "report")
     if report.get("schema") != REPORT_SCHEMA:
         raise _report_contract_error("Report item has an unsupported schema identity.")
@@ -163,6 +289,14 @@ def _parse_report(raw: object) -> ArchivedReplayReport:
     execution = _mapping(report.get("execution"), "execution")
     status = _verification_status(execution.get("status"))
     provenance = _mapping(report.get("provenance"), "provenance")
+    report_context = _execution_context_from_value(
+        provenance.get("execution_context"),
+        prefix="report.execution_context",
+    )
+    if report_context != execution_context:
+        raise _report_contract_error(
+            "Report execution context does not match collection provenance."
+        )
     fingerprints = _mapping(provenance.get("fingerprints"), "provenance.fingerprints")
     input_fingerprint = _fingerprint(fingerprints.get("inputs"), "inputs")
     archived_property_fingerprint = _fingerprint(
@@ -381,6 +515,12 @@ def _optional_text(value: object, name: str) -> str | None:
         return None
     if not isinstance(value, str):
         raise _report_contract_error(f"{name} must be text or null.")
+    return value
+
+
+def _required_bool(value: object, name: str) -> bool:
+    if not isinstance(value, bool):
+        raise _report_contract_error(f"{name} must be a boolean.")
     return value
 
 

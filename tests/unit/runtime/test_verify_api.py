@@ -10,7 +10,7 @@ from toetra._runtime.errors import (
     VerificationConfigurationError,
 )
 from toetra._runtime.backends import BackendRunnerRegistry
-from toetra._runtime.api import verify
+from toetra._runtime.api import _load_specification, _resolve_model, verify
 from toetra._compiler.semantic.types.enums import EnumDataType
 from toetra._models.detector.model_framework import EnumModelFramework
 from toetra._models.schema.feature_schema import FeatureSchema
@@ -51,14 +51,39 @@ def test_verify_rejects_schema_and_model_artifacts_together() -> None:
         verify(_SOURCE, schema=_schema(), model="model.joblib")
 
 
-def test_verify_rejects_header_and_schema_target_mismatch() -> None:
-    with pytest.raises(VerificationConfigurationError, match="different outputs"):
-        verify(_SOURCE, schema=_schema(target="other_score"))
+def test_schema_output_is_rebound_to_the_effective_header_target() -> None:
+    schema = _schema(target="other_score")
+    loaded = _load_specification(_SOURCE)
+
+    resolved = _resolve_model(
+        loaded,
+        model=None,
+        dataset=None,
+        target=None,
+        schema=schema,
+    )
+
+    assert schema.output_name == "other_score"
+    assert resolved.schema.output_name == "score"
+    assert resolved.program.header.target == "score"
 
 
-def test_verify_rejects_explicit_target_different_from_header() -> None:
-    with pytest.raises(VerificationConfigurationError, match="Toetra header target"):
-        verify(_SOURCE, model="model.joblib", target="other_score")
+def test_explicit_target_rebinds_schema_and_effective_ast() -> None:
+    schema = _schema()
+    loaded = _load_specification(_SOURCE)
+
+    resolved = _resolve_model(
+        loaded,
+        model=None,
+        dataset=None,
+        target="other_score",
+        schema=schema,
+    )
+
+    assert schema.output_name == "score"
+    assert resolved.schema.output_name == "other_score"
+    assert resolved.program.header.target == "other_score"
+    assert resolved.execution_context.target_overridden is True
 
 
 def test_verify_requires_runner_for_selected_backend() -> None:

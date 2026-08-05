@@ -67,7 +67,8 @@ prerequisite restores the optional header dataset as an effective runtime
 artifact and enforces the no-silent-loss rule for grammar arguments. Remaining
 P28 implementation covers:
 
-- the `init` command handler;
+- the `init` command handler, built on the accepted declared/effective
+  execution-context contract;
 - final cross-command exit-code and stdout/stderr consistency checks;
 - the generated-specification contract;
 - predictable path, cancellation, and resource-policy behavior outside the

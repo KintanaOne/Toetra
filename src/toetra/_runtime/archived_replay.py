@@ -19,9 +19,14 @@ from toetra._runtime.archived_report import (
     ArchivedReplayReport,
     load_archived_verification_collection,
 )
+from toetra._runtime import api as runtime_api
 from toetra._runtime.errors import (
     ReplayUnavailableError,
     VerificationConfigurationError,
+)
+from toetra._runtime.execution_context import (
+    ExecutionContext,
+    resolve_execution_context,
 )
 from toetra._runtime.preflight import ExecutablePlan, build_executable_plan
 from toetra._runtime.replay import CounterexampleReplay, PointReplay
@@ -190,14 +195,14 @@ def replay_archived_report(
     report: str | Path,
     *,
     specification: str | Path,
-    model: str | Path,
+    model: str | Path | None = None,
     dataset: str | Path | None = None,
     anchor_source: str | Path | None = None,
     target: str | None = None,
     property_indices: Sequence[int] = (),
     tolerance: float = 1e-9,
 ) -> ReplayCollectionResult:
-    """Replay selected archived findings against one supplied model artifact."""
+    """Replay selected archived findings against the archived effective context."""
 
     if not math.isfinite(tolerance) or tolerance < 0:
         raise VerificationConfigurationError(
@@ -210,13 +215,18 @@ def replay_archived_report(
     archive = load_archived_verification_collection(report)
     requested = _deduplicate_indices(property_indices)
     selected = _select_reports(archive.reports, requested=requested)
+    replay_context = _replay_execution_context(
+        archive.execution_context,
+        specification=specification,
+        target=target,
+    )
     plan = build_executable_plan(
         specification,
         model=model,
         dataset=dataset,
         anchor_source=anchor_source,
-        target=target,
         require_translation=False,
+        execution_context=replay_context,
     )
     if plan.provenance.completeness.value != "complete":
         raise VerificationConfigurationError(
@@ -251,6 +261,43 @@ def replay_archived_report(
         requested_properties=requested,
         results=results,
         consumed_paths=_consumed_paths(archive.path, plan),
+    )
+
+
+def _replay_execution_context(
+    archived: ExecutionContext | None,
+    *,
+    specification: str | Path,
+    target: str | None,
+) -> ExecutionContext:
+    if archived is not None:
+        if target is not None and target != archived.effective_target:
+            raise VerificationConfigurationError(
+                "Target override does not match the archived effective target.",
+                code="REPLAY_EXECUTION_CONTEXT_MISMATCH",
+                stage="configuration",
+                hint=(
+                    "Replay reconstructs the historical target. Run a new "
+                    "verification to use another target."
+                ),
+            )
+        return archived
+
+    loaded = runtime_api._load_specification(specification)
+    if target is not None and target != loaded.target:
+        raise VerificationConfigurationError(
+            "Legacy report cannot establish the requested target override.",
+            code="REPLAY_EXECUTION_CONTEXT_MISMATCH",
+            stage="configuration",
+            hint="Use the target declared by the archived specification.",
+        )
+    return resolve_execution_context(
+        declared_model_reference=loaded.model_reference,
+        declared_target=loaded.target,
+        declared_dataset_reference=loaded.dataset_reference,
+        model=None,
+        target=None,
+        dataset=None,
     )
 
 

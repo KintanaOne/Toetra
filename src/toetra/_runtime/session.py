@@ -30,6 +30,7 @@ from toetra._reporting.accessors import (
     report_output_values_by_point,
     report_point_values,
 )
+from toetra._runtime.execution_context import ExecutionContext
 from toetra._runtime.replay import CounterexampleReplay
 from toetra._runtime.replay_engine import replay_verification_report
 from toetra._models.schema.model_schema import ModelSchema
@@ -191,6 +192,7 @@ class VerificationSession(Sequence[VerificationExecution]):
     model: object | None = field(default=None, repr=False, compare=False)
     model_path: Path | None = None
     dataset_path: Path | None = None
+    execution_context: ExecutionContext | None = None
     provenance: VerificationProvenanceContext | None = None
     anchor_resolutions: Mapping[str, ResolvedAnchorBinding] = field(
         default_factory=lambda: MappingProxyType({}),

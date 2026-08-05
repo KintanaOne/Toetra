@@ -127,6 +127,40 @@ class CompilerProvenance:
 
 
 @dataclass(frozen=True)
+class ExecutionContextProvenance:
+    """Declared defaults and effective values used for one verification run."""
+
+    declared_model_reference: str
+    declared_target: str
+    declared_dataset_reference: str | None
+    effective_model_reference: str
+    effective_target: str
+    effective_dataset_reference: str | None
+    model_overridden: bool
+    target_overridden: bool
+    dataset_overridden: bool
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "declared": {
+                "model": self.declared_model_reference,
+                "target": self.declared_target,
+                "dataset": self.declared_dataset_reference,
+            },
+            "effective": {
+                "model": self.effective_model_reference,
+                "target": self.effective_target,
+                "dataset": self.effective_dataset_reference,
+            },
+            "overrides": {
+                "model": self.model_overridden,
+                "target": self.target_overridden,
+                "dataset": self.dataset_overridden,
+            },
+        }
+
+
+@dataclass(frozen=True)
 class VerificationProvenanceContext:
     """Invocation-level evidence shared by every property in one session."""
 
@@ -135,6 +169,7 @@ class VerificationProvenanceContext:
     completeness: ProvenanceCompleteness
     unavailable_inputs: tuple[str, ...]
     artifacts: Mapping[str, ArtifactProvenance]
+    execution_context: ExecutionContextProvenance
     software: SoftwareProvenance
     preferred_normal_form: str | None
     max_distribution_size: int
@@ -159,6 +194,7 @@ class ReportProvenance:
     execution_policy_fingerprint: str
     verification_fingerprint: str
     artifacts: Mapping[str, ArtifactProvenance]
+    execution_context: ExecutionContextProvenance
     software: SoftwareProvenance
     compiler: CompilerProvenance
 

@@ -223,6 +223,11 @@ def build_run_manifest(
             "destination": "stdout" if primary_destination == "-" else "file",
             "path": None if primary_destination == "-" else primary_destination,
         },
+        "execution_context": (
+            session.execution_context.to_dict()
+            if session.execution_context is not None
+            else None
+        ),
         "verification": {
             "schema": artifacts.verification.schema,
             "schema_version": artifacts.verification.schema_version,

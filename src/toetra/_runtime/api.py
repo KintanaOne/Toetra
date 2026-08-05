@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -44,6 +45,10 @@ from toetra._runtime.anchors import (
     DataFrameAnchorResolver,
 )
 from toetra._runtime.backends import BackendRunnerRegistry
+from toetra._runtime.execution_context import (
+    ExecutionContext,
+    resolve_execution_context,
+)
 from toetra._runtime.errors import (
     AnchorResolutionError,
     BackendRunnerNotRegisteredError,
@@ -104,6 +109,8 @@ class _ResolvedModel:
     model: object | None
     model_path: Path | None
     dataset_path: Path | None
+    execution_context: ExecutionContext
+    program: ProgramNode
 
 
 @dataclass(frozen=True)
@@ -272,6 +279,7 @@ def _verify(
         model=plan.model,
         model_path=plan.model_path,
         dataset_path=plan.dataset_path,
+        execution_context=plan.execution_context,
         anchor_resolutions=plan.anchor_resolutions,
         provenance=plan.provenance,
     )
@@ -381,36 +389,47 @@ def _resolve_model(
     dataset: str | Path | None,
     target: str | None,
     schema: ModelSchema | None,
+    execution_context: ExecutionContext | None = None,
 ) -> _ResolvedModel:
+    if execution_context is None:
+        execution_context = resolve_execution_context(
+            declared_model_reference=loaded.model_reference,
+            declared_target=loaded.target,
+            declared_dataset_reference=loaded.dataset_reference,
+            model=model,
+            target=target,
+            dataset=dataset,
+        )
+    else:
+        _validate_execution_context_declarations(loaded, execution_context)
+    effective_program = execution_context.apply_to(loaded.program)
+
     if schema is not None:
         if model is not None or dataset is not None:
             raise VerificationConfigurationError(
                 "Provide either 'schema' or explicit model/dataset artifacts, not both"
             )
-        if target is not None and target != schema.output_name:
-            raise VerificationConfigurationError(
-                f"Explicit target '{target}' does not match schema target "
-                f"'{schema.output_name}'"
-            )
+        effective_schema = _schema_with_output_name(
+            schema,
+            execution_context.effective_target,
+        )
         dataset_path = _resolve_effective_dataset_path(loaded, dataset=None)
         _require_dataset_file(dataset_path)
         return _ResolvedModel(
-            schema=schema,
+            schema=effective_schema,
             model=None,
             model_path=None,
             dataset_path=(dataset_path.resolve() if dataset_path is not None else None),
+            execution_context=execution_context,
+            program=effective_program,
         )
 
-    resolved_target = target or loaded.target
-    if resolved_target != loaded.target:
-        raise VerificationConfigurationError(
-            f"Explicit target '{resolved_target}' does not match Toetra header "
-            f"target '{loaded.target}'"
-        )
-
+    model_locator: str | Path | None = model
+    if model_locator is None and execution_context.model_overridden:
+        model_locator = execution_context.effective_model_reference
     model_path = (
-        _resolve_explicit_path(model)
-        if model is not None
+        _resolve_explicit_path(model_locator)
+        if model_locator is not None
         else _resolve_header_model_path(loaded)
     )
     if not model_path.is_file():
@@ -425,13 +444,19 @@ def _resolve_model(
             path=str(model_path),
         )
 
-    dataset_path = _resolve_effective_dataset_path(loaded, dataset=dataset)
+    dataset_locator: str | Path | None = dataset
+    if dataset_locator is None and execution_context.dataset_overridden:
+        dataset_locator = execution_context.effective_dataset_reference
+    dataset_path = _resolve_effective_dataset_path(
+        loaded,
+        dataset=dataset_locator,
+    )
     _require_dataset_file(dataset_path)
 
     manager = ModelManager(
         model_path=model_path,
         dataset_path=dataset_path,
-        output_name=resolved_target,
+        output_name=execution_context.effective_target,
     )
     try:
         resolved_schema = manager.build_schema()
@@ -441,12 +466,53 @@ def _resolve_model(
             model_path=model_path,
             dataset_path=dataset_path,
         ) from error
+    _validate_target_contract(
+        execution_context.effective_target,
+        resolved_schema.output_name,
+    )
     return _ResolvedModel(
         schema=resolved_schema,
         model=manager.model,
         model_path=model_path.resolve(),
         dataset_path=(dataset_path.resolve() if dataset_path is not None else None),
+        execution_context=execution_context,
+        program=effective_program,
     )
+
+
+def _validate_execution_context_declarations(
+    loaded: _LoadedSpecification,
+    context: ExecutionContext,
+) -> None:
+    declared = (
+        context.declared_model_reference,
+        context.declared_target,
+        context.declared_dataset_reference,
+    )
+    current = (
+        loaded.model_reference,
+        loaded.target,
+        loaded.dataset_reference,
+    )
+    if declared == current:
+        return
+    raise VerificationConfigurationError(
+        "Execution context declarations do not match the specification header.",
+        code="EXECUTION_CONTEXT_DECLARATION_MISMATCH",
+        stage="configuration",
+        hint="Use the exact specification that declared this execution context.",
+        path=str(loaded.path) if loaded.path is not None else None,
+    )
+
+
+def _schema_with_output_name(schema: ModelSchema, output_name: str) -> ModelSchema:
+    """Return an isolated schema view bound to one effective output name."""
+
+    if schema.output_name == output_name:
+        return schema
+    rebound = deepcopy(schema)
+    rebound.output_name = output_name
+    return rebound
 
 
 def _resolve_header_model_path(loaded: _LoadedSpecification) -> Path:
@@ -871,12 +937,18 @@ def _public_backend_execution_error(
     )
 
 
-def _validate_target_contract(header_target: str, schema_target: str) -> None:
-    if header_target != schema_target:
+def _validate_target_contract(effective_target: str, schema_target: str) -> None:
+    if effective_target != schema_target:
         raise VerificationConfigurationError(
-            f"Toetra header target '{header_target}' does not match model schema "
+            f"Effective target '{effective_target}' does not match model schema "
             f"target '{schema_target}'. The property and model assumptions would "
-            "otherwise refer to different outputs."
+            "otherwise refer to different outputs.",
+            code="TARGET_SCHEMA_MISMATCH",
+            stage="model",
+            hint=(
+                "Use a target override supported by the effective model/schema, "
+                "or remove the override."
+            ),
         )
 
 

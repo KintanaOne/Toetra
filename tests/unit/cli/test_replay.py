@@ -262,3 +262,36 @@ def test_replay_renderer_failure_is_runtime_status(
     captured = capsys.readouterr()
     assert captured.out == ""
     assert "Failed to render replay output" in captured.err
+
+
+def test_replay_uses_specification_model_when_override_is_omitted(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    report, specification, _model = _paths(tmp_path)
+    captured: dict[str, Any] = {}
+
+    def replay(*args: object, **kwargs: object) -> SimpleNamespace:
+        captured["kwargs"] = kwargs
+        return _result(tmp_path)
+
+    monkeypatch.setattr(
+        "toetra._runtime.archived_replay.replay_archived_report",
+        replay,
+    )
+
+    assert (
+        main(
+            [
+                "replay",
+                str(report),
+                "--specification",
+                str(specification),
+            ]
+        )
+        == EXIT_OK
+    )
+
+    assert captured["kwargs"]["model"] is None
+    assert capsys.readouterr().out == "replay text\n"

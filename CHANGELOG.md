@@ -36,6 +36,14 @@
 
 ### Changed
 
+- Introduced one immutable declared/effective execution context for model,
+  target, and dataset values. Explicit CLI or Python values now override header
+  defaults for one invocation; all three values replace the isolated effective
+  header, target overrides rebind semantic compilation, model and dataset
+  overrides rebuild the consumed schema, and JSON v6,
+  inspection, validation, manifests, and replay retain the effective context.
+- Made archived replay use the model and dataset declared by the specification
+  when no explicit artifact override is supplied.
 - Propagated the optional `dataset := ...` header declaration through AST,
   runtime artifact resolution, anchor fallback, provenance, validation, and
   inspection; explicit dataset paths remain per-run artifact overrides.
