@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from pathlib import Path
 
 import pandas as pd
 import pytest
@@ -131,3 +132,26 @@ def test_inline_anchor_does_not_require_external_resolution() -> None:
 
     assert session.reports[0].status is VerificationStatus.PROVED
     assert not session.anchor_resolutions
+
+
+def test_header_dataset_is_reused_as_anchor_fallback(tmp_path: Path) -> None:
+    dataset_path = tmp_path / "reference.csv"
+    pd.DataFrame({"id": ["R-42"], "a": [1.0]}).to_csv(
+        dataset_path,
+        index=False,
+    )
+    specification_path = tmp_path / "policy.toetra"
+    specification_path.write_text(
+        _SOURCE.replace(
+            "target := score\n",
+            'target := score\ndataset := "reference.csv"\n',
+            1,
+        ),
+        encoding="utf-8",
+    )
+
+    session = verify(specification_path, schema=_schema())
+
+    assert session.reports[0].status is VerificationStatus.PROVED
+    assert session.dataset_path == dataset_path.resolve()
+    assert tuple(session.anchor_resolutions) == ("row",)

@@ -40,7 +40,7 @@ artifact progression.
 
 | Category | Main contracts | Purpose |
 |---|---|---|
-| Syntax | [source to CST](source-to-cst.md), [CST to AST](cst-to-ast.md), [AST](ast-contract.md) | preserve accepted source as typed structure |
+| Syntax | [source to CST](source-to-cst.md), [CST to AST](cst-to-ast.md), [AST](ast-contract.md), [DSL information preservation](dsl-information-preservation.md) | preserve accepted source as typed structure without silent loss |
 | Semantics | [AST to semantic](ast-to-semantic.md), [schema to semantic](schema-to-semantic.md), [type normalization](type-normalization.md) | resolve bindings, points, types, and compatibility |
 | Declarative model outputs | [output observables](model-output-observables.md), [model semantic lowering](model-semantic-lowering.md), [binary profile](binary-classification-profile.md) | separate public intent from internal model quantities |
 | Logical IR | [semantic to IR1](semantic-to-ir1.md), [IR1 to IR2](ir1-to-ir2.md), [assumption composition](assertion-aggregation.md) | preserve meaning while normalizing and building the verification condition |
@@ -68,6 +68,8 @@ end-to-end support.
 ## Preservation principles
 
 Across every implemented boundary:
+
+- every information-bearing accepted construct is preserved until its owning boundary or rejected explicitly;
 
 - quantified and point identities remain explicit;
 - interval boundary kinds and finite-set meaning are preserved;

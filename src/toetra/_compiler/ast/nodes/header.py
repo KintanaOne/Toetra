@@ -18,6 +18,7 @@ class SpecificationConstantDeclarationNode(ASTNode):
 class HeaderNode:
     model: str
     target: str
+    dataset: str | None = None
     specification_constants: list[SpecificationConstantDeclarationNode] = field(
         default_factory=list
     )

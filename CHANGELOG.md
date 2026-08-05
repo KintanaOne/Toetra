@@ -4,6 +4,9 @@
 
 ### Added
 
+- Added an accepted DSL information-preservation contract and regression tests
+  requiring every information-bearing grammar construct to be preserved until
+  its owning boundary or rejected explicitly.
 - Added the P28.4 `replay` workflow for archived JSON v6 witness and
   counterexample evidence, with strict provenance and property-fingerprint
   matching, repeated property selection, text/JSON/HTML output, logical replay
@@ -33,6 +36,13 @@
 
 ### Changed
 
+- Propagated the optional `dataset := ...` header declaration through AST,
+  runtime artifact resolution, anchor fallback, provenance, validation, and
+  inspection; explicit dataset paths remain per-run artifact overrides.
+- Preserved typed named backend and legacy-neighborhood arguments at the
+  builder boundary, rejected duplicate/positional forms, and made unsupported
+  backend or problem-function arguments fail explicitly instead of being
+  discarded.
 - Published `toetra replay` as a solver-free reconstruction workflow over the
   existing concrete replay engine, without widening the nine-symbol public
   Python facade or introducing a serialized private IR contract.

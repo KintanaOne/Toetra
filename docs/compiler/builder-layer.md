@@ -53,13 +53,13 @@ The builder produces a tree of Toetra AST nodes, including:
 | AST Node | Meaning |
 |---|---|
 | `ProgramNode` | Full Toetra program. |
-| `HeaderNode` | Model and target declarations. |
+| `HeaderNode` | Model, target, optional dataset, and specification-constant declarations. |
 | `PropertyNode` | One property section. |
 | `PropertyRuleNode` | Scope + assertion. |
 | `ExpressionNode` variants | LHS evaluation context. |
 | `AssertionNode` | RHS logical assertion wrapper. |
 | `LogicalNode` variants | Boolean and predicate structure. |
-| `BackendNode` | Optional backend hint. |
+| `BackendNode` | Optional backend requirement plus ordered typed arguments. |
 
 ---
 
@@ -149,7 +149,9 @@ Examples:
 | `A -> B` | `ImplicationNode` |
 | `CLASSIFICATION.EQUAL()` | `ProblemNode` |
 
-The builder should preserve logical structure but should not rewrite it.
+The builder should preserve logical structure but should not rewrite it. A
+non-empty problem-function argument list is rejected because no public problem
+predicate defines argument semantics.
 
 ---
 
@@ -159,7 +161,7 @@ The builder should preserve logical structure but should not rewrite it.
 |---|---|
 | Header parsing | Ensure `parse_header` works consistently whether called on program or header subtree. |
 | Logic expression handling | Clarify whether `logic_expr` is still part of the grammar or should be removed. |
-| Backend args | Normalize backend argument parsing and value typing. |
+| Backend args | Preserve unique named primitive values; reject positional or duplicate forms. |
 | Enum conversion | Centralize enum parsing to avoid inconsistent value/name handling. |
 | Pairwise parsing | Preserve `x ~ x'` syntax for semantic and IR layers. |
 | Quantifier parsing | Normalize unicode and word quantifiers. |
@@ -167,6 +169,12 @@ The builder should preserve logical structure but should not rewrite it.
 ---
 
 ## Building Specification Constants and Bare Names
+
+The builder follows the
+[DSL information preservation contract](../contracts/dsl-information-preservation.md):
+every information-bearing accepted construct is represented or rejected, never
+dropped. In particular, it retains the optional dataset declaration and typed
+named arguments until their owning semantic boundary.
 
 The builder:
 

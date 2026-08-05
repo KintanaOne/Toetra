@@ -44,17 +44,18 @@ injection hooks.
 |---|---|---|
 | `specification` | Inline source, a `.toetra` string path, or a `Path` | A path is read as UTF-8; inline source is compiled directly |
 | `model` | Serialized supported model path | Overrides the header model reference |
-| `dataset` | Optional reference CSV path | Used for schema construction and, when needed, as the default anchor source |
+| `dataset` | Optional reference CSV path | Overrides the optional header dataset for schema construction and, when needed, default anchor lookup |
 | `target` | Optional output name | Must equal the target declared in the specification |
 | `schema` | Already normalized model schema | Alternative to `model` and `dataset`; see the boundary below |
 | `anchor_source` | pandas DataFrame or CSV path | Source used to resolve referenced anchors |
 | `anchor_resolver` | Custom resolver object | Alternative to `anchor_source` |
 
-When `specification` is a `.toetra` file and `model` is omitted, the
-`model := ...` reference in its header is resolved relative to the
-specification directory. For inline source, the header reference is resolved
-from the caller's working directory. Explicit `model` and `dataset` paths are
-also resolved from that working directory.
+When `specification` is a `.toetra` file, omitted model and dataset arguments
+use their header declarations and resolve them relative to the specification
+directory. For inline source, header references resolve from the caller's
+working directory. Explicit `model` and `dataset` paths also resolve from that
+working directory and override only the effective artifact selected for the
+run.
 
 A string ending in `.toetra` is treated as a file path even when the file does
 not exist. Former specification extensions are rejected.
@@ -66,8 +67,8 @@ The model metadata has exactly one source:
 | Inputs | Result |
 |---|---|
 | `model=...`, optional `dataset=...` | Toetra loads the model and builds its schema |
-| neither `model` nor `schema` | Toetra loads the header model reference |
-| `schema=...` only | Toetra verifies against the normalized schema |
+| neither `model` nor `schema` | Toetra loads the header model reference and optional header dataset |
+| `schema=...` only | Toetra verifies against the normalized schema; an optional header dataset remains available for anchor lookup |
 | `schema=...` with `model` or `dataset` | `VerificationConfigurationError` |
 
 The header target, explicit `target` and schema output must agree. Toetra
@@ -85,7 +86,7 @@ Referenced anchors require one of:
 
 - `anchor_source=...`;
 - `anchor_resolver=...`;
-- a compatible `dataset=...`, reused as the default lookup source.
+- an effective dataset, declared in the header or supplied through `dataset=...`, reused as the default lookup source.
 
 Providing both `anchor_source` and `anchor_resolver` is ambiguous and raises
 `VerificationConfigurationError`. Inline points and properties without

@@ -167,6 +167,7 @@ nav:
       - Compiler Pipeline: contracts/compiler-pipeline.md
       - Source to CST: contracts/source-to-cst.md
       - CST to AST: contracts/cst-to-ast.md
+      - DSL Information Preservation: contracts/dsl-information-preservation.md
       - AST Contract: contracts/ast-contract.md
       - AST to Semantic: contracts/ast-to-semantic.md
       - Semantic to IR1: contracts/semantic-to-ir1.md

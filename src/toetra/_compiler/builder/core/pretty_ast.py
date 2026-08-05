@@ -447,12 +447,17 @@ def _pretty_anchor(node: AnchorDeclarationNode, indent: int):
 def _pretty_header(node: HeaderNode, indent: int):
     pad = _pad(indent)
 
-    return "\n".join(
-        [
-            f"{pad}model := {node.model}",
-            f"{pad}target := {node.target}",
-        ]
+    lines = [
+        f"{pad}model := {node.model}",
+        f"{pad}target := {node.target}",
+    ]
+    if node.dataset is not None:
+        lines.append(f"{pad}dataset := {node.dataset}")
+    lines.extend(
+        f"{pad}{declaration.name} := {_expr(declaration.value)}"
+        for declaration in node.specification_constants
     )
+    return "\n".join(lines)
 
 
 @register(ProgramNode)

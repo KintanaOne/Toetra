@@ -94,6 +94,14 @@ IR1 does not flatten the expression into coefficients unless a separate explicit
 
 ---
 
+## Backend requirement
+
+A semantically accepted explicit backend name is retained as the IR1 backend
+requirement and later reaches IR2 routing. Backend arguments are retained in
+the AST but are rejected by public V1 semantic validation because no public
+backend argument contract exists. Unsupported arguments must not be erased to
+make the task appear executable.
+
 ## Typed Domain IR1
 
 `ScopeIR.domain` remains typed and backend-independent.

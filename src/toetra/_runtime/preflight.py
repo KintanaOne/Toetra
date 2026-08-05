@@ -135,6 +135,11 @@ class ValidationResult:
     valid: bool
     checks: tuple[str, ...]
     property_count: int | None = None
+    declared_model_reference: str | None = None
+    declared_target: str | None = None
+    declared_dataset_reference: str | None = None
+    model_overridden: bool = False
+    dataset_overridden: bool = False
     specification_path: Path | None = field(default=None, repr=False)
     model_path: Path | None = field(default=None, repr=False)
     dataset_path: Path | None = field(default=None, repr=False)
@@ -190,6 +195,15 @@ class ValidationResult:
             "valid": self.valid,
             "checks": list(self.checks),
             "property_count": self.property_count,
+            "declarations": {
+                "model": self.declared_model_reference,
+                "target": self.declared_target,
+                "dataset": self.declared_dataset_reference,
+            },
+            "overrides": {
+                "model": self.model_overridden,
+                "dataset": self.dataset_overridden,
+            },
             "artifacts": artifacts,
             "diagnostics": (
                 [self.diagnostic.to_dict()] if self.diagnostic is not None else []
@@ -284,6 +298,11 @@ class ExecutablePlan:
 
     source: str = field(repr=False)
     specification_path: Path | None
+    declared_model_reference: str
+    declared_target: str
+    declared_dataset_reference: str | None
+    model_overridden: bool
+    dataset_overridden: bool
     schema: ModelSchema
     model: object | None = field(repr=False, compare=False)
     model_path: Path | None
@@ -346,6 +365,11 @@ class InspectionResult:
                     if plan.specification_path is not None
                     else None
                 ),
+                "declarations": {
+                    "model": plan.declared_model_reference,
+                    "target": plan.declared_target,
+                    "dataset": plan.declared_dataset_reference,
+                },
                 "target": schema.output_name,
                 "property_count": len(properties),
                 "constant_count": len(plan.constants),
@@ -357,7 +381,9 @@ class InspectionResult:
                 ),
             },
             "model": {
+                "declared_reference": plan.declared_model_reference,
                 "path": str(plan.model_path) if plan.model_path is not None else None,
+                "overridden": plan.model_overridden,
                 "framework": schema.framework.value,
                 "family": schema.model_type,
                 "task": schema.task,
@@ -382,6 +408,16 @@ class InspectionResult:
                     "observables": [
                         observable.value for observable in output.available_observables
                     ],
+                },
+                "dataset": {
+                    "declared_reference": plan.declared_dataset_reference,
+                    "path": (
+                        str(plan.dataset_path)
+                        if plan.dataset_path is not None
+                        else None
+                    ),
+                    "overridden": plan.dataset_overridden,
+                    "provided": plan.dataset_path is not None,
                 },
             },
             "properties": properties,
@@ -422,12 +458,17 @@ class InspectionResult:
         payload = self.to_dict()
         model = payload["model"]
         execution = payload["execution"]
+        dataset = model["dataset"]
         lines = [
             "EXECUTABLE PLAN",
             f"specification: {payload['specification']['path'] or '<inline>'}",
             f"target: {payload['specification']['target']}",
             f"properties: {payload['specification']['property_count']}",
             ("model: " f"{model['framework']} / {model['family']} / {model['task']}"),
+            f"model path: {model['path'] or '<schema-only>'}",
+            f"model overridden: {str(model['overridden']).lower()}",
+            f"dataset: {dataset['path'] or '<not provided>'}",
+            f"dataset overridden: {str(dataset['overridden']).lower()}",
             f"translation ready: {str(execution['translation_ready']).lower()}",
             "routes:",
         ]
@@ -466,8 +507,14 @@ def validate_request(
     model_path = _optional_resolved_path(model)
     dataset_path = _optional_resolved_path(dataset)
     anchor_source_path = _path_from_source(anchor_source)
+    declared_model_reference: str | None = None
+    declared_target: str | None = None
+    declared_dataset_reference: str | None = None
     try:
         loaded = _load_specification(specification)
+        declared_model_reference = loaded.model_reference
+        declared_target = loaded.target
+        declared_dataset_reference = loaded.dataset_reference
         checks.extend(("source_loaded", "syntax_parsed", "ast_built"))
         completed = ValidationLevel.SYNTAX
         if requested is ValidationLevel.SYNTAX:
@@ -477,12 +524,22 @@ def validate_request(
                 valid=True,
                 checks=tuple(checks),
                 property_count=len(loaded.program.body),
+                declared_model_reference=declared_model_reference,
+                declared_target=declared_target,
+                declared_dataset_reference=declared_dataset_reference,
+                model_overridden=model is not None,
+                dataset_overridden=dataset is not None,
                 specification_path=loaded.path,
                 anchor_source_path=anchor_source_path,
             )
 
         if model is None:
             model_path = runtime_api._resolve_header_model_path(loaded).resolve()
+        if dataset is None:
+            header_dataset = runtime_api._resolve_header_dataset_path(loaded)
+            dataset_path = (
+                header_dataset.resolve() if header_dataset is not None else None
+            )
 
         resolved = runtime_api._resolve_model(
             loaded,
@@ -525,6 +582,11 @@ def validate_request(
                 valid=True,
                 checks=tuple(checks),
                 property_count=len(loaded.program.body),
+                declared_model_reference=declared_model_reference,
+                declared_target=declared_target,
+                declared_dataset_reference=declared_dataset_reference,
+                model_overridden=model is not None,
+                dataset_overridden=dataset is not None,
                 specification_path=loaded.path,
                 model_path=resolved.model_path,
                 dataset_path=resolved.dataset_path,
@@ -534,6 +596,8 @@ def validate_request(
         plan = _build_executable_plan_from_resolved(
             loaded,
             resolved,
+            model_overridden=model is not None,
+            dataset_overridden=dataset is not None,
             anchors=anchors,
             anchor_source=anchor_source,
             anchor_resolver=anchor_resolver,
@@ -564,6 +628,11 @@ def validate_request(
             valid=True,
             checks=tuple(checks),
             property_count=len(plan.properties),
+            declared_model_reference=plan.declared_model_reference,
+            declared_target=plan.declared_target,
+            declared_dataset_reference=plan.declared_dataset_reference,
+            model_overridden=plan.model_overridden,
+            dataset_overridden=plan.dataset_overridden,
             specification_path=plan.specification_path,
             model_path=plan.model_path,
             dataset_path=plan.dataset_path,
@@ -577,6 +646,11 @@ def validate_request(
             valid=False,
             checks=tuple(checks),
             property_count=None,
+            declared_model_reference=declared_model_reference,
+            declared_target=declared_target,
+            declared_dataset_reference=declared_dataset_reference,
+            model_overridden=model is not None,
+            dataset_overridden=dataset is not None,
             specification_path=(
                 specification_path.resolve()
                 if specification_path is not None and specification_path.exists()
@@ -626,6 +700,8 @@ def inspect_request(
     plan = _build_executable_plan_from_resolved(
         loaded,
         resolved,
+        model_overridden=model is not None,
+        dataset_overridden=dataset is not None,
         anchors=anchors,
         anchor_source=anchor_source,
         anchor_resolver=anchor_resolver,
@@ -680,6 +756,8 @@ def build_executable_plan(
     return _build_executable_plan_from_resolved(
         loaded,
         resolved,
+        model_overridden=model is not None,
+        dataset_overridden=dataset is not None,
         anchors=anchors,
         anchor_source=anchor_source,
         anchor_resolver=anchor_resolver,
@@ -698,6 +776,8 @@ def _build_executable_plan_from_resolved(
     loaded: Any,
     resolved: Any,
     *,
+    model_overridden: bool,
+    dataset_overridden: bool,
     anchors: Mapping[str, ResolvedAnchorBinding],
     anchor_source: AnchorSource | None,
     anchor_resolver: AnchorResolver | None,
@@ -806,6 +886,11 @@ def _build_executable_plan_from_resolved(
     return ExecutablePlan(
         source=loaded.source,
         specification_path=loaded.path,
+        declared_model_reference=loaded.model_reference,
+        declared_target=loaded.target,
+        declared_dataset_reference=loaded.dataset_reference,
+        model_overridden=model_overridden,
+        dataset_overridden=dataset_overridden,
         schema=resolved.schema,
         model=resolved.model,
         model_path=resolved.model_path,

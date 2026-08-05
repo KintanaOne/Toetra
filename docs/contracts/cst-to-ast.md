@@ -155,6 +155,33 @@ The builder rejects CST shapes that are syntactically accepted but structurally 
 - comparison with fewer or more than two scalar operands;
 - unrecognized protected vocabulary after normalization.
 
+## Header and argument preservation
+
+The header builder preserves:
+
+```text
+model declaration   → HeaderNode.model
+target declaration  → HeaderNode.target
+dataset declaration → HeaderNode.dataset | None
+constant declarations → ordered HeaderNode.specification_constants
+anchor declarations → ordered ProgramNode.anchors
+```
+
+Header artifact declarations are not resolved at this boundary. File-relative
+resolution belongs to runtime planning. Anchors remain program-level nodes
+because they enter the shared point environment rather than model metadata.
+
+Generic grammar arguments must never disappear during AST construction:
+
+- backend `name=value` arguments become ordered typed `ArgNode` entries;
+- duplicate or positional backend arguments fail explicitly;
+- non-empty problem-function arguments fail explicitly because their semantics
+  are not defined;
+- legacy-neighborhood arguments become ordered typed `ArgNode` entries, while
+  positional or duplicate entries fail explicitly.
+
+See the [DSL information preservation contract](dsl-information-preservation.md).
+
 ## Specification Constant Addendum
 
 For header declarations and bare scalar names, the builder must produce:

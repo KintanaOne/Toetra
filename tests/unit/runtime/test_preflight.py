@@ -188,3 +188,77 @@ def test_inspection_never_runs_backend_solver(
     result = inspect_request(specification_path, dataset=dataset_path)
 
     assert result.to_dict()["execution"]["translation_ready"] is True
+
+
+def test_inspection_distinguishes_declared_and_effective_artifacts(
+    tmp_path: Path,
+) -> None:
+    specification_path, model_path, dataset_path = _artifacts(tmp_path)
+    specification_path.write_text(
+        _SOURCE.replace(
+            "target := score\n",
+            'target := score\ndataset := "linear.csv"\n',
+            1,
+        ),
+        encoding="utf-8",
+    )
+
+    declared = inspect_request(specification_path).to_dict()
+
+    assert declared["specification"]["declarations"] == {
+        "model": "linear.joblib",
+        "target": "score",
+        "dataset": "linear.csv",
+    }
+    assert declared["model"]["declared_reference"] == "linear.joblib"
+    assert declared["model"]["path"] == str(model_path.resolve())
+    assert declared["model"]["overridden"] is False
+    assert declared["model"]["dataset"] == {
+        "declared_reference": "linear.csv",
+        "path": str(dataset_path.resolve()),
+        "overridden": False,
+        "provided": True,
+    }
+
+    override_model = tmp_path / "candidate.joblib"
+    override_model.write_bytes(model_path.read_bytes())
+    override_dataset = tmp_path / "override.csv"
+    pd.read_csv(dataset_path).to_csv(override_dataset, index=False)
+    overridden = inspect_request(
+        specification_path,
+        model=override_model,
+        dataset=override_dataset,
+    ).to_dict()
+
+    assert overridden["model"]["declared_reference"] == "linear.joblib"
+    assert overridden["model"]["path"] == str(override_model.resolve())
+    assert overridden["model"]["overridden"] is True
+    assert overridden["model"]["dataset"]["declared_reference"] == "linear.csv"
+    assert overridden["model"]["dataset"]["path"] == str(override_dataset.resolve())
+    assert overridden["model"]["dataset"]["overridden"] is True
+
+
+def test_syntax_validation_reports_declarations_without_consuming_artifacts(
+    tmp_path: Path,
+) -> None:
+    specification_path = tmp_path / "policy.toetra"
+    specification_path.write_text(
+        _SOURCE.replace(
+            "target := score\n",
+            'target := score\ndataset := "missing.csv"\n',
+            1,
+        ),
+        encoding="utf-8",
+    )
+
+    result = validate_request(specification_path, level=ValidationLevel.SYNTAX)
+    payload = result.to_dict()
+
+    assert result.valid
+    assert payload["declarations"] == {
+        "model": "linear.joblib",
+        "target": "score",
+        "dataset": "missing.csv",
+    }
+    assert payload["overrides"] == {"model": False, "dataset": False}
+    assert result.consumed_paths == (specification_path.resolve(),)

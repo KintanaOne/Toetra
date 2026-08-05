@@ -53,7 +53,10 @@ generated Lark grammar is derived and must not be edited manually.
 
 `parse_toetra_code(...)` rejects invalid grammar and returns a CST.
 `parse_program(...)` fully translates that CST into nodes beneath
-`toetra._compiler.ast`. No Lark `Tree` should survive in the AST.
+`toetra._compiler.ast`. No Lark `Tree` should survive in the AST. Every
+information-bearing accepted construct must either be represented by AST or be
+rejected explicitly under the
+[DSL information preservation contract](../contracts/dsl-information-preservation.md).
 
 ## Semantic validation
 
@@ -73,7 +76,7 @@ code does not define a separate `SemanticValidatedAST` class.
 
 `IRTranslator` emits one `VerificationTask` per property. Each task retains:
 
-- property type and optional backend hint;
+- property type and optional backend requirement;
 - `ScopeIR`, ordered binders, points, domains, and restrictions;
 - backend-neutral scalar/logical query;
 - public output-observable intent when model-family meaning is still required.

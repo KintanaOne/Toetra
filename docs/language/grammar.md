@@ -36,8 +36,11 @@ does not establish:
 - model encoder availability;
 - backend support.
 
-Those decisions belong to semantic validation and route qualification. See
-[Language support levels](support-levels.md).
+Those decisions belong to semantic validation and route qualification. Grammar
+acceptance still creates a preservation obligation: an information-bearing CST
+value must reach its owning AST/semantic boundary or fail explicitly under the
+[DSL information preservation contract](../contracts/dsl-information-preservation.md).
+See [Language support levels](support-levels.md).
 
 ## Program structure
 

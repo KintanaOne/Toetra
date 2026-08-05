@@ -46,7 +46,7 @@ The AST sits between parser-specific syntax and semantic interpretation.
 | Expression nodes | `AtExprNode`, `PairwiseExprNode`, `CheckAtExprNode`, `QuantifierExprNode` | LHS evaluation context. |
 | Assertion nodes | `AssertionNode`, `ComparisonNode`, `AndNode`, `OrNode`, `NotNode`, `ImplicationNode`, `ProblemNode` | RHS logical intent. |
 | Primitive nodes | `AttributeNode`, `ConstantNode`, `ArgNode` | Leaves and values. |
-| Backend nodes | `BackendNode` | Optional backend hint. |
+| Backend nodes | `BackendNode` | Optional backend requirement and retained named arguments. |
 | Domain/neighborhood nodes | `DomainNode`, `NeighborhoodNode` | Scope modifiers. |
 
 ---
@@ -181,7 +181,9 @@ SpecificationConstantDeclarationNode(name, value)
 NameRefNode(name)
 ```
 
-`HeaderNode` preserves specification constants in source order.
+`HeaderNode` preserves the required model and target, the optional dataset, and
+specification constants in source order. Global anchor declarations remain
+ordered on `ProgramNode.anchors` because they enter the point environment.
 
 `NameRefNode` represents a bare scalar identifier whose meaning is intentionally unresolved at builder time. It is distinct from:
 
@@ -203,7 +205,7 @@ The following invariants should hold for any builder-produced AST:
 | Scope is explicit | Scope is one of the supported expression node types. |
 | Assertion has root | Every assertion wraps a logical root. |
 | Comparison has operands | Comparisons have two scalar-expression operands and one comparison operator. |
-| Backend hint is optional | Absence of backend does not invalidate AST. |
+| Backend requirement is optional | Absence of backend does not invalidate AST; retained arguments require an explicit backend. |
 
 ---
 

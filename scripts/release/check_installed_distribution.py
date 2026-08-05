@@ -142,7 +142,8 @@ joblib.dump(model, root / "linear model.joblib")
 frame.to_csv(root / "reference data.csv", index=False)
 source = (
     'model := "linear model.joblib"\n'
-    'target := score\n\n'
+    'target := score\n'
+    'dataset := "reference data.csv"\n\n'
     '[BOUND]:\n'
     'forall x0\n'
     'with domain(x0.a: [0.0, 3.0])\n'
@@ -151,7 +152,8 @@ source = (
 (root / "policy.toetra").write_text(source, encoding="utf-8")
 failure_source = (
     'model := "linear model.joblib"\n'
-    "target := score\n\n"
+    "target := score\n"
+    'dataset := "reference data.csv"\n\n'
     "[BOUND]:\n"
     "forall x0\n"
     "with domain(x0.a: [0.0, 3.0])\n"
@@ -229,8 +231,6 @@ def main() -> int:
                 str(console),
                 "validate",
                 str(policy),
-                "--dataset",
-                str(dataset),
                 "--format",
                 "json",
             ],
@@ -247,6 +247,8 @@ def main() -> int:
         assert validation_payload["schema_version"] == 1
         assert validation_payload["valid"] is True
         assert validation_payload["completed_level"] == "executable"
+        assert validation_payload["declarations"]["dataset"] == ("reference data.csv")
+        assert validation_payload["overrides"]["dataset"] is False
 
         inspection_output = cli_root / "nested output" / "inspection.json"
         inspect = subprocess.run(
@@ -257,8 +259,6 @@ def main() -> int:
                 "toetra",
                 "inspect",
                 str(policy),
-                "--dataset",
-                str(dataset),
                 "--format",
                 "json",
                 "--output",
@@ -277,6 +277,11 @@ def main() -> int:
         assert inspection_payload["schema"] == "toetra.inspection"
         assert inspection_payload["schema_version"] == 1
         assert inspection_payload["execution"]["translation_ready"] is True
+        assert inspection_payload["model"]["dataset"]["declared_reference"] == (
+            "reference data.csv"
+        )
+        assert inspection_payload["model"]["dataset"]["path"] == str(dataset)
+        assert inspection_payload["model"]["dataset"]["overridden"] is False
 
         verification_output = cli_root / "nested output" / "verification.json"
         artifact_directory = cli_root / "verification artifacts"
@@ -286,8 +291,6 @@ def main() -> int:
                 str(console),
                 "verify",
                 str(policy),
-                "--dataset",
-                str(dataset),
                 "--format",
                 "json",
                 "--output",

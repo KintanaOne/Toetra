@@ -2,13 +2,18 @@ from lark import Tree, Token
 
 from toetra._compiler.ast.nodes.backends import BackendNode
 from toetra._compiler.ast.nodes.primitives import ArgNode
+from toetra._compiler.builder.core.source import with_source_span
 from toetra._compiler.builder.core.utils import (
     find_child,
     find_all_nodes,
     find_node,
     get_node_name_or_value,
 )
-from toetra._compiler.builder.core.ast_utils import node_value, clean_string
+from toetra._compiler.builder.core.ast_utils import (
+    clean_string,
+    node_value,
+    parse_value,
+)
 from toetra._language.vocabulary.backends import EnumBackend
 
 
@@ -40,7 +45,7 @@ def _extract_backend_name(node: Tree) -> str:
     raise ValueError("Backend name missing")
 
 
-def parse_backend(node: Tree | None):
+def parse_backend(node: Tree | None) -> BackendNode | None:
     if node is None:
         return None
 
@@ -57,20 +62,25 @@ def parse_backend(node: Tree | None):
         raise ValueError(f"Unsupported backend '{raw_name}'") from e
 
     args: list[ArgNode] = []
+    seen: set[str] = set()
 
     args_node = find_child(backend_node, "args")
-
-    if args_node:
+    if args_node is not None:
         for arg in find_all_nodes(args_node, "arg"):
             eq = find_child(arg, "arg_identifier_eq")
+            if eq is None:
+                raise ValueError(
+                    "Backend arguments must use the explicit name=value form"
+                )
 
-            if eq:
-                key = node_value(find_child(eq, "quoted_identifier"))
-                val = clean_string(node_value(find_child(eq, "value")))
+            key = clean_string(node_value(find_child(eq, "quoted_identifier")))
+            value_node = find_child(eq, "value")
+            if key is None or value_node is None:
+                raise ValueError("Invalid backend argument")
+            if key in seen:
+                raise ValueError(f"Duplicate backend argument '{key}'")
+            seen.add(key)
+            argument = ArgNode(key=key, value=parse_value(value_node).value)
+            args.append(with_source_span(argument, arg))
 
-                if key is None or val is None:
-                    raise ValueError("Invalid backend arg")
-
-                args.append(ArgNode(key=key, value=val))
-
-    return BackendNode(name=name, args=args)
+    return with_source_span(BackendNode(name=name, args=args), backend_node)

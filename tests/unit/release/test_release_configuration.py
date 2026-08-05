@@ -86,6 +86,7 @@ def test_release_probe_exercises_binary_classification() -> None:
     assert '"toetra.replay-report-collection"' in probe
     assert '"-m",' in probe and '"toetra",' in probe
     assert "CLI artifacts \u03a9" in probe
+    assert 'dataset := "reference data.csv"' in probe
     assert "from toetra.examples import credit_risk_policy" in probe
     assert 'find_spec("forml") is None' in probe
     assert 'find_spec("dsl") is None' in probe

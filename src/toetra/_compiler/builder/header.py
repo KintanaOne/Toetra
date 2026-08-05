@@ -23,9 +23,9 @@ from toetra._compiler.builder.core.utils import find_all_nodes, find_child
 
 
 def get_header(tree: Tree) -> Tree:
-    """
-    Extract header node from full AST.
-    """
+    """Return a header subtree from either a program or header CST node."""
+    if tree.data == "header":
+        return tree
     return require_node(find_child(tree, "header"), "Header node not found")
 
 
@@ -83,6 +83,24 @@ def parse_target(tree: Tree) -> str:
     )
 
 
+def parse_dataset(tree: Tree) -> str | None:
+    """Parse the optional ``dataset := ...`` header declaration."""
+
+    header = get_header(tree)
+    dataset_declaration = find_child(header, "dataset_declaration")
+    if dataset_declaration is None:
+        return None
+
+    dataset_node = require_node(
+        find_child(dataset_declaration, "dataset"),
+        "Dataset node not found",
+    )
+    return require_value(
+        clean_string(node_value(dataset_node)),
+        "Dataset declaration is missing or invalid",
+    )
+
+
 # ---------------------------------------------------------------------------
 
 
@@ -93,6 +111,7 @@ def parse_header(tree: Tree) -> HeaderNode:
 
     model = parse_model(tree)
     target = parse_target(tree)
+    dataset = parse_dataset(tree)
 
     specification_constants = [
         _parse_specification_constant(declaration)
@@ -105,6 +124,7 @@ def parse_header(tree: Tree) -> HeaderNode:
     return HeaderNode(
         model=model,
         target=target,
+        dataset=dataset,
         specification_constants=specification_constants,
     )
 
