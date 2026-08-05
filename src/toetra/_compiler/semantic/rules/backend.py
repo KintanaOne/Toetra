@@ -1,6 +1,9 @@
+from collections.abc import Sequence
+
+from toetra._compiler.ast.nodes.primitives import ArgNode
+from toetra._compiler.semantic.errors.errors import InvalidPropertyError
 from toetra._language.vocabulary.backends import EnumBackend
 from toetra._language.vocabulary.properties import EnumProperty
-from toetra._compiler.semantic.errors.errors import InvalidPropertyError
 
 V1_SUPPORTED_BACKENDS = {
     EnumBackend.Z3,
@@ -17,7 +20,11 @@ PROPERTY_BACKEND_COMPATIBILITY = {
 }
 
 
-def validate_backend_for_property(property_type, backend):
+def validate_backend_for_property(
+    property_type: EnumProperty,
+    backend: EnumBackend | None,
+    backend_arguments: Sequence[ArgNode] = (),
+) -> bool:
     """
     Validate backend compatibility for the current V1.
 
@@ -28,7 +35,19 @@ def validate_backend_for_property(property_type, backend):
     """
 
     if backend is None:
+        if backend_arguments:
+            raise InvalidPropertyError(
+                "Backend arguments require an explicit backend declaration"
+            )
         return True
+
+    if backend_arguments:
+        names = ", ".join(argument.key for argument in backend_arguments)
+        raise InvalidPropertyError(
+            "Backend arguments are parsed and preserved in the AST but are not "
+            f"supported by the public V1 profile: {names}. Configure generic "
+            "execution controls through the runtime execution policy instead."
+        )
 
     if backend not in V1_SUPPORTED_BACKENDS:
         raise InvalidPropertyError(
@@ -40,7 +59,8 @@ def validate_backend_for_property(property_type, backend):
 
     if allowed is None:
         raise InvalidPropertyError(
-            f"No backend compatibility rule defined for property '{property_type.value}'"
+            "No backend compatibility rule defined for property "
+            f"'{property_type.value}'"
         )
 
     if backend not in allowed:

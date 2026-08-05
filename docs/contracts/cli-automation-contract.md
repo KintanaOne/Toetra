@@ -101,8 +101,10 @@ interpreted relative to the specification file, matching `toetra.verify(...)`.
 
 ### Dataset, anchors, and target
 
-- `--dataset` supplies the reference dataset used by model introspection and,
-  when eligible, the existing anchor-source fallback;
+- `--dataset` overrides the optional dataset reference declared in the
+  specification header; when omitted, the header dataset is resolved relative
+  to the specification file and is used by model introspection and, when
+  eligible, the existing anchor-source fallback;
 - `--anchor-source` supplies a CSV anchor source explicitly;
 - `--target` applies the existing runtime target override and must still agree
   with the normalized model schema;

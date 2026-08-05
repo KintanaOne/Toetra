@@ -15,7 +15,12 @@ session = verify(
 )
 ```
 
-`dataset` supports model/schema introspection and, when no explicit anchor mechanism is supplied, may also be reused as the default source for `ref(...)`. `anchor_source` or `anchor_resolver` always wins.
+The effective dataset comes from an explicit runtime override when present,
+otherwise from the optional specification header. Header paths are relative to
+the `.toetra` file; explicit paths are relative to the working directory. The
+dataset supports model/schema introspection and, when no explicit anchor
+mechanism is supplied, is reused as the default source for `ref(...)`.
+`anchor_source` or `anchor_resolver` always wins.
 
 ## Anchor resolution
 

@@ -129,6 +129,14 @@ def parse_assertion(node: Tree | Token | None) -> LogicalNode:
         problem: EnumProblem | None = None
         function: EnumFunction | None = None
 
+        args_nodes = list(node.find_data("args"))
+        if args_nodes:
+            raise ValueError(
+                "Problem-function arguments are not supported by the public DSL "
+                "pipeline; remove the arguments instead of relying on them being "
+                "ignored"
+            )
+
         for c in node.children:
             if isinstance(c, Token):
                 try:

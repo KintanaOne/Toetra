@@ -13,8 +13,10 @@ SPECIFICATION
 --target NAME
 ```
 
-CLI model paths are relative to the working directory. A model declared inside
-the specification is relative to the specification file.
+CLI model and dataset paths are per-run overrides relative to the working
+directory. Model and dataset paths declared inside the specification are
+relative to the specification file and are used when no corresponding override
+is supplied.
 
 The executable commands share:
 

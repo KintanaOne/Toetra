@@ -62,7 +62,10 @@ probes. P28.3 adds `verify`, exact JSON v6 and HTML rendering, logical process
 statuses, atomic report artifacts, and the run-manifest completion marker.
 P28.4 adds delayed `replay`, strict archived provenance/property matching,
 solver-free task reconstruction, stable replay JSON, and installed-wheel replay
-evidence. Remaining P28 implementation covers:
+evidence. Before the final CLI surface is frozen, the DSL declaration-flow
+prerequisite restores the optional header dataset as an effective runtime
+artifact and enforces the no-silent-loss rule for grammar arguments. Remaining
+P28 implementation covers:
 
 - the `init` command handler;
 - final cross-command exit-code and stdout/stderr consistency checks;

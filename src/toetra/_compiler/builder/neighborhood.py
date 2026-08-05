@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 from lark import Token, Tree
 
 from toetra._compiler.ast.nodes.neighborhood import (
@@ -9,55 +7,48 @@ from toetra._compiler.ast.nodes.neighborhood import (
     NeighborhoodNode,
 )
 from toetra._compiler.ast.nodes.primitives import ArgNode
-from toetra._compiler.builder.core.ast_utils import clean_string, node_value
+from toetra._compiler.builder.core.ast_utils import (
+    clean_string,
+    node_value,
+    parse_value,
+)
 from toetra._compiler.builder.core.source import with_source_span
 from toetra._compiler.builder.core.strict import require_node, require_value
 from toetra._compiler.builder.core.utils import find_all_nodes, find_child, find_node
 from toetra._compiler.builder.scalar import parse_scalar_expression
-from toetra._compiler.parser.errors import ParserPropertyError
-
-
-def _parse_numeric(value: Any) -> Any:
-    """Convert a legacy argument spelling to int/float when possible."""
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        pass
-
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return value
 
 
 def _parse_arg(arg_node: Tree) -> ArgNode:
     eq = find_child(arg_node, "arg_identifier_eq")
     if eq is None:
-        raise ParserPropertyError("Missing '=' in argument")
+        raise ValueError("Neighborhood arguments must use the explicit name=value form")
 
     key_node = find_child(eq, "quoted_identifier")
-    val_node = find_child(eq, "value")
+    value_node = find_child(eq, "value")
+    key = clean_string(node_value(key_node))
 
-    if val_node is None:
-        raise ParserPropertyError("Missing argument value in neighborhood argument")
+    if not key:
+        raise ValueError("Missing neighborhood argument key")
+    if value_node is None:
+        raise ValueError(f"Missing neighborhood argument value for key={key}")
 
-    key = require_value(node_value(key_node), "Missing argument key")
-    raw_val = node_value(val_node)
-    if raw_val is None:
-        raise ParserPropertyError(f"Missing argument value for key={key}")
-
-    try:
-        val = _parse_numeric(raw_val)
-    except Exception:
-        val = clean_string(raw_val)
-
-    return ArgNode(key=key, value=val)
+    argument = ArgNode(key=key, value=parse_value(value_node).value)
+    return with_source_span(argument, arg_node)
 
 
 def _parse_args(args_node: Tree | None) -> list[ArgNode]:
     if args_node is None:
         return []
-    return [_parse_arg(arg) for arg in find_all_nodes(args_node, "arg")]
+
+    arguments: list[ArgNode] = []
+    names: set[str] = set()
+    for arg_node in find_all_nodes(args_node, "arg"):
+        argument = _parse_arg(arg_node)
+        if argument.key in names:
+            raise ValueError(f"Duplicate neighborhood argument '{argument.key}'")
+        names.add(argument.key)
+        arguments.append(argument)
+    return arguments
 
 
 def _extract_metric(node: Tree) -> str:

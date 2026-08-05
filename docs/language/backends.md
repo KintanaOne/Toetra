@@ -23,7 +23,10 @@ using backend(name=value)
 ```
 
 No DSL backend argument belongs to the public V1 profile unless the backend
-contract explicitly documents its meaning. Parser acceptance alone is not an
+contract explicitly documents its meaning. The builder preserves unique named
+primitive arguments in the AST so they cannot disappear silently; semantic
+validation then rejects every non-empty list in V1. Positional or duplicate
+arguments fail during AST construction. Parser acceptance alone is not an
 execution guarantee.
 
 ## Selection semantics
@@ -60,8 +63,8 @@ They do not announce bundled adapters, algorithms, or post-V1 delivery dates.
 Backend syntax reaches execution only after:
 
 ```text
-AST backend declaration
-→ semantic backend validation
+AST backend declaration and retained arguments
+→ semantic backend validation or explicit argument rejection
 → IR1 and IR2 preservation
 → model-semantic lowering
 → requirement extraction

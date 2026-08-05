@@ -229,6 +229,7 @@ class PropertyValidator:
             validate_backend_for_property(
                 property_type=property_type,
                 backend=prop.backend.name if prop.backend else None,
+                backend_arguments=prop.backend.args if prop.backend else (),
             )
 
             # ==================================================

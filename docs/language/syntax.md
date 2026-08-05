@@ -48,7 +48,14 @@ dataset := "observations.csv"
 ```
 
 `model` and `dataset` accept a quoted string or identifier. Canonical paths are
-quoted. `target` accepts one identifier.
+quoted. `target` accepts one identifier. For file-backed specifications, header
+model and dataset paths are resolved relative to the `.toetra` file. Runtime or
+CLI artifact overrides, when supplied, are resolved from the caller's working
+directory and replace only the effective artifact for that run.
+
+The optional dataset is consumed for model-schema construction and may be used
+as the fallback source for referenced anchors. A declared dataset is not merely
+documentary and is never silently ignored.
 
 ### Specification constants
 
@@ -408,9 +415,10 @@ using Z3
 using z3
 ```
 
-An explicit backend is required, not a hint. Backend argument syntax is parsed,
-but no DSL backend argument is part of the public V1 profile unless a backend
-contract documents it.
+An explicit backend is required, not a hint. Named backend arguments are parsed
+and preserved in the AST, but public V1 semantic validation rejects every
+non-empty argument list until a backend contract documents its names and
+meaning. Positional and duplicate arguments fail at the builder boundary.
 
 ERAN, zonotope, and box spellings are reserved syntax and are rejected as V1
 execution requests.

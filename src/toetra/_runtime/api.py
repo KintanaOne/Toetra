@@ -114,6 +114,7 @@ class _LoadedSpecification:
     base_directory: Path
     model_reference: str
     target: str
+    dataset_reference: str | None
 
 
 def verify(
@@ -138,12 +139,14 @@ def verify(
     A caller may provide an already normalized ``ModelSchema`` or let Toetra
     build one from a serialized model. When ``model`` is omitted for a file
     specification, the model reference from the Toetra header is resolved
-    relative to the specification file. Referenced anchors require either a
-    dedicated ``anchor_source`` (pandas DataFrame or CSV path) or a custom
-    ``anchor_resolver``. When neither is provided, a compatible ``dataset``
-    artifact is reused as the default anchor lookup source. This fallback is
-    ergonomic only: src/toetra/_models/schema introspection and anchor lookup remain
-    distinct runtime responsibilities. Custom framework/model integrations may
+    relative to the specification file. An omitted ``dataset`` argument uses
+    the optional header dataset under the same path rule. Referenced anchors
+    require either a dedicated ``anchor_source`` (pandas DataFrame or CSV
+    path) or a custom ``anchor_resolver``. When neither is provided, the
+    effective dataset artifact is reused as the default anchor lookup source.
+    This fallback is ergonomic only: model-schema introspection and anchor
+    lookup remain distinct runtime responsibilities. Custom framework/model
+    integrations may
     supply a ``model_encoder_factory`` whose selected encoder declares its
     numeric semantic target. ``execution_policy`` applies one backend-neutral
     timeout/resource/cancellation contract to every property in the session.
@@ -346,6 +349,7 @@ def _load_specification(specification: str | Path) -> _LoadedSpecification:
         base_directory=base_directory,
         model_reference=program.header.model,
         target=program.header.target,
+        dataset_reference=program.header.dataset,
     )
 
 
@@ -381,18 +385,20 @@ def _resolve_model(
     if schema is not None:
         if model is not None or dataset is not None:
             raise VerificationConfigurationError(
-                "Provide either 'schema' or model/dataset artifacts, not both"
+                "Provide either 'schema' or explicit model/dataset artifacts, not both"
             )
         if target is not None and target != schema.output_name:
             raise VerificationConfigurationError(
                 f"Explicit target '{target}' does not match schema target "
                 f"'{schema.output_name}'"
             )
+        dataset_path = _resolve_effective_dataset_path(loaded, dataset=None)
+        _require_dataset_file(dataset_path)
         return _ResolvedModel(
             schema=schema,
             model=None,
             model_path=None,
-            dataset_path=None,
+            dataset_path=(dataset_path.resolve() if dataset_path is not None else None),
         )
 
     resolved_target = target or loaded.target
@@ -419,15 +425,8 @@ def _resolve_model(
             path=str(model_path),
         )
 
-    dataset_path = _resolve_explicit_path(dataset) if dataset is not None else None
-    if dataset_path is not None and not dataset_path.is_file():
-        raise VerificationConfigurationError(
-            f"Reference dataset not found: {dataset_path}",
-            code="MODEL_DATASET_NOT_FOUND",
-            stage="model",
-            hint="Check dataset=... and ensure the CSV artifact exists.",
-            path=str(dataset_path),
-        )
+    dataset_path = _resolve_effective_dataset_path(loaded, dataset=dataset)
+    _require_dataset_file(dataset_path)
 
     manager = ModelManager(
         model_path=model_path,
@@ -455,6 +454,41 @@ def _resolve_header_model_path(loaded: _LoadedSpecification) -> Path:
     if candidate.is_absolute():
         return candidate
     return loaded.base_directory / candidate
+
+
+def _resolve_header_dataset_path(loaded: _LoadedSpecification) -> Path | None:
+    reference = loaded.dataset_reference
+    if reference is None:
+        return None
+    candidate = Path(reference)
+    if candidate.is_absolute():
+        return candidate
+    return loaded.base_directory / candidate
+
+
+def _resolve_effective_dataset_path(
+    loaded: _LoadedSpecification,
+    *,
+    dataset: str | Path | None,
+) -> Path | None:
+    if dataset is not None:
+        return _resolve_explicit_path(dataset)
+    return _resolve_header_dataset_path(loaded)
+
+
+def _require_dataset_file(dataset_path: Path | None) -> None:
+    if dataset_path is None or dataset_path.is_file():
+        return
+    raise VerificationConfigurationError(
+        f"Reference dataset not found: {dataset_path}",
+        code="MODEL_DATASET_NOT_FOUND",
+        stage="model",
+        hint=(
+            "Check dataset=... or the dataset path in the Toetra header. "
+            "Header paths are relative to the specification file."
+        ),
+        path=str(dataset_path),
+    )
 
 
 def _resolve_explicit_path(value: str | Path) -> Path:
