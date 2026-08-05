@@ -155,7 +155,7 @@ failure_source = (
     "[BOUND]:\n"
     "forall x0\n"
     "with domain(x0.a: [0.0, 3.0])\n"
-    "=> target[x0] < 7.0 using Z3\n"
+    "=> target[x0] < 0.0 using Z3\n"
 )
 (root / "failure.toetra").write_text(failure_source, encoding="utf-8")
 """
@@ -392,7 +392,11 @@ def main() -> int:
             text=True,
         )
 
-        assert replay.returncode == 0, replay.stderr
+        assert replay.returncode == 0, (
+            f"Replay returned {replay.returncode}\n"
+            f"stdout:\n{replay.stdout}\n"
+            f"stderr:\n{replay.stderr}"
+        )
         assert replay.stdout == ""
         assert replay.stderr == ""
         replay_payload = json.loads(replay_output.read_text(encoding="utf-8"))
