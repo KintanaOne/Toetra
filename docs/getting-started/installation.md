@@ -58,11 +58,14 @@ toetra validate policy.toetra --model model.joblib --dataset reference.csv
 toetra inspect policy.toetra --model model.joblib --dataset reference.csv
 toetra verify policy.toetra --model model.joblib --dataset reference.csv \
   --format json --artifacts-dir artifacts/toetra
+toetra replay artifacts/toetra/toetra-verification-report.json \
+  --specification policy.toetra --model model.joblib --dataset reference.csv
 ```
 
 `verify` returns `0` for positive conclusions, `1` for a formal failure, and `2`
-for `UNKNOWN`. The JSON v6 and HTML files are each committed atomically,
-and the manifest is written last.
+for `UNKNOWN`. `replay` uses the same statuses for consistent, inconsistent, and
+inconclusive concrete evidence. The JSON v6 and HTML verification files are each
+committed atomically, and the verification manifest is written last.
 
 ## Development setup
 

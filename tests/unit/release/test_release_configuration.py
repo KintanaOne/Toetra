@@ -80,8 +80,10 @@ def test_release_probe_exercises_binary_classification() -> None:
     assert "VerificationStatus.WITNESS" in probe
     assert '"validate",' in probe
     assert '"inspect",' in probe
+    assert '"replay",' in probe
     assert '"toetra.validation-result"' in probe
     assert '"toetra.inspection"' in probe
+    assert '"toetra.replay-report-collection"' in probe
     assert '"-m",' in probe and '"toetra",' in probe
     assert "CLI artifacts \u03a9" in probe
     assert "from toetra.examples import credit_risk_policy" in probe

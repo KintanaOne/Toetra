@@ -138,26 +138,16 @@ def build_report_provenance(
 ) -> ReportProvenance:
     """Derive property, route and full verification fingerprints."""
 
-    property_fingerprint = _digest_payload(
-        {
-            "index": property_index,
-            "property_type": task.property_type.value,
-            "semantics": task.semantics.value,
-            "scope": {
-                "kind": task.scope.kind,
-                "quantifier": task.scope.quantifier,
-                "variables": dict(task.scope.variables),
-            },
-            "normal_form": task.normal_form.value,
-            "spec_formula": task.spec_formula,
-        }
+    property_fingerprint_value = property_fingerprint(
+        task,
+        property_index=property_index,
     )
     route_fingerprint = _digest_payload(_route_payload(route))
     execution_policy_fingerprint = _digest_payload(_execution_policy_payload(result))
     verification_fingerprint = _digest_payload(
         {
             "input_fingerprint": context.input_fingerprint,
-            "property_fingerprint": property_fingerprint,
+            "property_fingerprint": property_fingerprint_value,
             "route_fingerprint": route_fingerprint,
             "execution_policy_fingerprint": execution_policy_fingerprint,
         }
@@ -168,7 +158,7 @@ def build_report_provenance(
         input_fingerprint=context.input_fingerprint,
         completeness=context.completeness,
         unavailable_inputs=context.unavailable_inputs,
-        property_fingerprint=property_fingerprint,
+        property_fingerprint=property_fingerprint_value,
         route_fingerprint=route_fingerprint,
         execution_policy_fingerprint=execution_policy_fingerprint,
         verification_fingerprint=verification_fingerprint,
@@ -184,6 +174,29 @@ def build_report_provenance(
             source_ir=_optional_text(task.metadata.get("source_ir")),
             builder=_optional_text(task.metadata.get("builder")),
         ),
+    )
+
+
+def property_fingerprint(
+    task: VerificationTaskIR2,
+    *,
+    property_index: int,
+) -> str:
+    """Return the stable property fingerprint used by archived replay."""
+
+    return _digest_payload(
+        {
+            "index": property_index,
+            "property_type": task.property_type.value,
+            "semantics": task.semantics.value,
+            "scope": {
+                "kind": task.scope.kind,
+                "quantifier": task.scope.quantifier,
+                "variables": dict(task.scope.variables),
+            },
+            "normal_form": task.normal_form.value,
+            "spec_formula": task.spec_formula,
+        }
     )
 
 

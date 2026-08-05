@@ -1,8 +1,8 @@
 # Command-line interface
 
-> `validate`, `inspect`, and `verify` are implemented through P28.3 for both
-> the installed `toetra` entry point and `python -m toetra`. `replay` and
-> `init` remain documented contracts pending later P28 increments. The
+> `validate`, `inspect`, `verify`, and `replay` are implemented through P28.4
+> for both the installed `toetra` entry point and `python -m toetra`. `init`
+> remains a documented contract pending the final P28 increment. The
 > [Python API](../api-reference/index.md) remains available for embedded use.
 
 ## Goals
@@ -32,7 +32,7 @@ Current implementation status:
 | `validate` | implemented in P28.2 |
 | `inspect` | implemented in P28.2 |
 | `verify` | implemented in P28.3 |
-| `replay` | command reserved; handler pending |
+| `replay` | implemented in P28.4 |
 | `init` | command reserved; handler pending |
 
 The normative behavior is defined by the
@@ -57,7 +57,8 @@ optional delayed toetra replay of archived evidence
 ```
 
 `validate` and `inspect` never invoke the solver. `verify` produces the formal
-conclusion. `replay` checks archived witness/counterexample evidence against a
+conclusion. `replay` validates archived JSON v6 provenance, reconstructs the
+matching property tasks, and checks witness/counterexample evidence against a
 concrete model without silently rerunning formal verification.
 
 ## Process statuses

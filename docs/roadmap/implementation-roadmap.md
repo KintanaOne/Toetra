@@ -60,11 +60,13 @@ process diagnostic boundary. P28.2 adds solver-free `validate` and `inspect`
 handlers, stable validation/inspection JSON, atomic output, and installed-wheel
 probes. P28.3 adds `verify`, exact JSON v6 and HTML rendering, logical process
 statuses, atomic report artifacts, and the run-manifest completion marker.
-Remaining P28 implementation covers:
+P28.4 adds delayed `replay`, strict archived provenance/property matching,
+solver-free task reconstruction, stable replay JSON, and installed-wheel replay
+evidence. Remaining P28 implementation covers:
 
-- `replay` and `init` command handlers;
+- the `init` command handler;
 - final cross-command exit-code and stdout/stderr consistency checks;
-- replay JSON and generated-specification contracts;
+- the generated-specification contract;
 - predictable path, cancellation, and resource-policy behavior outside the
   source checkout;
 - clean-install, Windows/Linux, container-job, and CI integration evidence.

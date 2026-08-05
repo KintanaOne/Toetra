@@ -48,11 +48,19 @@ case "$status" in
   2) echo "Verification inconclusive"; exit 2 ;;
   *) echo "Toetra process failure: $status"; exit "$status" ;;
 esac
+
+toetra replay artifacts/toetra/verification.json \
+  --specification policy.toetra \
+  --model artifacts/model.joblib \
+  --dataset data/reference.csv \
+  --format json \
+  --output artifacts/toetra/replay.json
 ```
 
 The example intentionally handles status `2` separately. A shell-wide
 `set -e` around `verify` would erase the distinction between a formal failure,
-an inconclusive result, and a process error.
+an inconclusive result, and a process error. Replay has the same logical
+`0`/`1`/`2` shape: consistent, inconsistent, or inconclusive.
 
 ## Container-job model
 

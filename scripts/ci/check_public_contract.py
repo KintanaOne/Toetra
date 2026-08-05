@@ -23,6 +23,7 @@ EXPECTED_LICENSE = "PolyForm-Noncommercial-1.0.0"
 EXPECTED_VALIDATION_SCHEMA = ("toetra.validation-result", 1)
 EXPECTED_INSPECTION_SCHEMA = ("toetra.inspection", 1)
 EXPECTED_RUN_MANIFEST_SCHEMA = ("toetra.run-manifest", 1)
+EXPECTED_REPLAY_SCHEMA = ("toetra.replay-report-collection", 1)
 
 CLASSIFICATION_TARGET_DOCUMENTS = (
     ROOT / "docs" / "adr" / "ADR-0023-typed-model-outputs-and-observables.md",
@@ -204,6 +205,32 @@ def cli_run_manifest_contract() -> tuple[str, int]:
     except KeyError as error:
         raise PublicContractError(
             "CLI run-manifest schema constants were not found"
+        ) from error
+
+
+def cli_replay_contract() -> tuple[str, int]:
+    source = (ROOT / "src" / "toetra" / "_runtime" / "archived_replay.py").read_text(
+        encoding="utf-8"
+    )
+    module = ast.parse(source)
+    names = {"REPLAY_COLLECTION_SCHEMA", "REPLAY_COLLECTION_SCHEMA_VERSION"}
+    values: dict[str, str | int] = {}
+    for node in module.body:
+        if not isinstance(node, ast.Assign):
+            continue
+        for target in node.targets:
+            if isinstance(target, ast.Name) and target.id in names:
+                value = ast.literal_eval(node.value)
+                if isinstance(value, (str, int)):
+                    values[target.id] = value
+    try:
+        return (
+            str(values["REPLAY_COLLECTION_SCHEMA"]),
+            int(values["REPLAY_COLLECTION_SCHEMA_VERSION"]),
+        )
+    except KeyError as error:
+        raise PublicContractError(
+            "CLI replay schema constants were not found"
         ) from error
 
 
@@ -415,6 +442,7 @@ def _validate_public_narrative() -> None:
         "python -m pip install .",
         "python -m demo.quickstart.verify_model --demo",
         "toetra verify",
+        "toetra replay",
         "`PROVED`",
         "`COUNTEREXAMPLE`",
         "`WITNESS`",
@@ -441,6 +469,7 @@ def _validate_public_narrative() -> None:
         "python -m pip install .",
         "python -m demo.quickstart.verify_model --demo",
         "toetra verify",
+        "toetra replay",
         'python -m pip install -e ".[dev,docs]"',
     )
     missing_installation = tuple(
@@ -502,6 +531,10 @@ def check_public_contract() -> None:
     if cli_run_manifest_contract() != EXPECTED_RUN_MANIFEST_SCHEMA:
         raise PublicContractError(
             "CLI run-manifest JSON schema identity/version changed unexpectedly."
+        )
+    if cli_replay_contract() != EXPECTED_REPLAY_SCHEMA:
+        raise PublicContractError(
+            "CLI replay JSON schema identity/version changed unexpectedly."
         )
 
     license_text = (ROOT / "LICENSE").read_text(encoding="utf-8")
