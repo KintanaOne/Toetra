@@ -64,16 +64,10 @@ P28.4 adds delayed `replay`, strict archived provenance/property matching,
 solver-free task reconstruction, stable replay JSON, and installed-wheel replay
 evidence. Before the final CLI surface is frozen, the DSL declaration-flow
 prerequisite restores the optional header dataset as an effective runtime
-artifact and enforces the no-silent-loss rule for grammar arguments. Remaining
-P28 implementation covers:
-
-- the `init` command handler, built on the accepted declared/effective
-  execution-context contract;
-- final cross-command exit-code and stdout/stderr consistency checks;
-- the generated-specification contract;
-- predictable path, cancellation, and resource-policy behavior outside the
-  source checkout;
-- clean-install, Windows/Linux, container-job, and CI integration evidence.
+artifact and enforces the no-silent-loss rule for grammar arguments. P28.5 completes the five-command surface with model-aware `init`, executable
+validation before atomic publication, generated model/target/dataset
+declarations, cross-command stream/status checks, and an installed-wheel
+`init → validate → verify` probe. The CLI milestone is therefore implemented.
 
 The CLI remains an adapter over shared application workflows. Compiler,
 verification, reporting, and replay semantics stay owned by the library rather

@@ -50,10 +50,13 @@ python toetra-quickstart.py --demo
 The release gate executes this outside-checkout form against a clean-installed
 wheel without the source repository on the import path.
 
-For an existing specification and trusted local model artifacts, the installed
-process interface can validate and execute the same workflow:
+For trusted local model artifacts, the installed process interface can first
+generate an executably validated starter specification and then run the same
+workflow:
 
 ```bash
+toetra init policy.toetra --model model.joblib --target score \
+  --dataset reference.csv
 toetra validate policy.toetra --model model.joblib --dataset reference.csv
 toetra inspect policy.toetra --model model.joblib --dataset reference.csv
 toetra verify policy.toetra --model model.joblib --dataset reference.csv \

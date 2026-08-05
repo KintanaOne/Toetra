@@ -1,6 +1,6 @@
 # CLI and Automation Contract
 
-> **Status:** Accepted design; P28.4 replay implemented, init pending
+> **Status:** Implemented through P28.5
 >
 > **Compatibility surface:** installed process interface, machine-readable output,
 > diagnostics, artifacts, and exit codes
@@ -514,8 +514,10 @@ The command:
 - refuses to overwrite an existing file unless `--force` is present;
 - loads and introspects the supplied model using the accepted built-in route;
 - writes the explicitly supplied `--target` as the default output declaration;
-- writes a relative model reference when a portable relative path can be
-  represented;
+- writes relative model and dataset references when portable relative paths can
+  be represented;
+- writes `dataset := ...` when `--dataset` is supplied, so the generated source
+  can be validated and verified without repeating the artifact override;
 - includes comments listing normalized input features and model/task identity;
 - generates exactly one clearly labelled smoke property:
   - regression compares the selected output with itself;

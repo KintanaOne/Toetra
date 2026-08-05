@@ -168,6 +168,7 @@ def _build_parser(*, diagnostic_format: str) -> ToetraArgumentParser:
     _configure_inspect_parser(parsers["inspect"])
     _configure_verify_parser(parsers["verify"])
     _configure_replay_parser(parsers["replay"])
+    _configure_init_parser(parsers["init"])
     return parser
 
 
@@ -235,6 +236,18 @@ def _configure_replay_parser(parser: ToetraArgumentParser) -> None:
     _add_primary_output(parser, formats=("text", "json", "html"))
 
 
+def _configure_init_parser(parser: ToetraArgumentParser) -> None:
+    parser.add_argument("specification", metavar="SPECIFICATION")
+    parser.add_argument("--model", required=True, metavar="PATH")
+    parser.add_argument("--target", required=True, metavar="NAME")
+    parser.add_argument("--dataset", metavar="PATH")
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Replace an existing destination after successful validation.",
+    )
+
+
 def _add_shared_inputs(parser: ToetraArgumentParser) -> None:
     parser.add_argument("specification", metavar="SPECIFICATION")
     parser.add_argument("--model", metavar="PATH")
@@ -271,21 +284,6 @@ def _add_primary_output(
     )
 
 
-def _pending_command(command: str, *, diagnostic_format: str) -> int:
-    render_diagnostic(
-        CliDiagnostic(
-            category="usage",
-            code="COMMAND_NOT_IMPLEMENTED",
-            stage="usage",
-            command=command,
-            message=f"Command '{command}' is not implemented in this build.",
-            hint="This command is planned for a later P28 increment.",
-        ),
-        output_format=diagnostic_format,
-    )
-    return EXIT_USAGE
-
-
 def _dispatch(namespace: argparse.Namespace) -> int:
     command = cast(str, namespace._command_name)
     if command == "validate":
@@ -304,7 +302,11 @@ def _dispatch(namespace: argparse.Namespace) -> int:
         from toetra._cli.commands import run_replay
 
         return run_replay(namespace)
-    return _pending_command(command, diagnostic_format=namespace.diagnostic_format)
+    if command == "init":
+        from toetra._cli.commands import run_init
+
+        return run_init(namespace)
+    raise AssertionError(f"Unhandled CLI command: {command}")
 
 
 def _render_failure(

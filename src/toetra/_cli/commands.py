@@ -22,6 +22,26 @@ if TYPE_CHECKING:
     from toetra._runtime.session import VerificationSession
 
 
+def run_init(namespace: Namespace) -> int:
+    """Execute ``toetra init`` and print the committed destination path."""
+
+    from toetra._runtime.initialization import initialize_specification
+
+    result = initialize_specification(
+        namespace.specification,
+        model=namespace.model,
+        target=namespace.target,
+        dataset=namespace.dataset,
+        force=namespace.force,
+    )
+    emit_primary_output(
+        str(result.destination),
+        destination="-",
+        stream=sys.stdout,
+    )
+    return 0
+
+
 def run_validate(namespace: Namespace) -> int:
     """Execute ``toetra validate`` and emit its completed result."""
 
