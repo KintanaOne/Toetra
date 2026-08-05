@@ -135,11 +135,14 @@ frame = pd.DataFrame(
     {
         "a": [0.0, 1.0, 2.0, 3.0],
         "score": [1.0, 3.0, 5.0, 7.0],
+        "risk_score": [1.0, 3.0, 5.0, 7.0],
     }
 )
 model = LinearRegression().fit(frame[["a"]], frame["score"])
 joblib.dump(model, root / "linear model.joblib")
+joblib.dump(model, root / "candidate model.joblib")
 frame.to_csv(root / "reference data.csv", index=False)
+frame.to_csv(root / "candidate reference.csv", index=False)
 source = (
     'model := "linear model.joblib"\n'
     'target := score\n'
@@ -226,6 +229,8 @@ def main() -> int:
         console = _venv_script(environment, "toetra")
         policy = cli_root / "policy.toetra"
         dataset = cli_root / "reference data.csv"
+        candidate_model = cli_root / "candidate model.joblib"
+        candidate_dataset = cli_root / "candidate reference.csv"
         validate = subprocess.run(
             [
                 str(console),
@@ -248,7 +253,16 @@ def main() -> int:
         assert validation_payload["valid"] is True
         assert validation_payload["completed_level"] == "executable"
         assert validation_payload["declarations"]["dataset"] == ("reference data.csv")
-        assert validation_payload["overrides"]["dataset"] is False
+        assert validation_payload["effective"] == {
+            "model": "linear model.joblib",
+            "target": "score",
+            "dataset": "reference data.csv",
+        }
+        assert validation_payload["overrides"] == {
+            "model": False,
+            "target": False,
+            "dataset": False,
+        }
 
         inspection_output = cli_root / "nested output" / "inspection.json"
         inspect = subprocess.run(
@@ -282,6 +296,8 @@ def main() -> int:
         )
         assert inspection_payload["model"]["dataset"]["path"] == str(dataset)
         assert inspection_payload["model"]["dataset"]["overridden"] is False
+        assert inspection_payload["specification"]["effective"]["target"] == "score"
+        assert inspection_payload["specification"]["overrides"]["target"] is False
 
         verification_output = cli_root / "nested output" / "verification.json"
         artifact_directory = cli_root / "verification artifacts"
@@ -291,6 +307,12 @@ def main() -> int:
                 str(console),
                 "verify",
                 str(policy),
+                "--model",
+                str(candidate_model),
+                "--target",
+                "risk_score",
+                "--dataset",
+                str(candidate_dataset),
                 "--format",
                 "json",
                 "--output",
@@ -318,6 +340,22 @@ def main() -> int:
             "toetra.verification-report-collection"
         )
         assert verification_payload["schema_version"] == 6
+        execution_context = verification_payload["provenance"]["execution_context"]
+        assert execution_context["declared"] == {
+            "model": "linear model.joblib",
+            "target": "score",
+            "dataset": "reference data.csv",
+        }
+        assert execution_context["effective"] == {
+            "model": str(candidate_model),
+            "target": "risk_score",
+            "dataset": str(candidate_dataset),
+        }
+        assert execution_context["overrides"] == {
+            "model": True,
+            "target": True,
+            "dataset": True,
+        }
 
         artifact_json = artifact_directory / "installed-check.json"
         artifact_html = artifact_directory / "installed-check.html"
@@ -330,6 +368,7 @@ def main() -> int:
         assert manifest_payload["schema"] == "toetra.run-manifest"
         assert manifest_payload["schema_version"] == 1
         assert manifest_payload["process_status"] == 0
+        assert manifest_payload["execution_context"] == execution_context
 
         for role, artifact_path in (
             ("json", artifact_json),
@@ -379,10 +418,6 @@ def main() -> int:
                 str(failure_report),
                 "--specification",
                 str(cli_root / "failure.toetra"),
-                "--model",
-                str(cli_root / "linear model.joblib"),
-                "--dataset",
-                str(dataset),
                 "--format",
                 "json",
                 "--output",

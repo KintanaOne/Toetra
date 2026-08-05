@@ -90,6 +90,11 @@ SPECIFICATION
 One specification per process keeps provenance, cancellation, output ownership,
 and exit status unambiguous. Pipeline-level fan-out belongs to the orchestrator.
 
+The header values are reusable defaults, not immutable run parameters. Explicit
+`--model`, `--target`, and `--dataset` values form one temporary execution
+overlay with precedence over the header. The source AST remains unchanged; the
+shared runtime resolves and records the effective context before compilation.
+
 ### Model precedence
 
 When `--model` is supplied, it replaces the model reference declared in the
@@ -106,8 +111,9 @@ interpreted relative to the specification file, matching `toetra.verify(...)`.
   to the specification file and is used by model introspection and, when
   eligible, the existing anchor-source fallback;
 - `--anchor-source` supplies a CSV anchor source explicitly;
-- `--target` applies the existing runtime target override and must still agree
-  with the normalized model schema;
+- `--target` temporarily rebinds the effective DSL output name before semantic
+  validation and IR construction; the runtime rebuilds or aliases the effective
+  schema to the same name and records both declared and effective targets;
 - providing both an explicit anchor source and another future resolver form is
   rejected rather than guessed.
 
@@ -419,7 +425,7 @@ It does not invoke the solver or silently perform a new verification.
 ```text
 toetra replay REPORT_JSON
     --specification SPECIFICATION
-    --model PATH
+    [--model PATH]
     [--dataset PATH]
     [--anchor-source PATH]
     [--target NAME]
@@ -431,6 +437,10 @@ toetra replay REPORT_JSON
 
 Defaults:
 
+- model and dataset use the specification declarations when no override is
+  supplied;
+- target uses the archived effective target when available, otherwise the
+  specification declaration;
 - all replayable `COUNTEREXAMPLE` and `WITNESS` reports are selected;
 - repeated `--property` values select zero-based report property indices,
   preserve first occurrence order, and ignore exact duplicates;
@@ -444,7 +454,8 @@ The command:
 
 1. loads a `toetra.verification-report-collection` schema v6 document;
 2. validates its structure before using any evidence;
-3. loads and fingerprints the supplied specification and model artifacts;
+3. resolves the header defaults plus any explicit model, target, or dataset
+   overrides and fingerprints the effective artifacts;
 4. verifies those fingerprints against archived provenance;
 5. recompiles the exact specification through the pre-execution pipeline
    without invoking the solver;
@@ -492,8 +503,8 @@ business property.
 ```text
 toetra init SPECIFICATION
     --model PATH
+    --target NAME
     [--dataset PATH]
-    [--target NAME]
     [--force]
 ```
 
@@ -502,7 +513,7 @@ The command:
 - requires a destination ending in `.toetra`;
 - refuses to overwrite an existing file unless `--force` is present;
 - loads and introspects the supplied model using the accepted built-in route;
-- chooses the normalized target unless `--target` supplies an agreeing name;
+- writes the explicitly supplied `--target` as the default output declaration;
 - writes a relative model reference when a portable relative path can be
   represented;
 - includes comments listing normalized input features and model/task identity;

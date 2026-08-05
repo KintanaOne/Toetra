@@ -1,8 +1,8 @@
 # Schema to Semantic Contract
 
-> Status: Implemented for feature validation and P21.3 output observables; broader task contracts remain incremental  
-> Scope: ModelSchema integration into semantic validation  
-> Implementation: Schema-aware features and typed output observables are active  
+> Status: Implemented for feature validation and P21.3 output observables; broader task contracts remain incremental
+> Scope: ModelSchema integration into semantic validation
+> Implementation: Schema-aware features and typed output observables are active
 > Audience: semantic maintainers, ModelBridge authors, compiler maintainers
 
 ## Purpose
@@ -56,7 +56,7 @@ Schema-aware semantic validation should check:
 |---|---|
 | Feature existence | `age` exists in `ModelSchema.features`. |
 | Feature dtype | numeric comparisons only apply to numeric features. |
-| Target compatibility | `target := label` matches schema target. |
+| Target compatibility | the effective target binding matches the effective schema output. |
 | Task compatibility | `CLASSIFICATION` applies to classification model. |
 | Property compatibility | property type is meaningful for model task. |
 | Nullability constraints | nullable features may require special handling. |
@@ -109,7 +109,7 @@ This layer should reject:
 
 - unknown feature references;
 - incompatible dtype/operator combinations;
-- target mismatch;
+- an unresolved or invalid effective target binding;
 - property/problem mismatch with model task;
 - missing required schema metadata;
 - unsupported schema version.

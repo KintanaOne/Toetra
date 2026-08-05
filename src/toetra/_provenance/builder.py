@@ -6,7 +6,7 @@ import os
 import platform
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from toetra._backends.results import VerificationResult
 from toetra._backends.router import BackendRoute
@@ -22,6 +22,7 @@ from toetra._provenance.fingerprint import (
 from toetra._provenance.model import (
     ArtifactProvenance,
     CompilerProvenance,
+    ExecutionContextProvenance,
     FingerprintStatus,
     ProvenanceCompleteness,
     ReportProvenance,
@@ -29,6 +30,9 @@ from toetra._provenance.model import (
     VerificationProvenanceContext,
 )
 from toetra._models.schema.model_schema import ModelSchema
+
+if TYPE_CHECKING:
+    from toetra._runtime.execution_context import ExecutionContext
 
 _CORE_DISTRIBUTIONS = (
     "lark",
@@ -50,6 +54,7 @@ def build_provenance_context(
     anchors_used: bool,
     schema: ModelSchema,
     ir2_context: IR2BuildContext,
+    execution_context: ExecutionContext | None = None,
     captured_at: datetime | None = None,
 ) -> VerificationProvenanceContext:
     """Capture immutable invocation evidence before backend execution begins."""
@@ -85,12 +90,20 @@ def build_provenance_context(
         "model_schema": _schema_artifact(schema),
     }
 
+    context_provenance = _execution_context_provenance(
+        execution_context,
+        schema=schema,
+        model_path=model_path,
+        dataset_path=dataset_path,
+    )
+
     input_fingerprint = _digest_payload(
         {
             "artifacts": {
                 role: _artifact_identity(artifact)
                 for role, artifact in artifacts.items()
             },
+            "effective_target": context_provenance.effective_target,
             "compiler_policy": _compiler_policy_payload(ir2_context),
         }
     )
@@ -111,6 +124,7 @@ def build_provenance_context(
         completeness=completeness,
         unavailable_inputs=unavailable_inputs,
         artifacts=artifacts,
+        execution_context=context_provenance,
         software=_software_provenance(),
         preferred_normal_form=(
             ir2_context.preferred_normal_form.value
@@ -125,6 +139,41 @@ def build_provenance_context(
             else None
         ),
         strict=ir2_context.strict,
+    )
+
+
+def _execution_context_provenance(
+    execution_context: ExecutionContext | None,
+    *,
+    schema: ModelSchema,
+    model_path: Path | None,
+    dataset_path: Path | None,
+) -> ExecutionContextProvenance:
+    if execution_context is not None:
+        return ExecutionContextProvenance(
+            declared_model_reference=execution_context.declared_model_reference,
+            declared_target=execution_context.declared_target,
+            declared_dataset_reference=execution_context.declared_dataset_reference,
+            effective_model_reference=execution_context.effective_model_reference,
+            effective_target=execution_context.effective_target,
+            effective_dataset_reference=execution_context.effective_dataset_reference,
+            model_overridden=execution_context.model_overridden,
+            target_overridden=execution_context.target_overridden,
+            dataset_overridden=execution_context.dataset_overridden,
+        )
+
+    model_reference = model_path.name if model_path is not None else "<schema>"
+    dataset_reference = dataset_path.name if dataset_path is not None else None
+    return ExecutionContextProvenance(
+        declared_model_reference=model_reference,
+        declared_target=schema.output_name,
+        declared_dataset_reference=dataset_reference,
+        effective_model_reference=model_reference,
+        effective_target=schema.output_name,
+        effective_dataset_reference=dataset_reference,
+        model_overridden=False,
+        target_overridden=False,
+        dataset_overridden=False,
     )
 
 
@@ -163,6 +212,7 @@ def build_report_provenance(
         execution_policy_fingerprint=execution_policy_fingerprint,
         verification_fingerprint=verification_fingerprint,
         artifacts=context.artifacts,
+        execution_context=context.execution_context,
         software=context.software,
         compiler=CompilerProvenance(
             preferred_normal_form=context.preferred_normal_form,

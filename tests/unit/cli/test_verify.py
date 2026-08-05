@@ -27,6 +27,25 @@ class _FakeSession:
         self.dataset_path = specification.with_name("dataset.csv").resolve()
         self.exit_code = exit_code
         self.reports = (object(),)
+        self.execution_context = SimpleNamespace(
+            to_dict=lambda: {
+                "declared": {
+                    "model": "model.joblib",
+                    "target": "score",
+                    "dataset": None,
+                },
+                "effective": {
+                    "model": "candidate.joblib",
+                    "target": "risk_score",
+                    "dataset": "dataset.csv",
+                },
+                "overrides": {
+                    "model": True,
+                    "target": True,
+                    "dataset": True,
+                },
+            }
+        )
         self.provenance = SimpleNamespace(
             input_fingerprint="sha256:" + "a" * 64,
             completeness=SimpleNamespace(value="complete"),
@@ -190,6 +209,7 @@ def test_verify_artifact_manifest_is_committed_last_with_matching_hashes(
         "completed_at_utc",
         "duration_ms",
         "primary_output",
+        "execution_context",
         "verification",
         "artifacts",
         "software",
@@ -206,6 +226,9 @@ def test_verify_artifact_manifest_is_committed_last_with_matching_hashes(
         "destination": "stdout",
         "path": None,
     }
+    assert manifest["execution_context"]["declared"]["target"] == "score"
+    assert manifest["execution_context"]["effective"]["target"] == "risk_score"
+    assert manifest["execution_context"]["overrides"]["target"] is True
     assert manifest["software"] == {
         "toetra_version": "1.0.0rc3",
         "toetra_build_id": "git:test",

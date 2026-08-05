@@ -168,6 +168,7 @@ nav:
       - Source to CST: contracts/source-to-cst.md
       - CST to AST: contracts/cst-to-ast.md
       - DSL Information Preservation: contracts/dsl-information-preservation.md
+      - Execution Overrides: contracts/execution-overrides.md
       - AST Contract: contracts/ast-contract.md
       - AST to Semantic: contracts/ast-to-semantic.md
       - Semantic to IR1: contracts/semantic-to-ir1.md
@@ -283,6 +284,7 @@ nav:
       - ADR-0030 Public Exposure, CLI, and Stable Release: adr/ADR-0030-separate-public-exposure-cli-and-stable-release.md
       - ADR-0031 Noncommercial and Commercial Licensing: adr/ADR-0031-noncommercial-and-commercial-licensing.md
       - ADR-0032 CLI Command Surface and Application Boundary: adr/ADR-0032-cli-command-surface-and-application-boundary.md
+      - ADR-0033 Declared Defaults and Execution Overrides: adr/ADR-0033-declared-defaults-and-execution-overrides.md
 
   - Roadmap:
       - Implementation Roadmap: roadmap/implementation-roadmap.md

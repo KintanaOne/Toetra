@@ -11,6 +11,7 @@ from toetra._compiler.semantic.core.validator import ToetraValidator
 from toetra._compiler.semantic.runtime.tracer import ValidationTracer
 
 if TYPE_CHECKING:
+    from toetra._compiler.ast.nodes.program import ProgramNode
     from toetra._models.schema.model_schema import ModelSchema
     from toetra._compiler.semantic.symbols.point import ResolvedAnchorBinding
 
@@ -39,16 +40,30 @@ def run_ir(
 
     cst = parse_toetra_code(source)
     ast = parse_program(cst)
+    return run_ir_from_program(
+        ast,
+        model_schema=model_schema,
+        resolved_anchors=resolved_anchors,
+    )
+
+
+def run_ir_from_program(
+    program: ProgramNode,
+    *,
+    model_schema: ModelSchema | None = None,
+    resolved_anchors: Mapping[str, ResolvedAnchorBinding] | None = None,
+):
+    """Run semantic validation and IR1 translation from one prepared AST."""
 
     ToetraValidator().validate(
-        ast,
+        program,
         tracer=ValidationTracer(enabled=False),
         model_schema=model_schema,
         resolved_anchors=resolved_anchors,
     )
 
     translator = IRTranslator()
-    return translator.translate(ast)
+    return translator.translate(program)
 
 
 if __name__ == "__main__":

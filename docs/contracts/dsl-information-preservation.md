@@ -24,9 +24,9 @@ never accept a value and then silently discard it.
 
 | DSL information | AST ownership | Later ownership | Required outcome |
 |---|---|---|---|
-| `model := ...` | `HeaderNode.model` | model resolution, semantic model identity, model evaluations, provenance | preserved; a runtime artifact override may replace only the effective path |
-| `target := ...` | `HeaderNode.target` | schema contract, semantic output identity, model-evaluation IR, reporting | preserved; mismatches fail closed |
-| `dataset := ...` | `HeaderNode.dataset` | dataset resolution, schema construction, anchor fallback, provenance, inspection | preserved; an explicit runtime dataset may replace only the effective path |
+| `model := ...` | `HeaderNode.model` | declared default, effective artifact resolution, semantic model identity, model evaluations, provenance | preserved; an execution override replaces the value in an isolated effective AST |
+| `target := ...` | `HeaderNode.target` | declared default, effective schema binding, semantic output identity, model-evaluation IR, reporting | preserved; an explicit execution override rebinds the effective AST without mutating the declaration |
+| `dataset := ...` | `HeaderNode.dataset` | declared default, effective path resolution, schema construction, anchor fallback, provenance, inspection | preserved; an execution override replaces the value in an isolated effective AST |
 | specification constants | ordered header declarations | semantic constant registry and scalar IR | preserved with literal type and spelling evidence |
 | inline and referenced anchors | ordered `ProgramNode.anchors` | point environment, concrete resolution, assumptions, provenance, replay | preserved; malformed or unresolved bindings fail explicitly |
 | property type | `PropertyNode.type` | compatibility rules, IR1, IR2, routing, reporting | preserved |
@@ -53,10 +53,11 @@ explicit runtime model/dataset override
     → relative to the caller's working directory
 ```
 
-Absolute paths remain absolute. The runtime records both the declared reference
-and the effective consumed artifact. An override changes the artifact selected
-for one run; it does not rewrite the specification or alter its target or
-properties.
+Absolute paths remain absolute. The runtime records both the declared defaults
+and the effective execution context. Model and dataset overrides replace the
+artifacts consumed for one run. A target override rebinds the effective output
+name used by the properties. No override rewrites the specification source or
+mutates its declared AST.
 
 For inline source, header artifact references are resolved from the caller's
 working directory because no specification directory exists.
@@ -114,9 +115,11 @@ rejected by semantics does not need a placeholder IR representation.
 
 ### Runtime and CLI
 
-Runtime planning distinguishes declared artifacts from effective artifacts.
-CLI options may override supported artifact locations or execution policy, but
-must not create a second source of truth for DSL semantics.
+Runtime planning distinguishes declared defaults from one immutable effective
+execution context. CLI and Python options have explicit precedence over the
+header for the current invocation. The runtime applies these values before
+semantic validation, records both views, and never mutates the declared AST.
+See the [execution override contract](execution-overrides.md).
 
 ## Regression requirements
 
@@ -124,7 +127,8 @@ Tests must cover at least:
 
 - model, target, dataset, constants, and anchors retained from CST to AST;
 - header dataset resolution relative to a specification;
-- explicit dataset override precedence;
+- model, target, and dataset override precedence;
+- effective-target rebinding through semantic validation and IR;
 - inspection of declared and effective artifact identities;
 - typed backend argument retention followed by explicit semantic rejection;
 - explicit rejection of problem-function arguments;

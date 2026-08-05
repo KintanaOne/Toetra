@@ -9,17 +9,19 @@ session = verify(
     specification,
     model=optional_model_path,
     dataset=optional_dataset,
+    target=optional_target_name,
     schema=optional_schema,
     anchor_source=optional_source,
     anchor_resolver=optional_resolver,
 )
 ```
 
-The effective dataset comes from an explicit runtime override when present,
-otherwise from the optional specification header. Header paths are relative to
-the `.toetra` file; explicit paths are relative to the working directory. The
-dataset supports model/schema introspection and, when no explicit anchor
-mechanism is supplied, is reused as the default source for `ref(...)`.
+Model, target, and dataset declarations are defaults. Explicit runtime values
+replace them in an isolated effective AST for the current invocation without
+mutating the parsed source. Header paths are relative to the `.toetra` file;
+explicit model and dataset paths are relative to the working directory. The
+effective dataset supports model/schema introspection and, when no explicit
+anchor mechanism is supplied, is reused as the default source for `ref(...)`.
 `anchor_source` or `anchor_resolver` always wins.
 
 ## Anchor resolution

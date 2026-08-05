@@ -29,8 +29,9 @@ from toetra._compiler.ast.nodes.anchors import (
     InlineAnchorBindingNode,
 )
 from toetra._compiler.ast.nodes.primitives import PrimitiveValue
+from toetra._compiler.ast.nodes.program import ProgramNode
 from toetra._compiler.builder.errors import BuilderError
-from toetra._compiler.ir.ir1.run_ir1 import run_ir
+from toetra._compiler.ir.ir1.run_ir1 import run_ir_from_program
 from toetra._compiler.ir.ir2.context import IR2BuildContext
 from toetra._compiler.ir.ir2.dsl.nodes import VerificationTaskIR2
 from toetra._compiler.ir.ir2.enums import NormalFormKind
@@ -56,6 +57,10 @@ from toetra._runtime.anchors import AnchorResolver, AnchorSource
 from toetra._runtime.backends import (
     BackendRunnerRegistry,
     create_default_backend_runner_registry,
+)
+from toetra._runtime.execution_context import (
+    ExecutionContext,
+    resolve_execution_context,
 )
 from toetra._runtime.errors import (
     BackendRunnerNotRegisteredError,
@@ -138,7 +143,11 @@ class ValidationResult:
     declared_model_reference: str | None = None
     declared_target: str | None = None
     declared_dataset_reference: str | None = None
+    effective_model_reference: str | None = None
+    effective_target: str | None = None
+    effective_dataset_reference: str | None = None
     model_overridden: bool = False
+    target_overridden: bool = False
     dataset_overridden: bool = False
     specification_path: Path | None = field(default=None, repr=False)
     model_path: Path | None = field(default=None, repr=False)
@@ -200,8 +209,14 @@ class ValidationResult:
                 "target": self.declared_target,
                 "dataset": self.declared_dataset_reference,
             },
+            "effective": {
+                "model": self.effective_model_reference,
+                "target": self.effective_target,
+                "dataset": self.effective_dataset_reference,
+            },
             "overrides": {
                 "model": self.model_overridden,
+                "target": self.target_overridden,
                 "dataset": self.dataset_overridden,
             },
             "artifacts": artifacts,
@@ -221,6 +236,9 @@ class ValidationResult:
             lines.append(f"completed level: {self.completed_level.value}")
         if self.property_count is not None:
             lines.append(f"properties: {self.property_count}")
+        if self.effective_target is not None:
+            lines.append(f"effective target: {self.effective_target}")
+            lines.append(f"target overridden: {str(self.target_overridden).lower()}")
         if self.checks:
             lines.append("checks:")
             lines.extend(f"  - {check}" for check in self.checks)
@@ -298,11 +316,7 @@ class ExecutablePlan:
 
     source: str = field(repr=False)
     specification_path: Path | None
-    declared_model_reference: str
-    declared_target: str
-    declared_dataset_reference: str | None
-    model_overridden: bool
-    dataset_overridden: bool
+    execution_context: ExecutionContext
     schema: ModelSchema
     model: object | None = field(repr=False, compare=False)
     model_path: Path | None
@@ -317,6 +331,42 @@ class ExecutablePlan:
     execution_policy: BackendExecutionPolicy
     provenance: VerificationProvenanceContext
     properties: tuple[PlannedProperty, ...]
+
+    @property
+    def declared_model_reference(self) -> str:
+        return self.execution_context.declared_model_reference
+
+    @property
+    def declared_target(self) -> str:
+        return self.execution_context.declared_target
+
+    @property
+    def declared_dataset_reference(self) -> str | None:
+        return self.execution_context.declared_dataset_reference
+
+    @property
+    def effective_model_reference(self) -> str:
+        return self.execution_context.effective_model_reference
+
+    @property
+    def effective_target(self) -> str:
+        return self.execution_context.effective_target
+
+    @property
+    def effective_dataset_reference(self) -> str | None:
+        return self.execution_context.effective_dataset_reference
+
+    @property
+    def model_overridden(self) -> bool:
+        return self.execution_context.model_overridden
+
+    @property
+    def target_overridden(self) -> bool:
+        return self.execution_context.target_overridden
+
+    @property
+    def dataset_overridden(self) -> bool:
+        return self.execution_context.dataset_overridden
 
     @property
     def consumed_paths(self) -> tuple[Path, ...]:
@@ -370,6 +420,16 @@ class InspectionResult:
                     "target": plan.declared_target,
                     "dataset": plan.declared_dataset_reference,
                 },
+                "effective": {
+                    "model": plan.effective_model_reference,
+                    "target": plan.effective_target,
+                    "dataset": plan.effective_dataset_reference,
+                },
+                "overrides": {
+                    "model": plan.model_overridden,
+                    "target": plan.target_overridden,
+                    "dataset": plan.dataset_overridden,
+                },
                 "target": schema.output_name,
                 "property_count": len(properties),
                 "constant_count": len(plan.constants),
@@ -382,6 +442,7 @@ class InspectionResult:
             },
             "model": {
                 "declared_reference": plan.declared_model_reference,
+                "effective_reference": plan.effective_model_reference,
                 "path": str(plan.model_path) if plan.model_path is not None else None,
                 "overridden": plan.model_overridden,
                 "framework": schema.framework.value,
@@ -397,7 +458,9 @@ class InspectionResult:
                     for feature in schema.features.values()
                 ],
                 "output": {
+                    "declared_name": plan.declared_target,
                     "name": schema.output_name,
+                    "overridden": plan.target_overridden,
                     "kind": output.kind.value,
                     "dtype": (
                         output.primary_dtype.value
@@ -411,6 +474,7 @@ class InspectionResult:
                 },
                 "dataset": {
                     "declared_reference": plan.declared_dataset_reference,
+                    "effective_reference": plan.effective_dataset_reference,
                     "path": (
                         str(plan.dataset_path)
                         if plan.dataset_path is not None
@@ -440,6 +504,7 @@ class InspectionResult:
                     role: _artifact_to_dict(artifact)
                     for role, artifact in plan.provenance.artifacts.items()
                 },
+                "execution_context": plan.provenance.execution_context.to_dict(),
                 "compiler_policy": {
                     "preferred_normal_form": (plan.provenance.preferred_normal_form),
                     "max_distribution_size": (plan.provenance.max_distribution_size),
@@ -463,6 +528,10 @@ class InspectionResult:
             "EXECUTABLE PLAN",
             f"specification: {payload['specification']['path'] or '<inline>'}",
             f"target: {payload['specification']['target']}",
+            (
+                "target overridden: "
+                f"{str(payload['specification']['overrides']['target']).lower()}"
+            ),
             f"properties: {payload['specification']['property_count']}",
             ("model: " f"{model['framework']} / {model['family']} / {model['task']}"),
             f"model path: {model['path'] or '<schema-only>'}",
@@ -510,11 +579,25 @@ def validate_request(
     declared_model_reference: str | None = None
     declared_target: str | None = None
     declared_dataset_reference: str | None = None
+    effective_model_reference: str | None = None
+    effective_target: str | None = None
+    effective_dataset_reference: str | None = None
     try:
         loaded = _load_specification(specification)
         declared_model_reference = loaded.model_reference
         declared_target = loaded.target
         declared_dataset_reference = loaded.dataset_reference
+        syntax_context = resolve_execution_context(
+            declared_model_reference=loaded.model_reference,
+            declared_target=loaded.target,
+            declared_dataset_reference=loaded.dataset_reference,
+            model=model,
+            target=target,
+            dataset=dataset,
+        )
+        effective_model_reference = syntax_context.effective_model_reference
+        effective_target = syntax_context.effective_target
+        effective_dataset_reference = syntax_context.effective_dataset_reference
         checks.extend(("source_loaded", "syntax_parsed", "ast_built"))
         completed = ValidationLevel.SYNTAX
         if requested is ValidationLevel.SYNTAX:
@@ -527,7 +610,11 @@ def validate_request(
                 declared_model_reference=declared_model_reference,
                 declared_target=declared_target,
                 declared_dataset_reference=declared_dataset_reference,
+                effective_model_reference=effective_model_reference,
+                effective_target=effective_target,
+                effective_dataset_reference=effective_dataset_reference,
                 model_overridden=model is not None,
+                target_overridden=target is not None,
                 dataset_overridden=dataset is not None,
                 specification_path=loaded.path,
                 anchor_source_path=anchor_source_path,
@@ -548,19 +635,15 @@ def validate_request(
             target=target,
             schema=None,
         )
-        runtime_api._validate_target_contract(
-            loaded.target,
-            resolved.schema.output_name,
-        )
         anchors = runtime_api._resolve_anchor_bindings(
-            loaded.program,
+            resolved.program,
             schema=resolved.schema,
             anchor_source=anchor_source,
             anchor_resolver=anchor_resolver,
             dataset_fallback=resolved.dataset_path,
         )
         _run_semantic_ir1(
-            loaded.source,
+            resolved.program,
             schema=resolved.schema,
             resolved_anchors=anchors,
             specification=specification,
@@ -585,8 +668,16 @@ def validate_request(
                 declared_model_reference=declared_model_reference,
                 declared_target=declared_target,
                 declared_dataset_reference=declared_dataset_reference,
-                model_overridden=model is not None,
-                dataset_overridden=dataset is not None,
+                effective_model_reference=(
+                    resolved.execution_context.effective_model_reference
+                ),
+                effective_target=resolved.execution_context.effective_target,
+                effective_dataset_reference=(
+                    resolved.execution_context.effective_dataset_reference
+                ),
+                model_overridden=resolved.execution_context.model_overridden,
+                target_overridden=resolved.execution_context.target_overridden,
+                dataset_overridden=resolved.execution_context.dataset_overridden,
                 specification_path=loaded.path,
                 model_path=resolved.model_path,
                 dataset_path=resolved.dataset_path,
@@ -596,8 +687,6 @@ def validate_request(
         plan = _build_executable_plan_from_resolved(
             loaded,
             resolved,
-            model_overridden=model is not None,
-            dataset_overridden=dataset is not None,
             anchors=anchors,
             anchor_source=anchor_source,
             anchor_resolver=anchor_resolver,
@@ -631,7 +720,11 @@ def validate_request(
             declared_model_reference=plan.declared_model_reference,
             declared_target=plan.declared_target,
             declared_dataset_reference=plan.declared_dataset_reference,
+            effective_model_reference=plan.effective_model_reference,
+            effective_target=plan.effective_target,
+            effective_dataset_reference=plan.effective_dataset_reference,
             model_overridden=plan.model_overridden,
+            target_overridden=plan.target_overridden,
             dataset_overridden=plan.dataset_overridden,
             specification_path=plan.specification_path,
             model_path=plan.model_path,
@@ -649,7 +742,11 @@ def validate_request(
             declared_model_reference=declared_model_reference,
             declared_target=declared_target,
             declared_dataset_reference=declared_dataset_reference,
+            effective_model_reference=effective_model_reference,
+            effective_target=effective_target,
+            effective_dataset_reference=effective_dataset_reference,
             model_overridden=model is not None,
+            target_overridden=target is not None,
             dataset_overridden=dataset is not None,
             specification_path=(
                 specification_path.resolve()
@@ -689,9 +786,8 @@ def inspect_request(
         target=target,
         schema=None,
     )
-    runtime_api._validate_target_contract(loaded.target, resolved.schema.output_name)
     anchors = runtime_api._resolve_anchor_bindings(
-        loaded.program,
+        resolved.program,
         schema=resolved.schema,
         anchor_source=anchor_source,
         anchor_resolver=anchor_resolver,
@@ -700,8 +796,6 @@ def inspect_request(
     plan = _build_executable_plan_from_resolved(
         loaded,
         resolved,
-        model_overridden=model is not None,
-        dataset_overridden=dataset is not None,
         anchors=anchors,
         anchor_source=anchor_source,
         anchor_resolver=anchor_resolver,
@@ -734,6 +828,7 @@ def build_executable_plan(
     numeric_compatibility_registry: NumericCompatibilityRegistry | None = None,
     runner_registry: BackendRunnerRegistry | None = None,
     require_translation: bool = True,
+    execution_context: ExecutionContext | None = None,
 ) -> ExecutablePlan:
     """Build one routed plan, optionally translating without solver execution."""
 
@@ -744,10 +839,10 @@ def build_executable_plan(
         dataset=dataset,
         target=target,
         schema=schema,
+        execution_context=execution_context,
     )
-    runtime_api._validate_target_contract(loaded.target, resolved.schema.output_name)
     anchors = runtime_api._resolve_anchor_bindings(
-        loaded.program,
+        resolved.program,
         schema=resolved.schema,
         anchor_source=anchor_source,
         anchor_resolver=anchor_resolver,
@@ -756,8 +851,6 @@ def build_executable_plan(
     return _build_executable_plan_from_resolved(
         loaded,
         resolved,
-        model_overridden=model is not None,
-        dataset_overridden=dataset is not None,
         anchors=anchors,
         anchor_source=anchor_source,
         anchor_resolver=anchor_resolver,
@@ -776,8 +869,6 @@ def _build_executable_plan_from_resolved(
     loaded: Any,
     resolved: Any,
     *,
-    model_overridden: bool,
-    dataset_overridden: bool,
     anchors: Mapping[str, ResolvedAnchorBinding],
     anchor_source: AnchorSource | None,
     anchor_resolver: AnchorResolver | None,
@@ -805,6 +896,7 @@ def _build_executable_plan_from_resolved(
             ir2_context=context,
             encoder_factory=encoder_factory,
             resolved_anchors=anchors,
+            program=resolved.program,
         )
     except (ParserError, BuilderError, SemanticError) as error:
         raise _compiler_error(error, specification=loaded.path) from error
@@ -840,6 +932,7 @@ def _build_executable_plan_from_resolved(
         anchors_used=bool(anchors),
         schema=resolved.schema,
         ir2_context=context,
+        execution_context=resolved.execution_context,
     )
 
     planned: list[PlannedProperty] = []
@@ -886,11 +979,7 @@ def _build_executable_plan_from_resolved(
     return ExecutablePlan(
         source=loaded.source,
         specification_path=loaded.path,
-        declared_model_reference=loaded.model_reference,
-        declared_target=loaded.target,
-        declared_dataset_reference=loaded.dataset_reference,
-        model_overridden=model_overridden,
-        dataset_overridden=dataset_overridden,
+        execution_context=resolved.execution_context,
         schema=resolved.schema,
         model=resolved.model,
         model_path=resolved.model_path,
@@ -931,15 +1020,15 @@ def _load_specification(specification: str | Path) -> Any:
 
 
 def _run_semantic_ir1(
-    source: str,
+    program: ProgramNode,
     *,
     schema: ModelSchema,
     resolved_anchors: Mapping[str, ResolvedAnchorBinding],
     specification: str | Path,
 ) -> Sequence[object]:
     try:
-        return run_ir(
-            source,
+        return run_ir_from_program(
+            program,
             model_schema=schema,
             resolved_anchors=resolved_anchors,
         )

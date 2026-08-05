@@ -44,7 +44,7 @@ Canonical JSON preserves deterministic mapping order, sequence order, type disti
 
 ## Fingerprint hierarchy
 
-- **Input** covers artifacts and compiler policy.
+- **Input** covers artifacts, the effective target, and compiler policy.
 - **Property** covers property type, semantics, scope, normal form and normalized formula.
 - **Route** covers backend profile and numeric compatibility evidence.
 - **Execution policy** covers timeout, work and memory budgets, deterministic seed and options.
@@ -80,6 +80,23 @@ Records and DataFrames add `verification_fingerprint`, `input_fingerprint` and `
       "verification": "sha256:..."
     },
     "artifacts": {},
+    "execution_context": {
+      "declared": {
+        "model": "production.joblib",
+        "target": "score",
+        "dataset": "reference.csv"
+      },
+      "effective": {
+        "model": "candidate.joblib",
+        "target": "risk_score",
+        "dataset": "candidate.csv"
+      },
+      "overrides": {
+        "model": true,
+        "target": true,
+        "dataset": true
+      }
+    },
     "software": {
       "toetra_version": "1.0.0rc3",
       "toetra_build_id": "git:..."
@@ -89,7 +106,9 @@ Records and DataFrames add `verification_fingerprint`, `input_fingerprint` and `
 }
 ```
 
-Collections expose only shared input/session evidence. Property and route identities remain on individual reports.
+Collections expose only shared input/session evidence, including the declared
+and effective execution context. Property and route identities remain on
+individual reports.
 
 ## Completeness examples
 

@@ -193,6 +193,7 @@ def _collection_provenance_to_dict(
             role: _artifact_provenance_to_dict(artifact)
             for role, artifact in provenance.artifacts.items()
         },
+        "execution_context": provenance.execution_context.to_dict(),
         "software": {
             "toetra_version": software.toetra_version,
             "toetra_build_id": software.toetra_build_id,
@@ -233,6 +234,7 @@ def _provenance_to_dict(
             role: _artifact_provenance_to_dict(artifact)
             for role, artifact in provenance.artifacts.items()
         },
+        "execution_context": provenance.execution_context.to_dict(),
         "software": {
             "toetra_version": software.toetra_version,
             "toetra_build_id": software.toetra_build_id,

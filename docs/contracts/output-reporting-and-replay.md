@@ -1,7 +1,7 @@
 # Model Output Reporting and Replay Contract
 
-> Status: Implemented by P21.9 for scalar regression and the initial binary-classification profile  
-> Scope: IR2 traceability, backend assignments, reports, JSON, text/HTML/Jupyter renderers, concrete replay  
+> Status: Implemented by P21.9 for scalar regression and the initial binary-classification profile
+> Scope: IR2 traceability, backend assignments, reports, JSON, text/HTML/Jupyter renderers, concrete replay
 > Public release status: JSON v6 identity contract current after P23.3
 
 ## Purpose
@@ -136,7 +136,7 @@ The required consistency groups are:
 | execution | termination status, duration, policy limits/options, normalized reason and native reason |
 | numeric trust | rule, support, classification, semantic target, conclusion scope, permitted conclusions and replay requirements |
 | evidence | points, assignments, model evaluations and lowering traces when present |
-| traceability | provenance fingerprints/completeness and structured diagnostics |
+| traceability | provenance fingerprints/completeness, declared/effective execution context, and structured diagnostics |
 
 Terminal text and HTML/Jupyter are human presentations. They make the
 conclusion and trust context visible and summarize the available evidence.

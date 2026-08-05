@@ -39,8 +39,10 @@ The goal of the ADR section is to make explicit:
   separate projects,
 - why public source access is noncommercial while commercial rights require
   a separate agreement,
-- and why the CLI exposes application workflows without becoming a second
-  verification implementation.
+- why the CLI exposes application workflows without becoming a second
+  verification implementation,
+- and why DSL header values are declared defaults resolved into an immutable
+  effective execution context for each invocation.
 
 ## ADR format
 
@@ -92,6 +94,7 @@ Impact on Toetra
 | ADR-0030 | Separate public repository exposure, CLI, and stable release |
 | ADR-0031 | Adopt noncommercial and separate commercial licensing |
 | ADR-0032 | Define the CLI command surface and application boundary |
+| ADR-0033 | Separate declared defaults from execution overrides |
 
 ## Decision status vocabulary
 

@@ -15,6 +15,7 @@ from toetra._compiler.semantic.types.enums import EnumDataType
 from toetra._models.detector.model_framework import EnumModelFramework
 from toetra._models.schema.feature_schema import FeatureSchema
 from toetra._models.schema.model_schema import ModelSchema
+from toetra._runtime.execution_context import ExecutionContext
 from toetra._models.schema.output_schema import (
     BinaryClassificationDecisionPolicy,
     ClassificationOutputSchema,
@@ -224,3 +225,46 @@ def test_binary_decision_policy_changes_model_schema_fingerprint() -> None:
     assert first.canonicalization == "toetra_model_schema_canonical_json_v3"
     assert second.canonicalization == "toetra_model_schema_canonical_json_v3"
     assert first != second
+
+
+def test_effective_target_changes_input_identity_and_is_recorded() -> None:
+    base = ExecutionContext(
+        declared_model_reference="model.joblib",
+        declared_target="score",
+        declared_dataset_reference=None,
+        effective_model_reference="model.joblib",
+        effective_target="score",
+        effective_dataset_reference=None,
+        model_overridden=False,
+        target_overridden=False,
+        dataset_overridden=False,
+    )
+    retargeted = ExecutionContext(
+        declared_model_reference="model.joblib",
+        declared_target="score",
+        declared_dataset_reference=None,
+        effective_model_reference="model.joblib",
+        effective_target="risk_score",
+        effective_dataset_reference=None,
+        model_overridden=False,
+        target_overridden=True,
+        dataset_overridden=False,
+    )
+
+    first = _context(execution_context=base)
+    second = _context(
+        schema=ModelSchema(
+            framework=_schema().framework,
+            model_type=_schema().model_type,
+            features=_schema().features,
+            output_name="risk_score",
+            task=_schema().task,
+            output_schema=_schema().output_schema,
+            metadata=_schema().metadata,
+        ),
+        execution_context=retargeted,
+    )
+
+    assert first.input_fingerprint != second.input_fingerprint
+    assert second.execution_context.effective_target == "risk_score"
+    assert second.execution_context.target_overridden is True
