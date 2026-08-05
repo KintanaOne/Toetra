@@ -6,13 +6,28 @@ A production pipeline should separate cheap structural checks from solver work:
 
 ```text
 1. Retrieve immutable model and policy artifacts
-2. Validate at executable depth
-3. Archive the resolved inspection JSON
-4. Run formal verification
-5. Archive JSON v6, HTML, and the run manifest
-6. Gate explicitly on 0, 1, or 2
-7. Replay archived witness/counterexample evidence when required
+2. Generate a starter policy with `init` when no reviewed policy exists yet
+3. Validate at executable depth
+4. Archive the resolved inspection JSON
+5. Run formal verification
+6. Archive JSON v6, HTML, and the run manifest
+7. Gate explicitly on 0, 1, or 2
+8. Replay archived witness/counterexample evidence when required
 ```
+
+
+When bootstrapping a new policy, generate the declaration-bearing source once,
+review it, and then version it with the pipeline configuration:
+
+```bash
+toetra init policy.toetra \
+  --model artifacts/model.joblib \
+  --target score \
+  --dataset data/reference.csv
+```
+
+The generated smoke property is not an assurance gate. Replace it with the
+intended formal properties before promoting the policy.
 
 Example shell shape:
 

@@ -441,6 +441,103 @@ def main() -> int:
         assert replay_payload["schema"] == "toetra.replay-report-collection"
         assert replay_payload["schema_version"] == 1
         assert replay_payload["conclusion"] == "consistent"
+
+        generated = cli_root / "generated policies" / "smoke policy.toetra"
+        init_result = subprocess.run(
+            [
+                str(console),
+                "init",
+                str(generated),
+                "--model",
+                str(cli_root / "linear model.joblib"),
+                "--target",
+                "score",
+                "--dataset",
+                str(dataset),
+            ],
+            check=False,
+            cwd=root,
+            env=clean_environment,
+            capture_output=True,
+            text=True,
+        )
+        assert init_result.returncode == 0, init_result.stderr
+        assert init_result.stdout == f"{generated.resolve()}\n"
+        assert init_result.stderr == ""
+        generated_source = generated.read_text(encoding="utf-8")
+        assert 'model := "../linear model.joblib"' in generated_source
+        assert "target := score" in generated_source
+        assert 'dataset := "../reference data.csv"' in generated_source
+
+        init_again = subprocess.run(
+            [
+                str(console),
+                "init",
+                str(generated),
+                "--model",
+                str(cli_root / "linear model.joblib"),
+                "--target",
+                "score",
+                "--dataset",
+                str(dataset),
+            ],
+            check=False,
+            cwd=root,
+            env=clean_environment,
+            capture_output=True,
+            text=True,
+        )
+        assert init_again.returncode == 3
+        assert init_again.stdout == ""
+        assert "already exists" in init_again.stderr
+        assert generated.read_text(encoding="utf-8") == generated_source
+
+        generated_validation = subprocess.run(
+            [
+                str(python),
+                "-I",
+                "-m",
+                "toetra",
+                "validate",
+                str(generated),
+                "--format",
+                "json",
+            ],
+            check=False,
+            cwd=root,
+            env=clean_environment,
+            capture_output=True,
+            text=True,
+        )
+        assert generated_validation.returncode == 0, generated_validation.stderr
+        assert generated_validation.stderr == ""
+        assert json.loads(generated_validation.stdout)["valid"] is True
+
+        generated_verification = subprocess.run(
+            [
+                str(console),
+                "verify",
+                str(generated),
+                "--format",
+                "json",
+            ],
+            check=False,
+            cwd=root,
+            env=clean_environment,
+            capture_output=True,
+            text=True,
+        )
+        assert generated_verification.returncode == 0, (
+            f"Generated verification returned "
+            f"{generated_verification.returncode}\n"
+            f"stdout:\n{generated_verification.stdout}\n"
+            f"stderr:\n{generated_verification.stderr}"
+        )
+        assert generated_verification.stderr == ""
+        generated_payload = json.loads(generated_verification.stdout)
+        assert generated_payload["schema_version"] == 6
+        assert generated_payload["reports"][0]["status"] == "PROVED"
+
         quickstart = root / "verify_model.py"
         report = root / "quickstart-report.json"
         shutil.copy2(

@@ -109,18 +109,6 @@ def test_subcommand_errors_preserve_json_diagnostics(
     assert payload["code"] == "INVALID_ARGUMENTS"
 
 
-@pytest.mark.parametrize("command", ["init"])
-def test_pending_commands_fail_explicitly(
-    command: str,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    assert main([command]) == EXIT_USAGE
-
-    captured = capsys.readouterr()
-    assert captured.out == ""
-    assert "not implemented in this build" in captured.err
-
-
 def test_sigterm_uses_reserved_termination_status(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
@@ -142,7 +130,19 @@ def test_sigterm_uses_reserved_termination_status(
     monkeypatch.setattr(cli_main.signal, "signal", fake_signal)
     monkeypatch.setattr(cli_main, "_dispatch", terminate_during_dispatch)
 
-    assert main(["init"]) == EXIT_TERMINATED
+    assert (
+        main(
+            [
+                "init",
+                "policy.toetra",
+                "--model",
+                "model.joblib",
+                "--target",
+                "score",
+            ]
+        )
+        == EXIT_TERMINATED
+    )
 
     captured = capsys.readouterr()
     assert captured.out == ""

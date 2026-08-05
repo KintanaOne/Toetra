@@ -144,8 +144,15 @@ toetra init SPECIFICATION
     [--force]
 ```
 
-`init` writes a model-aware smoke specification, validates it at executable
-depth, and refuses to overwrite an existing destination without `--force`.
+`init` requires explicit model and target declarations. When `--dataset` is
+provided, the generated header also contains `dataset := ...`; model and dataset
+references are made relative to the destination when portable. The generated
+smoke property is validated at executable depth before an atomic commit, and an
+existing destination is preserved unless `--force` is explicitly supplied.
+
+The generated property is an integration check only. Replace it with a meaningful
+bound, witness, monotonicity, robustness, fairness, or label/probability
+requirement before treating the specification as assurance evidence.
 
 ## Global diagnostics
 

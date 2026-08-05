@@ -58,6 +58,9 @@ This design:
 - Effective target changes participate in provenance and property identity.
 - JSON v6 provenance gains an additive `execution_context` object.
 - `replay --model` becomes optional because the DSL header is a valid default.
+- `init` is the creation boundary: its model, target, and optional dataset
+  arguments become declarations in the generated source, not temporary
+  overrides.
 - Future multi-output support must define how an effective target selects a
   concrete output port; this ADR does not claim that support today.
 

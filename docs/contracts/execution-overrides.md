@@ -90,6 +90,14 @@ The effective dataset participates in:
 The effective schema is rebuilt after the override. A dataset override is never
 treated as a cosmetic path change.
 
+## Initialization boundary
+
+`toetra init` runs before a specification exists. Its required model and target,
+and optional dataset, are therefore written as declared defaults in the new
+header. They are not recorded as execution overrides. The generated source must
+validate at executable depth using only those declarations before it is
+published atomically.
+
 ## Validation levels
 
 `validate --level syntax` parses the specification and resolves the textual

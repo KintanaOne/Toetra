@@ -4,6 +4,11 @@
 
 ### Added
 
+- Added the P28.5 `init` workflow for model-aware regression and binary-
+  classification smoke specifications. `--model` and `--target` are required,
+  an optional dataset is written into the generated header, the staged source
+  must pass executable validation before atomic commit, and the installed-wheel
+  probe now covers `init → validate → verify`.
 - Added an accepted DSL information-preservation contract and regression tests
   requiring every information-bearing grammar construct to be preserved until
   its owning boundary or rejected explicitly.
@@ -25,7 +30,7 @@
 - Accepted the P28 CLI and automation contract for `validate`, `inspect`,
   `verify`, `replay`, and `init`, including process statuses, stream ownership,
   machine-readable diagnostics, artifact manifests, cancellation, and MLOps
-  integration boundaries; only the `init` handler remains pending after P28.4.
+  integration boundaries. P28.5 completes the accepted five-command surface.
 - Added a public-snapshot audit gate, a full-history audit command, and explicit
   CC BY 4.0 provenance for the redistributed UCI processed Cleveland dataset.
 - Added an outside-in gate that clones the exact clean candidate, follows the

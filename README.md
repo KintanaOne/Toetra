@@ -100,10 +100,15 @@ raise SystemExit(session.exit_code)
 
 `toetra.verify(...)` remains the public Python execution entry point for
 embedded use. The installed `toetra` and `python -m toetra` process interfaces
-now provide solver-free `validate` and `inspect` commands, executable
-verification, and delayed replay of archived evidence:
+provide model-aware initialization, solver-free validation and inspection,
+formal verification, and delayed replay of archived evidence:
 
 ```bash
+toetra init policy.toetra \
+  --model model.joblib \
+  --target score \
+  --dataset reference.csv
+
 toetra verify policy.toetra \
   --model model.joblib \
   --dataset reference.csv \
@@ -123,7 +128,9 @@ toetra replay artifacts/toetra/toetra-verification-report.json \
   --format json
 ```
 
-Only `init` remains scheduled for the final P28 increment.
+The generated `init` property is deliberately tautological and labelled as an
+integration smoke test. Replace it with a meaningful requirement before using
+the policy as assurance evidence.
 
 ## Reading a result
 

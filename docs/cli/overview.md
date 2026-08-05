@@ -1,8 +1,7 @@
 # Command-line interface
 
-> `validate`, `inspect`, `verify`, and `replay` are implemented through P28.4
-> for both the installed `toetra` entry point and `python -m toetra`. `init`
-> remains a documented contract pending the final P28 increment. The
+> P28 implements `init`, `validate`, `inspect`, `verify`, and `replay` for both
+> the installed `toetra` entry point and `python -m toetra`. The
 > [Python API](../api-reference/index.md) remains available for embedded use.
 
 ## Goals
@@ -33,7 +32,7 @@ Current implementation status:
 | `inspect` | implemented in P28.2 |
 | `verify` | implemented in P28.3 |
 | `replay` | implemented in P28.4 |
-| `init` | command reserved; handler pending |
+| `init` | implemented in P28.5 |
 
 The normative behavior is defined by the
 [CLI and automation contract](../contracts/cli-automation-contract.md) and the
@@ -46,7 +45,9 @@ while declared defaults and temporary overrides are recorded in
 ## Intended workflow
 
 ```text
-model artifact + policy.toetra
+model artifact + optional reference dataset
+        ↓
+optional toetra init policy.toetra --model ... --target ... [--dataset ...]
         ↓
 toetra validate --level executable
         ↓
@@ -92,3 +93,11 @@ contract. `serve` is deferred until a network API, isolation, authentication,
 resource governance, and model-upload threat model are designed.
 
 Neither command is required to run Toetra as a robust MLOps job.
+
+## Initialization contract
+
+`toetra init` creates a deterministic integration smoke specification. It
+requires an explicit model and target, writes an optional dataset declaration,
+and validates the generated source at executable depth before publication. The
+smoke property proves only that Toetra can introspect, compile, route, translate,
+and verify the selected model wiring; it is not business or safety evidence.

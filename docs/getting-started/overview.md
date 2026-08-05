@@ -46,6 +46,21 @@ witnessing, and pairwise label equality:
 make demo-classification
 ```
 
+## Create a starter policy
+
+For an existing supported model, `toetra init` creates a `.toetra` file whose
+model, target, and optional dataset declarations are immediately executable:
+
+```bash
+toetra init policy.toetra \
+  --model model.joblib \
+  --target score \
+  --dataset reference.csv
+```
+
+The generated property is a wiring smoke test only. Replace it with a meaningful
+requirement before interpreting the policy as verification evidence.
+
 ## Reading order
 
 1. [Installation and availability](installation.md)
