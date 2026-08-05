@@ -1,8 +1,7 @@
 # CLI command reference
 
-> P28.3 implements `validate`, `inspect`, and `verify`. The remaining command
-> sections define accepted contracts for handlers delivered in later P28
-> increments.
+> P28.4 implements `validate`, `inspect`, `verify`, and `replay`. The `init`
+> section defines the accepted contract for the final P28 handler.
 
 ## Shared inputs
 
@@ -111,9 +110,17 @@ toetra replay REPORT_JSON
     [--output PATH|-]
 ```
 
-Replay accepts only a JSON v6 report collection. It validates provenance,
-reconstructs matching tasks without solving, and replays all witness and
-counterexample evidence by default.
+Replay accepts only a JSON v6 report collection. It validates complete input
+provenance and each selected property fingerprint, reconstructs matching tasks
+without translation or solver execution, and replays all witness and
+counterexample evidence by default. Repeated `--property` values preserve first
+occurrence order and ignore exact duplicates. A non-replayable selected status
+is returned as an inconclusive replay result rather than an empty success.
+
+JSON output uses `toetra.replay-report-collection` schema version 1. Exit status
+`0` means all selected evidence is consistent, `1` means at least one concrete
+contradiction, and `2` means no contradiction but unavailable or indeterminate
+evidence.
 
 ## Init
 

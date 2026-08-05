@@ -1,6 +1,6 @@
 # CLI and Automation Contract
 
-> **Status:** Accepted design; P28.3 validate, inspect, and verify implemented
+> **Status:** Accepted design; P28.4 replay implemented, init pending
 >
 > **Compatibility surface:** installed process interface, machine-readable output,
 > diagnostics, artifacts, and exit codes

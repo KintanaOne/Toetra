@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Protocol
 
 from toetra._backends.results import VerificationStatus
 from toetra._compiler.ir.ir2.dsl.nodes import VerificationTaskIR2
 from toetra._reporting.accessors import point_input_values, point_output_values
 from toetra._reporting.evaluations import ReportModelEvaluation
-from toetra._reporting.model import VerificationReport
+from toetra._reporting.model import ReportPointEvidence
 from toetra._runtime.errors import ReplayUnavailableError
 from toetra._runtime.model_observer import ModelObservation, ModelObserverRegistry
 from toetra._runtime.replay import CounterexampleReplay, EvaluationReplay, PointReplay
@@ -17,8 +17,24 @@ from toetra._models.runtime.sklearn_observer import (
 from toetra._models.schema.model_schema import ModelSchema
 
 
+class ReplayReport(Protocol):
+    """Read-only structural report contract required by concrete replay."""
+
+    @property
+    def property_index(self) -> int: ...
+
+    @property
+    def status(self) -> VerificationStatus: ...
+
+    @property
+    def points(self) -> tuple[ReportPointEvidence, ...]: ...
+
+    @property
+    def model_evaluations(self) -> tuple[ReportModelEvaluation, ...]: ...
+
+
 def replay_verification_report(
-    report: VerificationReport,
+    report: ReplayReport,
     *,
     task: VerificationTaskIR2,
     schema: ModelSchema,

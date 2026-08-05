@@ -4,6 +4,10 @@
 
 ### Added
 
+- Added the P28.4 `replay` workflow for archived JSON v6 witness and
+  counterexample evidence, with strict provenance and property-fingerprint
+  matching, repeated property selection, text/JSON/HTML output, logical replay
+  statuses `0`/`1`/`2`, atomic output, and an installed-wheel replay probe.
 - Added the P28.3 `verify` workflow with text, exact JSON v6, and HTML
   primary output, logical process statuses `0`/`1`/`2`, individually atomic
   JSON/HTML artifacts, a manifest-last `toetra.run-manifest` completion marker,
@@ -18,8 +22,7 @@
 - Accepted the P28 CLI and automation contract for `validate`, `inspect`,
   `verify`, `replay`, and `init`, including process statuses, stream ownership,
   machine-readable diagnostics, artifact manifests, cancellation, and MLOps
-  integration boundaries; `replay` and `init` handlers remain pending after
-  P28.3.
+  integration boundaries; only the `init` handler remains pending after P28.4.
 - Added a public-snapshot audit gate, a full-history audit command, and explicit
   CC BY 4.0 provenance for the redistributed UCI processed Cleveland dataset.
 - Added an outside-in gate that clones the exact clean candidate, follows the
@@ -30,6 +33,9 @@
 
 ### Changed
 
+- Published `toetra replay` as a solver-free reconstruction workflow over the
+  existing concrete replay engine, without widening the nine-symbol public
+  Python facade or introducing a serialized private IR contract.
 - Published `toetra verify` as the process adapter over the existing shared
   verification session without changing the Python API or JSON v6 report
   contract, while invalidating stale completion manifests before artifact

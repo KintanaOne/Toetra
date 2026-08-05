@@ -338,6 +338,7 @@ def main() -> int:
                 == hashlib.sha256(content).hexdigest()
             )
 
+        failure_report = cli_root / "nested output" / "failure.json"
         failure = subprocess.run(
             [
                 str(python),
@@ -350,6 +351,8 @@ def main() -> int:
                 str(dataset),
                 "--format",
                 "json",
+                "--output",
+                str(failure_report),
             ],
             check=False,
             cwd=root,
@@ -359,10 +362,43 @@ def main() -> int:
         )
 
         assert failure.returncode == 1, failure.stderr
+        assert failure.stdout == ""
         assert failure.stderr == ""
 
-        failure_payload = json.loads(failure.stdout)
+        failure_payload = json.loads(failure_report.read_text(encoding="utf-8"))
         assert failure_payload["schema_version"] == 6
+
+        replay_output = cli_root / "nested output" / "replay.json"
+        replay = subprocess.run(
+            [
+                str(console),
+                "replay",
+                str(failure_report),
+                "--specification",
+                str(cli_root / "failure.toetra"),
+                "--model",
+                str(cli_root / "linear model.joblib"),
+                "--dataset",
+                str(dataset),
+                "--format",
+                "json",
+                "--output",
+                str(replay_output),
+            ],
+            check=False,
+            cwd=root,
+            env=clean_environment,
+            capture_output=True,
+            text=True,
+        )
+
+        assert replay.returncode == 0, replay.stderr
+        assert replay.stdout == ""
+        assert replay.stderr == ""
+        replay_payload = json.loads(replay_output.read_text(encoding="utf-8"))
+        assert replay_payload["schema"] == "toetra.replay-report-collection"
+        assert replay_payload["schema_version"] == 1
+        assert replay_payload["conclusion"] == "consistent"
         quickstart = root / "verify_model.py"
         report = root / "quickstart-report.json"
         shutil.copy2(

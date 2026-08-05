@@ -68,6 +68,65 @@ def run_inspect(namespace: Namespace) -> int:
     return 0
 
 
+def run_replay(namespace: Namespace) -> int:
+    """Execute ``toetra replay`` without invoking a backend solver."""
+
+    from toetra._runtime.archived_replay import replay_archived_report
+
+    report_path = Path(namespace.report).expanduser()
+    if report_path.suffix.lower() != ".json":
+        from toetra._runtime.errors import VerificationConfigurationError
+
+        raise VerificationConfigurationError(
+            "Archived replay input must be a JSON file.",
+            code="REPLAY_REPORT_EXTENSION_INVALID",
+            stage="configuration",
+            hint="Provide a JSON v6 verification report collection.",
+            path=str(report_path),
+        )
+
+    specification = _specification_path(namespace.specification)
+    consumed = (
+        report_path,
+        specification,
+        Path(namespace.model).expanduser(),
+        *(
+            (Path(namespace.dataset).expanduser(),)
+            if namespace.dataset is not None
+            else ()
+        ),
+        *(
+            (Path(namespace.anchor_source).expanduser(),)
+            if namespace.anchor_source is not None
+            else ()
+        ),
+    )
+    primary_paths = (
+        ()
+        if namespace.output == "-"
+        else (Path(namespace.output).expanduser().resolve(),)
+    )
+    validate_output_paths(primary_paths, consumed_paths=consumed)
+
+    result = replay_archived_report(
+        report_path,
+        specification=specification,
+        model=namespace.model,
+        dataset=namespace.dataset,
+        anchor_source=namespace.anchor_source,
+        target=namespace.target,
+        property_indices=tuple(namespace.properties),
+        tolerance=namespace.tolerance,
+    )
+    emit_primary_output(
+        _render_replay(result, output_format=namespace.format),
+        destination=namespace.output,
+        consumed_paths=(*result.consumed_paths, *consumed),
+        stream=sys.stdout,
+    )
+    return result.exit_code
+
+
 def run_verify(namespace: Namespace) -> int:
     """Execute ``toetra verify`` and emit reports plus optional artifacts."""
 
@@ -240,6 +299,24 @@ def _render_inspection(result: InspectionResult, *, output_format: str) -> str:
     if output_format == "json":
         return result.to_json()
     return result.to_text()
+
+
+def _render_replay(result: object, *, output_format: str) -> str:
+    try:
+        renderer = getattr(result, f"to_{output_format}")
+        rendered = renderer()
+        if not isinstance(rendered, str):
+            raise TypeError("replay renderers must return text")
+        return rendered
+    except (AttributeError, TypeError, ValueError) as error:
+        from toetra._runtime.errors import VerificationRuntimeError
+
+        raise VerificationRuntimeError(
+            f"Failed to render replay output as {output_format}.",
+            code="CLI_REPLAY_RENDER_FAILED",
+            stage="output",
+            hint="Retry another output format and report reproducible failures.",
+        ) from error
 
 
 def _render_verification(

@@ -100,8 +100,8 @@ raise SystemExit(session.exit_code)
 
 `toetra.verify(...)` remains the public Python execution entry point for
 embedded use. The installed `toetra` and `python -m toetra` process interfaces
-now provide solver-free `validate` and `inspect` commands plus executable
-verification:
+now provide solver-free `validate` and `inspect` commands, executable
+verification, and delayed replay of archived evidence:
 
 ```bash
 toetra verify policy.toetra \
@@ -112,8 +112,18 @@ toetra verify policy.toetra \
 ```
 
 The command returns `0` for positive conclusions, `1` for a formal failure, and
-`2` for an inconclusive result. `replay` and `init` remain scheduled for later
-P28 increments under the separate CLI automation contract.
+`2` for an inconclusive result. Archived counterexamples and witnesses can then
+be checked against the exact supplied artifacts without rerunning the solver:
+
+```bash
+toetra replay artifacts/toetra/toetra-verification-report.json \
+  --specification policy.toetra \
+  --model model.joblib \
+  --dataset reference.csv \
+  --format json
+```
+
+Only `init` remains scheduled for the final P28 increment.
 
 ## Reading a result
 

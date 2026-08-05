@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import math
 import signal
 import sys
 import traceback
@@ -119,6 +120,13 @@ def _non_negative_integer(value: str) -> int:
     return parsed
 
 
+def _non_negative_float(value: str) -> float:
+    parsed = float(value)
+    if not math.isfinite(parsed) or parsed < 0:
+        raise argparse.ArgumentTypeError("must be a finite non-negative number")
+    return parsed
+
+
 def _build_parser(*, diagnostic_format: str) -> ToetraArgumentParser:
     parser = ToetraArgumentParser(
         prog="toetra",
@@ -159,6 +167,7 @@ def _build_parser(*, diagnostic_format: str) -> ToetraArgumentParser:
     _configure_validate_parser(parsers["validate"])
     _configure_inspect_parser(parsers["inspect"])
     _configure_verify_parser(parsers["verify"])
+    _configure_replay_parser(parsers["replay"])
     return parser
 
 
@@ -194,6 +203,36 @@ def _configure_verify_parser(parser: ToetraArgumentParser) -> None:
         metavar="NAME",
         help="Portable filename stem for --artifacts-dir outputs.",
     )
+
+
+def _configure_replay_parser(parser: ToetraArgumentParser) -> None:
+    parser.add_argument("report", metavar="REPORT_JSON")
+    parser.add_argument(
+        "--specification",
+        required=True,
+        metavar="SPECIFICATION",
+    )
+    parser.add_argument("--model", required=True, metavar="PATH")
+    parser.add_argument("--dataset", metavar="PATH")
+    parser.add_argument("--anchor-source", metavar="PATH")
+    parser.add_argument("--target", metavar="NAME")
+    parser.add_argument(
+        "--property",
+        dest="properties",
+        action="append",
+        type=_non_negative_integer,
+        default=[],
+        metavar="INDEX",
+        help="Replay one zero-based property index; may be repeated.",
+    )
+    parser.add_argument(
+        "--tolerance",
+        type=_non_negative_float,
+        default=1e-9,
+        metavar="FLOAT",
+        help="Finite non-negative replay tolerance (default: 1e-9).",
+    )
+    _add_primary_output(parser, formats=("text", "json", "html"))
 
 
 def _add_shared_inputs(parser: ToetraArgumentParser) -> None:
@@ -261,6 +300,10 @@ def _dispatch(namespace: argparse.Namespace) -> int:
         from toetra._cli.commands import run_verify
 
         return run_verify(namespace)
+    if command == "replay":
+        from toetra._cli.commands import run_replay
+
+        return run_replay(namespace)
     return _pending_command(command, diagnostic_format=namespace.diagnostic_format)
 
 
