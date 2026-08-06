@@ -4,7 +4,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).parents[3]
 EXPECTED_LAYOUT = {
-    "ci": {"__init__.py", "check_public_contract.py", "clean_notebooks.py"},
+    "ci": {
+        "__init__.py",
+        "check_cli_smoke.py",
+        "check_public_contract.py",
+        "clean_notebooks.py",
+    },
     "docs": {
         "__init__.py",
         "check_snippets.py",

@@ -67,7 +67,9 @@ prerequisite restores the optional header dataset as an effective runtime
 artifact and enforces the no-silent-loss rule for grammar arguments. P28.5 completes the five-command surface with model-aware `init`, executable
 validation before atomic publication, generated model/target/dataset
 declarations, cross-command stream/status checks, and an installed-wheel
-`init → validate → verify` probe. The CLI milestone is therefore implemented.
+`init → validate → verify` probe. A final reusable smoke scenario now
+exercises all five commands through both entry points in checkout CI and the
+isolated-wheel gate. The CLI milestone is therefore implemented.
 
 The CLI remains an adapter over shared application workflows. Compiler,
 verification, reporting, and replay semantics stay owned by the library rather

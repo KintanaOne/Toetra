@@ -77,6 +77,20 @@ The example intentionally handles status `2` separately. A shell-wide
 an inconclusive result, and a process error. Replay has the same logical
 `0`/`1`/`2` shape: consistent, inconsistent, or inconclusive.
 
+## Reproducible CLI contract check
+
+Before integrating a checkout or release candidate into an orchestrator, run
+the same smoke scenario used by hosted CI:
+
+```bash
+make cli-smoke-check
+```
+
+The scenario runs outside the repository, compares CLI version metadata with
+`pyproject.toml`, checks both supported entry points, and exercises the full
+`init -> validate -> inspect -> verify -> replay` lifecycle. The release
+installation gate invokes the same implementation against the built wheel.
+
 ## Container-job model
 
 The first MLOps deployment target is a finite job, not a long-running service:

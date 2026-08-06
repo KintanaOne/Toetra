@@ -73,23 +73,27 @@ def test_release_probe_exercises_binary_classification() -> None:
     probe = (
         ROOT / "scripts" / "release" / "check_installed_distribution.py"
     ).read_text(encoding="utf-8")
+    smoke = (ROOT / "scripts" / "ci" / "check_cli_smoke.py").read_text(encoding="utf-8")
     makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+
     assert "LogisticRegression" in probe
     assert "target[applicant].label" in probe
     assert "target[applicant].probability" in probe
     assert "VerificationStatus.WITNESS" in probe
-    assert '"validate",' in probe
-    assert '"inspect",' in probe
-    assert '"replay",' in probe
-    assert '"init",' in probe
-    assert '"toetra.validation-result"' in probe
-    assert '"toetra.inspection"' in probe
-    assert '"toetra.replay-report-collection"' in probe
-    assert '"-m",' in probe and '"toetra",' in probe
-    assert "CLI artifacts \u03a9" in probe
-    assert 'dataset := "reference data.csv"' in probe
-    assert 'dataset := "../reference data.csv"' in probe
-    assert '"generated policies"' in probe
+    assert "run_cli_smoke" in probe
+    assert '"validate"' in smoke
+    assert '"inspect"' in smoke
+    assert '"verify"' in smoke
+    assert '"replay"' in smoke
+    assert '"init"' in smoke
+    assert '"toetra.validation-result"' in smoke
+    assert '"toetra.inspection"' in smoke
+    assert '"toetra.replay-report-collection"' in smoke
+    assert '"-m", "toetra"' in smoke
+    assert "toetra-cli-smoke-" in smoke
+    assert 'dataset := "reference data.csv"' in smoke
+    assert 'dataset := "../reference data.csv"' in smoke
+    assert '"generated policies"' in smoke
     assert "from toetra.examples import credit_risk_policy" in probe
     assert 'find_spec("forml") is None' in probe
     assert 'find_spec("dsl") is None' in probe
@@ -98,6 +102,7 @@ def test_release_probe_exercises_binary_classification() -> None:
     assert '"demo" / "quickstart" / "verify_model.py"' in probe
     assert '"quickstart-report.json"' in probe
     assert '"toetra.verification-report-collection"' in probe
+    assert "cli-smoke-check" in makefile
     assert "demo-quickstart" in makefile
     assert "demo-regression" in makefile
     assert "demo-classification" in makefile

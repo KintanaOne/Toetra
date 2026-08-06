@@ -49,3 +49,22 @@ make ci
 ```
 
 It runs notebook hygiene, Ruff, Black, Pyright, and Pytest. A patch is not complete until this gate is green in the full repository.
+## Reproducible CLI smoke scenario
+
+The complete five-command process contract is exercised by one reusable
+cross-platform scenario:
+
+```bash
+make cli-smoke-check
+```
+
+`scripts/ci/check_cli_smoke.py` creates all models, datasets, policies, and
+outputs in a temporary directory outside the checkout. It verifies the
+active distribution version, both `python -m toetra` and the installed
+`toetra` script, then runs `init`, `validate`, `inspect`, `verify`, and
+`replay`, including declared/effective overrides and report artifacts.
+
+The same Python scenario is invoked by the isolated-wheel installation
+probe. Checkout CI and release CI therefore share assertions rather than
+maintaining separate manual command lists. A failure retains its temporary
+workspace and prints the exact command, status, stdout, and stderr.

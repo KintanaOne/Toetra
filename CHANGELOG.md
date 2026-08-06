@@ -4,6 +4,12 @@
 
 ### Added
 
+- Added one reproducible, cross-platform CLI smoke scenario shared by the
+  checkout CI gate and the isolated-wheel installation gate. The scenario
+  verifies version metadata, both entry points, `init`, all validation depths,
+  inspection, proof, counterexample, witness replay, execution overrides,
+  atomic artifacts, manifests, and temporary-file cleanup outside the
+  repository.
 - Added the P28.5 `init` workflow for model-aware regression and binary-
   classification smoke specifications. `--model` and `--target` are required,
   an optional dataset is written into the generated header, the staged source
