@@ -98,7 +98,7 @@ Records and DataFrames add `verification_fingerprint`, `input_fingerprint` and `
       }
     },
     "software": {
-      "toetra_version": "1.0.0rc3",
+      "toetra_version": "1.0.0rc4",
       "toetra_build_id": "git:..."
     },
     "compiler": {}

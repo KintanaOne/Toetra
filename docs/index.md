@@ -5,7 +5,7 @@ framework for machine-learning models. It verifies properties over explicit
 input domains and returns proof results, counterexamples or witnesses with
 provenance and concrete model replay.
 
-> **Current status:** `1.0.0rc3` is an evaluation release candidate, not the
+> **Current status:** `1.0.0rc4` is an evaluation release candidate, not the
 > stable `1.0.0` release. It is currently installed from a source checkout or
 > source archive and is not published on PyPI.
 
@@ -31,7 +31,7 @@ Continue with:
 3. [Public V1 profile and limitations](public-v1-profile.md)
 4. [Public Python API](api-reference/index.md)
 5. [Command-line interface](cli/overview.md)
-6. [1.0.0rc3 release notes](releases/1.0.0rc3.md)
+6. [1.0.0rc4 release notes](releases/1.0.0rc4.md)
 7. [Model output observables](language/model-output-observables.md)
 8. [Compatibility matrices](generated/numeric-compatibility-matrices.md)
 

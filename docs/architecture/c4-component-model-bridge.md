@@ -1,6 +1,6 @@
 # C4 component view — ModelBridge
 
-> **Status:** As built for `1.0.0rc3`
+> **Status:** As built for `1.0.0rc4`
 >
 > **Scope:** `toetra._models`
 

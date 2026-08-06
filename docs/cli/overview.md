@@ -1,6 +1,6 @@
 # Command-line interface
 
-> P28 implements `init`, `validate`, `inspect`, `verify`, and `replay` for both
+> `1.0.0rc4` implements `init`, `validate`, `inspect`, `verify`, and `replay` for both
 > the installed `toetra` entry point and `python -m toetra`. The
 > [Python API](../api-reference/index.md) remains available for embedded use.
 
@@ -28,11 +28,11 @@ Current implementation status:
 
 | Command | Status |
 |---|---|
-| `validate` | implemented in P28.2 |
-| `inspect` | implemented in P28.2 |
-| `verify` | implemented in P28.3 |
-| `replay` | implemented in P28.4 |
-| `init` | implemented in P28.5 |
+| `validate` | implemented |
+| `inspect` | implemented |
+| `verify` | implemented |
+| `replay` | implemented |
+| `init` | implemented |
 
 The normative behavior is defined by the
 [CLI and automation contract](../contracts/cli-automation-contract.md) and the

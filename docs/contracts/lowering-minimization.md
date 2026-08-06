@@ -40,7 +40,7 @@ to the build policy.
 
 ## No generic minimization claim
 
-`1.0.0rc3` does not promise:
+`1.0.0rc4` does not promise:
 
 - arbitrary constant/algebraic folding;
 - subsumption or redundant-constraint elimination;

@@ -5,8 +5,8 @@ body:
   - type: markdown
     attributes:
       value: |
-        P27 keeps the 1.0.0rc3 product boundary frozen. Proposals are welcome,
-        but acceptance does not place them in the current release scope.
+        The 1.0.0rc4 product boundary is frozen. Proposals are welcome, but
+        acceptance does not place them in the current release scope.
 
   - type: textarea
     id: problem
@@ -34,7 +34,7 @@ body:
     attributes:
       label: Scope acknowledgement
       options:
-        - label: I understand this proposal is outside the frozen P27 release-candidate scope.
+        - label: I understand this proposal is outside the frozen 1.0.0rc4 release-candidate scope.
           required: true
         - label: This proposal does not contain credentials, private data, or a security vulnerability.
           required: true

@@ -1,8 +1,8 @@
 # Controlled public exposure runbook
 
-This runbook closes P27.5 without coupling repository visibility to a package
-publication or stable release. It does not create a GitHub Release, publish to
-PyPI, add the P28 CLI, or declare the P29 stable `1.0.0`.
+This runbook controls repository visibility without coupling it to package
+publication or stable release. It does not publish to PyPI or declare the
+stable `1.0.0` release.
 
 ## 1. Select the immutable candidate
 
@@ -50,9 +50,9 @@ In the GitHub repository settings, change only the canonical
 `KintanaOne/Toetra` repository visibility from private to public. Reconfirm the
 repository name before accepting GitHub's warning.
 
-Do not create or publish a package, tag, release, deployment, or CLI as part of
-this operation. A GitHub Release remains optional and, if created later during
-P27, must be marked as a pre-release.
+Do not create or publish a package, tag, release, or deployment as part of this
+visibility operation. A GitHub Release is a separate action and must remain a
+pre-release while the project is on `1.0.0rc4`.
 
 ## 4. Verify anonymously
 
@@ -89,7 +89,7 @@ The P27 closure record contains:
 - confirmed copyright holder and, when completed, a privately retained
   e-Soleau deposit record;
 - any deliberately accepted residual limitation;
-- confirmation that PyPI, the P28 CLI, and stable `1.0.0` remain deferred.
+- confirmation that PyPI publication and stable `1.0.0` remain deferred.
 
 P27 enters observation after this record is reviewed. Only soundness, security,
 provenance, installation, materially misleading documentation, or material

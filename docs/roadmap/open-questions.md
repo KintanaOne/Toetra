@@ -1,6 +1,6 @@
 # Open questions
 
-> **Status:** Active from the `1.0.0rc3` evaluation candidate
+> **Status:** Active from the `1.0.0rc4` evaluation candidate
 >
 > **Rule:** this page records unresolved choices in the order they are expected
 > to matter; it does not announce implemented support

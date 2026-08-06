@@ -77,7 +77,7 @@ invocation. Toetra compiles the isolated effective view and preserves the
 original source and caller-owned schema.
 
 The schema-only route is accepted by the runtime, but the schema classes are not
-part of the nine-name public facade in `1.0.0rc3`. Normal application code
+part of the nine-name public facade in `1.0.0rc4`. Normal application code
 should therefore use model artifacts. A schema-only session also has no
 concrete model attached; pass a model explicitly when replaying a finding.
 

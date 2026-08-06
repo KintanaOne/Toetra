@@ -1,6 +1,6 @@
 # C4 container view
 
-> **Status:** As built for `1.0.0rc3`
+> **Status:** As built for `1.0.0rc4`
 >
 > **Level:** logical containers inside the installed Python distribution
 
@@ -67,7 +67,7 @@ formal evidence and a concrete model through a runtime-observer protocol.
 
 ## Deployment statement
 
-`1.0.0rc3` is a local library/runtime. It does not ship a server, remote worker,
+`1.0.0rc4` is a local library/runtime. It does not ship a server, remote worker,
 monitoring daemon, distributed scheduler, or multi-service control plane.
 
 ## Stability statement

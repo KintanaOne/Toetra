@@ -27,7 +27,7 @@ body:
     id: version
     attributes:
       label: Toetra version
-      placeholder: 1.0.0rc3
+      placeholder: 1.0.0rc4
     validations:
       required: true
 

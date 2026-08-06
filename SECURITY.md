@@ -3,12 +3,12 @@
 ## Supported versions
 
 Toetra has not yet published a stable V1. Security fixes are evaluated for the
-current `1.0.0rc3` release candidate and any later release candidate explicitly
+current `1.0.0rc4` release candidate and any later release candidate explicitly
 identified as current in the repository.
 
 | Version | Security fixes |
 |---|---|
-| `1.0.0rc3` | evaluated |
+| `1.0.0rc4` | evaluated |
 | older candidates and development snapshots | not supported |
 
 ## Reporting a vulnerability

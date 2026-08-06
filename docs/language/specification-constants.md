@@ -1,6 +1,6 @@
 # Specification constants
 
-> Status: Implemented and semantically defined in `1.0.0rc3`
+> Status: Implemented and semantically defined in `1.0.0rc4`
 > Scope: Immutable scalar declarations in a `.toetra` header
 > Audience: users and compiler contributors
 

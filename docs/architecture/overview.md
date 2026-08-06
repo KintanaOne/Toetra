@@ -1,6 +1,6 @@
 # Architecture overview
 
-> **Status:** As built for `1.0.0rc3`
+> **Status:** As built for `1.0.0rc4`
 >
 > **Audience:** maintainers, contributors, backend authors, and reviewers
 >

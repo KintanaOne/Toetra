@@ -77,6 +77,7 @@ nav:
   - Home: index.md
   - Public V1 Profile: public-v1-profile.md
   - Release Notes:
+      - 1.0.0rc4: releases/1.0.0rc4.md
       - 1.0.0rc3: releases/1.0.0rc3.md
       - 1.0.0rc2: releases/1.0.0rc2.md
   - Getting Started:

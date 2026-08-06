@@ -1,6 +1,6 @@
 # Public repository audit
 
-This procedure implements P27.1 for the exact `1.0.0rc3` candidate selected for
+This procedure implements P27.1 for the exact `1.0.0rc4` candidate selected for
 public exposure. It does not publish the repository, create a GitHub Release,
 publish to PyPI, add a CLI, or change the stable-version decision.
 

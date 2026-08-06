@@ -1,6 +1,6 @@
 # Model output observables
 
-> Status: Public and executable since `1.0.0rc2`; current in `1.0.0rc3`
+> Status: Public and executable since `1.0.0rc2`; current in `1.0.0rc4`
 > Scope: Declarative regression and binary-classification output views
 > Audience: users, semantic contributors, and model-encoder authors
 
