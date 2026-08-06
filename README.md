@@ -5,7 +5,7 @@ formally verifying behavioral properties of machine-learning models. It turns a
 property and an explicit input domain into a proof result, counterexample, or
 witness, with provenance and concrete model replay.
 
-> **Project status — `1.0.0rc3`:** this is an evaluation release candidate, not
+> **Project status — `1.0.0rc4`:** this is an evaluation release candidate, not
 > the stable `1.0.0` release. It is not currently published on PyPI. Install it
 > from a source checkout or source archive while the candidate is exercised in
 > real use.
@@ -162,7 +162,7 @@ calibration wrappers, custom decision thresholds, probability
 equality/edge-thresholds/arithmetic, alternating quantifiers, and built-in
 non-Z3 backends are outside the V1 profile.
 
-In particular, pass already transformed numeric features. Toetra `1.0.0rc3`
+In particular, pass already transformed numeric features. Toetra `1.0.0rc4`
 does not reconstruct or verify a scikit-learn `Pipeline`.
 
 ## Demos and documentation
@@ -176,7 +176,7 @@ make demo-classification
 The classification demo covers label proof, a replayable counterexample, a
 probability witness, and pairwise label equality.
 
-- [1.0.0rc3 release notes](docs/releases/1.0.0rc3.md)
+- [1.0.0rc4 release notes](docs/releases/1.0.0rc4.md)
 - [Getting started](docs/getting-started/overview.md)
 - [Public Python API](docs/api-reference/index.md)
 - [Language reference](docs/language/overview.md)

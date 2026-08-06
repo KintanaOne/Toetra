@@ -1,6 +1,6 @@
 # Domains
 
-> Status: Accepted syntax and semantics in `1.0.0rc3`
+> Status: Accepted syntax and semantics in `1.0.0rc4`
 > Scope: Typed input assumptions attached to quantified points
 > Audience: users, semantic contributors, and backend authors
 

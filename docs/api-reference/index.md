@@ -1,6 +1,6 @@
 # Public Python API
 
-> Status: Frozen for `1.0.0rc3`
+> Status: Frozen for `1.0.0rc4`
 >
 > Supported import surface: `toetra`
 

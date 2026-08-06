@@ -30,8 +30,8 @@ REQUIRED_MARKERS = {
         "PolyForm Noncommercial 1.0.0",
         "explicit contributor agreement",
         "COMMERCIAL_LICENSE.md",
-        "P28",
-        "P29",
+        "1.0.0rc4",
+        "stable-release work",
     ),
     "COMMERCIAL_LICENSE.md": (
         "PolyForm Noncommercial License 1.0.0",
@@ -47,7 +47,7 @@ REQUIRED_MARKERS = {
         "INPI e-Soleau",
     ),
     "SECURITY.md": (
-        "1.0.0rc3",
+        "1.0.0rc4",
         "Do not open a public issue",
         "private vulnerability reporting",
         "KintanaOne@proton.me",
@@ -69,7 +69,7 @@ REQUIRED_MARKERS = {
     ),
     ".github/ISSUE_TEMPLATE/post_v1_proposal.yml": (
         "name: Post-V1 proposal",
-        "outside the frozen P27",
+        "outside the frozen 1.0.0rc4",
         "required: true",
     ),
     ".github/pull_request_template.md": (
@@ -77,8 +77,8 @@ REQUIRED_MARKERS = {
         "Verification or numeric guarantee changed",
         "required contributor agreement",
         "commercial relicensing rights",
-        "P28 CLI",
-        "P29 stable release",
+        "1.0.0rc4",
+        "stable `1.0.0` release",
     ),
     ".github/dependabot.yml": (
         'package-ecosystem: "github-actions"',

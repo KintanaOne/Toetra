@@ -1,6 +1,6 @@
 # Public V1 contract
 
-> Status: frozen for `1.0.0rc3`, amended by P28.1
+> Status: frozen for `1.0.0rc4`
 
 ## Stable public surfaces
 
@@ -17,11 +17,11 @@ exception classes into the compatibility surface.
 
 ## Installed process surface
 
-P28.1 installs the `toetra` console script and the equivalent `python -m toetra`
-entry point. The process shell exposes `--help`, `--version`, diagnostic rendering,
-and the accepted `validate`, `inspect`, `verify`, `replay`, and `init` command
-index. Command handlers are delivered by later P28 increments. The adapter lives
-below private `toetra._cli` modules and does not expand `toetra.__all__`.
+`1.0.0rc4` installs the `toetra` console script and the equivalent
+`python -m toetra` entry point. The process shell exposes `--help`, `--version`,
+diagnostic rendering, and implemented `validate`, `inspect`, `verify`, `replay`,
+and `init` handlers. The adapter lives below private `toetra._cli` modules,
+reuses shared application workflows, and does not expand `toetra.__all__`.
 
 The EBNF is the language source of truth; the generated Lark grammar is never
 edited directly.

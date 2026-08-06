@@ -18,7 +18,7 @@ from toetra._compiler.parser.parser import parse_toetra_code  # noqa: E402
 
 EXPECTED_PROJECT_NAME = "toetra"
 EXPECTED_PROJECT_SCRIPTS = {"toetra": "toetra._cli.main:main"}
-EXPECTED_VERSION = "1.0.0rc3"
+EXPECTED_VERSION = "1.0.0rc4"
 EXPECTED_LICENSE = "PolyForm-Noncommercial-1.0.0"
 EXPECTED_VALIDATION_SCHEMA = ("toetra.validation-result", 1)
 EXPECTED_INSPECTION_SCHEMA = ("toetra.inspection", 1)
@@ -334,7 +334,7 @@ def _validate_classification_target_contract() -> None:
         encoding="utf-8"
     )
     current_markers = (
-        "Release candidate: `1.0.0rc3`",
+        "Release candidate: `1.0.0rc4`",
         "fitted single-output `LinearRegression`",
         "direct fitted binary `LogisticRegression`",
         "target[point].label",
@@ -347,7 +347,7 @@ def _validate_classification_target_contract() -> None:
     )
     if missing_current:
         raise PublicContractError(
-            "Current public rc3 profile is missing markers: "
+            "Current public rc4 profile is missing markers: "
             + ", ".join(missing_current)
         )
 
@@ -355,6 +355,7 @@ def _validate_classification_target_contract() -> None:
         ROOT / "docs" / "adr" / "ADR-0026-public-v1-binary-classification-extension.md",
         ROOT / "docs" / "releases" / "1.0.0rc2.md",
         ROOT / "docs" / "releases" / "1.0.0rc3.md",
+        ROOT / "docs" / "releases" / "1.0.0rc4.md",
     )
     for document in release_documents:
         if not document.is_file():
@@ -412,14 +413,14 @@ def _validate_public_narrative() -> None:
             ROOT / "docs" / "getting-started" / "overview.md"
         ),
         "docs/public-v1-profile.md": ROOT / "docs" / "public-v1-profile.md",
-        "docs/releases/1.0.0rc3.md": (ROOT / "docs" / "releases" / "1.0.0rc3.md"),
+        "docs/releases/1.0.0rc4.md": (ROOT / "docs" / "releases" / "1.0.0rc4.md"),
     }
     sources = {
         name: path.read_text(encoding="utf-8") for name, path in documents.items()
     }
 
     for name, source in sources.items():
-        required = ("1.0.0rc3", "release candidate")
+        required = ("1.0.0rc4", "release candidate")
         missing = tuple(marker for marker in required if marker not in source)
         if missing:
             raise PublicContractError(
@@ -451,7 +452,7 @@ def _validate_public_narrative() -> None:
         "`UNKNOWN`",
         "docs/getting-started/installation.md",
         "docs/public-v1-profile.md",
-        "docs/releases/1.0.0rc3.md",
+        "docs/releases/1.0.0rc4.md",
         "CHANGELOG.md",
         "CONTRIBUTING.md",
         "SECURITY.md",
@@ -590,7 +591,7 @@ def check_public_contract() -> None:
         ROOT / "docs" / "getting-started" / "installation.md",
         ROOT / "docs" / "getting-started" / "overview.md",
         ROOT / "docs" / "getting-started" / "first-property.md",
-        ROOT / "docs" / "releases" / "1.0.0rc3.md",
+        ROOT / "docs" / "releases" / "1.0.0rc4.md",
         ROOT
         / "docs"
         / "adr"

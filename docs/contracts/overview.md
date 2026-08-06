@@ -1,6 +1,6 @@
 # Contracts overview
 
-> **Status:** Active contract index for `1.0.0rc3`
+> **Status:** Active contract index for `1.0.0rc4`
 >
 > **Scope:** compiler, model, IR, backend, evidence, and release boundaries
 

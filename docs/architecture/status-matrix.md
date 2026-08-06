@@ -2,7 +2,7 @@
 
 > **Status date:** 2026-07-28
 >
-> **Release candidate:** `1.0.0rc3`
+> **Release candidate:** `1.0.0rc4`
 >
 > **Authority:** the [public V1 profile](../public-v1-profile.md) controls
 > executable support

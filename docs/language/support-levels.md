@@ -1,6 +1,6 @@
 # Language support levels
 
-> Status: Current for `1.0.0rc3`
+> Status: Current for `1.0.0rc4`
 > Scope: Interpretation of every Toetra language reference page
 > Audience: users, compiler contributors, extension authors, and reviewers
 

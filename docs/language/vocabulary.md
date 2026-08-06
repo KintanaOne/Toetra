@@ -1,6 +1,6 @@
 # Vocabulary
 
-> Status: Current vocabulary for `1.0.0rc3`
+> Status: Current vocabulary for `1.0.0rc4`
 > Scope: Recognized language words and their support level
 > Audience: users, semantic maintainers, and language contributors
 

@@ -94,7 +94,7 @@ session.write_artifacts(
 ) -> dict[str, Path]
 ```
 
-Renderer option objects are internal in `1.0.0rc3`; normal callers should use
+Renderer option objects are internal in `1.0.0rc4`; normal callers should use
 the defaults.
 
 ```python

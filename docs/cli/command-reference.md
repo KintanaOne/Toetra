@@ -1,7 +1,7 @@
 # CLI command reference
 
-> P28.4 implements `validate`, `inspect`, `verify`, and `replay`. The `init`
-> section defines the accepted contract for the final P28 handler.
+> `1.0.0rc4` implements the complete `init`, `validate`, `inspect`, `verify`,
+> and `replay` command surface.
 
 ## Shared inputs
 

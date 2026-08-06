@@ -1,7 +1,7 @@
 # Contributing to Toetra
 
 Thank you for helping evaluate Toetra. The project is currently at
-`1.0.0rc3`: a deliberately narrow release candidate whose public behavior is
+`1.0.0rc4`: a deliberately narrow release candidate whose public behavior is
 frozen while the repository is exposed and observed.
 
 ## Before opening a pull request
@@ -12,8 +12,9 @@ frozen while the repository is exposed and observed.
   [SECURITY.md](SECURITY.md).
 - Discuss substantial semantic, architectural, or public-contract changes
   before implementing them.
-- Keep new capabilities outside P27. The CLI belongs to P28 and the stable
-  release cut belongs to P29.
+- Keep new capabilities outside the frozen `1.0.0rc4` profile. The CLI is
+  part of the current candidate; stable-release work remains a separate
+  hardening milestone.
 
 ## Development setup
 

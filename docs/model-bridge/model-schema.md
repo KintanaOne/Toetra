@@ -1,6 +1,6 @@
 # ModelSchema
 
-> **Status:** As built for `1.0.0rc3`
+> **Status:** As built for `1.0.0rc4`
 >
 > **Scope:** private normalized model boundary used by semantic validation,
 > formal encoding, compatibility routing, and replay

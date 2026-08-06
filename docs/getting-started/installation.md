@@ -1,10 +1,10 @@
 # Installation and availability
 
-Toetra `1.0.0rc3` supports Python 3.11 and 3.12.
+Toetra `1.0.0rc4` supports Python 3.11 and 3.12.
 
 ## Release-candidate availability
 
-`1.0.0rc3` is an evaluation release candidate, not the stable `1.0.0` release.
+`1.0.0rc4` is an evaluation release candidate, not the stable `1.0.0` release.
 It is not currently published on PyPI. The command `pip install toetra`
 is not a documented installation path.
 

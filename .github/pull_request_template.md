@@ -13,8 +13,8 @@ does not by itself grant commercial relicensing rights.
 - JSON schema changed: yes / no
 - Documentation or release evidence changed: yes / no
 
-If any frozen P27 boundary would change, link the accepted design decision before
-requesting review.
+If any frozen `1.0.0rc4` boundary would change, link the accepted design
+decision before requesting review.
 
 ## Validation
 
@@ -24,4 +24,5 @@ requesting review.
 - [ ] Distribution or review-bundle gates pass when affected.
 - [ ] Documentation matches the implemented behavior.
 - [ ] The change contains no credentials, private data, generated build output, or patch artifact.
-- [ ] The change does not add the P28 CLI or declare the P29 stable release.
+- [ ] The change does not widen the `1.0.0rc4` capability profile or declare
+      the stable `1.0.0` release.

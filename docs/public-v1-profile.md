@@ -1,11 +1,11 @@
 # Public V1 profile
 
-> Release candidate: `1.0.0rc3`
-> Contract date: 2026-07-26
+> Release candidate: `1.0.0rc4`
+> Contract date: 2026-08-06
 
 This page is the public source of truth for executable Toetra V1 support.
 
-`1.0.0rc3` is an evaluation release candidate, not the stable `1.0.0`
+`1.0.0rc4` is an evaluation release candidate, not the stable `1.0.0`
 release. It is currently installed from a source checkout or source archive and
 is not published on PyPI. See
 [Installation and availability](getting-started/installation.md).
@@ -28,6 +28,19 @@ is not published on PyPI. See
 Both routes support homogeneous `forall` or `exists` bindings, points/anchors,
 numeric domains, affine arithmetic, Boolean logic, and `PROVED`,
 `COUNTEREXAMPLE`, `WITNESS`, `NO_WITNESS`, or `UNKNOWN`.
+
+## Public automation surface
+
+The installed `toetra` and `python -m toetra` entry points expose equivalent
+`init`, `validate`, `inspect`, `verify`, and `replay` commands. The CLI is a
+process adapter over the same application workflows used by the public Python
+API; it does not introduce a second verification implementation.
+
+Process statuses are `0` for a positive conclusion, `1` for a formal failure or
+replay inconsistency, `2` for an inconclusive result, and `3` for invalid usage,
+source, artifact, or configuration. JSON validation, inspection, run-manifest,
+and replay schemas are versioned independently while verification output remains
+JSON schema v6.
 
 ## Binary-classification semantics
 

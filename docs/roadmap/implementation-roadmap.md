@@ -1,9 +1,9 @@
 # Implementation roadmap
 
-> **Status:** Active from the `1.0.0rc3` evaluation candidate
+> **Status:** Active from the `1.0.0rc4` evaluation candidate
 >
-> **Scope:** public evaluation, the first automation surface, stable V1, and
-> evidence-led capability expansion
+> **Scope:** public evaluation, stable V1 hardening, and evidence-led capability
+> expansion
 
 This roadmap starts from the product that exists today. Delivered work belongs
 in the [project history](../history/roadmaps/index.md); current support is defined
@@ -11,7 +11,7 @@ by the [public V1 profile](../public-v1-profile.md), not by future plans.
 
 ## Current position
 
-`1.0.0rc3` is a source-installed evaluation candidate. Its public executable
+`1.0.0rc4` is a source-installed evaluation candidate. Its public executable
 profile includes:
 
 - fitted single-output sklearn `LinearRegression`;
@@ -20,69 +20,44 @@ profile includes:
 - homogeneous `forall` or `exists` point bindings;
 - Z3 execution;
 - text, JSON v6, HTML, Jupyter, records/DataFrame, provenance, and replay;
-- reproducible distributions, clean-install checks, and a reproducible review
-  bundle.
+- equivalent `toetra` and `python -m toetra` command-line entry points;
+- model-aware `init`, solver-free `validate` and `inspect`, formal `verify`, and
+  delayed archived-evidence `replay`;
+- stable process statuses, diagnostics, atomic outputs, manifests, execution
+  overrides, and reproducible cross-platform smoke coverage;
+- reproducible distributions, clean-install checks, outside-in rehearsal, and a
+  reproducible review bundle.
 
 The repository structure, public Python facade, documentation baseline, error
-boundary, reporting contract, contribution surfaces, licensing, and controlled
-exposure procedure are already in place. These are current foundations rather
+boundary, reporting contract, contribution surfaces, licensing, controlled
+exposure procedure, and automation boundary are implemented foundations rather
 than future roadmap items.
 
 The [implementation status matrix](../architecture/status-matrix.md) separates
 code present in the repository from built-in and publicly guaranteed routes.
 
-## Immediate — public evaluation
+## Immediate — evaluate `1.0.0rc4`
 
-The next milestone is a controlled public repository exposure, without
-presenting the candidate as a stable package release.
-
-The remaining work is operational:
+The next milestone is public observation of the complete candidate without
+presenting it as a stable package release. The remaining work is operational:
 
 - expose the accepted commit and verify its public surfaces anonymously;
-- confirm that the published repository matches the reviewed commit and review
-  bundle;
-- observe first-use, installation, documentation, security, and soundness
-  feedback;
+- confirm that the repository, tag, release artifacts, and review bundle identify
+  the same source state;
+- exercise source, wheel, and source-distribution installation on the accepted
+  Python and operating-system matrix;
+- observe first-use, command-line, documentation, security, soundness, and MLOps
+  integration feedback;
 - correct release-candidate defects without widening the frozen V1 capability
   profile.
 
-A GitHub Release is optional during this period and, if created, remains a
-pre-release. PyPI publication and `1.0.0` are separate decisions.
+A GitHub Release remains a pre-release. PyPI publication and stable `1.0.0` are
+separate decisions.
 
-## Next — CLI and automation
+## Next — stable `1.0.0`
 
-The process contract is now accepted in the
-[CLI and automation contract](../contracts/cli-automation-contract.md) and
-[ADR-0032](../adr/ADR-0032-cli-command-surface-and-application-boundary.md).
-P28.1 provides equivalent installed `toetra` and `python -m toetra` entry
-points, metadata-backed version reporting, the accepted command index, and the
-process diagnostic boundary. P28.2 adds solver-free `validate` and `inspect`
-handlers, stable validation/inspection JSON, atomic output, and installed-wheel
-probes. P28.3 adds `verify`, exact JSON v6 and HTML rendering, logical process
-statuses, atomic report artifacts, and the run-manifest completion marker.
-P28.4 adds delayed `replay`, strict archived provenance/property matching,
-solver-free task reconstruction, stable replay JSON, and installed-wheel replay
-evidence. Before the final CLI surface is frozen, the DSL declaration-flow
-prerequisite restores the optional header dataset as an effective runtime
-artifact and enforces the no-silent-loss rule for grammar arguments. P28.5 completes the five-command surface with model-aware `init`, executable
-validation before atomic publication, generated model/target/dataset
-declarations, cross-command stream/status checks, and an installed-wheel
-`init → validate → verify` probe. A final reusable smoke scenario now
-exercises all five commands through both entry points in checkout CI and the
-isolated-wheel gate. The CLI milestone is therefore implemented.
-
-The CLI remains an adapter over shared application workflows. Compiler,
-verification, reporting, and replay semantics stay owned by the library rather
-than being duplicated beneath the command-line layer. `compile` and `serve` are
-reserved but deferred because they require, respectively, a versioned compiled
-artifact or a separately secured network-service contract. This work may
-justify another release candidate, but it does not by itself trigger the stable
-release.
-
-## Then — stable `1.0.0`
-
-Stable V1 follows public observation and acceptance of the automation boundary.
-The release milestone includes:
+Stable V1 follows sufficient public observation and acceptance of both the
+Python and process boundaries. The release milestone includes:
 
 - a final clean-checkout, metadata, provenance, and licensing audit;
 - deterministic wheel, source distribution, and review bundle;

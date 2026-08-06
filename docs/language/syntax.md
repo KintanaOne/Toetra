@@ -1,6 +1,6 @@
 # Syntax
 
-> Status: Accepted syntax for `1.0.0rc3`
+> Status: Accepted syntax for `1.0.0rc4`
 > Scope: User-facing `.toetra` source
 > Audience: users, test authors, and language contributors
 

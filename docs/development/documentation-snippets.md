@@ -1,6 +1,6 @@
 # Documentation snippets
 
-> Status: Current contributor contract for `1.0.0rc3`
+> Status: Current contributor contract for `1.0.0rc4`
 >
 > Scope: selected public Python and Toetra examples
 

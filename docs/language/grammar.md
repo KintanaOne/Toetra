@@ -1,6 +1,6 @@
 # Grammar
 
-> Status: Implemented and generation-checked in `1.0.0rc3`
+> Status: Implemented and generation-checked in `1.0.0rc4`
 > Scope: Source recognition and CST structure
 > Audience: language and parser contributors
 

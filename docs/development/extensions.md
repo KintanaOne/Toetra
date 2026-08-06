@@ -1,6 +1,6 @@
 # Extension architecture
 
-> **Status:** contributor guide for `1.0.0rc3`
+> **Status:** contributor guide for `1.0.0rc4`
 >
 > **Scope:** built-in extensions developed inside the Toetra repository
 

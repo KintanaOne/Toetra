@@ -6,7 +6,7 @@ classification. Begin with the self-contained regression demo, then replace
 its temporary artifacts with a supported fitted model, reference dataset, and
 `.toetra` policy.
 
-`1.0.0rc3` is an evaluation release candidate installed from a source checkout
+`1.0.0rc4` is an evaluation release candidate installed from a source checkout
 or source archive. It is not the stable release and is not currently published
 on PyPI.
 

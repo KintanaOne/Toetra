@@ -1,6 +1,6 @@
 # Repository contract
 
-> **Status:** Frozen for `1.0.0rc3`, amended by P28.1
+> **Status:** Frozen for `1.0.0rc4`, amended by P28.1
 >
 > **Scope:** repository and package structure through the V1 release
 

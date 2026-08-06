@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.0.0rc4] - 2026-08-06
+
 ### Added
 
 - Added one reproducible, cross-platform CLI smoke scenario shared by the
@@ -77,9 +79,9 @@
   code and documentation, documented the separate commercial-licensing route,
   and protected that route from ungoverned outside contributions.
 - Reworked the public README and onboarding path around an explicit
-  source-installed `1.0.0rc3` evaluation status, a literal self-contained first
-  run, expected conclusions, supported routes, and visible limitations without
-  claiming PyPI, CLI, or stable-release availability.
+  source-installed release-candidate evaluation status, a literal self-contained
+  first run, expected conclusions, supported routes, and visible limitations
+  without claiming unavailable publication or stable-release status.
 - Separated public repository exposure, the CLI automation surface, and stable
   release hardening into independent milestones, and accepted a dedicated
   public repository readiness contract without changing `1.0.0rc3`.
@@ -107,7 +109,7 @@
 - Accepted the public failure boundary: the three existing error families now
   expose stable diagnostic codes, owning stages, optional remediation and source
   context, while private causes remain available through exception chaining.
-- Froze the `1.0.0rc3` documentation around the nine-symbol public API,
+- Froze the V1 documentation around the nine-symbol public API,
   as-built compiler/runtime pipeline, explicit language support levels, and
   separate model-family, framework-adapter, and backend extension paths.
 - Added canonical CI-checked public snippets, consolidated delivered work into a

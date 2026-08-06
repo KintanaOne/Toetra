@@ -1,6 +1,6 @@
 # C4 component view — logical verification
 
-> **Status:** As built for `1.0.0rc3`
+> **Status:** As built for `1.0.0rc4`
 >
 > **Scope:** model-semantic lowering, NNF, IR2, routing, and backend execution
 

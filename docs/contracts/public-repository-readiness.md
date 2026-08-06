@@ -2,7 +2,7 @@
 
 > **Status:** Accepted for P27
 >
-> **Scope:** safe public exposure of the `1.0.0rc3` source repository
+> **Scope:** safe public exposure of the `1.0.0rc4` source repository
 
 ## Purpose
 
@@ -129,7 +129,7 @@ still be accepted without transferring code copyright.
 An unfamiliar reader must be able to determine from the repository:
 
 - what Toetra verifies and what it does not verify;
-- that `1.0.0rc3` is a release candidate, not a stable release;
+- that `1.0.0rc4` is a release candidate, not a stable release;
 - which Python, model, framework, and backend routes are supported;
 - how to install and run the first example from documented available artifacts;
 - where the public API, limitations, release notes, and changelog live;
@@ -246,6 +246,6 @@ Secret values and private findings must never be copied into that record.
 
 ## Relationship to later projects
 
-P28 defines the CLI and automation contract. P29 reuses the durable release
-gates, adds stable-publication and rollback evidence, and owns the eventual
-`1.0.0` cut.
+The CLI and automation contract is implemented in `1.0.0rc4`. The stable
+release milestone reuses the durable release gates, adds publication and
+rollback evidence, and owns the eventual `1.0.0` cut.

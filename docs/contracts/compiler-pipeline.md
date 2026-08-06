@@ -32,7 +32,7 @@ ModelArtifact
 
 Labels such as `SemanticValidatedAST`, `AggregatedAssertionSet`,
 `LoweredQuery`, and `BackendQuery` may appear in historical design records.
-They are not runtime classes in `1.0.0rc3` and must not be required by current
+They are not runtime classes in `1.0.0rc4` and must not be required by current
 extensions.
 
 ## Artifact ownership
