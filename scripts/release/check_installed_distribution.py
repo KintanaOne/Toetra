@@ -536,7 +536,11 @@ def main() -> int:
         assert generated_verification.stderr == ""
         generated_payload = json.loads(generated_verification.stdout)
         assert generated_payload["schema_version"] == 6
-        assert generated_payload["reports"][0]["status"] == "PROVED"
+        generated_reports = generated_payload["reports"]
+        assert len(generated_reports) == 1, generated_payload
+        assert (
+            generated_reports[0]["execution"]["status"] == "proved"
+        ), generated_reports[0]
 
         quickstart = root / "verify_model.py"
         report = root / "quickstart-report.json"
