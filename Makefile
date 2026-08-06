@@ -5,7 +5,7 @@
 .PHONY: install test test-wip test-all lint format format-check type \
 	notebooks-clean notebooks-check generated-check identity-check public-contract-check \
 	public-snapshot-check public-history-check public-collaboration-check \
-	snippets-check docs-check ci \
+	cli-smoke-check snippets-check docs-check ci \
 	dist dist-check install-check release-check review-bundle \
 	review-bundle-check repository-check demo-regression demo-quickstart \
 	demo-classification demo-check outside-in-check public-surface-check clean ci-local
@@ -62,6 +62,9 @@ format-check: notebooks-check
 type:
 	python -m pyright
 
+cli-smoke-check:
+	python scripts/ci/check_cli_smoke.py
+
 snippets-check:
 	python scripts/docs/check_snippets.py
 
@@ -69,11 +72,11 @@ docs-check: snippets-check
 	python -m mkdocs build --strict
 
 # Non-mutating authoritative verification gate.
-ci: lint format-check generated-check identity-check public-contract-check repository-check public-snapshot-check public-collaboration-check type test docs-check
+ci: lint format-check generated-check identity-check public-contract-check repository-check public-snapshot-check public-collaboration-check type test cli-smoke-check docs-check
 
 # Complete local gate without Ruff for hosts that block unsigned native tools.
 # Hosted CI remains authoritative for lint.
-ci-local: format format-check generated-check identity-check public-contract-check repository-check public-snapshot-check public-collaboration-check type test docs-check
+ci-local: format format-check generated-check identity-check public-contract-check repository-check public-snapshot-check public-collaboration-check type test cli-smoke-check docs-check
 	
 ci-local-fix: format ci-local
 
@@ -85,6 +88,7 @@ ci-check:
 	python scripts/repository/check_identity_contract.py
 	python -m pyright
 	python -m pytest -q
+	python scripts/ci/check_cli_smoke.py
 
 # Build deterministic wheel and sdist artifacts.
 dist:
