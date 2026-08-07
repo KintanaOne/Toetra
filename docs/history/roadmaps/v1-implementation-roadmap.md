@@ -42,5 +42,5 @@ made the implemented route independently reviewable.
 
 This sequence produced `1.0.0rc1` on 2026-07-19: the first public end-to-end
 regression candidate. Its exact capability boundary is preserved in the
-[release history](../../releases/1.0.0rc3.md) and current
+[release history](../../releases/1.0.0rc4.md) and current
 [public V1 profile](../../public-v1-profile.md).
