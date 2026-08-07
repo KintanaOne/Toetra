@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from scripts.repository.check_public_collaboration import (
@@ -46,13 +47,14 @@ def test_collaboration_check_rejects_mutable_action_reference(
     repository = _collaboration_fixture(tmp_path)
     workflow = repository / ".github" / "workflows" / "ci.yml"
     source = workflow.read_text(encoding="utf-8")
-    workflow.write_text(
-        source.replace(
-            "actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2",
-            "actions/checkout@v4",
-        ),
-        encoding="utf-8",
+    mutated_source, replacement_count = re.subn(
+        r"actions/checkout@[0-9a-f]{40}",
+        "actions/checkout@v4",
+        source,
+        count=1,
     )
+    assert replacement_count == 1
+    workflow.write_text(mutated_source, encoding="utf-8")
 
     errors = public_collaboration_errors(repository)
 
