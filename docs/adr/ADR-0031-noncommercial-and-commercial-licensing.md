@@ -8,9 +8,7 @@
 Apache-2.0 permits commercial use, redistribution, hosted services, and
 commercial derivatives without a separate agreement. That does not preserve
 the intended launch boundary for Toetra: the source should be publicly
-reviewable and usable for noncommercial purposes without granting third parties
-the right to launch a competing commercial service before OntoLogIA.
-
+reviewable and usable for noncommercial purposes without granting third parties the right to launch a competing commercial service before the repository owner chooses that route.
 The repository has not yet completed its controlled public exposure. The
 licensing decision must therefore be corrected before the accepted public
 commit is selected.
