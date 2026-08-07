@@ -1,4 +1,8 @@
 # Toetra
+[![CI](https://github.com/KintanaOne/Toetra/actions/workflows/ci.yml/badge.svg)](https://github.com/KintanaOne/Toetra/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](https://www.python.org/)
+[![Version](https://img.shields.io/badge/version-1.0.0rc4-orange)](https://github.com/KintanaOne/Toetra/releases)
+[![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue)](LICENSE)
 
 Toetra is a Python framework and declarative language for specifying and
 formally verifying behavioral properties of machine-learning models. It turns a
