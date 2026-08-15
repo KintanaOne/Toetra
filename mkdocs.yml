@@ -286,6 +286,7 @@ nav:
       - ADR-0031 Noncommercial and Commercial Licensing: adr/ADR-0031-noncommercial-and-commercial-licensing.md
       - ADR-0032 CLI Command Surface and Application Boundary: adr/ADR-0032-cli-command-surface-and-application-boundary.md
       - ADR-0033 Declared Defaults and Execution Overrides: adr/ADR-0033-declared-defaults-and-execution-overrides.md
+      - ADR-0034 Model IR and Verification IR: adr/ADR-0034-separate-model-ir-from-verification-ir.md
 
   - Roadmap:
       - Implementation Roadmap: roadmap/implementation-roadmap.md

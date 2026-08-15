@@ -95,6 +95,7 @@ Impact on Toetra
 | ADR-0031 | Adopt noncommercial and separate commercial licensing |
 | ADR-0032 | Define the CLI command surface and application boundary |
 | ADR-0033 | Separate declared defaults from execution overrides |
+| ADR-0034 | Separate Model IR from Verification IR |
 
 ## Decision status vocabulary
 
