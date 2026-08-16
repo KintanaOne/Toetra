@@ -200,6 +200,7 @@ nav:
       - Errors: contracts/errors.md
       - Type Normalization: contracts/type-normalization.md
       - Mutation Boundaries: contracts/mutation-boundaries.md
+      - Model IR: contracts/model-ir.md
 
   - Backends:
       - Overview: backends/overview.md
@@ -246,6 +247,7 @@ nav:
       - Specification Constants Test Matrix: testing/specification-constants-tests.md
       - Point Binding and Evaluation Test Matrix: testing/point-binding-evaluation-test-matrix.md
       - Binary Classification Test Matrix: testing/binary-classification-test-matrix.md
+      - Model IR Test Matrix: testing/model-ir-test-matrix.md
       - End-to-End Tests: testing/end-to-end-tests.md
       - Property-Based Testing: testing/property-based-testing.md
       - Intelligent Fuzzing: testing/intelligent-fuzzing.md
