@@ -66,13 +66,13 @@ def replay_verification_report(
                 f"Required replay point {point_name!r} is missing from the report"
             )
         input_values = point_input_values(report_point)
-        missing = [name for name in schema.features if name not in input_values]
+        missing = [name for name in schema.feature_names if name not in input_values]
         if missing:
             raise ReplayUnavailableError(
                 f"Point {point_name!r} cannot be reconstructed; missing features: "
                 + ", ".join(missing)
             )
-        ordered_inputs = {name: input_values[name] for name in schema.features}
+        ordered_inputs = {name: input_values[name] for name in schema.feature_names}
         observation = observer.observe(
             schema=schema,
             model=model,

@@ -98,7 +98,7 @@ class DataFrameAnchorResolver(AnchorResolver):
         row = matches.iloc[0]
         row_index = matches.index[0]
         concrete_values: dict[str, PointLiteral] = {}
-        for feature_name, feature in schema.features.items():
+        for feature_name, feature in schema.features_by_name.items():
             if feature_name not in self._frame.columns:
                 raise AnchorResolutionError(
                     f"Anchor '{request.name}' source is missing transformed model "

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from collections.abc import Iterable, Mapping
+from dataclasses import dataclass
+from types import MappingProxyType
 from typing import Any
 
 from toetra._compatibility.descriptors import FrameworkModelDescriptor
@@ -8,6 +10,13 @@ from toetra._compiler.semantic.types.enums import EnumDataType
 
 from toetra._models.detector.model_framework import EnumModelFramework
 from toetra._models.schema.feature_schema import FeatureSchema
+from toetra._models.schema.metadata import (
+    FrozenMetadataMap,
+    FrozenMetadataValue,
+    MetadataEntry,
+    freeze_metadata,
+    thaw_metadata,
+)
 from toetra._models.schema.output_schema import (
     ClassificationOutputSchema,
     EnumModelOutputKind,
@@ -17,7 +26,7 @@ from toetra._models.schema.output_schema import (
 )
 
 
-@dataclass(init=False)
+@dataclass(frozen=True, init=False, slots=True)
 class ModelSchema:
     """Normalized Toetra model representation.
 
@@ -28,28 +37,33 @@ class ModelSchema:
 
     framework: EnumModelFramework
     model_type: str
-    features: dict[str, FeatureSchema]
+    features: tuple[FeatureSchema, ...]
     output_name: str
     task: str
     output_schema: ModelOutputSchema
-    metadata: dict[str, Any] = field(default_factory=dict)
+    metadata: tuple[MetadataEntry, ...]
     compatibility: FrameworkModelDescriptor | None = None
 
     def __init__(
         self,
         framework: EnumModelFramework,
         model_type: str,
-        features: dict[str, FeatureSchema],
+        features: Mapping[str, FeatureSchema] | Iterable[FeatureSchema],
         target: str | None = None,
         task: str = "unknown",
         target_dtype: EnumDataType | None = None,
-        metadata: dict[str, Any] | None = None,
+        metadata: Mapping[str, Any] | tuple[MetadataEntry, ...] | None = None,
         compatibility: FrameworkModelDescriptor | None = None,
         target_source_dtype: str | None = None,
         *,
         output_name: str | None = None,
         output_schema: ModelOutputSchema | None = None,
     ) -> None:
+        _validate_framework(framework)
+        _validate_text(model_type, field_name="model_type")
+        _validate_text(task, field_name="task")
+        normalized_features = _normalize_features(features)
+        normalized_metadata = freeze_metadata(metadata)
         resolved_output_name = _resolve_output_name(
             output_name=output_name,
             target=target,
@@ -58,8 +72,17 @@ class ModelSchema:
             task=task,
             target_dtype=target_dtype,
             target_source_dtype=target_source_dtype,
-            metadata=metadata or {},
+            metadata=FrozenMetadataMap(normalized_metadata),
         )
+        if type(resolved_output_schema) not in (
+            RegressionOutputSchema,
+            ClassificationOutputSchema,
+            UnknownOutputSchema,
+        ):
+            raise TypeError(
+                "ModelSchema output_schema must be a supported immutable "
+                "ModelOutputSchema value."
+            )
         _validate_output_kind(task=task, output_schema=resolved_output_schema)
         _validate_compatibility_projection(
             output_schema=resolved_output_schema,
@@ -67,14 +90,61 @@ class ModelSchema:
             target_source_dtype=target_source_dtype,
         )
 
-        self.framework = framework
-        self.model_type = model_type
-        self.features = features
-        self.output_name = resolved_output_name
-        self.task = task
-        self.output_schema = resolved_output_schema
-        self.metadata = dict(metadata or {})
-        self.compatibility = compatibility
+        if compatibility is not None and not isinstance(
+            compatibility, FrameworkModelDescriptor
+        ):
+            raise TypeError(
+                "ModelSchema compatibility must be a FrameworkModelDescriptor "
+                "or None."
+            )
+
+        object.__setattr__(self, "framework", framework)
+        object.__setattr__(self, "model_type", model_type)
+        object.__setattr__(self, "features", normalized_features)
+        object.__setattr__(self, "output_name", resolved_output_name)
+        object.__setattr__(self, "task", task)
+        object.__setattr__(self, "output_schema", resolved_output_schema)
+        object.__setattr__(self, "metadata", normalized_metadata)
+        object.__setattr__(self, "compatibility", compatibility)
+
+    @property
+    def feature_names(self) -> tuple[str, ...]:
+        """Return normalized input names in model order."""
+
+        return tuple(feature.name for feature in self.features)
+
+    @property
+    def features_by_name(self) -> Mapping[str, FeatureSchema]:
+        """Return a read-only feature lookup detached from caller-owned mappings."""
+
+        return MappingProxyType({feature.name: feature for feature in self.features})
+
+    def get_feature(self, name: str) -> FeatureSchema | None:
+        """Return one normalized feature without exposing mutable lookup state."""
+
+        return next(
+            (feature for feature in self.features if feature.name == name), None
+        )
+
+    @property
+    def metadata_by_name(self) -> FrozenMetadataMap:
+        """Return metadata through an immutable mapping-compatible view."""
+
+        return FrozenMetadataMap(self.metadata)
+
+    def get_metadata(
+        self,
+        key: str,
+        default: FrozenMetadataValue | None = None,
+    ) -> FrozenMetadataValue | None:
+        """Return one deeply immutable metadata value."""
+
+        return self.metadata_by_name.get(key, default)
+
+    def metadata_as_dict(self) -> dict[str, Any]:
+        """Return detached built-ins suitable for serialization and reports."""
+
+        return thaw_metadata(self.metadata)
 
     @property
     def output(self) -> ModelOutputSchema:
@@ -102,6 +172,10 @@ class ModelSchema:
 
 
 def _resolve_output_name(*, output_name: str | None, target: str | None) -> str:
+    if output_name is not None:
+        _validate_text(output_name, field_name="output_name")
+    if target is not None:
+        _validate_text(target, field_name="target")
     if output_name is not None and target is not None and output_name != target:
         raise ValueError(
             "ModelSchema output_name and compatibility target must identify "
@@ -119,7 +193,7 @@ def _legacy_output_schema(
     task: str,
     target_dtype: EnumDataType | None,
     target_source_dtype: str | None,
-    metadata: dict[str, Any],
+    metadata: Mapping[str, Any],
 ) -> ModelOutputSchema:
     if task == "regression":
         return RegressionOutputSchema(
@@ -194,4 +268,56 @@ def _validate_compatibility_projection(
         raise ValueError(
             "ModelSchema target_source_dtype compatibility projection conflicts "
             "with the typed output schema"
+        )
+
+
+def _normalize_features(
+    features: Mapping[str, FeatureSchema] | Iterable[FeatureSchema],
+) -> tuple[FeatureSchema, ...]:
+    if isinstance(features, Mapping):
+        normalized = tuple(features.values())
+        for key, feature in features.items():
+            if not isinstance(key, str):
+                raise TypeError("ModelSchema feature mapping keys must be strings.")
+            if not isinstance(feature, FeatureSchema):
+                raise TypeError("ModelSchema features must be FeatureSchema values.")
+            if key != feature.name:
+                raise ValueError(
+                    "ModelSchema feature mapping keys must match FeatureSchema names: "
+                    f"{key!r} != {feature.name!r}."
+                )
+    else:
+        normalized = tuple(features)
+
+    seen: set[str] = set()
+    for feature in normalized:
+        if not isinstance(feature, FeatureSchema):
+            raise TypeError("ModelSchema features must be FeatureSchema values.")
+        if feature.name in seen:
+            raise ValueError(f"Duplicate ModelSchema feature name: {feature.name!r}.")
+        seen.add(feature.name)
+    return normalized
+
+
+def _validate_framework(framework: object) -> None:
+    if not isinstance(framework, EnumModelFramework):
+        raise TypeError("ModelSchema framework must be an EnumModelFramework.")
+
+
+def _validate_text(value: object, *, field_name: str) -> None:
+    if not isinstance(value, str):
+        raise TypeError(f"ModelSchema {field_name} must be a string.")
+    if not value:
+        raise ValueError(f"ModelSchema {field_name} cannot be empty.")
+    if value.strip() != value:
+        raise ValueError(
+            f"ModelSchema {field_name} cannot have leading or trailing whitespace."
+        )
+    if field_name == "task" and value not in {
+        "regression",
+        "classification",
+        "unknown",
+    }:
+        raise ValueError(
+            "ModelSchema task must be 'regression', 'classification', or 'unknown'."
         )

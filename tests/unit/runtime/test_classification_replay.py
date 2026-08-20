@@ -173,7 +173,7 @@ class _ProtocolObserver:
         model: object,
         inputs: Mapping[str, Any],
     ) -> ModelObservation:
-        linear = schema.metadata["linear"]
+        linear = schema.metadata_by_name["linear"]
         decision = float(linear["coef"][0][0]) * float(inputs["income"]) + float(
             linear["intercept"][0]
         )

@@ -320,6 +320,6 @@ class LHSValidator:
                     dtype=feature.dtype,
                     nullable=feature.nullable,
                 )
-                for name, feature in self.model_schema.features.items()
+                for name, feature in self.model_schema.features_by_name.items()
             }
         )

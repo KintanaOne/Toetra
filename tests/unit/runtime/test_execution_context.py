@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 from pathlib import Path
 
 import pytest
@@ -107,8 +109,7 @@ def test_execution_context_rebinds_model_and_target_through_ir1() -> None:
         target="risk_score",
         dataset="candidate.csv",
     )
-    schema = numeric_schema()
-    schema.output_name = "risk_score"
+    schema = replace(numeric_schema(), output_name="risk_score")
 
     expression = run_ir_from_program(
         context.apply_to(program),

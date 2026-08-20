@@ -14,9 +14,7 @@ class ModelDescriptor:
 
     def __post_init__(self) -> None:
         if not isinstance(self.framework, EnumModelFramework):
-            raise TypeError(
-                "ModelDescriptor framework must be an EnumModelFramework."
-            )
+            raise TypeError("ModelDescriptor framework must be an EnumModelFramework.")
 
         if not isinstance(self.model_type, str):
             raise TypeError("ModelDescriptor model_type must be a string.")
@@ -29,9 +27,8 @@ class ModelDescriptor:
                 "ModelDescriptor model_type cannot have leading or trailing whitespace."
             )
 
-        if (
-            self.compatibility is not None
-            and not isinstance(self.compatibility, FrameworkModelDescriptor)
+        if self.compatibility is not None and not isinstance(
+            self.compatibility, FrameworkModelDescriptor
         ):
             raise TypeError(
                 "ModelDescriptor compatibility must be a "

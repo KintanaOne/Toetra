@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from dataclasses import replace
 
 import pytest
 
@@ -89,8 +90,7 @@ def test_default_factory_registers_logistic_regression_encoder() -> None:
 
 
 def test_logistic_encoder_rejects_unfitted_schema() -> None:
-    schema = _schema()
-    schema.metadata.pop("linear")
+    schema = replace(_schema(), metadata={})
 
     with pytest.raises(MissingModelParameterError, match="fitted direct"):
         SklearnLogisticRegressionEncoder().encode(schema, (_evaluation(),))
@@ -105,11 +105,13 @@ def test_logistic_encoder_rejects_non_finite_parameters() -> None:
 
 
 def test_logistic_encoder_rejects_schema_without_native_decision_policy() -> None:
-    schema = _schema()
-    schema.output_schema = ClassificationOutputSchema(
-        label_dtype=EnumDataType.STRING,
-        labels=("rejected", "approved"),
-        probability_available=True,
+    schema = replace(
+        _schema(),
+        output_schema=ClassificationOutputSchema(
+            label_dtype=EnumDataType.STRING,
+            labels=("rejected", "approved"),
+            probability_available=True,
+        ),
     )
 
     with pytest.raises(UnsupportedModelParameterError, match="decision policy"):
@@ -127,8 +129,7 @@ def test_logistic_encoder_rejects_schema_without_native_decision_policy() -> Non
     ],
 )
 def test_initial_registry_rejects_wrappers(model_type: str) -> None:
-    schema = _schema()
-    schema.model_type = model_type
+    schema = replace(_schema(), model_type=model_type)
 
     with pytest.raises(UnsupportedModelEncoderError):
         ModelEncoderFactory().create(schema)

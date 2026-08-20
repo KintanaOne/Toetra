@@ -34,6 +34,10 @@ Successful construction returns a normalized `ModelSchema` containing:
 - optional framework/model compatibility descriptor;
 - adapter-specific metadata that does not override normalized fields.
 
+The returned schema is a deeply immutable snapshot. Ordered features and
+metadata are stored as tuples; nested framework/caller mappings and sequences
+are detached and recursively frozen before the constructor succeeds.
+
 `target`, `target_dtype`, and `target_source_dtype` are read-only internal
 compatibility projections from the typed output source of truth.
 
@@ -81,6 +85,8 @@ If schema construction succeeds:
 5. classification labels and observables are structurally valid;
 6. downstream semantic validation can check feature and observable references;
 7. compatibility evidence, when present, is explicit and backend-independent.
+8. no caller- or framework-owned mutable collection can change the normalized
+   schema after construction.
 
 These guarantees do not imply that a complete encoder/backend route exists.
 Route qualification must still fail closed.

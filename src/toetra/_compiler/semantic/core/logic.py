@@ -324,14 +324,13 @@ class LogicValidator:
 
         feature_name = node.feature
 
-        if feature_name not in self.model_schema.features:
-            available = ", ".join(sorted(self.model_schema.features.keys()))
+        feature_schema = self.model_schema.get_feature(feature_name)
+        if feature_schema is None:
+            available = ", ".join(sorted(self.model_schema.feature_names))
 
             raise InvalidPropertyError(
                 f"Unknown feature '{feature_name}'. " f"Available features: {available}"
             )
-
-        feature_schema = self.model_schema.features[feature_name]
 
         if node.semantic is not None:
             node.semantic.resolved_type = feature_schema.dtype.value

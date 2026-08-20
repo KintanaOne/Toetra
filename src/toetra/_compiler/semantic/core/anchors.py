@@ -119,7 +119,7 @@ class AnchorValidator:
         if self.model_schema is None:
             return {}
 
-        expected = self.model_schema.features
+        expected = self.model_schema.features_by_name
         unknown = [name for name in values if name not in expected]
         if unknown:
             available = ", ".join(sorted(expected))
@@ -206,7 +206,7 @@ class AnchorValidator:
                     dtype=feature.dtype,
                     nullable=feature.nullable,
                 )
-                for name, feature in self.model_schema.features.items()
+                for name, feature in self.model_schema.features_by_name.items()
             }
             if self.model_schema is not None
             else {}
@@ -268,7 +268,7 @@ class AnchorValidator:
         if self.model_schema is None:
             return
 
-        expected = self.model_schema.features
+        expected = self.model_schema.features_by_name
         actual = resolved.concrete_values
         unknown = [name for name in actual if name not in expected]
         if unknown:

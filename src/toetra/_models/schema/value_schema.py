@@ -28,9 +28,7 @@ class ValueSchema:
 
         if self.source_dtype is not None:
             if not isinstance(self.source_dtype, str):
-                raise TypeError(
-                    "ValueSchema source_dtype must be a string or None."
-                )
+                raise TypeError("ValueSchema source_dtype must be a string or None.")
 
             if not self.source_dtype:
                 raise ValueError("ValueSchema source_dtype cannot be empty.")

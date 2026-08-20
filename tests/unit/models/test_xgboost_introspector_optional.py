@@ -6,6 +6,7 @@ from tests.support.model_bridge import dataset_path
 
 xgboost = pytest.importorskip("xgboost")
 
+
 def test_xgboost_introspector_reuses_sklearn_contract_and_preserves_target():
     import pandas as pd
 
@@ -30,5 +31,5 @@ def test_xgboost_introspector_reuses_sklearn_contract_and_preserves_target():
 
     assert schema.framework is EnumModelFramework.XGBOOST
     assert schema.target == "MyTarget"
-    assert "MyTarget" not in schema.features
-    assert "xgboost" in schema.metadata
+    assert "MyTarget" not in schema.feature_names
+    assert "xgboost" in schema.metadata_by_name

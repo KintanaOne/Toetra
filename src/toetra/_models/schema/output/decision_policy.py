@@ -7,15 +7,12 @@ from toetra._models.families import (
     BINARY_LOGISTIC_AFFINE_SEMANTIC_PROFILE_ID,
 )
 
-
 ModelLabel: TypeAlias = str | int | float | bool
 
 
 def _validate_label(label: ModelLabel, *, field_name: str) -> None:
     if not isinstance(label, (str, int, float, bool)):
-        raise TypeError(
-            f"{field_name} must be a string, integer, float, or boolean."
-        )
+        raise TypeError(f"{field_name} must be a string, integer, float, or boolean.")
 
     if isinstance(label, float) and not math.isfinite(label):
         raise ValueError(f"{field_name} must be finite.")
@@ -47,9 +44,7 @@ class BinaryClassificationDecisionPolicy:
             raise ValueError("Probability threshold must be finite.")
 
         if not Decimal("0") <= self.probability_threshold <= Decimal("1"):
-            raise ValueError(
-                "Probability threshold must be between 0 and 1."
-            )
+            raise ValueError("Probability threshold must be between 0 and 1.")
 
         if not isinstance(self.oriented_decision_threshold, Decimal):
             raise TypeError("Oriented decision threshold must be a Decimal.")

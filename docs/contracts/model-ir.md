@@ -1,6 +1,7 @@
 # Model IR Contract
 
-> Status: Planned
+> Status: Stabilizing for affine structure and sklearn construction; runtime
+> adoption remains planned
 >
 > Scope: ModelBridge, model representation, model IR construction, compiler
 > model lowering
@@ -237,6 +238,10 @@ Model IR
 The builder may use framework-specific APIs and normalized schema information.
 
 The resulting Model IR must not retain those framework-specific objects.
+
+The normalized `ModelSchema` input is an immutable snapshot. A builder may use
+its ordered features and typed output information, but it must neither mutate
+the schema nor depend on later adapter/runtime changes.
 
 During migration, existing normalized metadata may temporarily be used as an
 input to Model IR construction. It must not remain the long-term canonical

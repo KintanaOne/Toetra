@@ -15,14 +15,18 @@ feature, output, task, and compatibility information.
 |---|---|---|
 | `framework` | `EnumModelFramework` | detected framework identity |
 | `model_type` | `str` | concrete estimator class name |
-| `features` | `dict[str, FeatureSchema]` | ordered normalized inputs |
+| `features` | `tuple[FeatureSchema, ...]` | ordered immutable normalized inputs |
 | `output_name` | `str` | selected output-port name |
 | `task` | `str` | regression, classification, or unknown task |
 | `output_schema` | `ModelOutputSchema` | typed output and available observables |
-| `metadata` | `dict[str, Any]` | optional adapter-specific evidence |
+| `metadata` | `tuple[MetadataEntry, ...]` | deeply immutable adapter-specific evidence |
 | `compatibility` | descriptor or `None` | framework/model numeric contract used by routing |
 
 The concise `output` property returns `output_schema`.
+
+Named consumers use `feature_names` or the read-only `features_by_name` view.
+Metadata consumers use `metadata_by_name`; reporting and provenance use
+`metadata_as_dict()` to obtain a detached built-in serialization copy.
 
 ## Feature schema
 
@@ -75,12 +79,16 @@ If schema construction succeeds:
 
 1. the output name is non-empty;
 2. the task and typed output kind agree;
-3. feature names and semantic dtypes are normalized;
+3. feature names and semantic dtypes are normalized and unique;
 4. classification labels are unique JSON-compatible scalar values;
 5. a binary decision policy has exactly two consistently oriented labels;
 6. probability observability agrees with the recognized decision policy;
 7. framework-specific metadata does not become generic semantic authority;
-8. compatibility evidence remains explicit rather than inferred by a backend.
+8. compatibility evidence remains explicit rather than inferred by a backend;
+9. the schema and every reachable normalized feature/metadata value are
+   immutable after successful construction;
+10. caller/framework dictionaries, lists, and numpy values retain no mutation
+    channel into the normalized schema.
 
 ## Compatibility projections
 
@@ -97,4 +105,4 @@ Python API. Normal callers should provide a supported model artifact to
 
 See the [ModelBridge overview](overview.md), the
 [model-to-schema contract](../contracts/model-to-schema.md), and the
-[public V1 profile](../public-v1-profile.md).
+[immutable-schema decision](../adr/ADR-0035-immutable-model-schema-boundary.md).

@@ -179,7 +179,7 @@ def print_case(
     print(f"Model framework   : {schema.framework.value}")
     print(f"Model type        : {schema.model_type}")
     print(f"Target            : {schema.target}")
-    print(f"Linear metadata   : {schema.metadata.get('linear')}")
+    print(f"Linear metadata   : {schema.metadata_by_name.get('linear')}")
     print("Domain bounds     :")
 
     for bound in bounds:

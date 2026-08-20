@@ -65,7 +65,7 @@ def test_run_ref_008_dataset_is_default_anchor_source(tmp_path) -> None:
     session = verify(_SOURCE, model=model_path, dataset=dataset_path)
 
     assert session.reports[0].status is VerificationStatus.PROVED
-    assert tuple(session.schema.features) == ("a",)
+    assert session.schema.feature_names == ("a",)
     assert (
         EnumDataType.STRING
         not in session.executions[0].task.requirements.required_scalar_sorts

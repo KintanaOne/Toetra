@@ -389,12 +389,12 @@ def _schema_artifact(schema: ModelSchema) -> ArtifactProvenance:
                 "nullable": feature.nullable,
                 "source_dtype": feature.source_dtype,
             }
-            for feature in schema.features.values()
+            for feature in schema.features
         ],
         "output_name": schema.output_name,
         "task": schema.task,
         "output_schema": _output_schema_payload(schema.output_schema),
-        "metadata": schema.metadata,
+        "metadata": schema.metadata_as_dict(),
         "compatibility": schema.compatibility,
     }
     try:

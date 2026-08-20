@@ -19,18 +19,18 @@ def framework_model_descriptor(schema: ModelSchema) -> FrameworkModelDescriptor:
     if schema.compatibility is not None:
         return schema.compatibility
 
-    parameter_dtypes = _parameter_dtypes(schema.metadata)
+    metadata = schema.metadata_by_name
+    parameter_dtypes = _parameter_dtypes(metadata)
     numeric_semantics, profile_id = _numeric_semantics(parameter_dtypes)
     return FrameworkModelDescriptor(
         framework_adapter_id=schema.framework.value,
-        framework_version=_optional_text(schema.metadata.get("framework_version")),
+        framework_version=_optional_text(metadata.get("framework_version")),
         model_family=_model_family(schema),
         source_execution_profile_id=profile_id,
         numeric_semantics=numeric_semantics,
         parameter_dtypes=parameter_dtypes,
         input_dtypes=tuple(
-            feature.source_dtype or feature.dtype.value
-            for feature in schema.features.values()
+            feature.source_dtype or feature.dtype.value for feature in schema.features
         ),
         output_dtype=(schema.output_schema.source_dtype or _output_dtype(schema)),
     )

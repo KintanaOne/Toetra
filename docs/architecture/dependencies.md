@@ -33,6 +33,7 @@ boundaries.
 | parser | generated grammar and source text |
 | builder | CST shapes and AST node constructors |
 | semantic validator | AST, language rules, `ModelSchema`, resolved anchors |
+| Model IR builder | source-framework model API, immutable `ModelSchema`, Model IR constructors |
 | IR1 translator | validated AST state and semantic annotations |
 | model-semantic lowerer | IR1 output observables and `ModelSchema` |
 | model encoder | `ModelSchema`, requested evaluations, encoding context |
@@ -54,6 +55,8 @@ boundaries.
 | a renderer re-interpreting SAT/UNSAT | status interpretation belongs to the runner and policies |
 | replay changing the formal report status | replay is post-proof evidence |
 | internal code importing through the root facade | private code imports the concrete owning module |
+| Model IR importing compiler, backend, or framework modules | normalized computation IR remains reusable and framework/backend independent |
+| Model IR builder importing compiler or backend modules | construction normalizes source models but does not lower verification tasks |
 
 ## Runtime dependency assembly
 

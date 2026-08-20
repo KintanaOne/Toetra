@@ -33,13 +33,13 @@ class SklearnModelObserver:
         model: object,
         inputs: Mapping[str, Any],
     ) -> ModelObservation:
-        missing = tuple(name for name in schema.features if name not in inputs)
+        missing = tuple(name for name in schema.feature_names if name not in inputs)
         if missing:
             raise ReplayUnavailableError(
                 "Concrete observation is missing model features: " + ", ".join(missing)
             )
 
-        frame = pd.DataFrame([{name: inputs[name] for name in schema.features}])
+        frame = pd.DataFrame([{name: inputs[name] for name in schema.feature_names}])
         output_schema = schema.output_schema
         runtime_model = cast(Any, model)
 

@@ -32,5 +32,5 @@ forall x0 => x0.age >= 0
     ).build_schema()
 
     assert schema.target == "MyTarget"
-    assert "MyTarget" not in schema.features
-    assert set(schema.features) == {"age", "income", "score"}
+    assert "MyTarget" not in schema.feature_names
+    assert set(schema.feature_names) == {"age", "income", "score"}

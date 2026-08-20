@@ -1,6 +1,2 @@
-# src/toetra/_models/ir/base.py
-
 class ModelIR:
-    """Normalized Toetra model representation who's framework and backend agnostic.
-    """
-
+    """Marker base for framework- and backend-agnostic model computation IRs."""

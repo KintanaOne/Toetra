@@ -4,6 +4,7 @@ import pandas as pd
 from sklearn.linear_model import LogisticRegression
 
 from toetra._models.introspector.sklearn_introspector import SklearnIntrospector
+from toetra._models.schema.metadata import FrozenMetadataMap
 from toetra._models.schema.output_schema import (
     BinaryClassificationDecisionPolicy,
     ClassificationOutputSchema,
@@ -42,9 +43,15 @@ def test_direct_fitted_binary_logistic_regression_gets_frozen_profile(tmp_path) 
         negative_label=0,
         positive_label=1,
     )
-    assert schema.metadata["linear"]["feature_names"] == ["income", "debt"]
-    assert len(schema.metadata["linear"]["coef"]) == 1
-    assert len(schema.metadata["linear"]["intercept"]) == 1
+    linear = schema.metadata_by_name["linear"]
+    assert isinstance(linear, FrozenMetadataMap)
+    assert linear["feature_names"] == ("income", "debt")
+    coefficients = linear["coef"]
+    intercept = linear["intercept"]
+    assert isinstance(coefficients, tuple)
+    assert isinstance(intercept, tuple)
+    assert len(coefficients) == 1
+    assert len(intercept) == 1
 
 
 def test_unfitted_logistic_regression_is_not_classified_as_supported_profile(
@@ -64,7 +71,7 @@ def test_unfitted_logistic_regression_is_not_classified_as_supported_profile(
     assert schema.compatibility.model_family.startswith("unknown:")
     assert isinstance(schema.output_schema, ClassificationOutputSchema)
     assert schema.output_schema.decision_policy is None
-    assert "linear" not in schema.metadata
+    assert "linear" not in schema.metadata_by_name
 
 
 def test_multiclass_logistic_regression_is_not_classified_as_binary_profile(

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import Any, cast
 
 from toetra._compatibility.descriptors import ModelEncoderDescriptor
@@ -196,9 +196,9 @@ class SklearnLogisticRegressionEncoder:
             )
 
     @staticmethod
-    def _linear_metadata(schema: ModelSchema) -> dict[str, Any]:
-        raw = schema.metadata.get("linear")
-        if not isinstance(raw, dict):
+    def _linear_metadata(schema: ModelSchema) -> Mapping[str, Any]:
+        raw = schema.get_metadata("linear")
+        if not isinstance(raw, Mapping):
             raise MissingModelParameterError(
                 "A fitted direct LogisticRegression must expose learned "
                 "coef_ and intercept_ metadata."
@@ -212,11 +212,11 @@ class SklearnLogisticRegressionEncoder:
     @staticmethod
     def _feature_names(
         schema: ModelSchema,
-        linear: dict[str, Any],
+        linear: Mapping[str, Any],
     ) -> tuple[str, ...]:
         raw = linear.get("feature_names")
         if raw is None:
-            return tuple(schema.features.keys())
+            return schema.feature_names
         if not isinstance(raw, Sequence) or isinstance(raw, (str, bytes)):
             raise UnsupportedModelParameterError(
                 "linear.feature_names must be a sequence of strings."
@@ -226,14 +226,14 @@ class SklearnLogisticRegressionEncoder:
             raise UnsupportedModelParameterError(
                 "Logistic feature names must be unique."
             )
-        if names != tuple(schema.features.keys()):
+        if names != schema.feature_names:
             raise UnsupportedModelParameterError(
                 "Logistic feature order must match the normalized schema order."
             )
         return names
 
     @staticmethod
-    def _binary_coefficients(linear: dict[str, Any]) -> tuple[float, ...]:
+    def _binary_coefficients(linear: Mapping[str, Any]) -> tuple[float, ...]:
         coef = linear["coef"]
         if not isinstance(coef, Sequence) or isinstance(coef, (str, bytes)):
             raise UnsupportedModelParameterError(
@@ -252,7 +252,7 @@ class SklearnLogisticRegressionEncoder:
         return tuple(float(value) for value in cast(Sequence[Any], row))
 
     @staticmethod
-    def _binary_intercept(linear: dict[str, Any]) -> float:
+    def _binary_intercept(linear: Mapping[str, Any]) -> float:
         intercept = linear["intercept"]
         if not isinstance(intercept, Sequence) or isinstance(intercept, (str, bytes)):
             raise UnsupportedModelParameterError(

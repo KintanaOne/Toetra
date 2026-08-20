@@ -32,9 +32,9 @@ def test_model_feature_names_exclude_lookup_metadata_columns(tmp_path) -> None:
         target_name="score",
     ).introspect()
 
-    assert tuple(schema.features) == ("income", "debt_ratio")
-    assert "application_id" not in schema.features
-    assert schema.features["income"].dtype is EnumDataType.FLOAT
+    assert schema.feature_names == ("income", "debt_ratio")
+    assert "application_id" not in schema.feature_names
+    assert schema.features_by_name["income"].dtype is EnumDataType.FLOAT
 
 
 def test_model_feature_order_wins_over_dataset_column_order(tmp_path) -> None:
@@ -61,7 +61,7 @@ def test_model_feature_order_wins_over_dataset_column_order(tmp_path) -> None:
         target_name="score",
     ).introspect()
 
-    assert tuple(schema.features) == ("income", "debt_ratio")
+    assert schema.feature_names == ("income", "debt_ratio")
 
 
 def test_missing_model_declared_feature_is_rejected(tmp_path) -> None:
@@ -105,4 +105,4 @@ def test_unnamed_model_keeps_non_target_dataset_fallback(tmp_path) -> None:
         target_name="score",
     ).introspect()
 
-    assert tuple(schema.features) == ("a",)
+    assert schema.feature_names == ("a",)

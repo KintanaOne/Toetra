@@ -1,5 +1,3 @@
-
-
 from typing import Protocol
 
 from toetra._models.ir.base import ModelIR
@@ -12,13 +10,13 @@ class ModelIRBuilder(Protocol):
         model: object,
         schema: ModelSchema,
     ) -> ModelIR:
-        """Build a normalized Toetra Model IR from a source model and normalized schema.
+        """Build a normalized Model IR from a source model and schema.
 
         Args:
-            model (object): The input model representation.
-            schema (ModelSchema): The normalized schema describing the model interface.
+            model: The source framework model.
+            schema: The normalized model interface.
 
         Returns:
-            ModelIR: The normalized Toetra model representation.
+            The normalized Toetra model computation.
         """
         ...

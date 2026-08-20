@@ -1,6 +1,6 @@
 # Model IR Test Matrix
 
-> Status: Planned
+> Status: Stabilizing for Affine Model IR and sklearn affine construction
 >
 > Scope: Model IR invariants, structural validity, immutability, and deterministic normalization
 
@@ -107,6 +107,11 @@ whose modification could change the represented computation.
 
 The future Model IR builder is responsible for preserving or deriving the
 canonical source-model order before constructing the Model IR.
+
+The initial sklearn affine builder additionally tests fitted-model detection,
+single-output shape, exact supported estimator types, schema/model identity,
+feature count and order alignment, deterministic term construction, and
+non-finite parameter rejection.
 
 ## Boundary cases not owned by Affine Model IR
 

@@ -53,13 +53,13 @@ def test_sklearn_introspector_builds_classification_schema_with_explicit_target(
         EnumOutputObservable.CLASS_PROBABILITY,
     )
     assert schema.target_dtype is EnumDataType.INT
-    assert "MyTarget" not in schema.features
-    assert set(schema.features) == {"age", "income", "score"}
-    assert schema.features["age"].dtype is EnumDataType.INT
-    assert schema.features["score"].dtype is EnumDataType.FLOAT
-    assert schema.metadata["serialization_format"] == ".joblib"
-    assert schema.metadata["model_class"] == "LogisticRegression"
-    assert schema.metadata["n_features_in"] == 3
+    assert "MyTarget" not in schema.feature_names
+    assert set(schema.feature_names) == {"age", "income", "score"}
+    assert schema.features_by_name["age"].dtype is EnumDataType.INT
+    assert schema.features_by_name["score"].dtype is EnumDataType.FLOAT
+    assert schema.metadata_by_name["serialization_format"] == ".joblib"
+    assert schema.metadata_by_name["model_class"] == "LogisticRegression"
+    assert schema.metadata_by_name["n_features_in"] == 3
 
 
 def test_sklearn_introspector_preserves_integer_target_dtype_for_regression(
@@ -100,9 +100,9 @@ def test_sklearn_introspector_detects_nullable_columns():
         target_name="MyTarget",
     ).introspect()
 
-    assert schema.features["income"].nullable is True
-    assert schema.features["score"].nullable is True
-    assert schema.features["age"].nullable is False
+    assert schema.features_by_name["income"].nullable is True
+    assert schema.features_by_name["score"].nullable is True
+    assert schema.features_by_name["age"].nullable is False
 
 
 def test_sklearn_introspector_uses_external_schema_before_target_name():
@@ -139,7 +139,7 @@ def test_sklearn_introspector_uses_external_schema_before_target_name():
         ),
     )
     assert schema.target_dtype is EnumDataType.STRING
-    assert set(schema.features) == {"external_feature"}
+    assert set(schema.feature_names) == {"external_feature"}
 
 
 def test_sklearn_introspector_raises_when_no_dataset_or_schema_is_available():

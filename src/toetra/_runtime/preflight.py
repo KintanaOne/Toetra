@@ -455,7 +455,7 @@ class InspectionResult:
                         "nullable": feature.nullable,
                         "source_dtype": feature.source_dtype,
                     }
-                    for feature in schema.features.values()
+                    for feature in schema.features
                 ],
                 "output": {
                     "declared_name": plan.declared_target,

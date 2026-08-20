@@ -13,7 +13,6 @@ from toetra._models.schema.output.enums import (
 from toetra._models.schema.output.regression import RegressionOutputSchema
 from toetra._models.schema.output.unknown import UnknownOutputSchema
 
-
 __all__ = [
     "BinaryClassificationDecisionPolicy",
     "ClassificationOutputSchema",

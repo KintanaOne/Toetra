@@ -1,3 +1,4 @@
+from collections.abc import Iterable, Mapping
 from typing import Any
 
 import pandas as pd
@@ -349,7 +350,7 @@ class SklearnIntrospector(BaseIntrospector):
     def _compatibility_descriptor(
         self,
         *,
-        features: dict[str, FeatureSchema],
+        features: Mapping[str, FeatureSchema] | Iterable[FeatureSchema],
         task: str,
         metadata: dict[str, Any],
         target_source_dtype: str | None,
@@ -388,7 +389,9 @@ class SklearnIntrospector(BaseIntrospector):
             parameter_dtypes=parameter_dtypes,
             input_dtypes=tuple(
                 feature.source_dtype or feature.dtype.value
-                for feature in features.values()
+                for feature in (
+                    features.values() if isinstance(features, Mapping) else features
+                )
             ),
             output_dtype=target_source_dtype,
         )

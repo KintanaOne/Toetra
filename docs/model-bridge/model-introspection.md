@@ -126,6 +126,7 @@ The current sklearn introspector detects:
 | otherwise | `unknown` |
 
 XGBoost reuses sklearn-compatible introspection and overrides framework metadata.
+It returns a new enriched schema; it does not mutate the sklearn snapshot.
 
 ## Target Detection
 
@@ -168,6 +169,8 @@ Framework-specific metadata must remain optional and isolated.
 6. Feature names should be represented as strings.
 7. Feature dtypes should use Toetra semantic type vocabulary.
 8. Introspection should not mutate the model.
+9. Mutable adapter-local collections must be detached when constructing the
+   immutable `ModelSchema` snapshot.
 
 ## Current Limitations
 

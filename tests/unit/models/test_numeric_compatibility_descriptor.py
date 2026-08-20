@@ -36,7 +36,7 @@ def test_sklearn_introspector_preserves_framework_and_dtype_profile(tmp_path) ->
     assert descriptor.parameter_dtypes == ("float32",)
     assert descriptor.numeric_semantics.family is NumericFamily.BINARY_FLOAT
     assert descriptor.numeric_semantics.width_bits == 32
-    assert schema.features["a"].source_dtype == "float64"
+    assert schema.features_by_name["a"].source_dtype == "float64"
     assert schema.target_source_dtype == "float64"
 
 

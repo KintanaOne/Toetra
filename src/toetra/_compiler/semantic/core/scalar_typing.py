@@ -283,9 +283,9 @@ class ScalarTypeAnalyzer:
         if self.model_schema is None:
             return _dtype_from_annotation(node)
 
-        feature_schema = self.model_schema.features.get(node.feature)
+        feature_schema = self.model_schema.get_feature(node.feature)
         if feature_schema is None:
-            available = ", ".join(sorted(self.model_schema.features.keys()))
+            available = ", ".join(sorted(self.model_schema.feature_names))
             raise InvalidPropertyError(
                 f"Unknown feature '{node.feature}'. Available features: {available}"
             )

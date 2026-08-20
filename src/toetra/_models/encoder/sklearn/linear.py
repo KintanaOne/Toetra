@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Sequence, cast
+from collections.abc import Mapping, Sequence
+from typing import Any, cast
 
 from toetra._compatibility.descriptors import ModelEncoderDescriptor
 
@@ -149,10 +150,10 @@ class SklearnLinearRegressorEncoder:
                 "Requested model evaluation is missing its model identity."
             )
 
-    def _linear_metadata(self, schema: ModelSchema) -> dict[str, Any]:
-        raw = schema.metadata.get("linear")
+    def _linear_metadata(self, schema: ModelSchema) -> Mapping[str, Any]:
+        raw = schema.get_metadata("linear")
 
-        if not isinstance(raw, dict):
+        if not isinstance(raw, Mapping):
             raise MissingModelParameterError(
                 "ModelSchema.metadata['linear'] is required for linear encoding."
             )
@@ -167,7 +168,7 @@ class SklearnLinearRegressorEncoder:
     def _feature_names(
         self,
         schema: ModelSchema,
-        linear_metadata: dict[str, Any],
+        linear_metadata: Mapping[str, Any],
     ) -> tuple[str, ...]:
         raw_feature_names = linear_metadata.get("feature_names")
 
@@ -181,11 +182,11 @@ class SklearnLinearRegressorEncoder:
 
             return tuple(str(name) for name in raw_feature_names)
 
-        return tuple(schema.features.keys())
+        return schema.feature_names
 
     def _single_output_coefficients(
         self,
-        linear_metadata: dict[str, Any],
+        linear_metadata: Mapping[str, Any],
     ) -> tuple[float, ...]:
         coef = linear_metadata["coef"]
 
@@ -206,7 +207,7 @@ class SklearnLinearRegressorEncoder:
 
         return tuple(float(value) for value in cast(Sequence[Any], coef))
 
-    def _single_output_intercept(self, linear_metadata: dict[str, Any]) -> float:
+    def _single_output_intercept(self, linear_metadata: Mapping[str, Any]) -> float:
         intercept = linear_metadata["intercept"]
 
         if isinstance(intercept, Sequence) and not isinstance(intercept, (str, bytes)):

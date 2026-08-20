@@ -86,7 +86,7 @@ def schema_to_contract(schema) -> dict[str, Any]:
     full sklearn metadata such as learned coefficients or numpy arrays.
     """
 
-    metadata = dict(schema.metadata or {})
+    metadata = schema.metadata_as_dict()
 
     return {
         "framework": getattr(schema.framework, "value", str(schema.framework)),
@@ -103,7 +103,7 @@ def schema_to_contract(schema) -> dict[str, Any]:
                 "dtype": getattr(feature.dtype, "value", str(feature.dtype)),
                 "nullable": bool(feature.nullable),
             }
-            for name, feature in sorted(schema.features.items())
+            for name, feature in sorted(schema.features_by_name.items())
         },
         "metadata": {
             "serialization_format": metadata.get("serialization_format"),

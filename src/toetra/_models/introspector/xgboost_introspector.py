@@ -38,11 +38,11 @@ class XGBoostIntrospector(BaseIntrospector):
         # Override framework
         # --------------------------------------------------
 
-        sklearn_schema.framework = EnumModelFramework.XGBOOST
         xgboost_version = self._xgboost_version()
-        if sklearn_schema.compatibility is not None:
-            sklearn_schema.compatibility = replace(
-                sklearn_schema.compatibility,
+        compatibility = sklearn_schema.compatibility
+        if compatibility is not None:
+            compatibility = replace(
+                compatibility,
                 framework_adapter_id=EnumModelFramework.XGBOOST.value,
                 framework_version=xgboost_version,
                 model_family="tree_ensemble",
@@ -52,14 +52,20 @@ class XGBoostIntrospector(BaseIntrospector):
         # Inject XGBoost-specific metadata
         # --------------------------------------------------
 
-        sklearn_schema.metadata.update(
+        metadata = sklearn_schema.metadata_as_dict()
+        metadata.update(
             {
                 "framework_version": xgboost_version,
                 "xgboost": self._extract_xgb_metadata(),
             }
         )
 
-        return sklearn_schema
+        return replace(
+            sklearn_schema,
+            framework=EnumModelFramework.XGBOOST,
+            metadata=metadata,
+            compatibility=compatibility,
+        )
 
     # ======================================================
     # XGBoost metadata

@@ -198,7 +198,7 @@ def render_starter_specification(
                 else ""
             )
         )
-        for feature in schema.features.values()
+        for feature in schema.features
     ]
     declarations = [
         f"model := {json.dumps(model_reference, ensure_ascii=False)}",
@@ -343,7 +343,7 @@ def _validate_schema_identifiers(schema: ModelSchema) -> None:
             stage="model",
             hint="Provide a fitted model and reference dataset with named inputs.",
         )
-    for feature in schema.features.values():
+    for feature in schema.features:
         _require_identifier(feature.name, role="feature")
 
 
@@ -372,7 +372,7 @@ def _smoke_property(schema: ModelSchema) -> str:
         return "forall sample => target[sample] <= target[sample] using Z3"
     if output_kind is EnumModelOutputKind.CLASSIFICATION:
         restrictions = "\n    and ".join(
-            f"duplicate.{name} == sample.{name}" for name in schema.features
+            f"duplicate.{name} == sample.{name}" for name in schema.feature_names
         )
         return (
             "forall sample, duplicate\n"

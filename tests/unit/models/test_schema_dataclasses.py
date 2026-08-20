@@ -35,8 +35,9 @@ def test_model_schema_stores_core_contract():
     assert schema.target == "MyTarget"
     assert schema.output_schema == ClassificationOutputSchema()
     assert schema.target_dtype is None
-    assert schema.features == features
-    assert schema.metadata["model_class"] == "LogisticRegression"
+    assert schema.features == tuple(features.values())
+    assert schema.feature_names == ("age",)
+    assert schema.metadata_by_name["model_class"] == "LogisticRegression"
 
 
 def test_model_schema_stores_optional_target_dtype():

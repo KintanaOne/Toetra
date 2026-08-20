@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from toetra._backends.errors import (
@@ -510,9 +509,7 @@ def _schema_with_output_name(schema: ModelSchema, output_name: str) -> ModelSche
 
     if schema.output_name == output_name:
         return schema
-    rebound = deepcopy(schema)
-    rebound.output_name = output_name
-    return rebound
+    return replace(schema, output_name=output_name)
 
 
 def _resolve_header_model_path(loaded: _LoadedSpecification) -> Path:

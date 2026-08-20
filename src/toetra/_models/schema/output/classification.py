@@ -24,9 +24,7 @@ class ClassificationOutputSchema(ModelOutputSchema):
         super().__post_init__()
 
         if not isinstance(self.labels, tuple):
-            raise TypeError(
-                "ClassificationOutputSchema labels must be a tuple."
-            )
+            raise TypeError("ClassificationOutputSchema labels must be a tuple.")
 
         for label in self.labels:
             if not isinstance(label, (str, int, float, bool)):
@@ -45,12 +43,9 @@ class ClassificationOutputSchema(ModelOutputSchema):
                 "ClassificationOutputSchema probability_available must be a bool."
             )
 
-        if (
-            self.decision_policy is not None
-            and not isinstance(
-                self.decision_policy,
-                BinaryClassificationDecisionPolicy,
-            )
+        if self.decision_policy is not None and not isinstance(
+            self.decision_policy,
+            BinaryClassificationDecisionPolicy,
         ):
             raise TypeError(
                 "ClassificationOutputSchema decision_policy must be a "

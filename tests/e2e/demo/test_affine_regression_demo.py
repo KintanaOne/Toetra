@@ -14,8 +14,8 @@ def test_affine_regression_demo_runs_end_to_end() -> None:
     assert schema.model_type == "LinearRegression"
     assert schema.target == "score"
     assert schema.target_dtype is EnumDataType.FLOAT
-    assert schema.metadata["linear"]["coef"] == [2.0]
-    assert schema.metadata["linear"]["intercept"] == 1.0
+    assert schema.metadata_by_name["linear"]["coef"] == (2.0,)
+    assert schema.metadata_by_name["linear"]["intercept"] == 1.0
 
     statuses = tuple(execution.result.status for execution in executions)
     assert statuses == EXPECTED_STATUSES

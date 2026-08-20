@@ -42,7 +42,8 @@ The goal of the ADR section is to make explicit:
 - why the CLI exposes application workflows without becoming a second
   verification implementation,
 - and why DSL header values are declared defaults resolved into an immutable
-  effective execution context for each invocation.
+  effective execution context for each invocation;
+- why ModelSchema is a deeply immutable snapshot before Model IR construction.
 
 ## ADR format
 
@@ -96,6 +97,7 @@ Impact on Toetra
 | ADR-0032 | Define the CLI command surface and application boundary |
 | ADR-0033 | Separate declared defaults from execution overrides |
 | ADR-0034 | Separate Model IR from Verification IR |
+| ADR-0035 | Make ModelSchema an immutable snapshot boundary |
 
 ## Decision status vocabulary
 

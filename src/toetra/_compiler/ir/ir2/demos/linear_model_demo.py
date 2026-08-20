@@ -80,7 +80,7 @@ def print_demo_linear_regression_ir2() -> None:
     """Print a visual end-to-end IR2 demo with real model assumptions."""
 
     schema = build_demo_linear_regression_schema()
-    linear_metadata = schema.metadata.get("linear", {})
+    linear_metadata = schema.metadata_by_name.get("linear", {})
 
     tasks = run_ir2_with_model_schema(
         REAL_LINEAR_MODEL_SAMPLE,
@@ -94,7 +94,7 @@ def print_demo_linear_regression_ir2() -> None:
     print("\n=== IR2 REAL MODEL DEMO ===\n")
     print("Trained model    : sklearn.LinearRegression")
     print(f"Target           : {schema.target}")
-    print(f"Features         : {', '.join(schema.features.keys())}")
+    print(f"Features         : {', '.join(schema.feature_names)}")
     print(f"Linear coef      : {linear_metadata.get('coef')}")
     print(f"Linear intercept : {linear_metadata.get('intercept')}")
 

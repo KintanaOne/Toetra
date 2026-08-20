@@ -17,11 +17,11 @@ def test_demo_linear_regression_schema_is_introspected_from_real_model():
     assert schema.model_type == "LinearRegression"
     assert schema.task == "regression"
     assert schema.target == "MyTarget"
-    assert set(schema.features) == {"a", "b"}
-    assert "linear" in schema.metadata
-    assert schema.metadata["linear"]["coef"] is not None
-    assert schema.metadata["linear"]["intercept"] is not None
-    assert schema.metadata["linear"]["feature_names"] == ["a", "b"]
+    assert set(schema.feature_names) == {"a", "b"}
+    assert "linear" in schema.metadata_by_name
+    assert schema.metadata_by_name["linear"]["coef"] is not None
+    assert schema.metadata_by_name["linear"]["intercept"] is not None
+    assert schema.metadata_by_name["linear"]["feature_names"] == ("a", "b")
 
 
 def test_visual_demo_pretty_output_contains_model_assumption():

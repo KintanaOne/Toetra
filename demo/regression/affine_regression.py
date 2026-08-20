@@ -69,10 +69,10 @@ def run_demo() -> tuple[ModelSchema, VerificationSession]:
 
 
 def _model_equation(schema: ModelSchema) -> str:
-    linear = schema.metadata.get("linear", {})
+    linear = schema.metadata_by_name.get("linear", {})
     coefficients = linear.get("coef", [])
     intercept = linear.get("intercept")
-    feature_names = linear.get("feature_names", tuple(schema.features))
+    feature_names = linear.get("feature_names", schema.feature_names)
     terms = " + ".join(
         f"{coefficient}*x0.{feature}"
         for feature, coefficient in zip(feature_names, coefficients)
