@@ -44,13 +44,13 @@ class AffineModelIR(ModelIR):
             seen.add(feature)
 
             # coefficient
-            if not type(coefficient) is float:
+            if type(coefficient) is not float:
                 raise TypeError("Coefficient must be a float value.")
             if not math.isfinite(coefficient):
                 raise ValueError("Coefficient must be a finite float value.")
 
         # bias
-        if not type(self.bias) is float:
+        if type(self.bias) is not float:
             raise TypeError("Bias must be a float value.")
         if not math.isfinite(self.bias):
             raise ValueError("Bias must be a finite float value.")

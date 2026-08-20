@@ -1,11 +1,10 @@
 import pytest
 
-xgboost = pytest.importorskip("xgboost")
-
 from toetra._models.detector.model_framework import EnumModelFramework
 from toetra._models.introspector.xgboost_introspector import XGBoostIntrospector
 from tests.support.model_bridge import dataset_path
 
+xgboost = pytest.importorskip("xgboost")
 
 def test_xgboost_introspector_reuses_sklearn_contract_and_preserves_target():
     import pandas as pd
