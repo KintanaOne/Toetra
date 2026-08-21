@@ -41,27 +41,30 @@ artifact named `SemanticValidatedAST`.
 ```mermaid
 flowchart TD
     M["Model artifact"] --> S["ModelSchema"]
+    M --> R["Model IR"]
     S --> P["Semantic profile"]
-    S --> E["Model encoder"]
-    I["Requested evaluations"] --> E
-    E --> A["MODEL AssumptionIR2"]
-    P --> L["Canonical lowered property"]
+    S --> ML["Model IR lowerer"]
+    R --> ML
+    I["Requested evaluations"] --> ML
+    ML --> A["MODEL AssumptionIR2"]
+    P --> CP["Canonical lowered property"]
     A --> T["VerificationTaskIR2"]
-    L --> T
+    CP --> T
 ```
 
-`ModelSchema` is the only framework-neutral model description consumed by the
-compiler. The selected semantic profile says what a public output observable
-means for the model family. The selected encoder materializes equations from a
-concrete estimator.
+`ModelSchema` describes the normalized interface, while Model IR describes the
+normalized computation. The selected semantic profile says what a public output
+observable means for the model family. Compiler lowering materializes equations
+from Model IR for the exact requested evaluations.
 
 These roles must remain separate:
 
 | Role | Question answered |
 |---|---|
 | Schema | What features, output, task, framework, and model family exist? |
+| Model IR | How does the supported model compute? |
 | Semantic profile | What does `label` or `probability(label)` mean mathematically? |
-| Encoder | What equation represents this fitted model at each requested point? |
+| Model IR lowerer | What equation represents this computation at each requested point? |
 | Compatibility policy | Which conclusions remain sound for this numeric route? |
 | Runtime observer | What does the concrete model return during replay? |
 

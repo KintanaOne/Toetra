@@ -50,12 +50,12 @@ def test_verify_exposes_the_matched_abstraction_route() -> None:
     assert "conclusion scope=semantic_target_only" in session.reports[0].route_reason
 
 
-def test_verify_rejects_non_finite_model_parameters_before_z3_translation() -> None:
-    with pytest.raises(VerificationRuntimeError, match="NaN or infinity") as caught:
+def test_verify_rejects_non_finite_model_parameters_during_ir_construction() -> None:
+    with pytest.raises(VerificationRuntimeError, match="finite") as caught:
         verify(_SOURCE, schema=_schema(coefficient=float("inf")))
 
-    assert caught.value.code == "NUMERIC_COMPATIBILITY_ROUTE_UNSUPPORTED"
-    assert caught.value.stage == "compatibility"
+    assert caught.value.code == "MODEL_ENCODER_PARAMETER_UNSUPPORTED"
+    assert caught.value.stage == "model"
 
 
 def test_decimal_boundary_proof_is_explicitly_scoped_to_the_real_abstraction() -> None:

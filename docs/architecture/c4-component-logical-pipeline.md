@@ -20,7 +20,7 @@ flowchart TD
 |---|---|---|
 | `ModelSemanticLowerer` | IR1 task + `ModelSchema` | lowered task + structured evidence |
 | `NNFNormalizer` | lowered task | NNF `VerificationTask` |
-| model encoder | schema + requested evaluations | model `AssumptionIR2` values |
+| Model IR lowerer | Model IR + schema + requested evaluations | model `AssumptionIR2` values |
 | `IR2Builder` | NNF task + assumptions + policy | `VerificationTaskIR2` |
 | `BackendRouter` | IR2 task + compatibility/execution context | `BackendRoute` |
 | backend runner | routed IR2 task + execution policy | `VerificationResult` |

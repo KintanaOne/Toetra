@@ -25,7 +25,8 @@ The model path contributes:
 ```text
 ModelArtifact
 → ModelSchema
-→ semantic profile + model encoder
+→ Model IR construction
+→ semantic profile + compiler model lowering
 → typed model AssumptionIR2 values
 → VerificationTaskIR2
 ```

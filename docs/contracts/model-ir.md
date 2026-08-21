@@ -1,7 +1,7 @@
 # Model IR Contract
 
-> Status: Stabilizing for affine structure and sklearn construction; runtime
-> adoption remains planned
+> Status: Stabilized for affine structure, sklearn construction, and default
+> runtime adoption
 >
 > Scope: ModelBridge, model representation, model IR construction, compiler
 > model lowering
@@ -247,6 +247,11 @@ During migration, existing normalized metadata may temporarily be used as an
 input to Model IR construction. It must not remain the long-term canonical
 representation of model computation.
 
+The default artifact-backed sklearn path reads coefficients and intercepts
+directly from the fitted model. Schema-only execution retains a dedicated
+metadata compatibility builder so the RC4 contract remains executable, but
+compiler lowering never reads those generic metadata values.
+
 ## Compiler consumption contract
 
 The compiler consumes Model IR together with the semantic and evaluation
@@ -272,6 +277,10 @@ A single Model IR may therefore be reused for multiple model evaluations.
 
 Model IR itself must not be duplicated or specialized per symbolic point solely
 to satisfy verification lowering.
+
+For built-in affine routes this is the default runtime path. Supplying an
+explicit legacy `model_encoder_factory` opts into the compatibility extension
+seam and does not change the ownership of the built-in path.
 
 ## Equality and reproducibility
 

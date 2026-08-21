@@ -21,9 +21,11 @@ These checks fail before IR2. They are not solver assertions.
 
 ## Formal model equations
 
-The selected encoder receives:
+The selected builder first constructs immutable Model IR. Compiler lowering
+then receives:
 
 - normalized `ModelSchema`;
+- normalized Model IR;
 - exact requested `ModelEvaluationIR` identities;
 - optional `ModelEncodingContext`.
 
@@ -52,8 +54,8 @@ profile.
 
 ## Evaluation identity
 
-The encoder does not infer a point from a scope. It receives exact structured
-identities and must produce:
+Compiler lowering does not infer a point from a scope. It receives exact
+structured identities and must produce:
 
 - exactly one equation for every requested evaluation;
 - no equation for an unrequested evaluation;
@@ -74,9 +76,10 @@ executable verification condition and capability requirements.
 
 ## Soundness
 
-The encoder must derive every coefficient, intercept, class orientation, dtype,
-and output identity from explicit schema or fitted model state. Missing or
-unsupported state is rejected.
+Model IR construction derives coefficients and intercepts from fitted model
+state. Lowering combines that computation with explicit schema orientation,
+dtype, output identity, and requested evaluations. Missing or unsupported state
+is rejected at the owning boundary.
 
 The numeric compatibility layer records that the formal affine equation uses an
 exact-real abstraction of serialized framework floating-point parameters. Model
@@ -86,8 +89,8 @@ execution.
 ## Extension rule
 
 Adding a schema or introspector is insufficient. A new public model route also
-requires semantic meaning, encoder, backend capability, numeric policy,
-reporting, replay, and end-to-end/release tests.
+requires semantic meaning, Model IR construction, compiler lowering, backend
+capability, numeric policy, reporting, replay, and end-to-end/release tests.
 
 See the [model constraints contract](../contracts/model-constraints.md),
 [model-semantic lowering contract](../contracts/model-semantic-lowering.md), and

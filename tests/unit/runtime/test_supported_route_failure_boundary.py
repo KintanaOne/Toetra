@@ -34,6 +34,10 @@ from toetra._models.encoder.errors import (
     UnsupportedModelEncoderError,
     UnsupportedModelParameterError,
 )
+from toetra._models.ir_builder.errors import (
+    MissingModelIRParameterError,
+    UnsupportedModelIRBuilderError,
+)
 from toetra._models.schema.feature_schema import FeatureSchema
 from toetra._models.schema.model_schema import ModelSchema
 from toetra._models.semantics.errors import (
@@ -97,7 +101,7 @@ def test_verify_reports_missing_model_encoder_as_unsupported_route() -> None:
     assert error.code == "MODEL_ENCODER_UNSUPPORTED"
     assert error.stage == "model"
     assert error.hint is not None
-    assert isinstance(error.__cause__, UnsupportedModelEncoderError)
+    assert isinstance(error.__cause__, UnsupportedModelIRBuilderError)
 
 
 def test_verify_reports_missing_encoder_parameter_as_invalid_configuration() -> None:
@@ -108,7 +112,7 @@ def test_verify_reports_missing_encoder_parameter_as_invalid_configuration() -> 
     assert error.code == "MODEL_ENCODER_PARAMETER_MISSING"
     assert error.stage == "model"
     assert error.hint is not None
-    assert isinstance(error.__cause__, MissingModelParameterError)
+    assert isinstance(error.__cause__, MissingModelIRParameterError)
 
 
 def test_verify_reports_unsupported_output_observable_route() -> None:

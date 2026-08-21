@@ -36,7 +36,8 @@ boundaries.
 | Model IR builder | source-framework model API, immutable `ModelSchema`, Model IR constructors |
 | IR1 translator | validated AST state and semantic annotations |
 | model-semantic lowerer | IR1 output observables and `ModelSchema` |
-| model encoder | `ModelSchema`, requested evaluations, encoding context |
+| compiler model lowerer | Model IR, `ModelSchema`, requested evaluations, lowering context |
+| legacy model encoder | explicit advanced compatibility integrations only |
 | IR2 builder | NNF IR1, typed assumptions, build policy |
 | compatibility layer | model/encoder/backend descriptors and IR2 numeric requirements |
 | router | IR2 requirements, backend capabilities, numeric and execution policies |
@@ -57,13 +58,15 @@ boundaries.
 | internal code importing through the root facade | private code imports the concrete owning module |
 | Model IR importing compiler, backend, or framework modules | normalized computation IR remains reusable and framework/backend independent |
 | Model IR builder importing compiler or backend modules | construction normalizes source models but does not lower verification tasks |
+| compiler model lowering importing source frameworks or backends | lowering consumes normalized Model IR and emits backend-neutral IR2 |
+| a backend importing Model IR | backends consume verification IR2 only |
 
 ## Runtime dependency assembly
 
 `toetra._runtime.api.verify` is the composition root. It creates or receives:
 
-- `ModelSchema` and the optional concrete model;
-- model encoder and numeric compatibility descriptors;
+- `ModelSchema`, the optional concrete model, and its Model IR;
+- compiler model-lowering and numeric compatibility descriptors;
 - `IR2BuildContext`;
 - backend capability and runner registries;
 - execution policy;

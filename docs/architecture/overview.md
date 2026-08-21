@@ -83,13 +83,14 @@ which `ModelManager` builds one. Supplying both is rejected. The schema is used
 during semantic validation and to select:
 
 1. a model-family semantic profile for public output observables;
-2. a model encoder for concrete model equations;
+2. a Model IR builder for normalized computation;
 3. a numeric compatibility descriptor;
 4. a runtime observer for replay.
 
-The encoder receives the exact `(model, point, output)` evaluations discovered
-from the lowered property. It emits one typed model assumption per requested
-evaluation. It does not inspect a scope and guess a point.
+Compiler Model IR lowering receives the exact `(model, point, output)`
+evaluations discovered from the lowered property. It emits one typed model
+assumption per requested evaluation and does not inspect a scope to guess a
+point.
 
 The public V1 routes are direct fitted sklearn `LinearRegression` and binary
 `LogisticRegression`. Detection or introspection infrastructure for another

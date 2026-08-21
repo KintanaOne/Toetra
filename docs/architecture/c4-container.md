@@ -25,8 +25,8 @@ flowchart TD
 |---|---|---|
 | Public facade | `src/toetra/__init__.py` | stable user imports |
 | Runtime composition | `src/toetra/_runtime` | resolve request inputs, orchestrate properties, return sessions, replay |
-| Language/compiler | `src/toetra/_language`, `src/toetra/_compiler` | grammar, AST, semantics, IR1, NNF, IR2 |
-| ModelBridge | `src/toetra/_models` | loading, schema, semantic profiles, encoders, runtime observers |
+| Language/compiler | `src/toetra/_language`, `src/toetra/_compiler` | grammar, AST, semantics, IR1, Model IR lowering, NNF, IR2 |
+| ModelBridge | `src/toetra/_models` | loading, schema, semantic profiles, Model IR construction, runtime observers |
 | Numeric compatibility | `src/toetra/_compatibility` | qualify framework/encoder/backend numeric meaning and permitted conclusions |
 | Backend adapters | `src/toetra/_backends` | capabilities, routing, translation, solver execution |
 | Evidence | `src/toetra/_reporting`, `src/toetra/_provenance` | reports, renderers, fingerprints |
@@ -49,7 +49,7 @@ public verify(...)
 ### Compiler/ModelBridge convergence
 
 The compiler receives `ModelSchema` during semantic validation. Model semantics
-lower public observables before final NNF. The model encoder then emits
+lower public observables before final NNF. Compiler Model IR lowering then emits
 `AssumptionIR2` values only for evaluations discovered in the lowered property.
 IR2 owns the final verification condition.
 

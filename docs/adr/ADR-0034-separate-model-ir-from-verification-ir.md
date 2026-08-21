@@ -1,6 +1,6 @@
 # ADR-0034 — Separate Model IR from Verification IR
 
-> Status: Planned
+> Status: Accepted and implemented for the affine runtime path
 >
 > Date: 2026-08-14
 >
@@ -135,9 +135,10 @@ Verification IR2 model assumptions and constraints
 
 This transformation is distinct from framework-specific Model IR construction.
 
-The current `_models/encoder` responsibility is transitional. During migration
-it will be split between Model IR construction owned by the model subsystem and
-model-to-verification lowering owned by the compiler.
+The former `_models/encoder` responsibility is split between Model IR
+construction owned by the model subsystem and model-to-verification lowering
+owned by the compiler. Legacy encoders remain only as an explicit compatibility
+seam for advanced integrations and equivalence testing.
 
 ### Package ownership target
 
@@ -314,5 +315,20 @@ Model artifact
     +--> Model IR --------------+--> compiler lowering --> IR2 --> backend
 ```
 
-The decision is `Planned` until the new Model IR path is implemented,
-semantically compared with the existing affine path, and adopted by the runtime.
+The affine implementation now satisfies the migration gate:
+
+- artifact-backed sklearn models construct `AffineModelIR` directly from the
+  fitted estimator;
+- schema-only execution constructs the same IR through a documented legacy
+  metadata compatibility builder;
+- compiler-owned affine lowering consumes Model IR and requested evaluations;
+- regression and binary-logistic assumptions are compared structurally with
+  the legacy encoders;
+- the default runtime uses Model IR construction and compiler lowering;
+- an explicitly supplied `model_encoder_factory` retains the previous advanced
+  integration seam;
+- architecture tests prevent Model IR from depending on compiler/backends and
+  prevent backends from consuming Model IR directly.
+
+Tree and ensemble families remain future additions under the same accepted
+boundary; they are not required to consider the affine migration complete.

@@ -19,8 +19,7 @@ It does not define DSL meaning and does not translate IR2 into a backend query.
 Determine whether the framework implements an existing model family.
 
 - If yes, preserve the existing family and semantic profile. Add only the
-  framework-specific descriptor, encoder implementation if parameter access
-  differs, and runtime observer.
+  framework-specific descriptor, Model IR builder, and runtime observer.
 - If no, follow the [model-family guide](adding-model-family.md) as a separate
   workstream.
 - If the framework object is merely sklearn-compatible, reuse is allowed only
@@ -41,7 +40,7 @@ end-to-end claim.
 | Detection | `ModelDetector.detect(...)` | map a loaded object to exactly one framework |
 | Introspection dispatch | `IntrospectorFactory.INTROSPECTORS` | choose one `BaseIntrospector` |
 | Normalization | framework introspector | produce `ModelSchema` and compatibility descriptor |
-| Formal encoding | `ModelEncoderRegistry` | select encoder by framework and model type |
+| Model IR construction | `ModelIRBuilderRegistry` | select a builder by framework and model type |
 | Concrete observation | `ModelRuntimeObserver` and `ModelObserverRegistry` | normalize concrete predictions for replay |
 | Numeric policy | compatibility registry | qualify source/encoder/backend semantics |
 | Dependencies | `pyproject.toml` and release inventory | make install behavior explicit and reproducible |
@@ -122,18 +121,19 @@ missing feature order, ambiguous targets, unsupported multi-output shapes,
 unknown labels, custom decision policies, or inconsistent external schemas at
 this boundary.
 
-### 5. Connect formal encoding
+### 5. Connect Model IR construction
 
-If an existing encoder can consume the normalized schema without inspecting
-framework objects, reuse it. Otherwise implement a framework-specific
-`ModelEncoder` that emits the same family-level semantic target and register it
-in `create_default_model_encoder_registry()`.
+Implement a framework-specific `ModelIRBuilder` that extracts the supported
+computation and register it in `create_default_model_ir_builder_registry()`.
+Frameworks implementing the same mathematical family should construct the same
+Model IR shape.
 
-The encoder may read normalized parameters from `ModelSchema`; it must not call
-`predict`, import a backend, or change public observable semantics.
+The builder may inspect fitted framework parameters and the immutable
+`ModelSchema`; it must not call a backend, retain the estimator in Model IR, or
+change public observable semantics.
 
-An adapter that can build a schema but has no selected encoder is introspection
-support only.
+An adapter that can build a schema but has no selected Model IR builder and
+compiler lowerer is introspection support only.
 
 ### 6. Add concrete replay observation
 

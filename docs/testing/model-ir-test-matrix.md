@@ -1,6 +1,6 @@
 # Model IR Test Matrix
 
-> Status: Stabilizing for Affine Model IR and sklearn affine construction
+> Status: Stabilized for Affine Model IR, construction, and compiler lowering
 >
 > Scope: Model IR invariants, structural validity, immutability, and deterministic normalization
 
@@ -105,8 +105,8 @@ whose modification could change the represented computation.
 
 `AffineModelIR` must not silently reorder its terms.
 
-The future Model IR builder is responsible for preserving or deriving the
-canonical source-model order before constructing the Model IR.
+The Model IR builder preserves or derives the canonical source-model order
+before constructing the Model IR.
 
 The initial sklearn affine builder additionally tests fitted-model detection,
 single-output shape, exact supported estimator types, schema/model identity,
@@ -160,3 +160,14 @@ The Affine Model IR implementation is considered structurally stabilized when:
 
 At that point, downstream components may treat an `AffineModelIR` instance as a
 trusted normalized representation of affine computation.
+
+These criteria are satisfied. Runtime migration additionally tests:
+
+- construction directly from fitted sklearn affine models;
+- schema-only compatibility construction through normalized metadata;
+- structural equality between legacy and Model IR-derived regression IR2;
+- structural equality between legacy and Model IR-derived binary-logistic IR2;
+- default runtime use of Model IR construction and compiler lowering;
+- rejection of non-finite parameters before compatibility routing or backend
+  translation;
+- absence of direct Model IR imports from backend packages.

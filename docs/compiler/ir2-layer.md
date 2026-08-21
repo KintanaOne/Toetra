@@ -38,7 +38,7 @@ Homogeneous universal and existential chains are lowered to quantifier-free refu
 IR2 currently aggregates:
 
 - domain assumptions generated from `ScopeIR.domain`;
-- model assumptions produced by a `ModelEncoder`;
+- model assumptions produced by compiler lowering from Model IR;
 - externally supplied backend-neutral assumptions;
 - inline-anchor equality facts carrying exact point identity and source provenance.
 

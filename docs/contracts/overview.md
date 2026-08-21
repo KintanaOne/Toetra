@@ -29,7 +29,8 @@ ModelBridge contributes:
 ```text
 model artifact
 → ModelSchema
-→ semantic profile + model encoder
+→ Model IR construction
+→ semantic profile + compiler model lowering
 → model AssumptionIR2 values
 ```
 
@@ -44,7 +45,7 @@ artifact progression.
 | Semantics | [AST to semantic](ast-to-semantic.md), [schema to semantic](schema-to-semantic.md), [type normalization](type-normalization.md) | resolve bindings, points, types, and compatibility |
 | Declarative model outputs | [output observables](model-output-observables.md), [model semantic lowering](model-semantic-lowering.md), [binary profile](binary-classification-profile.md) | separate public intent from internal model quantities |
 | Logical IR | [semantic to IR1](semantic-to-ir1.md), [IR1 to IR2](ir1-to-ir2.md), [assumption composition](assertion-aggregation.md) | preserve meaning while normalizing and building the verification condition |
-| ModelBridge | [model to schema](model-to-schema.md), [model constraints](model-constraints.md) | normalize model metadata and encode requested model equations |
+| ModelBridge | [model to schema](model-to-schema.md), [Model IR](model-ir.md), [model constraints](model-constraints.md) | normalize model interface and computation, then lower requested model equations |
 | Numeric/backend | [numeric registry](numeric-compatibility-registry.md), [IR to backend](ir-to-backend.md), [backend execution](backend-execution-contract.md) | qualify and execute a sound backend route |
 | Evidence | [reporting and replay](output-reporting-and-replay.md), [provenance](verification-provenance.md) | retain source meaning, evidence, fingerprints, and concrete observations |
 | Product/release | [public V1](public-v1-contract.md), [CLI and automation](cli-automation-contract.md), [execution overrides](execution-overrides.md), [repository](repository-contract.md), [public repository readiness](public-repository-readiness.md), [release engineering](release-engineering.md) | freeze supported facade, process automation, layout, public exposure, and artifacts |

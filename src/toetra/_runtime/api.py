@@ -33,6 +33,11 @@ from toetra._compiler.builder.errors import BuilderError
 from toetra._compiler.builder.program import parse_program
 from toetra._compiler.ir.ir2.context import IR2BuildContext
 from toetra._compiler.ir.ir2.run_ir2 import run_ir2_with_model_schema
+from toetra._compiler.model_lowering.errors import (
+    InvalidModelIRLoweringError,
+    ModelIRLoweringError,
+    UnsupportedModelIRLoweringError,
+)
 from toetra._compiler.parser.errors import ParserError
 from toetra._compiler.parser.parser import parse_toetra_code
 from toetra._compiler.semantic.errors.errors import SemanticError
@@ -87,6 +92,12 @@ from toetra._models.encoder.errors import (
     UnsupportedModelParameterError,
 )
 from toetra._models.encoder.factory import ModelEncoderFactory
+from toetra._models.ir_builder.errors import (
+    InvalidModelIRParameterError,
+    MissingModelIRParameterError,
+    ModelIRBuilderError,
+    UnsupportedModelIRBuilderError,
+)
 from toetra._models.runtime.manager import ModelManager
 from toetra._models.schema.model_schema import ModelSchema
 from toetra._models.semantics.errors import (
@@ -726,6 +737,86 @@ def _public_model_encoder_error(
         code="MODEL_ENCODING_FAILED",
         stage="model",
         hint="Inspect the chained model-encoder error for diagnostic details.",
+        path=path,
+    )
+
+
+def _public_model_ir_builder_error(
+    error: ModelIRBuilderError,
+    *,
+    model_path: Path | None,
+) -> VerificationRuntimeError:
+    """Preserve the V1 model-route error surface for Model IR construction."""
+
+    path = str(model_path) if model_path is not None else None
+    if isinstance(error, UnsupportedModelIRBuilderError):
+        return VerificationRuntimeError(
+            str(error),
+            code="MODEL_ENCODER_UNSUPPORTED",
+            stage="model",
+            hint=(
+                "Use a model family with a complete Model IR route or register "
+                "an explicit legacy model_encoder_factory integration."
+            ),
+            path=path,
+        )
+    if isinstance(error, MissingModelIRParameterError):
+        return VerificationConfigurationError(
+            str(error),
+            code="MODEL_ENCODER_PARAMETER_MISSING",
+            stage="model",
+            hint=(
+                "Provide a model artifact, or a schema containing the legacy "
+                "parameters required for schema-only Model IR construction."
+            ),
+            path=path,
+        )
+    if isinstance(error, InvalidModelIRParameterError):
+        return VerificationRuntimeError(
+            str(error),
+            code="MODEL_ENCODER_PARAMETER_UNSUPPORTED",
+            stage="model",
+            hint="Use source parameters that define a valid supported Model IR.",
+            path=path,
+        )
+    return VerificationRuntimeError(
+        str(error),
+        code="MODEL_ENCODING_FAILED",
+        stage="model",
+        hint="Inspect the chained Model IR construction error.",
+        path=path,
+    )
+
+
+def _public_model_ir_lowering_error(
+    error: ModelIRLoweringError,
+    *,
+    model_path: Path | None,
+) -> VerificationRuntimeError:
+    """Normalize compiler Model IR lowering failures at the model boundary."""
+
+    path = str(model_path) if model_path is not None else None
+    if isinstance(error, UnsupportedModelIRLoweringError):
+        return VerificationRuntimeError(
+            str(error),
+            code="MODEL_ENCODER_UNSUPPORTED",
+            stage="model",
+            hint="Use a Model IR/schema pair with a supported compiler lowering.",
+            path=path,
+        )
+    if isinstance(error, InvalidModelIRLoweringError):
+        return VerificationRuntimeError(
+            str(error),
+            code="MODEL_ENCODER_OUTPUT_INVALID",
+            stage="model",
+            hint="The selected Model IR lowering emitted invalid model assumptions.",
+            path=path,
+        )
+    return VerificationRuntimeError(
+        str(error),
+        code="MODEL_ENCODING_FAILED",
+        stage="model",
+        hint="Inspect the chained Model IR lowering error.",
         path=path,
     )
 

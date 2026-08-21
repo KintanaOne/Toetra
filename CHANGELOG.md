@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+### Added
+
+- Added compiler-owned affine Model IR lowering, framework-specific Model IR
+  builder dispatch, schema-only compatibility construction, architecture
+  boundaries, and structural parity tests against the legacy affine encoders.
+
+### Changed
+
+- Made Model IR construction and compiler lowering the default affine runtime
+  path while retaining an explicitly supplied `model_encoder_factory` as the
+  advanced compatibility seam.
+- Reject non-finite affine parameters during Model IR construction before
+  numeric compatibility routing or backend translation.
+
 ## [1.0.0rc4] - 2026-08-06
 
 ### Added

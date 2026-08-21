@@ -10,7 +10,10 @@ from toetra._compatibility.descriptors import (
 from toetra._compatibility.enums import NumericFamily
 from toetra._models.schema.model_schema import ModelSchema
 from toetra._models.schema.output_schema import ClassificationOutputSchema
-from toetra._models.families import BINARY_LOGISTIC_AFFINE_MODEL_FAMILY
+from toetra._models.families import (
+    AFFINE_REGRESSION_MODEL_FAMILY,
+    BINARY_LOGISTIC_AFFINE_MODEL_FAMILY,
+)
 
 
 def framework_model_descriptor(schema: ModelSchema) -> FrameworkModelDescriptor:
@@ -38,7 +41,7 @@ def framework_model_descriptor(schema: ModelSchema) -> FrameworkModelDescriptor:
 
 def _model_family(schema: ModelSchema) -> str:
     if schema.model_type == "LinearRegression" and schema.task == "regression":
-        return "affine_regression"
+        return AFFINE_REGRESSION_MODEL_FAMILY
     if (
         schema.model_type == "LogisticRegression"
         and schema.task == "classification"

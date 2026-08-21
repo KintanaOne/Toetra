@@ -38,8 +38,10 @@ belong to compatibility descriptors and rules.
 | Source model description | `FrameworkModelDescriptor` via introspection or `framework_model_descriptor(...)` | family, versions, source profile, dtypes |
 | Public-observable meaning | `src/toetra/_models/semantics/` | `ModelSemanticProfile` and lowering evidence |
 | Profile dispatch | `ModelSemanticRegistry` | family-to-profile registration |
-| Formal model equations | `src/toetra/_models/encoder/` | backend-independent `AssumptionIR2` values |
-| Encoder dispatch | `ModelEncoderRegistry` | framework/model-type-to-encoder registration |
+| Model computation | `src/toetra/_models/ir/` | typed immutable Model IR |
+| Framework construction | `src/toetra/_models/ir_builder/` | source model + schema to Model IR |
+| Verification equations | `src/toetra/_compiler/model_lowering/` | backend-independent `AssumptionIR2` values |
+| Builder dispatch | `ModelIRBuilderRegistry` | framework/model-type-to-builder registration |
 | Backend requirements | IR2 nodes and `IR2Requirements` | complete structural/numeric requirement set |
 | Route soundness | `src/toetra/_compatibility/` | evidence-backed compatibility rule |
 | User evidence | reporting and provenance builders | stable, backend-neutral explanation |
@@ -97,11 +99,16 @@ framework-neutral constraints. It must:
 Lowering occurs before final NNF. It must not hide a non-equivalent
 transformation behind Boolean normalization.
 
-### 4. Add a backend-independent encoder
+### 4. Add Model IR and compiler lowering
 
-Implement `ModelEncoder.encode(...)`. The encoder receives a normalized schema
-and explicit `ModelEvaluationIR` identities; it must never infer points from a
-legacy scope.
+Define a typed immutable Model IR under `src/toetra/_models/ir/` and implement
+framework builders under `src/toetra/_models/ir_builder/`. Computation-defining
+structure must use explicit fields rather than generic metadata.
+
+Then implement compiler lowering under
+`src/toetra/_compiler/model_lowering/`. It receives Model IR, a normalized
+schema, and explicit `ModelEvaluationIR` identities; it must never infer points
+from a legacy scope.
 
 Each emitted assumption must:
 
@@ -110,13 +117,13 @@ Each emitted assumption must:
 - connect each requested evaluation exactly once;
 - preserve model, point, and output identity;
 - use backend-neutral IR2 nodes;
-- declare a `ModelEncoderDescriptor` with a stable encoder id, version, and
-  semantic target.
+- provide the stable `ModelEncoderDescriptor` retained by the numeric
+  compatibility contract, including id, version, and semantic target.
 
-Register built-in framework/model-type implementations in
-`create_default_model_encoder_registry()`. If several frameworks share the
-family, their encoders must target the same declared mathematical semantics or
-use distinct compatibility rules.
+Register framework/model-type builders in
+`create_default_model_ir_builder_registry()`. If several frameworks share the
+family, they should target the same Model IR and compiler lowerer, while
+distinct numeric semantics remain separate compatibility rules.
 
 ### 5. Complete IR2 and capability requirements
 

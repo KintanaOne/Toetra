@@ -108,5 +108,5 @@ immutable ModelSchema snapshot
         +--> Model IR builder --> immutable Model IR
 ```
 
-This ADR strengthens ADR-0008 and prepares the construction boundary defined by
-ADR-0034. It does not switch the runtime from legacy model encoders to Model IR.
+This ADR strengthens ADR-0008 and provides the stable construction boundary
+used by the affine Model IR runtime migration accepted in ADR-0034.

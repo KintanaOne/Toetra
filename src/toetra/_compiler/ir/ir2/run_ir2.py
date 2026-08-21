@@ -16,8 +16,10 @@ from toetra._models.semantics.lowering import ModelSemanticLowerer
 
 if TYPE_CHECKING:
     from toetra._compiler.ast.nodes.program import ProgramNode
+    from toetra._compiler.model_lowering.factory import ModelIRLoweringFactory
     from toetra._models.encoder.context import ModelEncodingContext
     from toetra._models.encoder.factory import ModelEncoderFactory
+    from toetra._models.ir.base import ModelIR
     from toetra._models.schema.model_schema import ModelSchema
     from toetra._compiler.semantic.symbols.point import ResolvedAnchorBinding
 
@@ -54,18 +56,38 @@ def run_ir2_with_model_schema(
     model_context: ModelEncodingContext | None = None,
     ir2_context: IR2BuildContext | None = None,
     encoder_factory: ModelEncoderFactory | None = None,
+    model_ir: ModelIR | None = None,
+    model_lowering_factory: ModelIRLoweringFactory | None = None,
     resolved_anchors: Mapping[str, ResolvedAnchorBinding] | None = None,
     program: ProgramNode | None = None,
 ) -> list[VerificationTaskIR2]:
     """Compile Toetra source to IR2 and inject per-evaluation model equations.
 
     The compiler first discovers the exact structured model evaluations
-    referenced by each task. ModelBridge then emits one equation for each
-    requested ``(model, point, target)`` identity and none for unreferenced
-    points. The model encoder never inspects a scope to guess an input entity.
+    referenced by each task. Compiler-owned Model IR lowering then emits one
+    equation for each requested ``(model, point, target)`` identity and none
+    for unreferenced points. An explicitly supplied ``encoder_factory`` keeps
+    the legacy advanced-integration seam.
     """
 
-    from toetra._models.encoder.factory import ModelEncoderFactory
+    from toetra._compiler.model_lowering.factory import ModelIRLoweringFactory
+    from toetra._models.ir_builder.factory import ModelIRFactory
+
+    if encoder_factory is not None and (
+        model_ir is not None or model_lowering_factory is not None
+    ):
+        raise ValueError(
+            "Provide either a legacy encoder_factory or the Model IR lowering "
+            "path, not both."
+        )
+
+    effective_model_ir = model_ir
+    lowerer_factory = model_lowering_factory
+    if encoder_factory is None:
+        effective_model_ir = effective_model_ir or ModelIRFactory().build_from_schema(
+            schema
+        )
+        lowerer_factory = lowerer_factory or ModelIRLoweringFactory()
 
     ir1_tasks = (
         run_ir(
@@ -84,8 +106,6 @@ def run_ir2_with_model_schema(
     lowered_tasks = [lowerer.lower_task(task, schema=schema) for task in ir1_tasks]
 
     builder = IR2Builder()
-    factory = encoder_factory or ModelEncoderFactory()
-
     tasks: list[VerificationTaskIR2] = []
 
     for lowered in lowered_tasks:
@@ -94,11 +114,21 @@ def run_ir2_with_model_schema(
         requested_evaluations = builder.point_analyzer.model_evaluations(
             spec_formula=spec_formula,
         )
-        model_assumptions = factory.encode(
-            schema,
-            requested_evaluations,
-            context=model_context,
-        )
+        if encoder_factory is not None:
+            model_assumptions = encoder_factory.encode(
+                schema,
+                requested_evaluations,
+                context=model_context,
+            )
+        else:
+            assert effective_model_ir is not None
+            assert lowerer_factory is not None
+            model_assumptions = lowerer_factory.lower(
+                effective_model_ir,
+                schema,
+                requested_evaluations,
+                context=model_context,
+            )
         tasks.append(
             builder.build(
                 task,

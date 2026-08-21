@@ -35,6 +35,8 @@ from toetra._compiler.ir.ir1.run_ir1 import run_ir_from_program
 from toetra._compiler.ir.ir2.context import IR2BuildContext
 from toetra._compiler.ir.ir2.dsl.nodes import VerificationTaskIR2
 from toetra._compiler.ir.ir2.enums import NormalFormKind
+from toetra._compiler.model_lowering.errors import ModelIRLoweringError
+from toetra._compiler.model_lowering.factory import ModelIRLoweringFactory
 from toetra._compiler.parser.errors import ParserError
 from toetra._compiler.semantic.errors.errors import SemanticError
 from toetra._compiler.semantic.symbols.point import ResolvedAnchorBinding
@@ -43,6 +45,8 @@ from toetra._models.encoder.context import ModelEncodingContext
 from toetra._models.encoder.errors import ModelEncoderError
 from toetra._models.encoder.factory import ModelEncoderFactory
 from toetra._models.encoder.profile import model_encoder_descriptor
+from toetra._models.ir_builder.errors import ModelIRBuilderError
+from toetra._models.ir_builder.factory import ModelIRFactory
 from toetra._models.schema.model_schema import ModelSchema
 from toetra._models.semantics.errors import ModelSemanticLoweringError
 from toetra._provenance.builder import build_provenance_context
@@ -882,26 +886,57 @@ def _build_executable_plan_from_resolved(
     require_translation: bool,
 ) -> ExecutablePlan:
     context = ir2_context or IR2BuildContext(preferred_normal_form=NormalFormKind.NNF)
-    encoder_factory = model_encoder_factory or ModelEncoderFactory()
     try:
-        selected_encoder = encoder_factory.create(resolved.schema)
+        if model_encoder_factory is None:
+            model_ir_factory = ModelIRFactory()
+            model_ir = (
+                model_ir_factory.build(resolved.model, resolved.schema)
+                if resolved.model is not None
+                else model_ir_factory.build_from_schema(resolved.schema)
+            )
+            lowering_factory = ModelIRLoweringFactory()
+            model_encoder = lowering_factory.descriptor(model_ir, resolved.schema)
+            tasks = runtime_api.run_ir2_with_model_schema(
+                loaded.source,
+                schema=resolved.schema,
+                model_context=model_context,
+                ir2_context=context,
+                model_ir=model_ir,
+                model_lowering_factory=lowering_factory,
+                resolved_anchors=anchors,
+                program=resolved.program,
+            )
+        else:
+            selected_encoder = model_encoder_factory.create(resolved.schema)
+            model_encoder = model_encoder_descriptor(selected_encoder)
+            tasks = runtime_api.run_ir2_with_model_schema(
+                loaded.source,
+                schema=resolved.schema,
+                model_context=model_context,
+                ir2_context=context,
+                encoder_factory=model_encoder_factory,
+                resolved_anchors=anchors,
+                program=resolved.program,
+            )
+
         compatibility_context = NumericCompatibilityContext(
             source_model=framework_model_descriptor(resolved.schema),
-            model_encoder=model_encoder_descriptor(selected_encoder),
-        )
-        tasks = runtime_api.run_ir2_with_model_schema(
-            loaded.source,
-            schema=resolved.schema,
-            model_context=model_context,
-            ir2_context=context,
-            encoder_factory=encoder_factory,
-            resolved_anchors=anchors,
-            program=resolved.program,
+            model_encoder=model_encoder,
         )
     except (ParserError, BuilderError, SemanticError) as error:
         raise _compiler_error(error, specification=loaded.path) from error
     except ModelEncoderError as error:
         raise runtime_api._public_model_encoder_error(
+            error,
+            model_path=resolved.model_path,
+        ) from error
+    except ModelIRBuilderError as error:
+        raise runtime_api._public_model_ir_builder_error(
+            error,
+            model_path=resolved.model_path,
+        ) from error
+    except ModelIRLoweringError as error:
+        raise runtime_api._public_model_ir_lowering_error(
             error,
             model_path=resolved.model_path,
         ) from error

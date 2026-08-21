@@ -29,6 +29,7 @@ from toetra._models.errors.introspection import (
     ReferenceDatasetError,
 )
 from toetra._models.families import (
+    AFFINE_REGRESSION_MODEL_FAMILY,
     BINARY_LOGISTIC_AFFINE_MODEL_FAMILY,
     BINARY_LOGISTIC_AFFINE_SEMANTIC_PROFILE_ID,
 )
@@ -372,7 +373,7 @@ class SklearnIntrospector(BaseIntrospector):
         numeric_semantics, profile_id = self._numeric_profile(parameter_dtypes)
         model_type = type(self.model).__name__
         if model_type == "LinearRegression" and task == "regression":
-            model_family = "affine_regression"
+            model_family = AFFINE_REGRESSION_MODEL_FAMILY
         elif self._supports_binary_logistic_profile(
             labels=self._normalized_metadata_labels(metadata),
             metadata=metadata,
