@@ -67,7 +67,8 @@ caller-owned schema and declared AST remain unchanged.
 
 For artifact-based requests, `ModelManager` loads the estimator, detects its
 framework, introspects it, and builds the normalized schema. The concrete model
-is retained only for replay.
+is retained for Model IR construction and replay. A schema-only request instead
+uses the documented metadata compatibility builder during Model IR construction.
 
 See the [model-to-schema contract](../contracts/model-to-schema.md) and
 [schema-to-semantic contract](../contracts/schema-to-semantic.md).
@@ -87,6 +88,21 @@ records lookup provenance. Missing or ambiguous anchors cannot reach IR2.
 
 ## 4. Compile each property
 
+Before compilation, the default built-in route constructs the normalized model
+computation once:
+
+```text
+model artifact + ModelSchema
+→ ModelIRFactory
+→ registered ModelIRBuilder
+→ Model IR
+```
+
+`ModelIRFactory` selects a framework/model-type builder for artifact-backed
+requests. Schema-only execution uses the dedicated compatibility builder. An
+explicit `model_encoder_factory` bypasses this default route and opts into the
+retained legacy advanced-integration path.
+
 `run_ir2_with_model_schema(...)` performs:
 
 ```text
@@ -98,6 +114,8 @@ source
 → model-semantic lowering
 → NNF normalization
 → requested model evaluations
+→ ModelIRLoweringFactory
+→ compiler model lowering
 → model assumptions
 → VerificationTaskIR2
 ```

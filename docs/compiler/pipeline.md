@@ -26,13 +26,19 @@ source text
 The model-aware entry point additionally supplies:
 
 ```text
-ModelSchema
+ModelSchema + Model IR
 → schema-aware validation
 → semantic profile selection
 → requested model evaluations
-→ encoded model assumptions
+→ compiler model lowering
+→ model assumptions
 → VerificationTaskIR2
 ```
+
+The runtime constructs Model IR from the concrete model artifact before calling
+the compiler. Schema-only execution uses the documented compatibility builder.
+Supplying an explicit legacy `model_encoder_factory` remains an opt-in advanced
+integration path and is not the built-in affine default.
 
 ## Stage contract
 

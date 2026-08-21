@@ -148,3 +148,8 @@ They support Toetra development and integration testing, but their accepted
 types live beneath `toetra._*`; documenting the keywords does not make those
 types public. Contributor procedures for built-in integrations begin at
 the [extension architecture](../development/extensions.md).
+
+The built-in affine route requires no model-encoder injection: it constructs
+Model IR and uses compiler-owned model lowering by default. Supplying
+`model_encoder_factory` explicitly opts into the retained legacy encoder path
+for advanced compatibility and integration testing.
