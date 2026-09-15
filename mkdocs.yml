@@ -14,14 +14,17 @@ copyright: Copyright &copy; 2025–2026 Tina RANDRIANARIJAONA-DUBIN
 
 theme:
   name: material
+  custom_dir: overrides
   language: en
+  logo: assets/brand/toetra-symbol-color-1024.png
+  favicon: assets/brand/favicon-48x48.png
   features:
     - navigation.instant
     - navigation.tracking
     - navigation.sections
-    - navigation.expand
     - navigation.indexes
     - navigation.top
+    - navigation.footer
     - search.highlight
     - search.suggest
     - content.code.copy
@@ -29,14 +32,14 @@ theme:
     - toc.follow
   palette:
     - scheme: default
-      primary: indigo
-      accent: deep purple
+      primary: teal
+      accent: green
       toggle:
         icon: material/weather-night
         name: Switch to dark mode
     - scheme: slate
-      primary: indigo
-      accent: deep purple
+      primary: teal
+      accent: green
       toggle:
         icon: material/weather-sunny
         name: Switch to light mode
@@ -45,6 +48,15 @@ theme:
 
 plugins:
   - search
+
+extra_css:
+  - assets/stylesheets/toetra.css
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/KintanaOne/Toetra
+      name: Toetra on GitHub
 
 markdown_extensions:
   - admonition

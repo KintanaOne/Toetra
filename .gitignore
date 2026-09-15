@@ -214,3 +214,4 @@ __marimo__/
 # Toetra local review artifacts
 /.docs/
 /toetra_review_bundle_*.zip
+*.patch

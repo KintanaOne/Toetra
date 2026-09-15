@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#00130c"/>
+      <stop offset="0.58" stop-color="#002d20"/>
+      <stop offset="1" stop-color="#00422c"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#01c573" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#01c573" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="64" height="64" patternUnits="userSpaceOnUse">
+      <path d="M 64 0 L 0 0 0 64" fill="none" stroke="#b6e7cd" stroke-opacity="0.055" stroke-width="1"/>
+    </pattern>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="20" flood-color="#000b07" flood-opacity="0.42"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  <circle cx="940" cy="284" r="330" fill="url(#glow)"/>
+  <circle cx="930" cy="300" r="246" fill="none" stroke="#9ef0c7" stroke-opacity="0.12"/>
+  <circle cx="930" cy="300" r="194" fill="none" stroke="#9ef0c7" stroke-opacity="0.08"/>
+
+  <image x="72" y="52" width="255" height="96" xlink:href="toetra-lockup-horizontal-reversed.png" preserveAspectRatio="xMinYMid meet"/>
+
+  <g transform="translate(72 184)">
+    <rect width="302" height="38" rx="19" fill="#ffffff" fill-opacity="0.035" stroke="#9ef0c7" stroke-opacity="0.22"/>
+    <circle cx="19" cy="19" r="4" fill="#01c573"/>
+    <text x="34" y="24" fill="#9ed8bb" font-family="Consolas, monospace" font-size="14" letter-spacing="1.4">EVALUATION RELEASE · 1.0.0RC4</text>
+  </g>
+
+  <text x="72" y="308" fill="#f7faf8" font-family="Arial, Helvetica, sans-serif" font-size="65" font-weight="700" letter-spacing="-2.5">State the behavior.</text>
+  <text x="72" y="380" fill="#2be58f" font-family="Arial, Helvetica, sans-serif" font-size="65" font-weight="700" letter-spacing="-2.5">Get the evidence.</text>
+
+  <text x="76" y="440" fill="#b9cbc2" font-family="Arial, Helvetica, sans-serif" font-size="22">
+    Declarative behavioral verification for machine-learning models.
+  </text>
+
+  <g filter="url(#shadow)">
+    <image x="790" y="120" width="300" height="300" xlink:href="toetra-symbol-color-1024.png" preserveAspectRatio="xMidYMid meet"/>
+  </g>
+
+  <line x1="72" y1="526" x2="1128" y2="526" stroke="#b6e7cd" stroke-opacity="0.14"/>
+  <text x="72" y="570" fill="#8ea69b" font-family="Consolas, monospace" font-size="16" letter-spacing="1.2">
+    INTENT → SPECIFICATION → Z3 → PROOF · COUNTEREXAMPLE · WITNESS
+  </text>
+  <text x="1128" y="570" text-anchor="end" fill="#8ea69b" font-family="Consolas, monospace" font-size="16">
+    KintanaOne/Toetra
+  </text>
+</svg>
