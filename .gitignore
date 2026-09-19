@@ -215,3 +215,7 @@ __marimo__/
 /.docs/
 /toetra_review_bundle_*.zip
 *.patch
+site/
+_site/
+.local-site/
+.local-sitedocs/

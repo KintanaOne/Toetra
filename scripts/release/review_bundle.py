@@ -49,6 +49,7 @@ CRITICAL_PATHS = (
     ".github/dependabot.yml",
     ".github/pull_request_template.md",
     ".github/workflows/ci.yml",
+    ".github/workflows/deploy-pages.yml",
     "CHANGELOG.md",
     "COMMERCIAL_LICENSE.md",
     "CONTRIBUTING.md",

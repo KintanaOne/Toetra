@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#011910" />
+    <meta
+      name="description"
+      content="Toetra turns behavioral intent for machine-learning models into solver-backed evidence: proofs, counterexamples, witnesses, explicit no-witness outcomes, provenance, and replay."
+    />
+    <meta name="author" content="Tina RANDRIANARIJAONA-DUBIN · KintanaOne" />
+    <link rel="canonical" href="https://kintanaone.github.io/Toetra/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Toetra" />
+    <meta property="og:title" content="Toetra — Behavioral verification for ML models" />
+    <meta
+      property="og:description"
+      content="State the behavior you require from a machine-learning model and inspect solver-backed evidence."
+    />
+    <meta property="og:url" content="https://kintanaone.github.io/Toetra/" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Toetra — Behavioral verification for ML models" />
+    <meta
+      name="twitter:description"
+      content="State the behavior you require from a machine-learning model and inspect solver-backed evidence."
+    />
+    <title>Toetra — Behavioral verification for ML models</title>
+    <link rel="icon" type="image/png" href="./assets/favicon-48x48.png" />
+    <script>
+      document.documentElement.classList.add("js");
+      window.setTimeout(function () {
+        if (!document.documentElement.classList.contains("enhanced")) {
+          document.documentElement.classList.remove("js");
+        }
+      }, 2000);
+    </script>
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="./app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <div class="scroll-progress" aria-hidden="true"><span></span></div>
+
+    <header class="site-header" data-header>
+      <a class="brand" href="#top" aria-label="Toetra home">
+        <img src="./assets/toetra-lockup-horizontal-reversed.png" alt="Toetra" width="1280" height="480" />
+      </a>
+
+      <button
+        class="nav-toggle"
+        type="button"
+        aria-expanded="false"
+        aria-controls="primary-navigation"
+        data-nav-toggle
+      >
+        <span></span><span></span>
+        <span class="sr-only" data-nav-label>Open navigation</span>
+      </button>
+
+      <nav id="primary-navigation" class="primary-nav" aria-label="Primary navigation" data-nav>
+        <a href="#demo">Walkthrough</a>
+        <a href="#workflow">How it works</a>
+        <a href="#scope">V1 scope</a>
+        <a href="#quickstart">Quickstart</a>
+        <a href="./docs/">Docs</a>
+        <a class="nav-github" href="https://github.com/KintanaOne/Toetra" target="_blank" rel="noreferrer">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .7a11.5 11.5 0 0 0-3.64 22.4c.58.1.79-.25.79-.56v-2.23c-3.22.7-3.9-1.37-3.9-1.37-.52-1.34-1.28-1.7-1.28-1.7-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.2 1.77 1.2 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.57-.3-5.27-1.29-5.27-5.69 0-1.26.45-2.29 1.19-3.1-.12-.3-.52-1.47.11-3.06 0 0 .97-.31 3.16 1.19A11 11 0 0 1 12 6.1c.98 0 1.95.13 2.87.38 2.2-1.5 3.16-1.2 3.16-1.2.63 1.6.23 2.77.11 3.07.74.81 1.19 1.84 1.19 3.1 0 4.42-2.7 5.4-5.28 5.69.42.36.79 1.07.79 2.16v3.24c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .7Z" /></svg>
+          GitHub
+        </a>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="hero" id="top">
+        <div class="hero-grid" aria-hidden="true"></div>
+        <div class="hero-aurora hero-aurora-a" aria-hidden="true"></div>
+        <div class="hero-aurora hero-aurora-b" aria-hidden="true"></div>
+
+        <div class="hero-inner">
+          <div class="hero-copy">
+            <div class="eyebrow-row reveal">
+              <span class="release-pill"><i></i> Evaluation release · 1.0.0rc4</span>
+              <span class="source-pill">Source-available</span>
+            </div>
+
+            <h1 class="reveal reveal-delay-1">
+              State the behavior.<br />
+              <span>Get the evidence.</span>
+            </h1>
+
+            <p class="hero-lede reveal reveal-delay-2">
+              Toetra is a Python framework, declarative language, and CLI that
+              turns an ML behavior you care about into a solver query and an
+              inspectable conclusion — proof, counterexample, witness, absence
+              of witness, or explicit unknown.
+            </p>
+
+            <div class="hero-actions reveal reveal-delay-3">
+              <a class="button button-primary" href="#demo">
+                Explore the walkthrough
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 6 6-6 6" /></svg>
+              </a>
+              <a class="button button-ghost" href="https://github.com/KintanaOne/Toetra" target="_blank" rel="noreferrer">
+                View source
+              </a>
+            </div>
+
+            <dl class="hero-facts reveal reveal-delay-4">
+              <div><dt>Language</dt><dd>.toetra</dd></div>
+              <div><dt>Models</dt><dd>Linear · binary logistic</dd></div>
+              <div><dt>Backend</dt><dd>Z3</dd></div>
+              <div><dt>Evidence</dt><dd>Report + replay</dd></div>
+            </dl>
+          </div>
+
+          <div class="hero-visual reveal reveal-delay-2" data-parallax>
+            <div class="orbit orbit-one" aria-hidden="true"></div>
+            <div class="orbit orbit-two" aria-hidden="true"></div>
+            <img class="hero-mark" src="./assets/toetra-symbol-color-1024.png" alt="" width="1024" height="1024" />
+
+            <div class="floating-chip chip-intent">
+              <span>01</span>
+              <strong>INTENT</strong>
+            </div>
+            <div class="floating-chip chip-solver">
+              <span>04</span>
+              <strong>ROUTED TO Z3</strong>
+            </div>
+
+            <article class="proof-signal" aria-label="Example verification result">
+              <div class="proof-signal-top">
+                <span class="window-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span>verification.report</span>
+                <span class="proof-time">RC4 DEMO</span>
+              </div>
+              <div class="proof-signal-body">
+                <div class="signal-line"><span>property</span><strong>maximum_score</strong></div>
+                <div class="signal-line"><span>domain</span><strong>x0.a ∈ [0, 3]</strong></div>
+                <div class="signal-result"><i></i> PROVED</div>
+                <p>No violating assignment exists in the declared formal scope.</p>
+              </div>
+            </article>
+          </div>
+        </div>
+
+        <a class="scroll-cue" href="#premise" aria-label="Continue to the next section">
+          <span>See what changes</span><i></i>
+        </a>
+      </section>
+
+      <section class="premise" id="premise">
+        <div class="section-shell premise-grid">
+          <p class="section-kicker reveal">Beyond aggregate metrics</p>
+          <p class="premise-statement reveal reveal-delay-1">
+            Aggregate metrics describe how a model performed on observed data.
+            <strong>Toetra asks whether its supported abstraction can violate a behavior you explicitly require.</strong>
+          </p>
+          <div class="premise-note reveal reveal-delay-2">
+            <span>Not another score.</span>
+            <span>A question over an exact domain.</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="demo-section" id="demo">
+        <div class="section-shell">
+          <div class="section-heading demo-heading reveal">
+            <div>
+              <p class="section-kicker">Interactive verification walkthrough</p>
+              <h2>One property.<br />One inspectable answer.</h2>
+            </div>
+            <p>
+              Switch between adapted excerpts from the public RC4 demos,
+              inspect the Toetra Specification Language, then follow the path
+              from specification to evidence. Z3 does not run in this browser.
+            </p>
+          </div>
+
+          <div class="verification-workbench reveal reveal-delay-1">
+            <div class="workbench-topbar">
+              <div class="scenario-tabs" role="tablist" aria-label="Verification scenarios">
+                <button type="button" id="scenario-tab-proof" role="tab" aria-selected="true" aria-controls="scenario-panel" tabindex="0" data-scenario="proof">Prove a bound</button>
+                <button type="button" id="scenario-tab-counterexample" role="tab" aria-selected="false" aria-controls="scenario-panel" tabindex="-1" data-scenario="counterexample">Expose a violation</button>
+                <button type="button" id="scenario-tab-witness" role="tab" aria-selected="false" aria-controls="scenario-panel" tabindex="-1" data-scenario="witness">Find a witness</button>
+              </div>
+              <button type="button" class="run-button" data-run>
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 5 8 5-8 5V5Z" /></svg>
+                <span>Play this example</span>
+              </button>
+            </div>
+
+            <noscript>
+              <p class="noscript-note">The walkthrough controls require JavaScript. The specification and the rest of this page remain available.</p>
+            </noscript>
+
+            <ol class="stage-rail" aria-label="Verification pipeline" data-stages>
+              <li class="is-complete"><span>01</span>Specification</li>
+              <li class="is-complete"><span>02</span>Semantic</li>
+              <li class="is-complete"><span>03</span>IR</li>
+              <li class="is-complete"><span>04</span>Route</li>
+              <li class="is-complete"><span>05</span>Z3</li>
+              <li class="is-complete"><span>06</span>Evidence</li>
+            </ol>
+
+            <div class="workbench-grid" id="scenario-panel" role="tabpanel" aria-labelledby="scenario-tab-proof" tabindex="0" data-scenario-panel>
+              <article class="editor-panel">
+                <header>
+                  <div><span class="file-icon">T</span><span data-filename>affine_regression_policy.toetra</span></div>
+                  <button class="copy-icon" type="button" data-copy-code aria-label="Copy Toetra property">
+                    <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 6.5V4.8A1.8 1.8 0 0 1 8.8 3h6.4A1.8 1.8 0 0 1 17 4.8v6.4a1.8 1.8 0 0 1-1.8 1.8h-1.7M4.8 7h6.4A1.8 1.8 0 0 1 13 8.8v6.4a1.8 1.8 0 0 1-1.8 1.8H4.8A1.8 1.8 0 0 1 3 15.2V8.8A1.8 1.8 0 0 1 4.8 7Z" /></svg>
+                  </button>
+                </header>
+                <pre class="code-editor" aria-label="Toetra specification"><code data-code><span class="tok-key">model</span> <span class="tok-op">:=</span> <span class="tok-str">"affine_score.joblib"</span>
+<span class="tok-key">target</span> <span class="tok-op">:=</span> score
+
+<span class="tok-id">maximum_score</span> <span class="tok-op">:=</span> <span class="tok-num">7.0</span>
+
+<span class="tok-sec">[BOUND]:</span>
+<span class="tok-key">forall</span> x0
+<span class="tok-key">with domain</span>(x0.a: [<span class="tok-num">0.0</span>, <span class="tok-num">3.0</span>])
+<span class="tok-op">=&gt;</span> target[x0] <span class="tok-op">&lt;=</span> maximum_score <span class="tok-key">using</span> Z3</code></pre>
+              </article>
+
+              <article class="evidence-panel" aria-live="polite" data-evidence>
+                <header>
+                  <span>Evidence</span>
+                  <span class="schema-chip">Report summary</span>
+                </header>
+                <div class="evidence-content">
+                  <div class="result-label">FORMAL CONCLUSION</div>
+                  <div class="result-status status-proved" data-status><i></i><span>PROVED</span></div>
+                  <p class="result-summary" data-summary>
+                    The universal property holds across the declared input domain.
+                  </p>
+                  <dl class="result-details" data-details>
+                    <div><dt>Property</dt><dd>BOUND</dd></div>
+                    <div><dt>Backend</dt><dd>Z3</dd></div>
+                    <div><dt>Model route</dt><dd>LinearRegression</dd></div>
+                    <div><dt>Formal scope</dt><dd>∀ x0.a ∈ [0, 3]</dd></div>
+                  </dl>
+                  <div class="trust-note">
+                    <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.5 16 5v4.6c0 3.7-2.5 6.4-6 7.9-3.5-1.5-6-4.2-6-7.9V5l6-2.5Z" /><path d="m7.2 10 1.8 1.8 3.8-4" /></svg>
+                    Exact-real affine abstraction · provenance retained
+                  </div>
+                </div>
+              </article>
+            </div>
+
+            <div class="workbench-footer">
+              <a href="https://github.com/KintanaOne/Toetra/blob/main/demo/regression/affine_regression_policy.toetra#L9-L13" target="_blank" rel="noreferrer" data-scenario-source><i></i> <span data-source-label>Open the public regression demo</span> ↗</a>
+              <span data-run-note>Ready · Z3 does not run in this browser</span>
+            </div>
+            <span class="sr-only" role="status" aria-live="polite" data-copy-status></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="workflow-section" id="workflow">
+        <div class="section-shell workflow-layout">
+          <div class="workflow-intro reveal">
+            <p class="section-kicker">The verification journey</p>
+            <h2>Intent enters.<br /><span>Evidence leaves.</span></h2>
+            <p>
+              The user stays in the vocabulary of model behavior. Toetra keeps
+              compiler details, solver symbols, and framework internals behind
+              explicit boundaries — without hiding how the conclusion was made.
+            </p>
+            <a class="text-link" href="./docs/architecture/overview/">
+              Explore the architecture <span>↗</span>
+            </a>
+          </div>
+
+          <div class="workflow-track">
+            <article class="workflow-step reveal" data-step="01">
+              <div class="step-index">01</div>
+              <div>
+                <p class="step-type">Human intent</p>
+                <h3>Specify the behavior</h3>
+                <p>Write the property, visible points, quantifier, and exact input domain in a readable <code>.toetra</code> policy.</p>
+              </div>
+              <span class="step-artifact">POLICY.TOETRA</span>
+            </article>
+            <article class="workflow-step reveal" data-step="02">
+              <div class="step-index">02</div>
+              <div>
+                <p class="step-type">Compiler</p>
+                <h3>Preserve and lower meaning</h3>
+                <p>Parse, bind, validate, normalize, then lower the property and model semantics through explicit intermediate representations.</p>
+              </div>
+              <span class="step-artifact">IR1 → IR2</span>
+            </article>
+            <article class="workflow-step reveal" data-step="03">
+              <div class="step-index">03</div>
+              <div>
+                <p class="step-type">Capability route</p>
+                <h3>Ask the right backend</h3>
+                <p>Route the verification task only when model, property, numeric semantics, and backend capabilities agree.</p>
+              </div>
+              <span class="step-artifact">Z3 · V1</span>
+            </article>
+            <article class="workflow-step reveal" data-step="04">
+              <div class="step-index">04</div>
+              <div>
+                <p class="step-type">Inspectable evidence</p>
+                <h3>Report, preserve, replay</h3>
+                <p>Return a conclusion with provenance and replay concrete counterexamples or witnesses against the supplied artifacts.</p>
+              </div>
+              <span class="step-artifact">REPORT.JSON</span>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="outcomes-section">
+        <div class="section-shell">
+          <div class="section-heading reveal">
+            <div>
+              <p class="section-kicker">Explicit conclusions</p>
+              <h2>Every conclusion<br />has a precise meaning.</h2>
+            </div>
+            <p>
+              Positive, negative, existential, or inconclusive: Toetra preserves
+              the distinction so an automation pipeline can make an honest decision.
+            </p>
+          </div>
+
+          <div class="outcome-grid">
+            <article class="outcome-card outcome-proved reveal">
+              <span class="outcome-symbol">✓</span>
+              <p class="outcome-status">PROVED</p>
+              <h3>No violation exists</h3>
+              <p>The universal property holds throughout the declared formal scope.</p>
+            </article>
+            <article class="outcome-card outcome-counter reveal reveal-delay-1">
+              <span class="outcome-symbol">×</span>
+              <p class="outcome-status">COUNTEREXAMPLE</p>
+              <h3>A violation is concrete</h3>
+              <p>An assignment falsifying the universal property can be inspected and replayed.</p>
+            </article>
+            <article class="outcome-card outcome-witness reveal reveal-delay-2">
+              <span class="outcome-symbol">◇</span>
+              <p class="outcome-status">WITNESS</p>
+              <h3>An example exists</h3>
+              <p>A satisfying assignment was found for an existential property.</p>
+            </article>
+            <article class="outcome-card outcome-no-witness reveal reveal-delay-3">
+              <span class="outcome-symbol">∅</span>
+              <p class="outcome-status">NO_WITNESS</p>
+              <h3>No example exists</h3>
+              <p>No satisfying assignment exists in the declared formal scope.</p>
+            </article>
+            <article class="outcome-card outcome-unknown reveal reveal-delay-4">
+              <span class="outcome-symbol">?</span>
+              <p class="outcome-status">UNKNOWN</p>
+              <h3>The boundary stays visible</h3>
+              <p>Toetra cannot make a sound positive or negative conclusion.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="scope-section" id="scope">
+        <div class="section-shell">
+          <div class="scope-heading reveal">
+            <div>
+              <p class="section-kicker">Public V1 profile</p>
+              <h2>Narrow by design.<br />Explicit by contract.</h2>
+            </div>
+            <div class="version-stamp">
+              <span>Current candidate</span>
+              <strong>1.0.0rc4</strong>
+              <small>Evaluation release</small>
+            </div>
+          </div>
+
+          <div class="scope-grid">
+            <article class="scope-card scope-supported reveal">
+              <header><span>SUPPORTED IN 1.0.0rc4</span><i></i></header>
+              <div class="scope-route">
+                <span>Regression</span>
+                <strong>scikit-learn LinearRegression</strong>
+              </div>
+              <div class="scope-route">
+                <span>Classification</span>
+                <strong>Direct binary LogisticRegression</strong>
+              </div>
+              <ul>
+                <li>Finite transformed numeric features</li>
+                <li>Homogeneous <code>forall</code> and <code>exists</code></li>
+                <li>Affine arithmetic and Boolean properties</li>
+                <li>Exact-real affine abstractions</li>
+                <li>Z3 execution and capability routing</li>
+                <li>Text, HTML, Jupyter, DataFrame and JSON reports</li>
+                <li>Provenance and concrete model replay</li>
+              </ul>
+            </article>
+
+            <article class="scope-card scope-boundary reveal reveal-delay-1">
+              <header><span>OUTSIDE THE V1 CONTRACT</span><i></i></header>
+              <p>
+                Toetra does not silently generalize beyond what it can currently
+                support end to end.
+              </p>
+              <ul>
+                <li>Multiclass and multi-output models</li>
+                <li>Trees, ensembles and neural networks</li>
+                <li>Symbolic preprocessing reconstruction</li>
+                <li>Calibration and threshold wrappers</li>
+                <li>Alternating quantifiers</li>
+                <li>Built-in non-Z3 backends</li>
+                <li>Bit-exact IEEE-754 equivalence claims</li>
+              </ul>
+              <a class="text-link dark-link" href="./docs/public-v1-profile/">
+                Read the authoritative support contract <span>↗</span>
+              </a>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="architecture-section">
+        <div class="section-shell">
+          <div class="architecture-copy reveal">
+            <p class="section-kicker">Inside the system</p>
+            <h2>A compiler between intention and proof.</h2>
+            <p>
+              Every boundary has a job. The language remains user-facing; model
+              semantics and logical semantics stay distinct until the verification
+              task is ready for a capable backend.
+            </p>
+          </div>
+
+          <div class="architecture-map reveal reveal-delay-1" aria-label="Toetra compiler pipeline">
+            <div class="architecture-flow">
+              <article class="arch-node arch-source"><span>01</span><small>Source</small><strong>.toetra</strong></article>
+              <i aria-hidden="true"></i>
+              <article class="arch-node"><span>02</span><small>Language</small><strong>AST</strong></article>
+              <i aria-hidden="true"></i>
+              <article class="arch-node"><span>03</span><small>Meaning</small><strong>Semantic</strong></article>
+              <i aria-hidden="true"></i>
+              <article class="arch-node"><span>04</span><small>Logic</small><strong>IR1 · IR2</strong></article>
+              <i aria-hidden="true"></i>
+              <article class="arch-node arch-router"><span>05</span><small>Capability</small><strong>Router</strong></article>
+              <i aria-hidden="true"></i>
+              <article class="arch-node arch-backend"><span>06</span><small>Backend</small><strong>Z3</strong></article>
+              <i aria-hidden="true"></i>
+              <article class="arch-node arch-evidence"><span>07</span><small>Evidence</small><strong>Report</strong></article>
+            </div>
+            <div class="model-bridge">
+              <span>MODEL BRIDGE</span>
+              <strong>framework model → ModelSchema → model assumptions → verification task</strong>
+              <svg viewBox="0 0 340 42" preserveAspectRatio="none" aria-hidden="true"><path d="M1 40V20C1 9.5 9.5 1 20 1h300c10.5 0 19 8.5 19 19v20" /></svg>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="quickstart-section" id="quickstart">
+        <div class="section-shell quickstart-layout">
+          <div class="quickstart-copy reveal">
+            <p class="section-kicker">Try the candidate</p>
+            <h2>From source checkout<br />to first evidence.</h2>
+            <p>
+              Toetra 1.0.0rc4 supports Python 3.11 and 3.12. It is an evaluation
+              release candidate and is not currently published on PyPI.
+            </p>
+            <dl class="exit-codes" aria-label="Command-line process statuses">
+              <div><dt>0</dt><dd>positive</dd></div>
+              <div><dt>1</dt><dd>formal failure</dd></div>
+              <div><dt>2</dt><dd>inconclusive</dd></div>
+              <div><dt>3</dt><dd>invalid input</dd></div>
+            </dl>
+            <div class="quickstart-actions">
+              <a class="button button-light" href="./docs/getting-started/installation/">Installation guide</a>
+              <a class="text-link" href="./docs/releases/1.0.0rc4/">1.0.0rc4 release notes <span>↗</span></a>
+            </div>
+          </div>
+
+          <div class="terminal reveal reveal-delay-1">
+            <header>
+              <span class="window-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+              <span>toetra · quickstart</span>
+              <button type="button" data-copy-target="quickstart-code">Copy</button>
+            </header>
+            <pre id="quickstart-code"><code><span class="prompt">$</span> git clone https://github.com/KintanaOne/Toetra.git
+<span class="prompt">$</span> cd Toetra
+<span class="prompt">$</span> python -m pip install .
+<span class="prompt">$</span> python -m demo.quickstart.verify_model --demo
+
+<span class="terminal-muted"># Expected: one PROVED result and one WITNESS</span></code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="closing-section">
+        <div class="closing-grid" aria-hidden="true"></div>
+        <div class="closing-aurora" aria-hidden="true"></div>
+        <div class="section-shell closing-inner reveal">
+          <img src="./assets/toetra-symbol-color-1024.png" alt="" width="1024" height="1024" />
+          <p class="section-kicker">Behavior, made explicit</p>
+          <h2>What should your model<br />never be allowed to do?</h2>
+          <p>Write the intention. Define the domain. Inspect the evidence.</p>
+          <div class="closing-actions">
+            <a class="button button-primary" href="https://github.com/KintanaOne/Toetra" target="_blank" rel="noreferrer">Explore Toetra on GitHub</a>
+            <a class="button button-ghost" href="./docs/">Read the documentation</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-main">
+        <a class="brand footer-brand" href="#top"><img src="./assets/toetra-lockup-horizontal-reversed.png" alt="Toetra" width="1280" height="480" /></a>
+        <p>Declarative behavioral specification and formal verification for machine-learning models.</p>
+        <div class="footer-links">
+          <a href="https://github.com/KintanaOne/Toetra" target="_blank" rel="noreferrer">GitHub</a>
+          <a href="./docs/">Documentation</a>
+          <a href="https://github.com/KintanaOne/Toetra/blob/main/CHANGELOG.md" target="_blank" rel="noreferrer">Changelog</a>
+          <a href="https://github.com/KintanaOne/Toetra/blob/main/CONTRIBUTING.md" target="_blank" rel="noreferrer">Contributing</a>
+          <a href="https://github.com/KintanaOne/Toetra/blob/main/COMMERCIAL_LICENSE.md" target="_blank" rel="noreferrer">Commercial use</a>
+        </div>
+      </div>
+      <div class="footer-meta">
+        <p>Created by <a href="https://github.com/KintanaOne" target="_blank" rel="noreferrer">Tina RANDRIANARIJAONA-DUBIN · KintanaOne</a> · © 2025–2026.</p>
+        <p>Source-available under PolyForm Noncommercial 1.0.0 · Commercial licensing available.</p>
+      </div>
+    </footer>
+  </body>
+</html>

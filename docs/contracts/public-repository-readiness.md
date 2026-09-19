@@ -145,7 +145,8 @@ Before accepting untrusted public contributions:
 - workflow permissions are least-privilege and explicit;
 - pull-request workflows do not expose publication credentials or use a
   privileged untrusted-code path;
-- publication remains a separate, protected, manually authorized operation;
+- publication remains a separate, protected operation from the main branch and
+  is never triggered by untrusted pull-request code;
 - contribution, security-reporting, and issue-intake expectations are present;
 - repository settings enable appropriate branch protection and security
   features for the public project.

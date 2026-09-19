@@ -15,6 +15,7 @@ EXPECTED_PUBLIC_FILES = (
     ".github/dependabot.yml",
     ".github/pull_request_template.md",
     ".github/workflows/ci.yml",
+    ".github/workflows/deploy-pages.yml",
     "COMMERCIAL_LICENSE.md",
     "CONTRIBUTING.md",
     "COPYRIGHT.md",
@@ -104,6 +105,8 @@ FORBIDDEN_WORKFLOW_MARKERS = (
     "pypa/gh-action-pypi-publish",
 )
 
+DEPLOYMENT_WORKFLOW_NAMES = frozenset({"deploy-pages.yml"})
+
 ACTION_USE = re.compile(
     r"^\s*uses:\s*(?P<target>[^@\s]+)@(?P<reference>[^\s#]+)"
     r"(?:\s+#\s*(?P<label>.+))?$",
@@ -122,11 +125,38 @@ class PublicCollaborationError(RuntimeError):
 def _workflow_errors(path: Path, source: str) -> list[str]:
     relative = path.as_posix()
     errors: list[str] = []
+    is_pages_deployment = path.name in DEPLOYMENT_WORKFLOW_NAMES
 
-    if not re.search(r"^permissions:\s*\n  contents:\s*read\s*$", source, re.MULTILINE):
-        errors.append(f"{relative} does not declare top-level contents: read")
-    if WRITE_PERMISSION.search(source):
-        errors.append(f"{relative} grants a write-capable workflow permission")
+    if is_pages_deployment:
+        expected_permissions = (
+            r"^permissions:\s*\n"
+            r"  contents:\s*read\s*\n"
+            r"  pages:\s*write\s*\n"
+            r"  id-token:\s*write\s*$"
+        )
+        if not re.search(expected_permissions, source, re.MULTILINE):
+            errors.append(
+                f"{relative} does not declare the narrow GitHub Pages permissions"
+            )
+        if not re.search(
+            r'^  push:\s*\n    branches:\s*\["main"\]\s*$',
+            source,
+            re.MULTILINE,
+        ):
+            errors.append(f"{relative} is not restricted to pushes on main")
+        if re.search(r"^  pull_request(?:_target)?:", source, re.MULTILINE):
+            errors.append(f"{relative} runs deployment on an untrusted pull request")
+        if "actions/upload-pages-artifact@" not in source:
+            errors.append(f"{relative} does not upload a Pages artifact")
+        if "actions/deploy-pages@" not in source:
+            errors.append(f"{relative} does not deploy the Pages artifact")
+    else:
+        if not re.search(
+            r"^permissions:\s*\n  contents:\s*read\s*$", source, re.MULTILINE
+        ):
+            errors.append(f"{relative} does not declare top-level contents: read")
+        if WRITE_PERMISSION.search(source):
+            errors.append(f"{relative} grants a write-capable workflow permission")
     if "timeout-minutes:" not in source:
         errors.append(f"{relative} does not bound job execution time")
 

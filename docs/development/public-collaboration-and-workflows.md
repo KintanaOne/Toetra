@@ -1,8 +1,8 @@
 # Public collaboration and workflow settings
 
 This page records the source-controlled and repository-hosted controls required
-by P27.3. It does not publish Toetra, create a release, or widen the V1 product
-boundary.
+by P27.3. It does not create a release or widen the V1 product boundary; the
+separate Pages workflow publishes only the reviewed static site.
 
 ## Source-controlled controls
 
@@ -15,7 +15,8 @@ The repository provides:
   merge outside code or documentation before an explicit contributor
   agreement;
 - read-only pull-request CI with immutable action references;
-- no `pull_request_target`, publication credential, deployment, or release job;
+- a separate, main-branch-only GitHub Pages deployment with immutable action
+  references and the minimum Pages permissions;
 - weekly Dependabot checks for pinned GitHub Actions.
 
 The durable check is:
@@ -25,8 +26,11 @@ make public-collaboration-check
 ```
 
 It rejects missing community files, mutable external action references,
-write-capable workflow permissions, secret use, privileged untrusted-code
-triggers, publication commands, and checkout credential persistence.
+write-capable workflow permissions in pull-request CI, secret use, privileged
+untrusted-code triggers, publication commands, and checkout credential
+persistence. The Pages workflow is checked separately: it can write only the
+Pages deployment token, runs from `main` or manual dispatch, and never runs on
+pull requests.
 
 ## GitHub settings checklist
 
@@ -43,11 +47,13 @@ private findings.
 
 ### Actions
 
-- [ ] Default workflow permissions are read-only.
+- [ ] Default workflow permissions are read-only; only the Pages deployment
+      workflow has `pages: write` and `id-token: write`.
 - [ ] GitHub Actions cannot create or approve pull requests.
 - [ ] Only GitHub-authored actions are allowed for the current P27 workflow, or
       an equally narrow allowlist is configured.
-- [ ] No repository or environment secret is available to pull-request CI.
+- [ ] No repository or environment secret is available to pull-request CI or
+      the Pages deployment.
 
 ### Main-branch protection
 
@@ -67,8 +73,9 @@ private findings.
 
 The `pull_request` workflow executes contributor-controlled code, including
 tests and build hooks. It therefore receives only a read-only token, no secrets,
-no publishing identity, and no write permission. Publication remains a
-separate, explicitly authorized future operation.
+no publishing identity, and no write permission. The landing page and
+documentation publication is a separate, explicitly authorized main-branch
+operation with a dedicated Pages environment.
 
 Opening a pull request does not grant Toetra the commercial relicensing rights
 needed by its dual-licensing model. Until an explicit contributor agreement is
