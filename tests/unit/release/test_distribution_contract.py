@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pytest
 
+from scripts.release.check_installed_distribution import installation_artifacts
 from scripts.release.distribution import (
     DistributionContractError,
     check_distribution_directory,
@@ -132,6 +133,59 @@ def test_distribution_contract_accepts_complete_wheel_and_sdist(
 
     assert artifacts.wheel.name.endswith(".whl")
     assert artifacts.sdist.name.endswith(".tar.gz")
+
+
+@pytest.mark.parametrize(
+    ("format", "suffixes"),
+    (("wheel", (".whl",)), ("sdist", (".tar.gz",)), ("both", (".whl", ".tar.gz"))),
+)
+def test_installation_selects_the_requested_validated_archives(
+    tmp_path: Path, format: str, suffixes: tuple[str, ...]
+) -> None:
+    _write_wheel(tmp_path / f"toetra-{PROJECT_VERSION}-py3-none-any.whl")
+    _write_sdist(tmp_path / f"toetra-{PROJECT_VERSION}.tar.gz", mtime=100)
+
+    selected = installation_artifacts(tmp_path, format=format)
+
+    assert len(selected) == len(suffixes)
+    assert all(path.name.endswith(suffix) for path, suffix in zip(selected, suffixes))
+    assert installation_artifacts(tmp_path) == (
+        tmp_path / f"toetra-{PROJECT_VERSION}-py3-none-any.whl",
+    )
+
+
+@pytest.mark.parametrize("missing", ("wheel", "sdist"))
+def test_installation_does_not_fall_back_when_an_archive_is_missing(
+    tmp_path: Path, missing: str
+) -> None:
+    if missing != "wheel":
+        _write_wheel(tmp_path / f"toetra-{PROJECT_VERSION}-py3-none-any.whl")
+    if missing != "sdist":
+        _write_sdist(tmp_path / f"toetra-{PROJECT_VERSION}.tar.gz", mtime=100)
+
+    with pytest.raises(DistributionContractError, match="Expected exactly one wheel"):
+        installation_artifacts(tmp_path, format=missing)
+
+
+@pytest.mark.parametrize("invalid", ("wheel", "sdist"))
+def test_installation_rejects_invalid_archive_contents(
+    tmp_path: Path, invalid: str
+) -> None:
+    wheel = tmp_path / f"toetra-{PROJECT_VERSION}-py3-none-any.whl"
+    sdist = tmp_path / f"toetra-{PROJECT_VERSION}.tar.gz"
+    _write_wheel(wheel)
+    _write_sdist(sdist, mtime=100)
+    (wheel if invalid == "wheel" else sdist).write_bytes(b"not an archive")
+
+    with pytest.raises((zipfile.BadZipFile, tarfile.ReadError)):
+        installation_artifacts(tmp_path, format=invalid)
+
+
+def test_installation_rejects_unknown_formats(tmp_path: Path) -> None:
+    with pytest.raises(
+        DistributionContractError, match="Unsupported installation format"
+    ):
+        installation_artifacts(tmp_path, format="editable")
 
 
 @pytest.mark.parametrize("package", ["forml", "dsl", "model"])

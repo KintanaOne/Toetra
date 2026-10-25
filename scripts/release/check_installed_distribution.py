@@ -1,4 +1,4 @@
-"""Install the built wheel outside the checkout and probe the public API."""
+"""Install built wheel/sdist archives outside the checkout and probe the public API."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ import sys
 import tempfile
 import tomllib
 import venv
+from collections.abc import Sequence
 from pathlib import Path
 
 PROBE = r"""
@@ -138,6 +139,53 @@ def check_policy(specification: str) -> VerificationSession:
 """
 
 
+def installation_artifacts(
+    directory: Path,
+    *,
+    format: str = "wheel",
+    repository: Path | None = None,
+) -> tuple[Path, ...]:
+    """Select validated archives; never substitute a checkout or another format."""
+
+    from scripts.release.distribution import (
+        DistributionContractError,
+        check_distribution_directory,
+    )
+
+    if format not in {"wheel", "sdist", "both"}:
+        raise DistributionContractError(f"Unsupported installation format: {format!r}")
+    artifacts = check_distribution_directory(directory.resolve(), repository=repository)
+    if format == "both":
+        return artifacts.wheel, artifacts.sdist
+    return (artifacts.wheel if format == "wheel" else artifacts.sdist,)
+
+
+def _require_installed_location(package: Path, python: Path, *, probe: str) -> None:
+    package = package.resolve()
+    venv_root = python.parent.parent.resolve()
+    if not package.is_relative_to(venv_root) or "site-packages" not in package.parts:
+        raise RuntimeError(f"{probe} resolved Toetra outside the clean venv: {package}")
+
+
+def check_installed_origin(
+    python: Path, workspace: Path, *, environment: dict[str, str]
+) -> None:
+    """Require the imported module to belong to this exact fresh environment."""
+
+    completed = subprocess.run(
+        [str(python), "-I", "-c", "import toetra; print(toetra.__file__)"],
+        cwd=workspace,
+        env=environment,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        check=True,
+    )
+    module_path = Path(completed.stdout.strip()).resolve()
+    _require_installed_location(module_path.parent, python, probe="Import")
+    print(f"Installed Toetra import: {module_path}")
+
+
 def check_installed_typing(
     python: Path,
     workspace: Path,
@@ -184,14 +232,7 @@ def check_installed_typing(
     result = json.loads(completed.stdout)
     completeness = result["typeCompleteness"]
     installed_root = Path(completeness["packageRootDirectory"]).resolve()
-    venv_root = python.parent.parent.resolve()
-    if (
-        not installed_root.is_relative_to(venv_root)
-        or "site-packages" not in installed_root.parts
-    ):
-        raise RuntimeError(
-            f"Pyright resolved Toetra outside the clean venv: {installed_root}"
-        )
+    _require_installed_location(installed_root, python, probe="Pyright")
     if completed.returncode or completeness["completenessScore"] != 1:
         failures = [
             {"name": symbol["name"], "diagnostics": symbol["diagnostics"]}
@@ -217,50 +258,49 @@ def _venv_python(directory: Path) -> Path:
     return directory / "bin" / "python"
 
 
-def main() -> int:
-    repository_root = Path(__file__).resolve().parents[2]
-    if str(repository_root) not in sys.path:
-        sys.path.insert(0, str(repository_root))
+def check_installed_archive(
+    archive: Path, *, repository_root: Path, pyright_requirement: str
+) -> None:
+    """Run the same isolated installed-package journey for either archive format."""
+
     from scripts.ci.check_cli_smoke import project_version, run_cli_smoke
-    from scripts.release.distribution import check_distribution_directory
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("directory", nargs="?", type=Path, default=Path("dist"))
-    arguments = parser.parse_args()
-    artifacts = check_distribution_directory(
-        arguments.directory.resolve(), repository=repository_root
-    )
-    project = tomllib.loads(
-        (repository_root / "pyproject.toml").read_text(encoding="utf-8")
-    )["project"]
-    pyright_requirement = next(
-        requirement
-        for requirement in project["optional-dependencies"]["dev"]
-        if requirement.startswith("pyright==")
-    )
-
+    print(f"Checking installed archive: {archive.name}", flush=True)
     with tempfile.TemporaryDirectory(prefix="toetra-install-check-") as raw_directory:
         root = Path(raw_directory)
         environment = root / "venv"
         venv.EnvBuilder(with_pip=True, clear=True).create(environment)
         python = _venv_python(environment)
+        clean_environment = os.environ.copy()
+        clean_environment.pop("PYTHONPATH", None)
+        clean_environment.pop("PYTHONHOME", None)
+        clean_environment["PYTHONSAFEPATH"] = "1"
+        clean_environment["VIRTUAL_ENV"] = str(environment)
+        clean_environment["PATH"] = (
+            str(python.parent) + os.pathsep + clean_environment.get("PATH", "")
+        )
         subprocess.run(
             [
                 str(python),
+                "-I",
                 "-m",
                 "pip",
                 "install",
                 "--disable-pip-version-check",
-                str(artifacts.wheel),
+                str(archive),
                 pyright_requirement,
             ],
             check=True,
             cwd=root,
+            env=clean_environment,
         )
-        subprocess.run([str(python), "-m", "pip", "check"], check=True, cwd=root)
-        clean_environment = os.environ.copy()
-        clean_environment.pop("PYTHONPATH", None)
-        clean_environment["PYTHONSAFEPATH"] = "1"
+        subprocess.run(
+            [str(python), "-I", "-m", "pip", "check"],
+            check=True,
+            cwd=root,
+            env=clean_environment,
+        )
+        check_installed_origin(python, root, environment=clean_environment)
         subprocess.run(
             [str(python), "-I", "-c", PROBE],
             check=True,
@@ -300,6 +340,40 @@ def main() -> int:
         payload = json.loads(report.read_text(encoding="utf-8"))
         assert payload["schema"] == "toetra.verification-report-collection"
         assert payload["schema_version"] == 6
+    print(f"Installed archive passed: {archive.name}", flush=True)
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    repository_root = Path(__file__).resolve().parents[2]
+    if str(repository_root) not in sys.path:
+        sys.path.insert(0, str(repository_root))
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("directory", nargs="?", type=Path, default=Path("dist"))
+    parser.add_argument(
+        "--format",
+        choices=("wheel", "sdist", "both"),
+        default="wheel",
+        help="Archive format to install; 'both' uses two separate fresh environments.",
+    )
+    arguments = parser.parse_args(argv)
+    archives = installation_artifacts(
+        arguments.directory, format=arguments.format, repository=repository_root
+    )
+    project = tomllib.loads(
+        (repository_root / "pyproject.toml").read_text(encoding="utf-8")
+    )["project"]
+    pyright_requirement = next(
+        requirement
+        for requirement in project["optional-dependencies"]["dev"]
+        if requirement.startswith("pyright==")
+    )
+    for archive in archives:
+        check_installed_archive(
+            archive,
+            repository_root=repository_root,
+            pyright_requirement=pyright_requirement,
+        )
     return 0
 
 

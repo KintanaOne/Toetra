@@ -32,6 +32,17 @@ persistence. The Pages workflow is checked separately: it can write only the
 Pages deployment token, runs from `main` or manual dispatch, and never runs on
 pull requests.
 
+The CI workflow triggers on pushes to `main` and all pull requests. It preserves
+Linux quality checks on Python 3.11/3.12, builds reproducible distributions once,
+and transfers the wheel and sdist to eight Ubuntu/native-Windows installation
+jobs covering both Python versions and both formats. Each job uses the same
+isolated installed-package journey and fails on compatibility errors or checkout
+mutations. Artifact download fails on a digest mismatch. Demonstrations and the
+reproducible review bundle remain in the build job. No publication permission is
+added, and the GitHub Pages workflow is unchanged. See the
+[release engineering contract](../contracts/release-engineering.md#automatic-installation-matrix)
+for the matrix and reproduction links.
+
 ## GitHub settings checklist
 
 These controls live on GitHub and therefore require owner verification. Record
@@ -58,7 +69,8 @@ private findings.
 ### Main-branch protection
 
 - [ ] Force pushes and branch deletion are blocked.
-- [ ] Required checks cover Python 3.11, Python 3.12, and the distribution job.
+- [ ] Required checks cover both Linux quality jobs, the distribution/bundle job,
+      and all eight Ubuntu/native-Windows, Python 3.11/3.12, wheel/sdist installation jobs.
 - [ ] Pull requests cannot merge while required checks fail.
 - [ ] Any maintainer bypass is deliberate and recorded.
 

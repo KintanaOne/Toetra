@@ -40,12 +40,13 @@ jobs:
         run: make ci
 
       - name: Verify CI left the checkout unchanged
+        if: always()
         run: |
           git status --short
           test -z "$(git status --porcelain)"
 
   release:
-    name: Distribution and clean-install contract
+    name: Reproducible distributions and review bundle
     runs-on: ubuntu-latest
     timeout-minutes: 45
     needs: quality
@@ -69,7 +70,7 @@ jobs:
           python -m pip install ".[dev,docs]"
 
       - name: Build reproducible distributions
-        run: make release-check
+        run: make dist dist-check
 
       - name: Run public demonstrations
         run: make demo-check
@@ -78,6 +79,68 @@ jobs:
         run: make review-bundle-check
 
       - name: Verify release checks left the checkout unchanged
+        if: always()
         run: |
           git status --short
           test -z "$(git status --porcelain)"
+
+      - name: Upload validated distributions
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: toetra-distributions
+          path: |
+            dist/*.whl
+            dist/*.tar.gz
+            dist/SHA256SUMS
+          if-no-files-found: error
+
+  install:
+    name: Install / ${{ matrix.os }} / Python ${{ matrix.python-version }} / ${{ matrix.distribution }}
+    needs: release
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.11", "3.12"]
+        distribution: [wheel, sdist]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install archive-validation tooling only
+        run: python -m pip install packaging==25.0
+
+      - name: Download the distributions from this build
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: toetra-distributions
+          path: dist
+          digest-mismatch: error
+
+      - name: Validate archive contents against the checkout
+        run: python scripts/release/check_distribution.py dist
+
+      - name: Verify the isolated installed package
+        run: python scripts/release/check_installed_distribution.py dist --format ${{ matrix.distribution }}
+
+      - name: Verify installation checks left the checkout unchanged
+        if: always()
+        shell: python
+        run: |
+          import subprocess
+          status = subprocess.check_output(
+              ["git", "status", "--porcelain", "--untracked-files=all"], text=True
+          )
+          print(status, end="")
+          if status.strip():
+              raise SystemExit("Installation checks modified the checkout")

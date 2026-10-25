@@ -1,8 +1,14 @@
 from __future__ import annotations
 
 import re
+import shlex
+import subprocess
 import tomllib
+from itertools import product
 from pathlib import Path
+
+import pytest
+import yaml
 
 ROOT = Path(__file__).parents[3]
 
@@ -28,15 +34,116 @@ def test_make_ci_is_non_mutating() -> None:
 
 
 def test_ci_covers_supported_python_versions_and_checks_checkout() -> None:
-    workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    # BaseLoader preserves GitHub's `on` key instead of treating it as YAML 1.1 true.
+    workflow = yaml.load(
+        (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8"),
+        Loader=yaml.BaseLoader,
+    )
+    assert workflow["on"]["push"]["branches"] == ["main"]
+    assert "pull_request" in workflow["on"]
+    jobs = workflow["jobs"]
+    assert set(jobs["quality"]["strategy"]["matrix"]["python-version"]) == {
+        "3.11",
+        "3.12",
+    }
+    installation = jobs["install"]
+    matrix = installation["strategy"]["matrix"]
+    assert not matrix.get("exclude") and not matrix.get("include")
+    cells = set(product(matrix["os"], matrix["python-version"], matrix["distribution"]))
+    assert cells == set(
+        product(
+            ("ubuntu-latest", "windows-latest"), ("3.11", "3.12"), ("wheel", "sdist")
+        )
+    )
+    assert installation["runs-on"] == "${{ matrix.os }}"
+    assert installation["needs"] == "release"
+    assert jobs["release"]["needs"] == "quality"
+    assert installation["strategy"]["fail-fast"] == "false"
+    for job in jobs.values():
+        assert 0 < int(job["timeout-minutes"]) <= 45
+        assert job.get("continue-on-error", "false") == "false"
+        assert all(
+            step.get("continue-on-error", "false") == "false" for step in job["steps"]
+        )
 
-    assert 'python-version: ["3.11", "3.12"]' in workflow
-    assert "git status --porcelain" in workflow
-    assert "make release-check" in workflow
-    assert "make demo-check" in workflow
-    assert "make review-bundle-check" in workflow
     makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
     assert "dist/toetra_review_bundle.zip" in makefile
+
+
+def test_installation_jobs_consume_the_single_build_without_rebuilding_sources() -> (
+    None
+):
+    workflow = yaml.load(
+        (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8"),
+        Loader=yaml.BaseLoader,
+    )
+    release = workflow["jobs"]["release"]["steps"]
+    installation = workflow["jobs"]["install"]["steps"]
+    uploads = [
+        step
+        for step in release
+        if step.get("uses", "").startswith("actions/upload-artifact@")
+    ]
+    downloads = [
+        step
+        for step in installation
+        if step.get("uses", "").startswith("actions/download-artifact@")
+    ]
+    assert len(uploads) == len(downloads) == 1
+    upload, download = uploads[0]["with"], downloads[0]["with"]
+    assert upload["name"] == download["name"]
+    assert upload["if-no-files-found"] == "error"
+    assert download["digest-mismatch"] == "error"
+    assert not {"run-id", "repository", "github-token"} & download.keys()
+    assert {"dist/*.whl", "dist/*.tar.gz", "dist/SHA256SUMS"} <= set(
+        upload["path"].splitlines()
+    )
+    release_commands = "\n".join(step.get("run", "") for step in release)
+    assert "make dist dist-check" in release_commands
+    assert "make demo-check" in release_commands
+    assert "make review-bundle-check" in release_commands
+    install_commands = "\n".join(step.get("run", "") for step in installation)
+    assert "build_distribution.py" not in install_commands
+    assert not re.search(r"^\s*make(?:\s|$)", install_commands, re.MULTILINE)
+    assert (
+        "check_installed_distribution.py dist --format ${{ matrix.distribution }}"
+        in install_commands
+    )
+    project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    requirements = project["project"]["optional-dependencies"]["dev"]
+    host_installs = [
+        shlex.split(step["run"])[4:]
+        for step in installation
+        if step.get("run", "").startswith("python -m pip install ")
+    ]
+    assert host_installs == [
+        [next(item for item in requirements if item.startswith("packaging=="))]
+    ]
+
+
+@pytest.mark.parametrize("status", ("", " M changed.py\n"))
+def test_native_windows_checkout_guard_fails_for_mutations(
+    monkeypatch: pytest.MonkeyPatch, status: str
+) -> None:
+    workflow = yaml.load(
+        (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8"),
+        Loader=yaml.BaseLoader,
+    )
+    guards = [
+        step
+        for step in workflow["jobs"]["install"]["steps"]
+        if step.get("if") == "always()"
+    ]
+    assert len(guards) == 1
+    guard = guards[0]
+    assert guard["shell"] == "python"
+    monkeypatch.setattr(subprocess, "check_output", lambda *args, **kwargs: status)
+    source = compile(guard["run"], "installation-checkout-guard", "exec")
+    if status:
+        with pytest.raises(SystemExit, match="modified the checkout"):
+            exec(source, {})
+    else:
+        exec(source, {})
 
 
 def test_ci_installs_project_runtime_and_all_required_extras() -> None:

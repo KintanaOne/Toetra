@@ -6,7 +6,7 @@
 	notebooks-clean notebooks-check generated-check identity-check public-contract-check \
 	public-snapshot-check public-history-check public-collaboration-check \
 	cli-smoke-check snippets-check docs-check ci \
-	dist dist-check install-check release-check review-bundle \
+	dist dist-check install-check install-check-sdist install-check-all release-check review-bundle \
 	review-bundle-check repository-check demo-regression demo-quickstart \
 	demo-classification demo-check outside-in-check public-surface-check clean ci-local
 
@@ -97,11 +97,17 @@ dist:
 dist-check:
 	python scripts/release/check_distribution.py dist
 
-# Install the wheel in a fresh venv and import Toetra outside the checkout.
+# Install each archive in its own fresh venv outside the checkout.
 install-check:
 	python scripts/release/check_installed_distribution.py dist
 
-release-check: identity-check public-contract-check repository-check public-collaboration-check dist dist-check install-check
+install-check-sdist:
+	python scripts/release/check_installed_distribution.py dist --format sdist
+
+install-check-all:
+	python scripts/release/check_installed_distribution.py dist --format both
+
+release-check: identity-check public-contract-check repository-check public-collaboration-check dist dist-check install-check-all
 
 review-bundle:
 	python scripts/release/build_review_bundle.py --output dist/toetra_review_bundle.zip

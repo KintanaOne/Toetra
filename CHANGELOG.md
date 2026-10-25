@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+### Added
+
+- Automatically validate the same reproducible wheel and sdist on Ubuntu and
+  native Windows with Python 3.11/3.12 on every main push and pull request. Transfer
+  the archives from one build job to eight isolated installation jobs, retaining
+  demos, bundle checks, read-only permissions, and checkout mutation checks.
+- Add explicit wheel/sdist/both installation selection while preserving the
+  wheel default, with shared runtime, provenance, CLI, replay, quickstart, and
+  Pyright checks. `make release-check` now exercises both archive formats.
+
 ### Fixed
 
 - Package the PEP 561 `py.typed` marker in wheel and sdist, require it in release

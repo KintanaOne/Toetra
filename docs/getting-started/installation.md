@@ -107,3 +107,43 @@ package, test, demo, documentation, and automation boundaries.
 
 See the [1.0.0 release notes](../releases/1.0.0.md) for compatibility and the
 remaining publication gates.
+
+## Reproduce an installation check
+
+GitHub Actions automatically schedules wheel and sdist checks on Ubuntu and
+native Windows with Python 3.11 and 3.12 for every push to `main` and every pull
+request. One release job builds the reproducible archives; all eight installation
+jobs download those same archives. Each selected format gets a separate fresh
+venv outside the repository, including the strict external Pyright consumer and
+100% public type-completeness check. Publication remains pending until separate
+release acceptance and publication actions.
+
+To reproduce a failure, use the failing job's Python version and native operating
+system. Download its `toetra-distributions` Actions artifact into `dist/`, or
+build the archives once from a **clean committed checkout**:
+
+```bash
+python scripts/release/build_distribution.py --output dist --check-reproducible --require-clean
+```
+
+Then use the same commands in Linux/WSL or native Windows PowerShell:
+
+```bash
+python scripts/release/check_distribution.py dist
+python scripts/release/check_installed_distribution.py dist --format wheel
+python scripts/release/check_installed_distribution.py dist --format sdist
+```
+
+`--format both` runs both journeys sequentially in distinct environments. Omitting
+`--format` retains the wheel-only default. The host needs the project development
+dependencies, or just the pinned `packaging` version from `pyproject.toml` to run
+the archive-validation scripts; each fresh venv installs its own runtime
+dependencies and pinned Pyright. Pip installs the sdist with normal isolated
+building, without using the checkout as the package source.
+
+On Linux/WSL, equivalent Make shortcuts are `make install-check` (wheel),
+`make install-check-sdist`, and `make install-check-all`. `make release-check`
+builds and checks both formats. These Make shortcuts are not required by native
+Windows jobs; those jobs call the Python entry points above. WSL validates the
+Linux path and does not replace native Windows coverage. No macOS or additional
+Python version is part of this installation matrix.
