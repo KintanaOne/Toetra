@@ -1,6 +1,6 @@
 # Invalid and unsupported examples
 
-> Status: Current boundary taxonomy for `1.0.0rc4`
+> Status: Current boundary taxonomy for `1.0.0`
 > Scope: Syntax errors, semantic errors, capability rejections, and outcomes
 > Audience: users, test authors, and diagnostic maintainers
 

@@ -1,6 +1,6 @@
 # Pipeline views
 
-> **Status:** As built for `1.0.0rc4`
+> **Status:** As built for `1.0.0`
 >
 > **Scope:** internal data flow and ownership
 

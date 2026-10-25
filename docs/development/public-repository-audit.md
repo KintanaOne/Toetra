@@ -4,6 +4,11 @@ This procedure implements P27.1 for the exact `1.0.0rc4` candidate selected for
 public exposure. It does not publish the repository, create a GitHub Release,
 publish to PyPI, add a CLI, or change the stable-version decision.
 
+The RC4 reference above records the original P27.1 baseline. Apply the same
+audit to the current stable `1.0.0` sources, prepared for publication, without
+treating the audit as publication evidence. See the
+[1.0.0 release notes](../releases/1.0.0.md).
+
 ## Evidence boundaries
 
 Two different checks are required:

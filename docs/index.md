@@ -7,7 +7,7 @@ hide:
   <div class="toetra-hero__brand"><img src="assets/brand/toetra-lockup-horizontal-reversed.png" alt="Toetra" /></div>
   <div class="toetra-hero__art" aria-hidden="true"><img src="assets/brand/toetra-symbol-color-1024.png" alt="" /></div>
 
-  <span class="toetra-eyebrow">Evaluation release · 1.0.0rc4</span>
+  <span class="toetra-eyebrow">Stable sources · 1.0.0 · prepared for publication</span>
 
 # State the behavior.<br /><span>Get the evidence.</span>
 
@@ -54,11 +54,11 @@ behavioral question without exposing solver formulas or framework internals.
   </div>
 </div>
 
-!!! warning "Precise evaluation scope"
+!!! warning "Stable scope and publication status"
 
-    `1.0.0rc4` is an evaluation release candidate, not the stable `1.0.0`
-    release. It is installed from a source checkout or source archive and is not
-    published on PyPI. The public V1 profile currently supports fitted
+    The stable `1.0.0` sources are prepared for publication. Publication remains
+    pending; Toetra is not currently published on PyPI. Install from a source
+    checkout or source archive. The public V1 profile supports fitted
     single-output scikit-learn `LinearRegression` and direct fitted binary
     `LogisticRegression` models over finite transformed numeric features.
 
@@ -103,7 +103,7 @@ its temporary model and dataset.
   **Checking the boundary**
 
   [Compatibility matrices](generated/numeric-compatibility-matrices.md)<br />
-  [1.0.0rc4 release notes](releases/1.0.0rc4.md)
+  [1.0.0 release notes — prepared for publication](releases/1.0.0.md)
   </div>
 </div>
 

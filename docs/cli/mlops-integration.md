@@ -79,7 +79,7 @@ an inconclusive result, and a process error. Replay has the same logical
 
 ## Reproducible CLI contract check
 
-Before integrating a checkout or release candidate into an orchestrator, run
+Before integrating a checkout or release artifact into an orchestrator, run
 the same smoke scenario used by hosted CI:
 
 ```bash

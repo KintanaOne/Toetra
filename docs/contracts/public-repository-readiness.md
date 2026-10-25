@@ -4,6 +4,17 @@
 >
 > **Scope:** safe public exposure of the `1.0.0rc4` source repository
 
+## Stable-source preparation amendment
+
+The P27 decision and candidate-specific requirements below are retained as the
+historical exposure baseline. For the current `1.0.0` sources, prepared for
+publication, the narrative requirement in section 4 is superseded: identify the
+stable source version and pending publication, provide usable source-installation
+instructions, and do not announce unavailable distributions. Repository exposure
+still grants no publication authority. The historical P27 pre-release condition
+does not reclassify the prepared stable sources as a release candidate. See the
+[1.0.0 release notes](../releases/1.0.0.md) for the current boundary and gates.
+
 ## Purpose
 
 This contract defines the evidence required before the canonical Toetra GitHub

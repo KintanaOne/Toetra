@@ -6,9 +6,10 @@ classification. Begin with the self-contained regression demo, then replace
 its temporary artifacts with a supported fitted model, reference dataset, and
 `.toetra` policy.
 
-`1.0.0rc4` is an evaluation release candidate installed from a source checkout
-or source archive. It is not the stable release and is not currently published
-on PyPI.
+The stable `1.0.0` sources are prepared for publication. Publication remains
+pending; Toetra is not currently published on PyPI. Install from a source checkout
+or source archive as described in the [installation guide](installation.md).
+See the [1.0.0 release notes](../releases/1.0.0.md) for compatibility.
 
 ## Requirements
 

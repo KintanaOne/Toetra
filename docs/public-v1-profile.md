@@ -1,14 +1,14 @@
 # Public V1 profile
 
-> Release candidate: `1.0.0rc4`
-> Contract date: 2026-08-06
+> Stable version: `1.0.0` — prepared for publication
+> Profile baseline date: 2026-08-06
 
 This page is the public source of truth for executable Toetra V1 support.
 
-`1.0.0rc4` is an evaluation release candidate, not the stable `1.0.0`
-release. It is currently installed from a source checkout or source archive and
-is not published on PyPI. See
-[Installation and availability](getting-started/installation.md).
+The stable `1.0.0` sources are prepared for publication. Publication remains
+pending; Toetra is not currently published on PyPI. Install from a source
+checkout or source archive. See [Installation and availability](getting-started/installation.md)
+and the [1.0.0 release notes](releases/1.0.0.md).
 
 ## Supported end-to-end routes
 

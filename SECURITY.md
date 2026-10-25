@@ -2,13 +2,14 @@
 
 ## Supported versions
 
-Toetra has not yet published a stable V1. Security fixes are evaluated for the
-current `1.0.0rc4` release candidate and any later release candidate explicitly
-identified as current in the repository.
+The stable `1.0.0` sources are prepared for publication; publication remains
+pending. Security fixes are evaluated for this current source version and any
+later version explicitly identified as supported in the repository. This policy
+does not announce a GitHub Release or package distribution.
 
 | Version | Security fixes |
 |---|---|
-| `1.0.0rc4` | evaluated |
+| `1.0.0` (prepared sources; publication pending) | evaluated |
 | older candidates and development snapshots | not supported |
 
 ## Reporting a vulnerability

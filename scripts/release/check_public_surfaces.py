@@ -27,7 +27,10 @@ EXPECTED_COPYRIGHT_YEARS = "2025-2026"
 UNASSERTED_LICENSE_IDS = (None, "NOASSERTION")
 
 RAW_SURFACES = {
-    "README": ("README.md", ("# Toetra", "1.0.0rc4")),
+    "README": (
+        "README.md",
+        ("# Toetra", "Project status — `1.0.0`", "prepared for publication"),
+    ),
     "license": (
         "LICENSE",
         (
@@ -48,7 +51,7 @@ RAW_SURFACES = {
         ),
     ),
     "contribution guide": ("CONTRIBUTING.md", ("# Contributing", "make ci")),
-    "security policy": ("SECURITY.md", ("# Security", "1.0.0rc4")),
+    "security policy": ("SECURITY.md", ("# Security", "`1.0.0`")),
     "bug-report form": (
         ".github/ISSUE_TEMPLATE/bug_report.yml",
         ("name: Bug report", "Minimal reproduction"),

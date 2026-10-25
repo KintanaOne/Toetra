@@ -6,7 +6,7 @@ This contract defines how a Toetra source state becomes a reviewable and install
 
 ## Required gates
 
-A release candidate must satisfy all of the following:
+A release source state, including stable `1.0.0`, must satisfy all of the following:
 
 1. `make ci` passes without modifying any source file.
 2. the release source is a clean Git checkout with no tracked or untracked changes;
@@ -69,6 +69,6 @@ Release tooling failures are build failures, not verification results. They must
 
 CI, public demonstrations, distribution validation, and review-bundle
 reproducibility remain separate durable gates. Run all four commands listed
-above from a clean committed checkout when validating a release candidate. The
+above from a clean committed checkout when validating a release for publication. The
 underlying layout is defined by the
 [repository contract](repository-contract.md).

@@ -1,8 +1,8 @@
 # Contributing to Toetra
 
-Thank you for helping evaluate Toetra. The project is currently at
-`1.0.0rc4`: a deliberately narrow release candidate whose public behavior is
-frozen while the repository is exposed and observed.
+Thank you for contributing to Toetra. The stable `1.0.0` sources are prepared
+for publication with a deliberately narrow, frozen public V1 profile.
+Publication remains pending; see the [release notes](docs/releases/1.0.0.md).
 
 ## Before opening a pull request
 
@@ -12,9 +12,8 @@ frozen while the repository is exposed and observed.
   [SECURITY.md](SECURITY.md).
 - Discuss substantial semantic, architectural, or public-contract changes
   before implementing them.
-- Keep new capabilities outside the frozen `1.0.0rc4` profile. The CLI is
-  part of the current candidate; stable-release work remains a separate
-  hardening milestone.
+- Keep new capabilities outside the frozen `1.0.0` profile. The CLI is
+  part of stable V1; publication remains a separate operation.
 
 ## Development setup
 
@@ -46,6 +45,10 @@ make release-check
 make demo-check
 make review-bundle-check
 ```
+
+Distribution gates require a clean committed checkout. During preparation, run
+`make ci`, `make demo-check`, and `git diff --check`; rerun the distribution and
+review-bundle gates after the preparation commit without bypassing cleanliness.
 
 ## Pull requests
 

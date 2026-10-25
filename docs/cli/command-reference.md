@@ -1,6 +1,6 @@
 # CLI command reference
 
-> `1.0.0rc4` implements the complete `init`, `validate`, `inspect`, `verify`,
+> `1.0.0` implements the complete `init`, `validate`, `inspect`, `verify`,
 > and `replay` command surface.
 
 ## Shared inputs

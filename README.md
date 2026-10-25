@@ -1,7 +1,7 @@
 # Toetra
 [![CI](https://github.com/KintanaOne/Toetra/actions/workflows/ci.yml/badge.svg)](https://github.com/KintanaOne/Toetra/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](https://www.python.org/)
-[![Version](https://img.shields.io/badge/version-1.0.0rc4-orange)](https://github.com/KintanaOne/Toetra/releases)
+[![Version](https://img.shields.io/badge/version-1.0.0_prepared-blue)](docs/releases/1.0.0.md)
 [![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue)](LICENSE)
 
 Toetra is a Python framework and declarative language for specifying and
@@ -9,10 +9,10 @@ formally verifying behavioral properties of machine-learning models. It turns a
 property and an explicit input domain into a proof result, counterexample, or
 witness, with provenance and concrete model replay.
 
-> **Project status — `1.0.0rc4`:** this is an evaluation release candidate, not
-> the stable `1.0.0` release. It is not currently published on PyPI. Install it
-> from a source checkout or source archive while the candidate is exercised in
-> real use.
+> **Project status — `1.0.0`:** the stable V1 sources are prepared for publication.
+> Publication remains pending; this preparation does not announce a GitHub Release
+> or distribution. Toetra is not currently published on PyPI. Install it from a
+> source checkout or source archive. See the [release notes](docs/releases/1.0.0.md).
 
 ## What Toetra verifies
 
@@ -29,7 +29,7 @@ abstraction extracted from the supported model. It does not claim correctness
 of the training data, preprocessing, deployment system, or arbitrary
 floating-point execution.
 
-| Route | Supported candidate profile |
+| Route | Supported stable V1 profile |
 |---|---|
 | Regression | fitted single-output scikit-learn `LinearRegression` |
 | Classification | direct fitted binary scikit-learn `LogisticRegression` |
@@ -41,7 +41,7 @@ floating-point execution.
 The [Public V1 profile](docs/public-v1-profile.md) is the authoritative support
 contract.
 
-## Try the release candidate
+## Try the prepared stable sources
 
 From the repository root with Python 3.11 or 3.12:
 
@@ -166,7 +166,7 @@ calibration wrappers, custom decision thresholds, probability
 equality/edge-thresholds/arithmetic, alternating quantifiers, and built-in
 non-Z3 backends are outside the V1 profile.
 
-In particular, pass already transformed numeric features. Toetra `1.0.0rc4`
+In particular, pass already transformed numeric features. Toetra `1.0.0`
 does not reconstruct or verify a scikit-learn `Pipeline`.
 
 ## Demos and documentation
@@ -180,7 +180,8 @@ make demo-classification
 The classification demo covers label proof, a replayable counterexample, a
 probability witness, and pairwise label equality.
 
-- [1.0.0rc4 release notes](docs/releases/1.0.0rc4.md)
+- [1.0.0 release notes — prepared for publication](docs/releases/1.0.0.md)
+- [Historical 1.0.0rc4 release notes](docs/releases/1.0.0rc4.md)
 - [Getting started](docs/getting-started/overview.md)
 - [Public Python API](docs/api-reference/index.md)
 - [Language reference](docs/language/overview.md)

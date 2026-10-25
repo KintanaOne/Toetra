@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [1.0.0] - Prepared for publication (unpublished)
+
+The stable source version and maturity metadata are prepared; publication is a
+separate operation. See [release notes](docs/releases/1.0.0.md) for the supported
+profile, compatibility with `1.0.0rc4`, limitations, and remaining gates.
+
+### Release preparation
+
+- Updated current documentation, badges, collaboration surfaces, and automated
+  contract checks for stable V1 sources without announcing available packages.
+- Preserved RC notes, ADR decisions, and archived roadmaps as historical records.
+
 ### Added
 
 - Added compiler-owned affine Model IR lowering, framework-specific Model IR

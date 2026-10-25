@@ -1,6 +1,6 @@
 # Public V1 contract
 
-> Status: frozen for `1.0.0rc4`
+> Status: frozen for stable `1.0.0`; prepared for publication
 
 ## Stable public surfaces
 
@@ -17,7 +17,7 @@ exception classes into the compatibility surface.
 
 ## Installed process surface
 
-`1.0.0rc4` installs the `toetra` console script and the equivalent
+`1.0.0` installs the `toetra` console script and the equivalent
 `python -m toetra` entry point. The process shell exposes `--help`, `--version`,
 diagnostic rendering, and implemented `validate`, `inspect`, `verify`, `replay`,
 and `init` handlers. The adapter lives below private `toetra._cli` modules,
@@ -57,6 +57,9 @@ toetra.verification-report-collection / schema_version 6
 ```
 
 Classification adds optional model-evaluation and lowering evidence only.
+
+Stable source status does not announce available distributions. See the
+[1.0.0 release notes](../releases/1.0.0.md) for compatibility and publication gates.
 
 ## Release gates
 

@@ -1,6 +1,6 @@
 # Intermediate representations overview
 
-> **Status:** Implemented for `1.0.0rc4`
+> **Status:** Implemented for `1.0.0`
 >
 > **Scope:** IR1, model-semantic lowering, NNF, and IR2
 

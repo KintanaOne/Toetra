@@ -8,6 +8,14 @@
 > **Implementation target:** the first Toetra release candidate that ships the
 > `toetra` entry point
 
+## Stable V1 amendment
+
+The implementation target above records the original CLI delivery milestone.
+The implemented process contract is retained for stable `1.0.0` sources, prepared
+for publication, with the same five commands, statuses, and schema identities.
+This amendment does not announce an available distribution. See the
+[1.0.0 release notes](../releases/1.0.0.md).
+
 ## Purpose
 
 The CLI exposes Toetra as a deterministic operating-system process for terminal

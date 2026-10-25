@@ -1,6 +1,6 @@
 # Language overview
 
-> Status: Current for `1.0.0rc4`
+> Status: Current for `1.0.0`
 > Scope: Public Toetra Specification Language surface
 > Audience: users, compiler contributors, and reviewers
 

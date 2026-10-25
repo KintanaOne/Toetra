@@ -1,6 +1,6 @@
 # Command-line interface
 
-> `1.0.0rc4` implements `init`, `validate`, `inspect`, `verify`, and `replay` for both
+> `1.0.0` implements `init`, `validate`, `inspect`, `verify`, and `replay` for both
 > the installed `toetra` entry point and `python -m toetra`. The
 > [Python API](../api-reference/index.md) remains available for embedded use.
 

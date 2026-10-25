@@ -26,9 +26,9 @@
   <image x="72" y="52" width="255" height="96" xlink:href="toetra-lockup-horizontal-reversed.png" preserveAspectRatio="xMinYMid meet"/>
 
   <g transform="translate(72 184)">
-    <rect width="302" height="38" rx="19" fill="#ffffff" fill-opacity="0.035" stroke="#9ef0c7" stroke-opacity="0.22"/>
+    <rect width="500" height="38" rx="19" fill="#ffffff" fill-opacity="0.035" stroke="#9ef0c7" stroke-opacity="0.22"/>
     <circle cx="19" cy="19" r="4" fill="#01c573"/>
-    <text x="34" y="24" fill="#9ed8bb" font-family="Consolas, monospace" font-size="14" letter-spacing="1.4">EVALUATION RELEASE · 1.0.0RC4</text>
+    <text x="34" y="24" fill="#9ed8bb" font-family="Consolas, monospace" font-size="14" letter-spacing="1.4">STABLE SOURCES · 1.0.0 · PUBLICATION PENDING</text>
   </g>
 
   <text x="72" y="308" fill="#f7faf8" font-family="Arial, Helvetica, sans-serif" font-size="65" font-weight="700" letter-spacing="-2.5">State the behavior.</text>

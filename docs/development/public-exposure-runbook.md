@@ -4,6 +4,12 @@ This runbook controls repository visibility without coupling it to package
 publication or stable release. It does not publish to PyPI or declare the
 stable `1.0.0` release.
 
+The current source version is stable `1.0.0`, prepared for publication. The
+RC4 pre-release and deferred-stability statements below describe the original
+P27 exposure milestone; they do not override the current
+[release notes](../releases/1.0.0.md). The visibility-only procedure and its
+publication separation still apply.
+
 ## 1. Select the immutable candidate
 
 Use the complete canonical clone and fetch every reachable ref:

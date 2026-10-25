@@ -1,8 +1,8 @@
 # Implementation roadmap
 
-> **Status:** Active from the `1.0.0rc4` evaluation candidate
+> **Status:** Stable `1.0.0` sources prepared for publication
 >
-> **Scope:** public evaluation, stable V1 hardening, and evidence-led capability
+> **Scope:** stable V1 publication gates and evidence-led capability
 > expansion
 
 This roadmap starts from the product that exists today. Delivered work belongs
@@ -11,8 +11,8 @@ by the [public V1 profile](../public-v1-profile.md), not by future plans.
 
 ## Current position
 
-`1.0.0rc4` is a source-installed evaluation candidate. Its public executable
-profile includes:
+`1.0.0` is prepared for publication and installed from source while publication
+remains pending. Its public executable profile includes:
 
 - fitted single-output sklearn `LinearRegression`;
 - direct fitted binary sklearn `LogisticRegression`;
@@ -36,28 +36,30 @@ than future roadmap items.
 The [implementation status matrix](../architecture/status-matrix.md) separates
 code present in the repository from built-in and publicly guaranteed routes.
 
-## Immediate — evaluate `1.0.0rc4`
+## Immediate — validate the prepared stable sources
 
-The next milestone is public observation of the complete candidate without
-presenting it as a stable package release. The remaining work is operational:
+The source metadata and current contracts now describe stable V1. This does not
+announce a GitHub Release, PyPI distribution, tag, or documentation deployment.
+The remaining work is operational:
 
 - expose the accepted commit and verify its public surfaces anonymously;
-- confirm that the repository, tag, release artifacts, and review bundle identify
-  the same source state;
+- after the preparation commit, rerun clean-checkout distribution and review
+  gates and bind all resulting evidence to the same source state;
 - exercise source, wheel, and source-distribution installation on the accepted
   Python and operating-system matrix;
 - observe first-use, command-line, documentation, security, soundness, and MLOps
   integration feedback;
-- correct release-candidate defects without widening the frozen V1 capability
+- correct blocking defects without widening the frozen V1 capability
   profile.
 
-A GitHub Release remains a pre-release. PyPI publication and stable `1.0.0` are
-separate decisions.
+Publication remains a separate decision after gate acceptance. The historical
+`1.0.0rc4` evaluation milestone is preserved in its
+[release notes](../releases/1.0.0rc4.md).
 
-## Next — stable `1.0.0`
+## Next — publish the accepted `1.0.0` artifacts
 
-Stable V1 follows sufficient public observation and acceptance of both the
-Python and process boundaries. The release milestone includes:
+Publication follows acceptance of the Python and process boundaries and all
+remaining evidence. The release milestone includes:
 
 - a final clean-checkout, metadata, provenance, and licensing audit;
 - deterministic wheel, source distribution, and review bundle;
@@ -65,11 +67,14 @@ Python and process boundaries. The release milestone includes:
   matrix;
 - demonstrations and documentation built against release artifacts;
 - publication rehearsal, checksums, release notes, and rollback evidence;
-- the final transition to `1.0.0`.
+- a separate, explicit publication action after acceptance.
 
 This is a hardening milestone, not a late feature window. No calendar date
 overrides a soundness, security, provenance, installation, or reproducibility
 failure.
+
+See the [prepared 1.0.0 release notes](../releases/1.0.0.md). No publication date
+is set by this roadmap.
 
 ## Later — capability expansion
 

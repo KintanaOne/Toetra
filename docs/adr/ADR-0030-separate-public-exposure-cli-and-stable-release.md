@@ -4,6 +4,15 @@
 > Date: 2026-07
 > Scope: repository publication and the remaining path to `1.0.0`
 
+## Stable-source preparation amendment
+
+The original P27/P28/P29 decision below remains the historical authority for
+separating repository exposure, CLI delivery, and publication. The current source
+version is now stable `1.0.0`, prepared for publication. This metadata and
+documentation step does not establish completion of P29's artifact, installation,
+publication, or rollback gates and authorizes no publication action. See the
+[1.0.0 release notes](../releases/1.0.0.md).
+
 ## Context
 
 After P26, Toetra has a green `1.0.0rc3` baseline with a frozen public Python

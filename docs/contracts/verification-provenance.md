@@ -98,7 +98,7 @@ Records and DataFrames add `verification_fingerprint`, `input_fingerprint` and `
       }
     },
     "software": {
-      "toetra_version": "1.0.0rc4",
+      "toetra_version": "1.0.0",
       "toetra_build_id": "git:..."
     },
     "compiler": {}
@@ -109,6 +109,9 @@ Records and DataFrames add `verification_fingerprint`, `input_fingerprint` and `
 Collections expose only shared input/session evidence, including the declared
 and effective execution context. Property and route identities remain on
 individual reports.
+
+The software version above illustrates current output. Archived evidence from
+`1.0.0rc4` retains that historical version; replay does not rewrite its provenance.
 
 ## Completeness examples
 

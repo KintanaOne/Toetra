@@ -1,6 +1,6 @@
 # First model schema
 
-> **Status:** Current onboarding for `1.0.0rc4`
+> **Status:** Current onboarding for `1.0.0`
 >
 > **Audience:** users who need to understand how a model becomes verifiable
 

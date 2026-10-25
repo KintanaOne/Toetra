@@ -137,7 +137,7 @@ runButton.addEventListener("click", () => {
   statusNode.className = "result-status status-running";
   statusNode.innerHTML = "<i></i><span>WALKTHROUGH</span>";
   summaryNode.textContent = "Following the precomputed path from specification to evidence…";
-  runNote.textContent = "Animating the public 1.0.0rc4 verification path";
+  runNote.textContent = "Animating the public 1.0.0 verification path";
   stageItems.forEach((item) => item.classList.remove("is-active", "is-complete"));
 
   if (reduceMotion) {

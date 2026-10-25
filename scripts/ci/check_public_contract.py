@@ -18,7 +18,8 @@ from toetra._compiler.parser.parser import parse_toetra_code  # noqa: E402
 
 EXPECTED_PROJECT_NAME = "toetra"
 EXPECTED_PROJECT_SCRIPTS = {"toetra": "toetra._cli.main:main"}
-EXPECTED_VERSION = "1.0.0rc4"
+EXPECTED_VERSION = "1.0.0"
+EXPECTED_MATURITY = "Development Status :: 5 - Production/Stable"
 EXPECTED_LICENSE = "PolyForm-Noncommercial-1.0.0"
 EXPECTED_VALIDATION_SCHEMA = ("toetra.validation-result", 1)
 EXPECTED_INSPECTION_SCHEMA = ("toetra.inspection", 1)
@@ -334,7 +335,7 @@ def _validate_classification_target_contract() -> None:
         encoding="utf-8"
     )
     current_markers = (
-        "Release candidate: `1.0.0rc4`",
+        "Stable version: `1.0.0` — prepared for publication",
         "fitted single-output `LinearRegression`",
         "direct fitted binary `LogisticRegression`",
         "target[point].label",
@@ -347,7 +348,7 @@ def _validate_classification_target_contract() -> None:
     )
     if missing_current:
         raise PublicContractError(
-            "Current public rc4 profile is missing markers: "
+            "Current public stable profile is missing markers: "
             + ", ".join(missing_current)
         )
 
@@ -413,28 +414,97 @@ def _validate_public_narrative() -> None:
             ROOT / "docs" / "getting-started" / "overview.md"
         ),
         "docs/public-v1-profile.md": ROOT / "docs" / "public-v1-profile.md",
-        "docs/releases/1.0.0rc4.md": (ROOT / "docs" / "releases" / "1.0.0rc4.md"),
+        "docs/releases/1.0.0.md": ROOT / "docs" / "releases" / "1.0.0.md",
+        "website/index.html": ROOT / "website" / "index.html",
     }
     sources = {
         name: path.read_text(encoding="utf-8") for name, path in documents.items()
     }
+    version_markers = {
+        "README.md": "Project status — `1.0.0`",
+        "docs/index.md": "Stable sources · 1.0.0 ·",
+        "docs/getting-started/installation.md": "Toetra `1.0.0` supports",
+        "docs/getting-started/overview.md": "stable `1.0.0` sources",
+        "docs/public-v1-profile.md": "Stable version: `1.0.0`",
+        "docs/releases/1.0.0.md": "# Toetra 1.0.0\n",
+        "website/index.html": "Stable sources · 1.0.0 ·",
+    }
 
     for name, source in sources.items():
-        required = ("1.0.0rc4", "release candidate")
+        required = (
+            version_markers[name],
+            "prepared for publication",
+            "Publication remains",
+            "not currently published on PyPI",
+        )
         missing = tuple(marker for marker in required if marker not in source)
         if missing:
             raise PublicContractError(
-                f"{name} does not identify the current release-candidate status: "
+                f"{name} does not identify the prepared stable source status: "
                 + ", ".join(missing)
             )
 
         if re.search(
-            r"^\s*(?:python\s+-m\s+)?pip\s+install\s+[\"']?toetra(?:[=<>!~\s]|$)",
+            r"^\s*(?:<[^>]+>\s*)*(?:\$\s*)?"
+            r"(?:python(?:3(?:\.\d+)?)?\s+-m\s+)?pip3?\s+install\s+"
+            r"[^\n]*?(?<![\w./-])[\"']?toetra(?:\[[^\]\n]+\])?"
+            r"(?:[=<>!~\s\"'<]|$)",
             source,
             re.MULTILINE,
         ):
             raise PublicContractError(
                 f"{name} presents an unavailable PyPI installation command"
+            )
+        if re.search(
+            r"evaluation release|release candidate, not|"
+            r"(?:is|now|already) (?:available|published|released) "
+            r"(?:on|via) (?:PyPI|GitHub)",
+            source,
+            re.IGNORECASE,
+        ):
+            raise PublicContractError(
+                f"{name} contains a stale status or premature publication claim"
+            )
+
+    # Historical RC documentation keeps its original status rather than being
+    # validated as if it described the prepared stable sources.
+    historical = (ROOT / "docs" / "releases" / "1.0.0rc4.md").read_text(
+        encoding="utf-8"
+    )
+    if any(
+        marker not in historical
+        for marker in ("# Toetra 1.0.0rc4", "evaluation release candidate")
+    ):
+        raise PublicContractError("Historical RC4 release status must be preserved")
+
+    release_links = {
+        "README.md": "docs/releases/1.0.0.md",
+        "docs/index.md": "releases/1.0.0.md",
+        "docs/public-v1-profile.md": "releases/1.0.0.md",
+        "website/index.html": "./docs/releases/1.0.0/",
+    }
+    for name, target in release_links.items():
+        if target not in sources[name]:
+            raise PublicContractError(f"{name} must link the prepared stable notes")
+    navigation = (ROOT / "mkdocs.yml").read_text(encoding="utf-8")
+    if "releases/1.0.0.md" not in navigation:
+        raise PublicContractError("MkDocs must link the prepared stable notes")
+    badge = "version-1.0.0_prepared-blue"
+    if badge not in sources["README.md"]:
+        raise PublicContractError("README badge must identify the prepared version")
+
+    reference_markers = {
+        "docs/contracts/public-v1-contract.md": "frozen for stable `1.0.0`",
+        "docs/api-reference/index.md": "Frozen for `1.0.0`",
+        "docs/cli/overview.md": "`1.0.0` implements",
+        "docs/cli/command-reference.md": "`1.0.0` implements",
+        "website/app.js": "public 1.0.0 verification path",
+        "docs/assets/brand/toetra-social-card.svg": "STABLE SOURCES · 1.0.0",
+    }
+    for name, marker in reference_markers.items():
+        if marker not in (ROOT / name).read_text(encoding="utf-8"):
+            raise PublicContractError(
+                f"{name} must identify the current stable version"
             )
     readme = sources["README.md"]
     readme_markers = (
@@ -452,7 +522,7 @@ def _validate_public_narrative() -> None:
         "`UNKNOWN`",
         "docs/getting-started/installation.md",
         "docs/public-v1-profile.md",
-        "docs/releases/1.0.0rc4.md",
+        "docs/releases/1.0.0.md",
         "CHANGELOG.md",
         "CONTRIBUTING.md",
         "SECURITY.md",
@@ -480,7 +550,7 @@ def _validate_public_narrative() -> None:
     )
     if missing_installation:
         raise PublicContractError(
-            "Installation guide is missing candidate-availability markers: "
+            "Installation guide is missing source-availability markers: "
             + ", ".join(missing_installation)
         )
 
@@ -496,6 +566,11 @@ def check_public_contract() -> None:
         raise PublicContractError(
             f"Expected project version {EXPECTED_VERSION}, got {project.get('version')!r}"
         )
+    classifiers = project.get("classifiers", [])
+    if not isinstance(classifiers, list) or [
+        value for value in classifiers if value.startswith("Development Status ::")
+    ] != [EXPECTED_MATURITY]:
+        raise PublicContractError(f"Expected maturity classifier {EXPECTED_MATURITY}")
     if project.get("license") != EXPECTED_LICENSE:
         raise PublicContractError(
             f"Expected SPDX license {EXPECTED_LICENSE}, got {project.get('license')!r}"
@@ -592,6 +667,7 @@ def check_public_contract() -> None:
         ROOT / "docs" / "getting-started" / "overview.md",
         ROOT / "docs" / "getting-started" / "first-property.md",
         ROOT / "docs" / "releases" / "1.0.0rc4.md",
+        ROOT / "docs" / "releases" / "1.0.0.md",
         ROOT
         / "docs"
         / "adr"

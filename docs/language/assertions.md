@@ -1,6 +1,6 @@
 # Assertions
 
-> Status: Accepted syntax and semantics in `1.0.0rc4`
+> Status: Accepted syntax and semantics in `1.0.0`
 > Scope: Boolean property expressions
 > Audience: users, semantic contributors, and backend authors
 

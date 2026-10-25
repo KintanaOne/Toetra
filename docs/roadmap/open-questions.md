@@ -1,6 +1,6 @@
 # Open questions
 
-> **Status:** Active from the `1.0.0rc4` evaluation candidate
+> **Status:** Stable `1.0.0` sources prepared for publication
 >
 > **Rule:** this page records unresolved choices in the order they are expected
 > to matter; it does not announce implemented support
@@ -10,13 +10,13 @@ as-built pipeline are already decided. Their authorities are the
 [public V1 profile](../public-v1-profile.md), accepted contracts and ADRs, and
 the [implementation status matrix](../architecture/status-matrix.md).
 
-## During public evaluation
+## Before publication
 
 ### Observation and feedback
 
-How much observation is sufficient before the candidate can be considered for
-a stable release? Which external reports require a new release candidate, and
-which usability improvements can wait until after V1?
+Which external reports block publication of the prepared stable sources, and
+which usability improvements can wait for a later compatible release? The
+source version is `1.0.0`; publication remains a separate decision.
 
 ### Installation evidence
 
@@ -31,13 +31,16 @@ advanced internal execution policy can opt out with `timeout_ms=None`. Which
 cancellation and resource-limit controls are enforceable enough to become
 public guarantees, and which must remain best-effort evidence?
 
-## Before stable `1.0.0`
+## Publication acceptance for `1.0.0`
 
 ### Stable-release acceptance
 
 Which unresolved soundness, security, provenance, packaging, documentation, or
-compatibility defects block `1.0.0`? Which release artifacts and rollback
+compatibility defects block publication? Which release artifacts and rollback
 evidence are mandatory before publication?
+
+The [1.0.0 release notes](../releases/1.0.0.md) record source preparation and
+remaining clean-checkout gates without claiming they have already passed.
 
 ## After V1
 

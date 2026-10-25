@@ -40,7 +40,7 @@ selects `target[point].label` or `target[point].probability(label)`. Internal
 quantities such as the logistic decision value appear only after IR1 and remain
 outside the DSL.
 
-Built-in `1.0.0rc4` routes are single-output sklearn `LinearRegression` and
+Built-in `1.0.0` routes are single-output sklearn `LinearRegression` and
 direct fitted binary `LogisticRegression`, both through Z3 with explicit numeric
 compatibility and provenance.
 
@@ -53,4 +53,4 @@ Source-of-truth rules:
 - edit the EBNF, never the generated Lark file;
 - document semantic changes before widening the public profile;
 - treat over-declared model/backend support as a soundness defect;
-- require CI, release, and review-bundle gates for a release candidate.
+- require CI, release, and review-bundle gates before publication.

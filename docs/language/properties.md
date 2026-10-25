@@ -1,6 +1,6 @@
 # Properties
 
-> Status: Accepted semantics for `1.0.0rc4`
+> Status: Accepted semantics for `1.0.0`
 > Scope: Property labels, scopes, and assertions
 > Audience: users, semantic contributors, and backend authors
 

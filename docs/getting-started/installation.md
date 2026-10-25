@@ -1,14 +1,15 @@
 # Installation and availability
 
-Toetra `1.0.0rc4` supports Python 3.11 and 3.12.
+Toetra `1.0.0` supports Python 3.11 and 3.12.
 
-## Release-candidate availability
+## Stable-source availability
 
-`1.0.0rc4` is an evaluation release candidate, not the stable `1.0.0` release.
-It is not currently published on PyPI. The command `pip install toetra`
+The stable `1.0.0` sources are prepared for publication. Publication remains
+pending; no GitHub Release or distribution is announced by this preparation.
+Toetra is not currently published on PyPI. The command `pip install toetra`
 is not a documented installation path.
 
-Install the candidate from a source checkout or extracted source archive. From
+Install from a source checkout or extracted source archive. From
 its repository root:
 
 ```bash
@@ -86,7 +87,8 @@ non-Ruff local gate and rely on hosted CI for the authoritative lint result:
 make ci-local
 ```
 
-Validate the release candidate from a clean checkout:
+Validate the prepared stable sources, then run distribution checks from a clean
+committed checkout:
 
 ```bash
 make ci
@@ -96,8 +98,12 @@ make review-bundle-check
 ```
 
 The four commands are separate quality, demonstration, distribution, and
-review-bundle gates. After committing a clean candidate,
+review-bundle gates. Distribution checks require a clean checkout; do not bypass
+that requirement during source preparation. After committing the preparation,
 `make outside-in-check` repeats the documented first use and all four gates from
 an exact fresh clone. See the
 [repository contract](../contracts/repository-contract.md) for the frozen
 package, test, demo, documentation, and automation boundaries.
+
+See the [1.0.0 release notes](../releases/1.0.0.md) for compatibility and the
+remaining publication gates.

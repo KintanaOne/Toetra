@@ -4,6 +4,13 @@
 >
 > **Scope:** repository and package structure through the V1 release
 
+## Stable V1 amendment
+
+The original RC4 freeze and P28.1 amendment below are retained. The same structural
+boundaries apply to stable `1.0.0` sources, prepared for publication. This status
+change introduces no package migration, public symbol, command, or schema change.
+See the [1.0.0 release notes](../releases/1.0.0.md).
+
 ## Purpose
 
 This contract freezes the structural boundaries established before the

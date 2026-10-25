@@ -1,6 +1,6 @@
 # Language examples
 
-> Status: Current examples for `1.0.0rc4`
+> Status: Current examples for `1.0.0`
 > Scope: Accepted language with explicit support levels
 > Audience: users, compiler authors, and test authors
 

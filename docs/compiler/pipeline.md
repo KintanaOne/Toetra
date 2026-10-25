@@ -1,6 +1,6 @@
 # Compiler pipeline
 
-> **Status:** Implemented for `1.0.0rc4`
+> **Status:** Implemented for `1.0.0`
 >
 > **Scope:** source text through backend-neutral IR2
 >

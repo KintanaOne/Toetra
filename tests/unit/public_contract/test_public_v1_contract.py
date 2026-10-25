@@ -3,9 +3,13 @@ from __future__ import annotations
 import tomllib
 from pathlib import Path
 
+import pytest
+
+from scripts.ci import check_public_contract as contract
 from scripts.ci.check_public_contract import (
     EXPECTED_INSPECTION_SCHEMA,
     EXPECTED_LICENSE,
+    EXPECTED_MATURITY,
     EXPECTED_PROJECT_SCRIPTS,
     EXPECTED_REPLAY_SCHEMA,
     EXPECTED_RUN_MANIFEST_SCHEMA,
@@ -31,6 +35,7 @@ def test_public_version_license_cli_and_json_contract_are_frozen() -> None:
     ]
 
     assert project["version"] == EXPECTED_VERSION
+    assert EXPECTED_MATURITY in project["classifiers"]
     assert project["license"] == EXPECTED_LICENSE
     assert project["license-files"] == ["LICENSE", "COPYRIGHT.md"]
     assert project["scripts"] == EXPECTED_PROJECT_SCRIPTS
@@ -68,7 +73,7 @@ def test_installation_does_not_claim_unavailable_distribution_surfaces() -> None
         encoding="utf-8"
     )
 
-    assert "not the stable `1.0.0` release" in installation
+    assert "stable `1.0.0` sources are prepared for publication" in installation
     assert "not currently published on PyPI" in installation
     assert "pip install toetra" in installation
     assert "is not a documented installation path" in installation
@@ -84,3 +89,110 @@ def test_sdist_manifest_includes_public_release_files() -> None:
     assert "include LICENSE" in manifest
     assert "include README.md" in manifest
     assert "include pyproject.toml" in manifest
+
+
+@pytest.mark.parametrize(
+    ("name", "before", "after", "message"),
+    (
+        (
+            "README.md",
+            "Project status — `1.0.0`",
+            "Project status — `1.0.0rc4`",
+            "prepared stable source status",
+        ),
+        (
+            "website/index.html",
+            "prepared for publication",
+            "evaluation release",
+            "prepared stable source status",
+        ),
+        (
+            "docs/releases/1.0.0.md",
+            "Publication remains pending",
+            "Publication completed",
+            "prepared stable source status",
+        ),
+        (
+            "docs/releases/1.0.0rc4.md",
+            "evaluation release candidate",
+            "stable release",
+            "Historical RC4 release status",
+        ),
+        (
+            "docs/cli/overview.md",
+            "`1.0.0` implements",
+            "`1.0.0rc4` implements",
+            "current stable version",
+        ),
+        (
+            "mkdocs.yml",
+            "releases/1.0.0.md",
+            "releases/1.0.0rc4.md",
+            "MkDocs must link",
+        ),
+    ),
+)
+def test_narrative_rejects_version_status_and_history_regressions(
+    monkeypatch: pytest.MonkeyPatch,
+    name: str,
+    before: str,
+    after: str,
+    message: str,
+) -> None:
+    original_read = Path.read_text
+    target = ROOT / name
+    assert before in target.read_text(encoding="utf-8")
+
+    def read_text(
+        path: Path, encoding: str | None = None, errors: str | None = None
+    ) -> str:
+        source = original_read(path, encoding=encoding, errors=errors)
+        return source.replace(before, after) if path == target else source
+
+    monkeypatch.setattr(Path, "read_text", read_text)
+    with pytest.raises(contract.PublicContractError, match=message):
+        contract._validate_public_narrative()
+
+
+@pytest.mark.parametrize(
+    "claim",
+    (
+        "pip install toetra",
+        "python -m pip install --upgrade toetra==1.0.0",
+        'python3 -m pip install "toetra[dev]"',
+        "pip3 install --pre toetra",
+        "Toetra is now published on PyPI.",
+        "Version 1.0.0 is available on GitHub.",
+    ),
+)
+def test_narrative_rejects_premature_distribution_claims(
+    monkeypatch: pytest.MonkeyPatch, claim: str
+) -> None:
+    original_read = Path.read_text
+
+    def read_text(
+        path: Path, encoding: str | None = None, errors: str | None = None
+    ) -> str:
+        source = original_read(path, encoding=encoding, errors=errors)
+        return source + "\n" + claim + "\n" if path == ROOT / "README.md" else source
+
+    monkeypatch.setattr(Path, "read_text", read_text)
+    with pytest.raises(contract.PublicContractError, match="unavailable|premature"):
+        contract._validate_public_narrative()
+
+
+@pytest.mark.parametrize(
+    "classifiers",
+    (
+        [],
+        ["Development Status :: 4 - Beta"],
+        [contract.EXPECTED_MATURITY, "Development Status :: 4 - Beta"],
+    ),
+)
+def test_contract_rejects_missing_or_conflicting_stable_maturity(
+    monkeypatch: pytest.MonkeyPatch, classifiers: list[str]
+) -> None:
+    project = dict(contract._project(), classifiers=classifiers)
+    monkeypatch.setattr(contract, "_project", lambda: project)
+    with pytest.raises(contract.PublicContractError, match="maturity classifier"):
+        check_public_contract()
