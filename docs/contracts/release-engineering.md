@@ -21,6 +21,11 @@ A release source state, including stable `1.0.0`, must satisfy all of the follow
 11. the standalone public quickstart runs after being copied into that clean environment;
 12. the review bundle contains every critical V1 artifact;
 13. two review-bundle builds produce identical bytes.
+14. wheel and sdist include `toetra/py.typed` (under `src/` in the sdist),
+    and the marker exists in the installed package;
+15. a strict Pyright consumer using the public facade passes outside the checkout
+    with source search paths disabled, and `pyright --verifytypes toetra
+    --ignoreexternal` reports 100% type completeness from that clean installation.
 
 ## Commands
 

@@ -393,6 +393,7 @@ def _validate_sdist_manifest() -> None:
         "include README.md",
         "include CHANGELOG.md",
         "include pyproject.toml",
+        "include src/toetra/py.typed",
         "recursive-include src/toetra/_language/grammar *.ebnf *.lark",
         "recursive-include src/toetra/examples *.toetra",
     }

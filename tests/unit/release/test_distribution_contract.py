@@ -26,6 +26,7 @@ SDIST_ROOT = f"toetra-{PROJECT_VERSION}"
 
 WHEEL_MEMBERS = {
     "toetra/__init__.py": b"from toetra._runtime.api import verify\n",
+    "toetra/py.typed": b"",
     "toetra/_language/grammar/toetra_grammar.ebnf": b"start = program\n",
     "toetra/_language/grammar/toetra_grammar.lark": b"start: program\n",
     "toetra/examples/credit_risk_policy.toetra": b"target := risk_score\n",
@@ -44,10 +45,18 @@ def _write_wheel(
     *,
     leak_tests: bool = False,
     include_public_example: bool = True,
+    include_typing_marker: bool = True,
+    typing_marker_directory: bool = False,
     forbidden_package: str | None = None,
 ) -> None:
     with zipfile.ZipFile(path, mode="w") as archive:
         for name, payload in WHEEL_MEMBERS.items():
+            if name == "toetra/py.typed":
+                if not include_typing_marker:
+                    continue
+                if typing_marker_directory:
+                    archive.writestr(name + "/", b"")
+                    continue
             if (
                 not include_public_example
                 and name == "toetra/examples/credit_risk_policy.toetra"
@@ -70,7 +79,13 @@ def _write_source_inventory(repository: Path) -> None:
         path.write_bytes(payload)
 
 
-def _write_sdist(path: Path, *, mtime: int) -> None:
+def _write_sdist(
+    path: Path,
+    *,
+    mtime: int,
+    include_typing_marker: bool = True,
+    typing_marker_directory: bool = False,
+) -> None:
     members = {
         f"{SDIST_ROOT}/LICENSE": b"license\n",
         f"{SDIST_ROOT}/COMMERCIAL_LICENSE.md": b"commercial licensing\n",
@@ -82,6 +97,7 @@ def _write_sdist(path: Path, *, mtime: int) -> None:
             f"[project]\nname='toetra'\nversion='{PROJECT_VERSION}'\n".encode()
         ),
         f"{SDIST_ROOT}/src/toetra/__init__.py": b"",
+        f"{SDIST_ROOT}/src/toetra/py.typed": b"",
         f"{SDIST_ROOT}/src/toetra/_language/grammar/toetra_grammar.ebnf": (
             b"start=program\n"
         ),
@@ -96,7 +112,11 @@ def _write_sdist(path: Path, *, mtime: int) -> None:
         with gzip.GzipFile(fileobj=raw, mode="wb", mtime=mtime) as compressed:
             with tarfile.open(fileobj=compressed, mode="w") as archive:
                 for name, payload in members.items():
+                    if name.endswith("/py.typed") and not include_typing_marker:
+                        continue
                     info = tarfile.TarInfo(name)
+                    if name.endswith("/py.typed") and typing_marker_directory:
+                        info.type = tarfile.DIRTYPE
                     info.size = len(payload)
                     info.mtime = mtime
                     archive.addfile(info, io.BytesIO(payload))
@@ -185,6 +205,27 @@ def test_distribution_contract_rejects_missing_public_example(tmp_path: Path) ->
     _write_sdist(tmp_path / f"toetra-{PROJECT_VERSION}.tar.gz", mtime=100)
 
     with pytest.raises(DistributionContractError, match="credit_risk_policy"):
+        check_distribution_directory(tmp_path)
+
+
+@pytest.mark.parametrize("archive_kind", ("wheel", "sdist"))
+@pytest.mark.parametrize("marker_kind", ("missing", "directory"))
+def test_distribution_contract_requires_typing_marker_file(
+    tmp_path: Path, archive_kind: str, marker_kind: str
+) -> None:
+    _write_wheel(
+        tmp_path / f"toetra-{PROJECT_VERSION}-py3-none-any.whl",
+        include_typing_marker=archive_kind != "wheel" or marker_kind != "missing",
+        typing_marker_directory=archive_kind == "wheel" and marker_kind == "directory",
+    )
+    _write_sdist(
+        tmp_path / f"toetra-{PROJECT_VERSION}.tar.gz",
+        mtime=100,
+        include_typing_marker=archive_kind != "sdist" or marker_kind != "missing",
+        typing_marker_directory=archive_kind == "sdist" and marker_kind == "directory",
+    )
+
+    with pytest.raises(DistributionContractError, match="py.typed"):
         check_distribution_directory(tmp_path)
 
 

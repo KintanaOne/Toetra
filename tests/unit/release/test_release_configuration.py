@@ -57,6 +57,15 @@ def test_cli_entry_point_targets_the_private_process_adapter() -> None:
     assert (ROOT / "src" / "toetra" / "__main__.py").is_file()
 
 
+def test_typing_marker_is_empty_and_explicitly_packaged() -> None:
+    project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    manifest = (ROOT / "MANIFEST.in").read_text(encoding="utf-8")
+
+    assert (ROOT / "src" / "toetra" / "py.typed").read_bytes() == b""
+    assert project["tool"]["setuptools"]["package-data"]["toetra"] == ["py.typed"]
+    assert "include src/toetra/py.typed" in manifest.splitlines()
+
+
 def test_build_toolchain_and_dev_extra_are_pinned() -> None:
     project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
 

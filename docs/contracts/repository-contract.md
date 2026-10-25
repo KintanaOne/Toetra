@@ -11,6 +11,13 @@ boundaries apply to stable `1.0.0` sources, prepared for publication. This statu
 change introduces no package migration, public symbol, command, or schema change.
 See the [1.0.0 release notes](../releases/1.0.0.md).
 
+### PEP 561 typing amendment
+
+The empty `toetra/py.typed` marker is also required package data in wheel and
+sdist. This amends the installed-resource restriction below without adding public
+symbols. The clean-install gate checks the marker, a strict external Pyright
+consumer, and public type completeness.
+
 ## Purpose
 
 This contract freezes the structural boundaries established before the

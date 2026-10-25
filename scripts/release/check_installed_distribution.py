@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import tomllib
 import venv
 from pathlib import Path
 
@@ -64,6 +65,7 @@ assert importlib.util.find_spec("forml") is None
 assert importlib.util.find_spec("dsl") is None
 assert importlib.util.find_spec("model") is None
 assert "site-packages" in module_path.parts, module_path
+assert (module_path.parent / "py.typed").is_file()
 assert callable(verify)
 assert VerificationSession is not None
 policy_source = credit_risk_policy()
@@ -118,6 +120,90 @@ with domain(applicant.income: [3.0, 6.0])
 print(f"Installed Toetra regression/classification probe passed from {module_path}")
 """
 
+TYPED_CONSUMER = """\
+from typing import assert_type
+
+from toetra import VerificationSession, VerificationStatus, verify
+
+
+def check_policy(specification: str) -> VerificationSession:
+    session = verify(specification)
+    assert_type(session, VerificationSession)
+    assert_type(session.reports[0].status, VerificationStatus)
+    assert_type(session.exit_code, int)
+    status: VerificationStatus = session.reports[0].status
+    if status is VerificationStatus.PROVED:
+        assert_type(session.to_text(), str)
+    return session
+"""
+
+
+def check_installed_typing(
+    python: Path,
+    workspace: Path,
+    *,
+    environment: dict[str, str],
+) -> None:
+    """Check a consumer and the installed facade without checkout search paths."""
+
+    # The completeness verifier also discovers Python from PATH.
+    environment = {
+        **environment,
+        "PATH": str(python.parent) + os.pathsep + environment.get("PATH", ""),
+        "VIRTUAL_ENV": str(python.parent.parent),
+    }
+    (workspace / "consumer.py").write_text(TYPED_CONSUMER, encoding="utf-8")
+    configuration = workspace / "pyrightconfig.json"
+    configuration.write_text(
+        json.dumps(
+            {
+                "include": ["consumer.py"],
+                "typeCheckingMode": "strict",
+                "extraPaths": [],
+                "executionEnvironments": [{"root": ".", "extraPaths": []}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    command = [str(python), "-I", "-m", "pyright", "--pythonpath", str(python)]
+    subprocess.run(
+        [*command, "--project", str(configuration)],
+        cwd=workspace,
+        env=environment,
+        check=True,
+    )
+    completed = subprocess.run(
+        [*command, "--verifytypes", "toetra", "--ignoreexternal", "--outputjson"],
+        cwd=workspace,
+        env=environment,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        check=False,
+    )
+    result = json.loads(completed.stdout)
+    completeness = result["typeCompleteness"]
+    installed_root = Path(completeness["packageRootDirectory"]).resolve()
+    venv_root = python.parent.parent.resolve()
+    if (
+        not installed_root.is_relative_to(venv_root)
+        or "site-packages" not in installed_root.parts
+    ):
+        raise RuntimeError(
+            f"Pyright resolved Toetra outside the clean venv: {installed_root}"
+        )
+    if completed.returncode or completeness["completenessScore"] != 1:
+        failures = [
+            {"name": symbol["name"], "diagnostics": symbol["diagnostics"]}
+            for symbol in completeness["symbols"]
+            if not symbol["isTypeKnown"]
+        ]
+        raise RuntimeError(f"Installed Toetra type completeness failed: {failures}")
+    print(
+        "Installed Toetra type completeness: 100%; "
+        f"symbols={completeness['exportedSymbolCounts']}; package={installed_root}"
+    )
+
 
 def _venv_script(directory: Path, name: str) -> Path:
     if os.name == "nt":
@@ -144,6 +230,14 @@ def main() -> int:
     artifacts = check_distribution_directory(
         arguments.directory.resolve(), repository=repository_root
     )
+    project = tomllib.loads(
+        (repository_root / "pyproject.toml").read_text(encoding="utf-8")
+    )["project"]
+    pyright_requirement = next(
+        requirement
+        for requirement in project["optional-dependencies"]["dev"]
+        if requirement.startswith("pyright==")
+    )
 
     with tempfile.TemporaryDirectory(prefix="toetra-install-check-") as raw_directory:
         root = Path(raw_directory)
@@ -158,6 +252,7 @@ def main() -> int:
                 "install",
                 "--disable-pip-version-check",
                 str(artifacts.wheel),
+                pyright_requirement,
             ],
             check=True,
             cwd=root,
@@ -172,6 +267,7 @@ def main() -> int:
             cwd=root,
             env=clean_environment,
         )
+        check_installed_typing(python, root, environment=clean_environment)
 
         console = _venv_script(environment, "toetra")
         run_cli_smoke(

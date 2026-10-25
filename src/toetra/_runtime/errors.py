@@ -24,8 +24,8 @@ class VerificationRuntimeError(RuntimeError):
     ) -> None:
         super().__init__(message)
         self.message = message
-        self.code = code or self._default_code
-        self.stage = stage or self._default_stage
+        self.code: str = code or self._default_code
+        self.stage: str = stage or self._default_stage
         self.hint = hint
         self.path = path
         self.line = line

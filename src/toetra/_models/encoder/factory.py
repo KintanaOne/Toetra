@@ -16,8 +16,10 @@ from toetra._models.schema.model_schema import ModelSchema
 class ModelEncoderFactory:
     """Select and execute a ModelEncoder for a ModelSchema."""
 
-    def __init__(self, registry: ModelEncoderRegistry | None = None):
-        self.registry = registry or create_default_model_encoder_registry()
+    def __init__(self, registry: ModelEncoderRegistry | None = None) -> None:
+        self.registry: ModelEncoderRegistry = (
+            registry or create_default_model_encoder_registry()
+        )
 
     def create(self, schema: ModelSchema) -> ModelEncoder:
         """Return the encoder matching a schema framework/model_type."""

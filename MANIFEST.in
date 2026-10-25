@@ -5,6 +5,7 @@ include README.md
 include CHANGELOG.md
 include THIRD_PARTY.md
 include pyproject.toml
+include src/toetra/py.typed
 recursive-include src/toetra/_language/grammar *.ebnf *.lark
 recursive-include src/toetra/examples *.toetra
 global-exclude *.py[cod]

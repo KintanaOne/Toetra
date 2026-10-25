@@ -61,6 +61,7 @@ where = ["src"]
 include = ["toetra*"]
 
 [tool.setuptools.package-data]
+"toetra" = ["py.typed"]
 "toetra._language.grammar" = ["*.lark", "*.ebnf"]
 "toetra.examples" = ["*.toetra"]
 

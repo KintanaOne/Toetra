@@ -23,6 +23,7 @@ EXPECTED_DISTRIBUTION_NAME = "toetra"
 EXPECTED_TOP_LEVEL_PACKAGES = ("toetra",)
 FORBIDDEN_TOP_LEVEL_PACKAGES = ("forml", "dsl", "model")
 EXPECTED_PACKAGE_DATA = (
+    "toetra/py.typed",
     "toetra/_language/grammar/toetra_grammar.ebnf",
     "toetra/_language/grammar/toetra_grammar.lark",
     "toetra/examples/credit_risk_policy.toetra",
@@ -374,7 +375,10 @@ def _check_wheel(
     name, version, _build, _tags = parse_wheel_filename(path.name)
     with zipfile.ZipFile(path) as archive:
         members = archive.namelist()
-        _check_required_members(members, archive_kind="Wheel")
+        file_members = [
+            item.filename for item in archive.infolist() if not item.is_dir()
+        ]
+        _check_required_members(file_members, archive_kind="Wheel")
         for required in ("LICENSE", "COPYRIGHT.md"):
             if not any(
                 member.endswith(f".dist-info/licenses/{required}") for member in members
@@ -414,7 +418,7 @@ def _check_sdist(
         archive_members = archive.getmembers()
         members = [member.name for member in archive_members]
         file_members = [member.name for member in archive_members if member.isfile()]
-        _check_required_members(members, archive_kind="Source distribution")
+        _check_required_members(file_members, archive_kind="Source distribution")
         for required in (
             "pyproject.toml",
             "README.md",

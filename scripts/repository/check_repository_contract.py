@@ -253,6 +253,7 @@ def repository_contract_errors(repository: Path) -> tuple[str, ...]:
 
     package_data = project["tool"]["setuptools"]["package-data"]
     expected_package_data = {
+        "toetra": ["py.typed"],
         "toetra._language.grammar": ["*.lark", "*.ebnf"],
         "toetra.examples": ["*.toetra"],
     }

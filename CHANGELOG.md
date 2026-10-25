@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Package the PEP 561 `py.typed` marker in wheel and sdist, require it in release
+  checks, and verify the installed public facade with a strict external Pyright
+  consumer and a 100% type-completeness gate. Add explicit annotations for the
+  diagnostic attributes and encoder registry exposed through public signatures.
+
 ## [1.0.0] - Prepared for publication (unpublished)
 
 The stable source version and maturity metadata are prepared; publication is a
