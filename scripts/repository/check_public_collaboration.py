@@ -7,6 +7,8 @@ import re
 from pathlib import Path
 from typing import Iterable
 
+import yaml
+
 EXPECTED_PUBLIC_FILES = (
     ".github/ISSUE_TEMPLATE/bug_report.yml",
     ".github/ISSUE_TEMPLATE/config.yml",
@@ -16,6 +18,7 @@ EXPECTED_PUBLIC_FILES = (
     ".github/pull_request_template.md",
     ".github/workflows/ci.yml",
     ".github/workflows/deploy-pages.yml",
+    ".github/workflows/publish-pypi.yml",
     "COMMERCIAL_LICENSE.md",
     "CONTRIBUTING.md",
     "COPYRIGHT.md",
@@ -107,6 +110,108 @@ FORBIDDEN_WORKFLOW_MARKERS = (
 )
 
 DEPLOYMENT_WORKFLOW_NAMES = frozenset({"deploy-pages.yml"})
+PUBLICATION_WORKFLOW = "publish-pypi.yml"
+PUBLICATION_GUARD = (
+    "github.repository == 'KintanaOne/Toetra' && github.ref == 'refs/heads/main'"
+)
+
+
+def _require_publication(condition: bool) -> None:
+    if not condition:
+        raise ValueError("Invalid publication configuration")
+
+
+def _publication_errors(source: str) -> list[str]:
+    """Allow OIDC only in the manual main-branch job after the complete CI."""
+    errors: list[str] = []
+    try:
+        workflow = yaml.load(source, Loader=yaml.BaseLoader)
+        _require_publication(set(workflow["on"]) == {"workflow_dispatch"})
+        version = workflow["on"]["workflow_dispatch"]["inputs"]["version"]
+        _require_publication(
+            version["required"] == "true" and version["type"] == "string"
+        )
+        _require_publication(workflow["permissions"] == {"contents": "read"})
+        _require_publication(
+            workflow["concurrency"]
+            == {
+                "group": "publish-pypi",
+                "cancel-in-progress": "false",
+            }
+        )
+        jobs = workflow["jobs"]
+        _require_publication(set(jobs) == {"verify", "publish"})
+        _require_publication(
+            jobs["verify"]
+            == {
+                "if": PUBLICATION_GUARD,
+                "uses": "./.github/workflows/ci.yml",
+            }
+        )
+        publish = jobs["publish"]
+        _require_publication(publish["needs"] == "verify")
+        _require_publication(publish["if"] == PUBLICATION_GUARD)
+        _require_publication(publish["runs-on"] == "ubuntu-latest")
+        _require_publication(0 < int(publish["timeout-minutes"]) <= 30)
+        _require_publication(publish["environment"]["name"] == "pypi")
+        _require_publication(
+            publish["permissions"] == {"contents": "read", "id-token": "write"}
+        )
+        _require_publication("continue-on-error" not in publish)
+        steps = publish["steps"]
+        _require_publication(len(steps) == 5)
+        actions = [step["uses"].split("@")[0] for step in steps if "uses" in step]
+        _require_publication(
+            actions
+            == [
+                "actions/checkout",
+                "actions/setup-python",
+                "actions/download-artifact",
+                "pypa/gh-action-pypi-publish",
+            ]
+        )
+        _require_publication(
+            all("if" not in step and "continue-on-error" not in step for step in steps)
+        )
+        _require_publication(
+            steps[0]["with"]
+            == {
+                "ref": "${{ github.sha }}",
+                "persist-credentials": "false",
+            }
+        )
+        _require_publication(
+            steps[2]["with"]
+            == {
+                "name": "toetra-distributions",
+                "path": "dist",
+                "digest-mismatch": "error",
+            }
+        )
+        _require_publication(
+            steps[3]["run"]
+            == (
+                "python scripts/release/check_pypi_artifacts.py dist --output publish-dist"
+            )
+        )
+        _require_publication(
+            steps[3]["env"] == {"RELEASE_VERSION": "${{ inputs.version }}"}
+        )
+        _require_publication(
+            steps[4]["with"]
+            == {
+                "packages-dir": "publish-dist/",
+                "skip-existing": "false",
+                "attestations": "true",
+                "print-hash": "true",
+            }
+        )
+    except (KeyError, TypeError, ValueError, yaml.YAMLError):
+        errors.append(
+            "publish-pypi.yml violates the manual main-only OIDC publication contract"
+        )
+    return errors
+
 
 ACTION_USE = re.compile(
     r"^\s*uses:\s*(?P<target>[^@\s]+)@(?P<reference>[^\s#]+)"
@@ -127,6 +232,7 @@ def _workflow_errors(path: Path, source: str) -> list[str]:
     relative = path.as_posix()
     errors: list[str] = []
     is_pages_deployment = path.name in DEPLOYMENT_WORKFLOW_NAMES
+    is_publication = path.name == PUBLICATION_WORKFLOW
 
     if is_pages_deployment:
         expected_permissions = (
@@ -156,17 +262,24 @@ def _workflow_errors(path: Path, source: str) -> list[str]:
             r"^permissions:\s*\n  contents:\s*read\s*$", source, re.MULTILINE
         ):
             errors.append(f"{relative} does not declare top-level contents: read")
-        if WRITE_PERMISSION.search(source):
+        if is_publication:
+            errors.extend(_publication_errors(source))
+        elif WRITE_PERMISSION.search(source):
             errors.append(f"{relative} grants a write-capable workflow permission")
     if "timeout-minutes:" not in source:
         errors.append(f"{relative} does not bound job execution time")
 
     for marker in FORBIDDEN_WORKFLOW_MARKERS:
+        if is_publication and marker == "pypa/gh-action-pypi-publish":
+            continue
         if marker in source:
             errors.append(f"{relative} contains forbidden workflow marker {marker!r}")
 
     uses_lines = tuple(
-        line.strip() for line in source.splitlines() if line.strip().startswith("uses:")
+        line.strip()
+        for line in source.splitlines()
+        if line.strip().startswith("uses:")
+        and not (is_publication and line.strip() == "uses: ./.github/workflows/ci.yml")
     )
     matches = tuple(ACTION_USE.finditer(source))
     if len(matches) != len(uses_lines):

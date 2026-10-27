@@ -4,6 +4,9 @@
 
 ### Added
 
+- Prepare manual PyPI Trusted Publishing from `main`, reusing the complete CI
+  and its exact tested archives. Validate release identity and checksums before
+  upload; keep permanent credentials and publication rights out of PR CI.
 - Automatically validate the same reproducible wheel and sdist on Ubuntu and
   native Windows with Python 3.11/3.12 on every main push and pull request. Transfer
   the archives from one build job to eight isolated installation jobs, retaining

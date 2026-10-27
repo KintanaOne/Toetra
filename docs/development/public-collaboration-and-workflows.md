@@ -4,6 +4,11 @@ This page records the source-controlled and repository-hosted controls required
 by P27.3. It does not create a release or widen the V1 product boundary; the
 separate Pages workflow publishes only the reviewed static site.
 
+The separate `publish-pypi.yml` workflow prepares manual package publication
+from `main` after the complete reusable CI. Publication remains pending.
+See [PyPI publication](pypi-publication.md) for the one-time setup and explicit
+release procedure.
+
 ## Source-controlled controls
 
 The repository provides:
@@ -32,14 +37,20 @@ persistence. The Pages workflow is checked separately: it can write only the
 Pages deployment token, runs from `main` or manual dispatch, and never runs on
 pull requests.
 
+The PyPI exception is confined to its manual main-only workflow: only its
+`publish` job receives `id-token: write`, uses the `pypi` environment, and waits
+for the full reused CI. Its archives come from that same run, with identity and
+checksum checks before upload. Permanent tokens and secret references remain
+forbidden. The check rejects triggers or permissions that bypass these gates.
+
 The CI workflow triggers on pushes to `main` and all pull requests. It preserves
 Linux quality checks on Python 3.11/3.12, builds reproducible distributions once,
 and transfers the wheel and sdist to eight Ubuntu/native-Windows installation
 jobs covering both Python versions and both formats. Each job uses the same
 isolated installed-package journey and fails on compatibility errors or checkout
 mutations. Artifact download fails on a digest mismatch. Demonstrations and the
-reproducible review bundle remain in the build job. No publication permission is
-added, and the GitHub Pages workflow is unchanged. See the
+reproducible review bundle remain in the build job. The reusable CI has no
+publication permission, and the GitHub Pages workflow is unchanged. See the
 [release engineering contract](../contracts/release-engineering.md#automatic-installation-matrix)
 for the matrix and reproduction links.
 
@@ -58,11 +69,13 @@ private findings.
 
 ### Actions
 
-- [ ] Default workflow permissions are read-only; only the Pages deployment
-      workflow has `pages: write` and `id-token: write`.
+- [ ] Default workflow permissions are read-only. Pages alone has `pages: write`;
+      OIDC write permission is restricted to Pages and the protected PyPI job.
+- [ ] The `pypi` environment accepts only `main`; review requirements and
+      self-review settings match the maintainer's intended release process.
 - [ ] GitHub Actions cannot create or approve pull requests.
-- [ ] Only GitHub-authored actions are allowed for the current P27 workflow, or
-      an equally narrow allowlist is configured.
+- [ ] The action allowlist includes only the reviewed GitHub actions and the
+      pinned `pypa/gh-action-pypi-publish` action required for package publication.
 - [ ] No repository or environment secret is available to pull-request CI or
       the Pages deployment.
 

@@ -245,6 +245,7 @@ nav:
       - Public Repository Audit: development/public-repository-audit.md
       - Copyright and e-Soleau Evidence: development/copyright-and-esoleau.md
       - Public Collaboration and Workflows: development/public-collaboration-and-workflows.md
+      - PyPI Publication: development/pypi-publication.md
       - Outside-In Rehearsal: development/outside-in-rehearsal.md
       - Controlled Public Exposure: development/public-exposure-runbook.md
       - Extension Architecture: development/extensions.md

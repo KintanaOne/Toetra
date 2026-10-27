@@ -3,6 +3,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import pytest
+
 from scripts.repository.check_public_collaboration import (
     EXPECTED_PUBLIC_FILES,
     public_collaboration_errors,
@@ -80,3 +82,37 @@ def test_collaboration_check_rejects_write_permission_and_secret_use(
 
     assert any("write-capable workflow permission" in error for error in errors)
     assert any("secrets." in error for error in errors)
+
+
+@pytest.mark.parametrize(
+    ("before", "after"),
+    [
+        ("  workflow_dispatch:", "  push:"),
+        ("needs: verify", "needs: []"),
+        ("github.ref == 'refs/heads/main'", "true"),
+        ("      name: pypi", "      name: unprotected"),
+        ("      id-token: write", "      contents: write"),
+        ("          digest-mismatch: error", "          digest-mismatch: warn"),
+        ('          skip-existing: "false"', '          skip-existing: "true"'),
+        ("./.github/workflows/ci.yml", "./.github/workflows/other.yml"),
+    ],
+)
+def test_pypi_contract_rejects_bypassing_publication_gates(
+    tmp_path: Path, before: str, after: str
+) -> None:
+    repository = _collaboration_fixture(tmp_path)
+    workflow = repository / ".github/workflows/publish-pypi.yml"
+    source = workflow.read_text()
+    assert before in source
+    workflow.write_text(source.replace(before, after))
+    assert public_collaboration_errors(repository)
+
+
+def test_pypi_permissions_remain_forbidden_in_pull_request_ci(tmp_path: Path) -> None:
+    repository = _collaboration_fixture(tmp_path)
+    workflow = repository / ".github/workflows/ci.yml"
+    workflow.write_text(workflow.read_text() + "\n# pypa/gh-action-pypi-publish\n")
+    assert any(
+        "forbidden workflow marker" in error
+        for error in public_collaboration_errors(repository)
+    )

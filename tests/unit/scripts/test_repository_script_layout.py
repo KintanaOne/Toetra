@@ -16,6 +16,7 @@ EXPECTED_LAYOUT = {
         "generate_numeric_compatibility_matrices.py",
     },
     "release": {
+        "check_pypi_artifacts.py",
         "__init__.py",
         "build_distribution.py",
         "build_review_bundle.py",

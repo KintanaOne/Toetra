@@ -217,5 +217,6 @@ __marimo__/
 *.patch
 site/
 _site/
+publish-dist/
 .local-site/
 .local-sitedocs/
