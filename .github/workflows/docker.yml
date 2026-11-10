@@ -1,0 +1,30 @@
+name: Docker
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and test Docker image
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build image
+        run: docker buildx build --load -t toetra:ci .
+
+      - name: Check CLI
+        run: |
+          docker run --rm toetra:ci --help
+          docker run --rm toetra:ci --version

@@ -220,3 +220,5 @@ _site/
 publish-dist/
 .local-site/
 .local-sitedocs/
+
+/docker-demo/
