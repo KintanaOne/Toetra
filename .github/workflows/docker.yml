@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  packages: write
 
 jobs:
   build:
@@ -28,3 +29,21 @@ jobs:
         run: |
           docker run --rm toetra:ci --help
           docker run --rm toetra:ci --version
+                
+      - name: Log in to GHCR
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          printf '%s' "$GHCR_TOKEN" |
+            docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+
+      - name: Publish image
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        env:
+          IMAGE_REF: ghcr.io/kintanaone/toetra
+        run: |
+          docker tag toetra:ci "$IMAGE_REF:edge"
+          docker tag toetra:ci "$IMAGE_REF:sha-$GITHUB_SHA"
+          docker push "$IMAGE_REF:edge"
+          docker push "$IMAGE_REF:sha-$GITHUB_SHA"
