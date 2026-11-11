@@ -1,0 +1,57 @@
+name: Publish Toetra to GHCR
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-docker
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: github.repository == 'KintanaOne/Toetra' && github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/ci.yml
+
+  publish:
+    needs: verify
+    if: github.repository == 'KintanaOne/Toetra' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout the verified commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Build image
+        run: docker buildx build --load -t toetra:publish .
+
+      - name: Check CLI
+        run: |
+          docker run --rm toetra:publish --help
+          docker run --rm toetra:publish --version
+
+      - name: Log in to GHCR
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          printf '%s' "$GHCR_TOKEN" |
+            docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+
+      - name: Publish image
+        env:
+          IMAGE_REF: ghcr.io/kintanaone/toetra
+        run: |
+          docker tag toetra:publish "$IMAGE_REF:edge"
+          docker tag toetra:publish "$IMAGE_REF:sha-$GITHUB_SHA"
+          docker push "$IMAGE_REF:edge"
+          docker push "$IMAGE_REF:sha-$GITHUB_SHA"

@@ -116,3 +116,30 @@ def test_pypi_permissions_remain_forbidden_in_pull_request_ci(tmp_path: Path) ->
         "forbidden workflow marker" in error
         for error in public_collaboration_errors(repository)
     )
+
+
+@pytest.mark.parametrize(
+    ("before", "after"),
+    [
+        ("  workflow_dispatch:", "  pull_request:"),
+        ("needs: verify", "needs: []"),
+        ("github.ref == 'refs/heads/main'", "true"),
+        ("      packages: write", "      contents: write"),
+        ("ref: ${{ github.sha }}", "ref: another-branch"),
+        ("secrets.GITHUB_TOKEN", "secrets.PUBLICATION_TOKEN"),
+        ("docker run --rm toetra:publish --help", "true"),
+        ("ghcr.io/kintanaone/toetra", "ghcr.io/other/toetra"),
+    ],
+)
+def test_ghcr_contract_rejects_invalid_publication(
+    tmp_path: Path, before: str, after: str
+) -> None:
+    repository = _collaboration_fixture(tmp_path)
+    workflow = repository / ".github/workflows/publish-docker.yml"
+    source = workflow.read_text(encoding="utf-8")
+    assert before in source
+    workflow.write_text(source.replace(before, after), encoding="utf-8")
+
+    errors = public_collaboration_errors(repository)
+
+    assert any("GHCR contract" in error for error in errors)

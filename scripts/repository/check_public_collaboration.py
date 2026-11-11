@@ -24,6 +24,7 @@ EXPECTED_PUBLIC_FILES = (
     "COPYRIGHT.md",
     "SECURITY.md",
     "docs/development/public-collaboration-and-workflows.md",
+    ".github/workflows/publish-docker.yml",
 )
 
 REQUIRED_MARKERS = {
@@ -111,6 +112,7 @@ FORBIDDEN_WORKFLOW_MARKERS = (
 
 DEPLOYMENT_WORKFLOW_NAMES = frozenset({"deploy-pages.yml"})
 PUBLICATION_WORKFLOW = "publish-pypi.yml"
+DOCKER_PUBLICATION_WORKFLOW = "publish-docker.yml"
 PUBLICATION_GUARD = (
     "github.repository == 'KintanaOne/Toetra' && github.ref == 'refs/heads/main'"
 )
@@ -213,6 +215,89 @@ def _publication_errors(source: str) -> list[str]:
     return errors
 
 
+def _docker_publication_errors(source: str) -> list[str]:
+    """Validate the manual main-only GHCR publication contract."""
+    try:
+        workflow = yaml.load(source, Loader=yaml.BaseLoader)
+        _require_publication(
+            set(workflow) == {"name", "on", "permissions", "concurrency", "jobs"}
+        )
+        _require_publication(workflow["on"] == {"workflow_dispatch": ""})
+        _require_publication(workflow["permissions"] == {"contents": "read"})
+        _require_publication(
+            workflow["concurrency"]
+            == {"group": "publish-docker", "cancel-in-progress": "false"}
+        )
+
+        jobs = workflow["jobs"]
+        _require_publication(set(jobs) == {"verify", "publish"})
+        _require_publication(
+            jobs["verify"]
+            == {"if": PUBLICATION_GUARD, "uses": "./.github/workflows/ci.yml"}
+        )
+
+        publish = jobs["publish"]
+        _require_publication(
+            set(publish)
+            == {"needs", "if", "runs-on", "timeout-minutes", "permissions", "steps"}
+        )
+        _require_publication(publish["needs"] == "verify")
+        _require_publication(publish["if"] == PUBLICATION_GUARD)
+        _require_publication(publish["runs-on"] == "ubuntu-latest")
+        _require_publication(0 < int(publish["timeout-minutes"]) <= 30)
+        _require_publication(
+            publish["permissions"] == {"contents": "read", "packages": "write"}
+        )
+
+        steps = publish["steps"]
+        _require_publication(len(steps) == 5)
+        checkout = steps[0]
+        _require_publication(set(checkout) == {"name", "uses", "with"})
+        _require_publication(checkout["uses"].startswith("actions/checkout@"))
+        _require_publication(
+            checkout["with"]
+            == {"ref": "${{ github.sha }}", "persist-credentials": "false"}
+        )
+
+        commands = (
+            "docker buildx build --load -t toetra:publish .",
+            "docker run --rm toetra:publish --help\n"
+            "docker run --rm toetra:publish --version",
+            "printf '%s' \"$GHCR_TOKEN\" |\n"
+            '  docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin',
+            'docker tag toetra:publish "$IMAGE_REF:edge"\n'
+            'docker tag toetra:publish "$IMAGE_REF:sha-$GITHUB_SHA"\n'
+            'docker push "$IMAGE_REF:edge"\n'
+            'docker push "$IMAGE_REF:sha-$GITHUB_SHA"',
+        )
+        environments = (
+            None,
+            None,
+            {"GHCR_TOKEN": "${{ secrets.GITHUB_TOKEN }}"},
+            {"IMAGE_REF": "ghcr.io/kintanaone/toetra"},
+        )
+
+        for step, command, environment in zip(steps[1:], commands, environments):
+            expected_keys = {"name", "run"}
+            if environment is not None:
+                expected_keys.add("env")
+                _require_publication(step["env"] == environment)
+            _require_publication(set(step) == expected_keys)
+            _require_publication(step["run"].strip() == command)
+
+        _require_publication(source.count("secrets.") == 1)
+    except (
+        KeyError,
+        TypeError,
+        ValueError,
+        IndexError,
+        AttributeError,
+        yaml.YAMLError,
+    ):
+        return ["publish-docker.yml violates the manual main-only GHCR contract"]
+    return []
+
+
 ACTION_USE = re.compile(
     r"^\s*uses:\s*(?P<target>[^@\s]+)@(?P<reference>[^\s#]+)"
     r"(?:\s+#\s*(?P<label>.+))?$",
@@ -233,6 +318,7 @@ def _workflow_errors(path: Path, source: str) -> list[str]:
     errors: list[str] = []
     is_pages_deployment = path.name in DEPLOYMENT_WORKFLOW_NAMES
     is_publication = path.name == PUBLICATION_WORKFLOW
+    is_docker_publication = path.name == DOCKER_PUBLICATION_WORKFLOW
 
     if is_pages_deployment:
         expected_permissions = (
@@ -264,6 +350,8 @@ def _workflow_errors(path: Path, source: str) -> list[str]:
             errors.append(f"{relative} does not declare top-level contents: read")
         if is_publication:
             errors.extend(_publication_errors(source))
+        elif is_docker_publication:
+            errors.extend(_docker_publication_errors(source))
         elif WRITE_PERMISSION.search(source):
             errors.append(f"{relative} grants a write-capable workflow permission")
     if "timeout-minutes:" not in source:
@@ -272,6 +360,8 @@ def _workflow_errors(path: Path, source: str) -> list[str]:
     for marker in FORBIDDEN_WORKFLOW_MARKERS:
         if is_publication and marker == "pypa/gh-action-pypi-publish":
             continue
+        if is_docker_publication and marker == "secrets.":
+            continue
         if marker in source:
             errors.append(f"{relative} contains forbidden workflow marker {marker!r}")
 
@@ -279,7 +369,10 @@ def _workflow_errors(path: Path, source: str) -> list[str]:
         line.strip()
         for line in source.splitlines()
         if line.strip().startswith("uses:")
-        and not (is_publication and line.strip() == "uses: ./.github/workflows/ci.yml")
+        and not (
+            (is_publication or is_docker_publication)
+            and line.strip() == "uses: ./.github/workflows/ci.yml"
+        )
     )
     matches = tuple(ACTION_USE.finditer(source))
     if len(matches) != len(uses_lines):
