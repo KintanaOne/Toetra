@@ -2,6 +2,12 @@ name: Publish Toetra to GHCR
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Optional stable image tag, for example 1.0.0"
+        required: false
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -48,8 +54,5 @@ jobs:
       - name: Publish image
         env:
           IMAGE_REF: ghcr.io/kintanaone/toetra
-        run: |
-          docker tag toetra:publish "$IMAGE_REF:edge"
-          docker tag toetra:publish "$IMAGE_REF:sha-$GITHUB_SHA"
-          docker push "$IMAGE_REF:edge"
-          docker push "$IMAGE_REF:sha-$GITHUB_SHA"
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: make docker-publish DOCKER_IMAGE=toetra:publish

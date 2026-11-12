@@ -25,6 +25,7 @@ EXPECTED_PUBLIC_FILES = (
     "SECURITY.md",
     "docs/development/public-collaboration-and-workflows.md",
     ".github/workflows/publish-docker.yml",
+    "scripts/release/publish_docker.sh",
 )
 
 REQUIRED_MARKERS = {
@@ -222,7 +223,18 @@ def _docker_publication_errors(source: str) -> list[str]:
         _require_publication(
             set(workflow) == {"name", "on", "permissions", "concurrency", "jobs"}
         )
-        _require_publication(workflow["on"] == {"workflow_dispatch": ""})
+        _require_publication(set(workflow["on"]) == {"workflow_dispatch"})
+        dispatch = workflow["on"]["workflow_dispatch"]
+        _require_publication(set(dispatch) == {"inputs"})
+        _require_publication(set(dispatch["inputs"]) == {"version"})
+
+        version_input = dispatch["inputs"]["version"]
+        _require_publication(
+            set(version_input) == {"description", "required", "type", "default"}
+        )
+        _require_publication(version_input["required"] == "false")
+        _require_publication(version_input["type"] == "string")
+        _require_publication(version_input["default"] == "")
         _require_publication(workflow["permissions"] == {"contents": "read"})
         _require_publication(
             workflow["concurrency"]
@@ -264,16 +276,16 @@ def _docker_publication_errors(source: str) -> list[str]:
             "make docker-smoke DOCKER_IMAGE=toetra:publish",
             "printf '%s' \"$GHCR_TOKEN\" |\n"
             '  docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin',
-            'docker tag toetra:publish "$IMAGE_REF:edge"\n'
-            'docker tag toetra:publish "$IMAGE_REF:sha-$GITHUB_SHA"\n'
-            'docker push "$IMAGE_REF:edge"\n'
-            'docker push "$IMAGE_REF:sha-$GITHUB_SHA"',
+            "make docker-publish DOCKER_IMAGE=toetra:publish",
         )
         environments = (
             None,
             None,
             {"GHCR_TOKEN": "${{ secrets.GITHUB_TOKEN }}"},
-            {"IMAGE_REF": "ghcr.io/kintanaone/toetra"},
+            {
+                "IMAGE_REF": "ghcr.io/kintanaone/toetra",
+                "RELEASE_VERSION": "${{ inputs.version }}",
+            },
         )
 
         for step, command, environment in zip(steps[1:], commands, environments):

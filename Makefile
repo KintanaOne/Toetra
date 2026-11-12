@@ -161,3 +161,8 @@ docker-pull:
 
 docker-check-published: docker-pull
 	python scripts/ci/check_docker_smoke.py --image "$(DOCKER_PUBLISHED_IMAGE)"
+
+.PHONY: docker-publish
+
+docker-publish:
+	bash scripts/release/publish_docker.sh "$(DOCKER_IMAGE)"

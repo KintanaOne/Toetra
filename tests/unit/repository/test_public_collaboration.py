@@ -129,6 +129,14 @@ def test_pypi_permissions_remain_forbidden_in_pull_request_ci(tmp_path: Path) ->
         ("secrets.GITHUB_TOKEN", "secrets.PUBLICATION_TOKEN"),
         ("make docker-smoke DOCKER_IMAGE=toetra:publish", "true"),
         ("ghcr.io/kintanaone/toetra", "ghcr.io/other/toetra"),
+        ("required: false", "required: true"),
+        ("type: string", "type: boolean"),
+        ('default: ""', 'default: "1.0.0"'),
+        (
+            "RELEASE_VERSION: ${{ inputs.version }}",
+            'RELEASE_VERSION: "1.0.0"',
+        ),
+        ("make docker-publish DOCKER_IMAGE=toetra:publish", "true"),
     ],
 )
 def test_ghcr_contract_rejects_invalid_publication(
