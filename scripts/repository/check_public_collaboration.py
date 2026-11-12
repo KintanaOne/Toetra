@@ -260,9 +260,8 @@ def _docker_publication_errors(source: str) -> list[str]:
         )
 
         commands = (
-            "docker buildx build --load -t toetra:publish .",
-            "docker run --rm toetra:publish --help\n"
-            "docker run --rm toetra:publish --version",
+            "make docker-build DOCKER_IMAGE=toetra:publish",
+            "make docker-smoke DOCKER_IMAGE=toetra:publish",
             "printf '%s' \"$GHCR_TOKEN\" |\n"
             '  docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin',
             'docker tag toetra:publish "$IMAGE_REF:edge"\n'

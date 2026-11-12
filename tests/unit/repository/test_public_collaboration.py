@@ -127,7 +127,7 @@ def test_pypi_permissions_remain_forbidden_in_pull_request_ci(tmp_path: Path) ->
         ("      packages: write", "      contents: write"),
         ("ref: ${{ github.sha }}", "ref: another-branch"),
         ("secrets.GITHUB_TOKEN", "secrets.PUBLICATION_TOKEN"),
-        ("docker run --rm toetra:publish --help", "true"),
+        ("make docker-smoke DOCKER_IMAGE=toetra:publish", "true"),
         ("ghcr.io/kintanaone/toetra", "ghcr.io/other/toetra"),
     ],
 )

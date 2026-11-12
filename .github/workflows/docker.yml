@@ -22,10 +22,8 @@ jobs:
           persist-credentials: false
 
       - name: Build image
-        run: docker buildx build --load -t toetra:ci .
+        run: make docker-build DOCKER_IMAGE=toetra:ci
 
       - name: Check CLI
-        run: |
-          docker run --rm toetra:ci --help
-          docker run --rm toetra:ci --version
+        run: make docker-smoke DOCKER_IMAGE=toetra:ci
         

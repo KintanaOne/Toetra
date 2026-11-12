@@ -141,3 +141,23 @@ clean:
 	python -c "import shutil; [shutil.rmtree(p, ignore_errors=True) for p in ('build', 'dist', 'site')]"
 	python -c "from pathlib import Path; [p.unlink() for p in Path('.').rglob('*.pyc')]"
 	python -c "import shutil; from pathlib import Path; [shutil.rmtree(p, ignore_errors=True) for p in Path('.').rglob('__pycache__')]"
+
+DOCKER_IMAGE ?= toetra:dev
+DOCKER_PUBLISHED_IMAGE ?= ghcr.io/kintanaone/toetra:edge
+
+.PHONY: docker-build docker-smoke docker-check docker-pull docker-check-published
+
+docker-build:
+	docker buildx build --load -t "$(DOCKER_IMAGE)" .
+
+docker-smoke:
+	python scripts/ci/check_docker_smoke.py --image "$(DOCKER_IMAGE)"
+
+docker-check: docker-build
+	"$(MAKE)" docker-smoke
+
+docker-pull:
+	docker pull "$(DOCKER_PUBLISHED_IMAGE)"
+
+docker-check-published: docker-pull
+	python scripts/ci/check_docker_smoke.py --image "$(DOCKER_PUBLISHED_IMAGE)"

@@ -33,12 +33,10 @@ jobs:
           persist-credentials: false
 
       - name: Build image
-        run: docker buildx build --load -t toetra:publish .
+        run: make docker-build DOCKER_IMAGE=toetra:publish
 
       - name: Check CLI
-        run: |
-          docker run --rm toetra:publish --help
-          docker run --rm toetra:publish --version
+        run: make docker-smoke DOCKER_IMAGE=toetra:publish
 
       - name: Log in to GHCR
         env:
