@@ -7,6 +7,7 @@ EXPECTED_LAYOUT = {
     "ci": {
         "__init__.py",
         "check_cli_smoke.py",
+        "check_docker_smoke.py",
         "check_public_contract.py",
         "clean_notebooks.py",
     },
